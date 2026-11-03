@@ -1,6 +1,6 @@
 # 项目结构与修改入口
 
-业务结构保持 `QAViT/`、`EXP/`、`reference/`、`AGENTS.md`、`STRUCTURE.md` 五项。根目录 `README.md` 保留远端仓库初始提交中的内容；`.git/` 和 `.gitignore` 用于版本管理。
+业务结构保持 `QAViT/`、`EXP/`、`reference/`、`AGENTS.md`、`STRUCTURE.md` 五项。根目录 `README.md` 提供项目概览与使用入口；`.git/` 和 `.gitignore` 用于版本管理。
 
 Git 管理 QAViT 的稳定代码、Prompt、工具、轻量配置、文档和测试，包括 `tests/data/` 的小型夹具与模型构造源码的现有许可证。新增源码默认可跟踪，不对 QAViT 设置逐文件白名单。
 
