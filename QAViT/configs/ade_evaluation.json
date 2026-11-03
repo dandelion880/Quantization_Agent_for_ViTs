@@ -1,0 +1,122 @@
+{
+  "model": {
+    "auxiliary_head": null,
+    "backbone": {
+      "type": "DeiTDualTaskBackbone",
+      "freeze_backbone": true,
+      "out_indices": [
+        2,
+        5,
+        8,
+        11
+      ]
+    },
+    "data_preprocessor": {
+      "bgr_to_rgb": true,
+      "mean": [
+        123.675,
+        116.28,
+        103.53
+      ],
+      "pad_val": 0,
+      "seg_pad_val": 255,
+      "size": [
+        512,
+        512
+      ],
+      "std": [
+        58.395,
+        57.12,
+        57.375
+      ],
+      "type": "SegDataPreProcessor"
+    },
+    "decode_head": {
+      "align_corners": false,
+      "channels": 512,
+      "dropout_ratio": 0.1,
+      "in_channels": [
+        768,
+        768,
+        768,
+        768
+      ],
+      "in_index": [
+        0,
+        1,
+        2,
+        3
+      ],
+      "loss_decode": {
+        "loss_weight": 1.0,
+        "type": "CrossEntropyLoss",
+        "use_sigmoid": false
+      },
+      "norm_cfg": {
+        "requires_grad": true,
+        "type": "SyncBN"
+      },
+      "num_classes": 150,
+      "pool_scales": [
+        1,
+        2,
+        3,
+        6
+      ],
+      "type": "UPerHead"
+    },
+    "neck": {
+      "in_channels": [
+        768,
+        768,
+        768,
+        768
+      ],
+      "out_channels": 768,
+      "scales": [
+        4,
+        2,
+        1,
+        0.5
+      ],
+      "type": "MultiLevelNeck"
+    },
+    "pretrained": null,
+    "test_cfg": {
+      "crop_size": [
+        512,
+        512
+      ],
+      "mode": "slide",
+      "stride": [
+        341,
+        341
+      ]
+    },
+    "train_cfg": {},
+    "type": "EncoderDecoder"
+  },
+  "pipeline": [
+    {
+      "type": "LoadImageFromFile"
+    },
+    {
+      "type": "Resize",
+      "scale": [
+        2048,
+        512
+      ],
+      "keep_ratio": true
+    },
+    {
+      "type": "LoadAnnotations",
+      "reduce_zero_label": true
+    },
+    {
+      "type": "PackSegInputs"
+    }
+  ],
+  "data_root": "/root/data-fs/projects/ptq_training_free/data/ade20k",
+  "head_receipt": "assets/ade_head.json",
+  "provenance": "/root/data-fs/projects/Quantization_Agent_for_ViTs/EXP/validation/self_containment_reference_v2"
+}

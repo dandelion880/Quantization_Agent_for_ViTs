@@ -1,0 +1,493 @@
+{
+  "schema_version": 1,
+  "methods": [
+    {
+      "id": "rtn",
+      "title": "RTN / 通用有限网格",
+      "targets": [
+        "weight",
+        "activation"
+      ],
+      "plugins": {
+        "weight": [
+          "rtn"
+        ],
+        "activation": [
+          "rtn"
+        ]
+      },
+      "tags": [
+        "uniform",
+        "对照",
+        "round",
+        "minmax",
+        "INT",
+        "NF4",
+        "FP4",
+        "量化误差"
+      ],
+      "paper": "基础量化",
+      "document": "rtn.md",
+      "implementation": "tools/ptq_agent/execution/plugin_math.py:encode_rtn; codecs.py:fit/qdq"
+    },
+    {
+      "id": "uniform_full",
+      "title": "完整 signed uniform 网格",
+      "targets": [
+        "weight",
+        "activation"
+      ],
+      "plugins": {
+        "weight": [
+          "uniform_full"
+        ],
+        "activation": [
+          "uniform_full"
+        ]
+      },
+      "tags": [
+        "uniform",
+        "signed",
+        "scale",
+        "PTQ4ViT",
+        "coordinate"
+      ],
+      "paper": "PTQ4ViT",
+      "document": "uniform_full.md",
+      "implementation": "tools/ptq_agent/execution/grids.py:fit/apply"
+    },
+    {
+      "id": "uniform_affine",
+      "title": "Unsigned affine + 可选 percentile observer",
+      "targets": [
+        "weight",
+        "activation"
+      ],
+      "plugins": {
+        "weight": [
+          "uniform_affine"
+        ],
+        "activation": [
+          "uniform_affine"
+        ]
+      },
+      "tags": [
+        "unsigned",
+        "asymmetric",
+        "负值",
+        "偏斜",
+        "percentile",
+        "RepQ",
+        "zero"
+      ],
+      "paper": "RepQ-ViT",
+      "document": "uniform_affine.md",
+      "implementation": "tools/ptq_agent/execution/grids.py:fit/affine_qdq"
+    },
+    {
+      "id": "uniform_minmax",
+      "title": "FQ minmax signed / unsigned observer",
+      "targets": [
+        "weight",
+        "activation"
+      ],
+      "plugins": {
+        "weight": [
+          "uniform_minmax"
+        ],
+        "activation": [
+          "uniform_minmax"
+        ]
+      },
+      "tags": [
+        "FQ",
+        "minmax",
+        "uniform",
+        "observer"
+      ],
+      "paper": "FQ-ViT",
+      "document": "uniform_minmax.md",
+      "implementation": "tools/ptq_agent/execution/grids.py:fit/apply"
+    },
+    {
+      "id": "gptq",
+      "title": "GPTQ 权重误差补偿",
+      "targets": [
+        "weight"
+      ],
+      "plugins": {
+        "weight": [
+          "gptq"
+        ]
+      },
+      "tags": [
+        "weight",
+        "权重",
+        "Hessian",
+        "Gram",
+        "补偿",
+        "actorder"
+      ],
+      "paper": "GPTQ",
+      "document": "gptq.md",
+      "implementation": "tools/ptq_agent/execution/plugin_math.py:gptq; calibration.py:gram"
+    },
+    {
+      "id": "twin_softmax",
+      "title": "概率双均匀区间",
+      "targets": [
+        "activation"
+      ],
+      "plugins": {
+        "activation": [
+          "twin_softmax"
+        ]
+      },
+      "tags": [
+        "softmax",
+        "probability",
+        "概率",
+        "长尾",
+        "twin",
+        "PTQ4ViT"
+      ],
+      "paper": "PTQ4ViT",
+      "document": "twin_softmax.md",
+      "implementation": "tools/ptq_agent/execution/plugin_math.py:fit_activation/activation_qdq"
+    },
+    {
+      "id": "log2",
+      "title": "概率 log2 网格",
+      "targets": [
+        "activation"
+      ],
+      "plugins": {
+        "activation": [
+          "log2"
+        ]
+      },
+      "tags": [
+        "softmax",
+        "probability",
+        "log",
+        "对数",
+        "长尾",
+        "FQ"
+      ],
+      "paper": "FQ-ViT",
+      "document": "log2.md",
+      "implementation": "tools/ptq_agent/execution/plugin_math.py:activation_qdq"
+    },
+    {
+      "id": "log_sqrt2",
+      "title": "概率 log√2 网格",
+      "targets": [
+        "activation"
+      ],
+      "plugins": {
+        "activation": [
+          "log_sqrt2"
+        ]
+      },
+      "tags": [
+        "softmax",
+        "probability",
+        "log",
+        "对数",
+        "RepQ",
+        "长尾"
+      ],
+      "paper": "RepQ-ViT",
+      "document": "log_sqrt2.md",
+      "implementation": "tools/ptq_agent/execution/plugin_math.py:activation_qdq; grids.py:percentile_log"
+    },
+    {
+      "id": "twin_gelu",
+      "title": "GELU 正负双区间",
+      "targets": [
+        "activation"
+      ],
+      "plugins": {
+        "activation": [
+          "twin_gelu"
+        ]
+      },
+      "tags": [
+        "GELU",
+        "negative",
+        "负支",
+        "置零",
+        "twin",
+        "PTQ4ViT"
+      ],
+      "paper": "PTQ4ViT",
+      "document": "twin_gelu.md",
+      "implementation": "tools/ptq_agent/execution/plugin_math.py:fit_activation/activation_qdq"
+    },
+    {
+      "id": "asymmetric_gelu",
+      "title": "观测式 GELU 正负尺度",
+      "targets": [
+        "activation"
+      ],
+      "plugins": {
+        "activation": [
+          "asymmetric_gelu"
+        ]
+      },
+      "tags": [
+        "GELU",
+        "negative",
+        "负支",
+        "asymmetric",
+        "适配"
+      ],
+      "paper": "项目适配",
+      "document": "asymmetric_gelu.md",
+      "implementation": "tools/ptq_agent/execution/plugin_math.py:fit_activation/activation_qdq"
+    },
+    {
+      "id": "ptf",
+      "title": "Power-of-Two Factor 通道尺度",
+      "targets": [
+        "activation"
+      ],
+      "plugins": {
+        "activation": [
+          "ptf"
+        ]
+      },
+      "tags": [
+        "LayerNorm",
+        "LN",
+        "channel",
+        "通道",
+        "PTF",
+        "FQ"
+      ],
+      "paper": "FQ-ViT",
+      "document": "ptf.md",
+      "implementation": "tools/ptq_agent/execution/plugin_math.py:fit_activation"
+    },
+    {
+      "id": "smoothquant",
+      "title": "激活/权重等价缩放",
+      "targets": [
+        "preprocess"
+      ],
+      "plugins": {
+        "preprocess": [
+          "smoothquant"
+        ]
+      },
+      "tags": [
+        "channel",
+        "通道",
+        "outlier",
+        "离群值",
+        "LN",
+        "reparameterization"
+      ],
+      "paper": "SmoothQuant",
+      "document": "smoothquant.md",
+      "implementation": "tools/ptq_agent/execution/plugin_math.py:smoothquant; pipeline.py:preprocess"
+    },
+    {
+      "id": "repq_ln",
+      "title": "LN 激活尺度重参数化",
+      "targets": [
+        "preprocess"
+      ],
+      "plugins": {
+        "preprocess": [
+          "repq_ln"
+        ]
+      },
+      "tags": [
+        "LayerNorm",
+        "LN",
+        "channel",
+        "通道",
+        "range",
+        "RepQ",
+        "reparameterization"
+      ],
+      "paper": "RepQ-ViT",
+      "document": "repq_ln.md",
+      "implementation": "tools/ptq_agent/execution/plugin_math.py:repq_ln; pipeline.py:preprocess"
+    },
+    {
+      "id": "integer_layernorm",
+      "title": "整数 LayerNorm 参考算子",
+      "targets": [
+        "operator"
+      ],
+      "plugins": {
+        "operator": [
+          "integer_layernorm"
+        ]
+      },
+      "tags": [
+        "LayerNorm",
+        "LN",
+        "integer",
+        "FQ",
+        "算子"
+      ],
+      "paper": "FQ-ViT",
+      "document": "integer_layernorm.md",
+      "implementation": "tools/ptq_agent/execution/operators.py:integer_layernorm"
+    },
+    {
+      "id": "integer_softmax",
+      "title": "Log-Int-Softmax 参考算子",
+      "targets": [
+        "operator"
+      ],
+      "plugins": {
+        "operator": [
+          "integer_softmax"
+        ]
+      },
+      "tags": [
+        "softmax",
+        "LIS",
+        "integer",
+        "FQ",
+        "算子"
+      ],
+      "paper": "FQ-ViT",
+      "document": "integer_softmax.md",
+      "implementation": "tools/ptq_agent/execution/operators.py:integer_softmax"
+    },
+    {
+      "id": "scale_selection",
+      "title": "尺度选择与任务相关误差",
+      "targets": [
+        "calibration"
+      ],
+      "plugins": {},
+      "tags": [
+        "scale",
+        "尺度",
+        "Hessian",
+        "metric",
+        "MSE",
+        "percentile",
+        "coordinate",
+        "裁剪"
+      ],
+      "paper": "PTQ4ViT / RepQ-ViT / 项目接口",
+      "document": "scale_selection.md",
+      "implementation": "tools/ptq_agent/execution/calibration.py; coordinate.py; plugin_contracts.py:calibration"
+    },
+    {
+      "id": "calibration_order",
+      "title": "顺序、诊断与组合",
+      "targets": [
+        "calibration"
+      ],
+      "plugins": {},
+      "tags": [
+        "order",
+        "顺序",
+        "组合",
+        "sequential",
+        "joint",
+        "预算"
+      ],
+      "paper": "执行合同",
+      "document": "calibration_order.md",
+      "implementation": "tools/ptq_agent/execution/pipeline.py:fit_model; plugin_contracts.py:validate_composition"
+    },
+    {
+      "id": "adalog",
+      "title": "AdaLog: adalog",
+      "targets": [
+        "activation"
+      ],
+      "plugins": {
+        "activation": [
+          "adalog"
+        ]
+      },
+      "document": "adalog.md",
+      "implementation": "tools/ptq_agent/execution/adalog.py",
+      "tags": [
+        "post_softmax",
+        "post_gelu",
+        "logarithmic",
+        "base",
+        "long",
+        "tail"
+      ]
+    },
+    {
+      "id": "adalog_bias",
+      "title": "AdaLog: adalog_bias",
+      "targets": [
+        "preprocess"
+      ],
+      "plugins": {
+        "preprocess": [
+          "adalog_bias"
+        ]
+      },
+      "document": "adalog_bias.md",
+      "implementation": "tools/ptq_agent/execution/pipeline.py",
+      "tags": [
+        "post_gelu",
+        "bias",
+        "reparameterization",
+        "decoded",
+        "weight"
+      ]
+    },
+    {
+      "id": "adaround",
+      "title": "AdaRound: adaround",
+      "targets": [
+        "weight"
+      ],
+      "plugins": {
+        "weight": [
+          "adaround"
+        ]
+      },
+      "document": "adaround.md",
+      "implementation": "tools/ptq_agent/execution/adaround.py",
+      "tags": [
+        "weight",
+        "rounding",
+        "reconstruction",
+        "fixed",
+        "grid",
+        "alpha"
+      ]
+    },
+    {
+      "id": "gptaq",
+      "title": "GPTAQ v1: gptaq",
+      "targets": [
+        "weight"
+      ],
+      "plugins": {
+        "weight": [
+          "gptaq"
+        ]
+      },
+      "document": "gptaq.md",
+      "implementation": "tools/ptq_agent/execution/gptaq.py",
+      "tags": [
+        "weight",
+        "original",
+        "fp",
+        "output",
+        "alignment",
+        "quantized",
+        "input",
+        "compensation"
+      ]
+    }
+  ]
+}

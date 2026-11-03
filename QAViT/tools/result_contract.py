@@ -1,0 +1,144 @@
+"""所有 L3 服务共用的冻结结果协议；completed 不是验证结论。"""
+import math
+import json
+from jsonschema import Draft202012Validator, SchemaError
+
+from core.cards import ContractError
+
+
+def evaluation_name(row):
+    return "segmentation" if row["kind"] == "ade_frozen" else row["kind"]
+
+
+def result_requirements(payload, brief):
+    spec = payload["execution"]
+    protocol = brief["evaluation_protocol"] if payload["level"] == "L3" else {}
+    requirements = protocol.get("required_results", [])
+    if not isinstance(requirements, list):
+        raise ContractError("evaluation_protocol.required_results 必须是数组")
+    for row in requirements:
+        if (not isinstance(row, dict) or set(row) != {"path", "schema"}
+                or not isinstance(row["path"], str) or not row["path"].strip() or not isinstance(row["schema"], dict)):
+            raise ContractError("required_results 必须包含非空 path 和 schema 对象")
+        try:
+            Draft202012Validator.check_schema(row["schema"])
+        except SchemaError as exc:
+            raise ContractError("required_results.schema 非法: " + exc.message) from exc
+        # 不允许验证过程去网络解析外部引用。
+        if '"$ref"' in json.dumps(row["schema"]):
+            raise ContractError("required_results.schema 不支持外部/递归 $ref")
+    rows = spec.get("evaluations", [])
+    if not isinstance(rows, list):
+        raise ContractError("execution.evaluations 必须是数组")
+    names = []
+    for row in rows:
+        if not isinstance(row, dict) or not isinstance(row.get("kind"), str) or not row["kind"].strip():
+            raise ContractError("execution.evaluations.kind 必须是非空字符串")
+        if set(row) - {"kind", "split", "count", "offset", "metrics", "full_dataset"}:
+            raise ContractError("execution.evaluations 存在未识别的必需字段")
+        if "count" not in row or (row["count"] is not None and (type(row["count"]) is not int or row["count"] <= 0)):
+            raise ContractError("execution.evaluations.count 必须显式为正整数或 null")
+        if row["kind"] != "ade_frozen" and (not isinstance(row.get("split"), str) or not row["split"].strip()):
+            raise ContractError("execution.evaluations.split 必须是非空字符串")
+        if "offset" in row and row["offset"] != 0:
+            raise ContractError("当前评测接口不支持非零 offset；不能静默忽略")
+        if "metrics" in row and (not isinstance(row["metrics"], list) or not row["metrics"]
+                                  or any(not isinstance(m, str) or not m.strip() for m in row["metrics"])):
+            raise ContractError("execution.evaluations.metrics 必须是非空指标名数组")
+        if "full_dataset" in row and type(row["full_dataset"]) is not bool:
+            raise ContractError("execution.evaluations.full_dataset 必须为 boolean")
+        names.append(evaluation_name(row))
+    if len(names) != len(set(names)):
+        raise ContractError("评测结果键重复；当前接口每个 kind 仅支持一个冻结数据视图")
+    if payload["level"] == "L3" and not rows and not requirements:
+        raise ContractError("L3 缺少可核验的 evaluations 或 evaluation_protocol.required_results")
+    for key in ("full_dataset", "reload_before_evaluation"):
+        if key in protocol and type(protocol[key]) is not bool:
+            raise ContractError("evaluation_protocol." + key + " 必须为 boolean")
+    for key in ("batch_size", "calibration_samples", "search_samples"):
+        if key in protocol and (type(protocol[key]) is not int or protocol[key] <= 0):
+            raise ContractError("evaluation_protocol." + key + " 必须为正整数")
+    return requirements
+
+
+def check_results(payload, brief, data):
+    requirements = result_requirements(payload, brief)
+    spec = payload["execution"]
+    observations = data.get("observations")
+    if not isinstance(observations, dict) or not observations:
+        raise ContractError("测量证据缺少 observations")
+    protocol = brief["evaluation_protocol"] if payload["level"] == "L3" else {}
+    evaluations = observations.get("evaluations", {})
+    if not isinstance(evaluations, dict):
+        raise ContractError("observations.evaluations 必须是对象")
+    identity = data.get("provenance", {}).get("data_identity", {})
+    for requested in spec.get("evaluations", []):
+        name = evaluation_name(requested)
+        measured = evaluations.get(name, {})
+        split = "ade_validation" if requested["kind"] == "ade_frozen" else requested["split"]
+        count, ids, metrics = measured.get("sample_count"), measured.get("sample_ids"), measured.get("metrics")
+        if (type(count) is not int or count <= 0 or not isinstance(ids, list) or len(ids) != count
+                or any(not isinstance(i, str) or not i for i in ids) or len(set(ids)) != count
+                or measured.get("split") != split or not isinstance(metrics, dict) or not metrics):
+            raise ContractError("测量证据缺少符合冻结规格的评测结果: " + requested["kind"])
+        expected_ids = identity.get("split_ids", {}).get(split)
+        if expected_ids is not None and ids != expected_ids[:requested["count"]]:
+            raise ContractError("评测实际 sample_ids 与冻结数据顺序/范围不一致")
+        if requested["count"] is not None and count != requested["count"]:
+            raise ContractError("评测 sample_count 与冻结规格不一致")
+        observed_ranges = data.get("provenance", {}).get("execution_facts", {}).get("data", {})
+        actual = next((row for row in observed_ranges.values() if row.get("split") == split
+                       and row.get("sample_ids") == ids and row.get("sample_count") == count), None)
+        if payload["level"] == "L3" and actual is None:
+            raise ContractError("L3 评测范围缺少宿主实际数据读取/执行事实支持")
+        if measured.get("full_dataset") is True and (actual is None or actual.get("full_dataset") is not True):
+            raise ContractError("自报 full_dataset 与宿主实际完整数据范围不一致")
+        if requested["count"] is None and expected_ids is None and measured.get("full_dataset") is not True:
+            raise ContractError("完整视图缺少可核验的数据身份或完整评测回执")
+        if ((protocol.get("full_dataset") is True or requested.get("full_dataset") is True
+             or (requested["count"] is None and split in ("final", "ade_validation")))
+                and measured.get("full_dataset") is not True):
+            raise ContractError("冻结评测要求完整数据，实际证据仅为子集")
+        required_metrics = list(requested.get("metrics", []))
+        if requested["kind"] == "classification" and data.get("measurement_source") == "real":
+            required_metrics.append("top1")
+        if requested["kind"] == "ade_frozen":
+            required_metrics.extend(("mIoU", "mAcc", "aAcc"))
+        if not set(required_metrics) <= set(metrics):
+            raise ContractError("评测缺少冻结协议必需指标: " + name)
+        if not any(type(v) in (int, float) and math.isfinite(v) for v in metrics.values()):
+            raise ContractError("评测没有有限数值指标: " + name)
+        for key in required_metrics:
+            if type(metrics[key]) not in (int, float) or not math.isfinite(metrics[key]):
+                raise ContractError("必需指标不是有限数值: " + key)
+    for row in requirements:
+        value = observations
+        for part in row["path"].split("."):
+            if not isinstance(value, dict) or part not in value:
+                raise ContractError("缺少 L3 必需结果: " + row["path"])
+            value = value[part]
+        error = next(Draft202012Validator(row["schema"]).iter_errors(value), None)
+        if error:
+            raise ContractError("L3 必需结果不符合冻结合同 " + row["path"] + ": " + error.message)
+    if protocol.get("reload_before_evaluation") or spec.get("reload_before_evaluation") or payload.get("validation", {}).get("export_reload"):
+        reload = observations.get("reload", {})
+        if reload.get("evaluated_instance") != "reloaded" or reload.get("host_verified") is not True:
+            raise ContractError("冻结协议要求使用宿主核验的重载实例评测")
+    provenance = data.get("provenance", {})
+    measured_data = provenance.get("execution_facts", {}).get("data", {})
+    bindings = {"batch_size": identity.get("batch_size"),
+                "calibration_samples": measured_data.get("calibration", {}).get("sample_count"),
+                "data_protocol": provenance.get("backend_data", {}).get("data_protocol"),
+                "manifest_sha256": provenance.get("backend_data", {}).get("data_sha256")}
+    for key, actual in bindings.items():
+        if key in protocol and actual != protocol[key]:
+            raise ContractError("实际执行不满足 evaluation_protocol." + key)
+    if "search_samples" in protocol:
+        counts = {row.get("sample_count") for row in measured_data.values() if row.get("split") == "search"}
+        if counts != {protocol["search_samples"]}:
+            raise ContractError("实际执行不满足 evaluation_protocol.search_samples")
+    if protocol.get("full_dataset") and not spec.get("evaluations"):
+        if not any(row.get("full_dataset") is True for row in measured_data.values()):
+            raise ContractError("完整数据协议缺少实际完整测量范围")
+    if payload["level"] == "L3" and not provenance.get("execution_facts", {}).get("measurement_kind"):
+        raise ContractError("L3 缺少宿主核验的 execution_facts，不能凭 completed 放行")

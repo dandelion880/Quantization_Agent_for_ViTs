@@ -1,0 +1,30 @@
+{
+  "supervisor": [
+    "gpt-6-luna",
+    "low"
+  ],
+  "generation": [
+    "gpt-6.1-sol",
+    "high"
+  ],
+  "judger": [
+    "gpt-6.1-sol",
+    "medium"
+  ],
+  "evolution": [
+    "gpt-6.1-sol",
+    "high"
+  ],
+  "recorder": [
+    "gpt-6-luna",
+    "high"
+  ],
+  "coding": [
+    "gpt-6.1-sol",
+    "medium"
+  ],
+  "safeguard": [
+    "gpt-6.1-sol",
+    "medium"
+  ]
+}

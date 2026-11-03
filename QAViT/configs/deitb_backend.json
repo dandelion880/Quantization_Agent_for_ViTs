@@ -1,0 +1,116 @@
+{
+  "mode": "real",
+  "task": {
+    "name": "DeiT-B strict static W4A4",
+    "metric": "task_accuracy",
+    "max_error": null,
+    "goal_error": null
+  },
+  "constraints": {
+    "precision_mode": "mixed",
+    "allowed_formats": [
+      "INT4",
+      "UINT4",
+      "NF4",
+      "FP4_E2M1",
+      "UINT8"
+    ],
+    "fixed_weight_format": null,
+    "fixed_activation_format": null,
+    "protected_modules": [],
+    "excluded_modules": [],
+    "fixed_layers": {}
+  },
+  "backend": {
+    "kind": "server",
+    "seed": 42,
+    "calibration_samples": 32,
+    "search_samples": 1000,
+    "final_samples": 50000,
+    "data_seeds": {
+      "calibration": 0,
+      "search": 20261008,
+      "final": 20261009
+    },
+    "model_path": "../../../ptq_training_free/checkpoints/fp_distribution_audit/deit_base_patch16_224-b5f2ef4d.pth",
+    "data_path": "assets/imagenet_manifest.json",
+    "asset_manifest": "assets/deit_model_manifest.json",
+    "model_id": "deit_base_patch16_224",
+    "device": "cuda:0",
+    "data_protocol": "imagefolder_manifest_v2",
+    "data_sha256": "7e560abfe98169fd72597ec87defd8bf12faadebdb3fb278bdbe9865ce400f4c"
+  },
+  "budget": {
+    "trials": 5,
+    "tools": 100,
+    "agents": 128,
+    "measurements": 8192,
+    "seconds": 21600,
+    "consecutive_failures": 6
+  },
+  "output_dir": "../../EXP/runs",
+  "memory_dir": "../../EXP/cache/profiling",
+  "loop": {
+    "evaluation": "classification",
+    "max_relative_mse": null,
+    "max_top1_drop_pp": null,
+    "max_weight_bytes_ratio": null,
+    "max_latency_ms": null,
+    "max_peak_memory_mib": null,
+    "execution_modes": [
+      "reference_qdq"
+    ],
+    "max_trials": 5,
+    "warmup": 2,
+    "repeats": 5,
+    "disk_budget_mib": 4096,
+    "min_free_disk_mib": 512,
+    "scope_modules": [],
+    "quantize_targets": [
+      "weight",
+      "activation"
+    ],
+    "calibration_cache_mib": 512,
+    "allowed_weight_methods": [
+      "rtn",
+      "gptq",
+      "uniform_full",
+      "uniform_affine",
+      "uniform_minmax",
+      "adaround",
+      "gptaq"
+    ],
+    "allowed_activation_methods": [
+      "rtn",
+      "uniform_full",
+      "uniform_affine",
+      "twin_softmax",
+      "log2",
+      "log_sqrt2",
+      "twin_gelu",
+      "asymmetric_gelu",
+      "ptf",
+      "uniform_minmax",
+      "adalog"
+    ],
+    "allowed_preprocess": [
+      "smoothquant",
+      "repq_ln",
+      "adalog_bias"
+    ],
+    "selection": "best_accuracy",
+    "quantize_classifier": true,
+    "required_sites": [],
+    "required_site_targets": {},
+    "required_execution": {},
+    "required_bits": {},
+    "site_bit_overrides": {},
+    "required_granularity": {},
+    "require_method_documents": true,
+    "stop_on_goal": false,
+    "require_decision_notes": false,
+    "search_max_top1_drop_pp": null,
+    "submission_reserve_tools_per_trial": 2,
+    "submission_reserve_agents_per_trial": 3
+  }
+}

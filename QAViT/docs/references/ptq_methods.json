@@ -1,0 +1,342 @@
+{
+  "record_scope": "Historical paper/source/validation provenance retained verbatim. Relative external paths identify original evidence locations, not QAViT runtime dependencies. Current independent implementations are under QAViT/tools/ptq_agent; current validation scope is documented in QAViT/README.md.",
+  "reviewed_on": "2026-10-14",
+  "purpose": "math/source reference, no upstream runtime imports",
+  "methods": [
+    {
+      "method": "SmoothQuant",
+      "paper": "https://arxiv.org/abs/2211.10438",
+      "repository": "https://github.com/mit-han-lab/smoothquant",
+      "commit": "c61476d728e42ae0d8a35e7e78494edcac3237b5",
+      "license": "MIT",
+      "files": [
+        {
+          "path": "smoothquant/smooth.py",
+          "url": "https://raw.githubusercontent.com/mit-han-lab/smoothquant/c61476d728e42ae0d8a35e7e78494edcac3237b5/smoothquant/smooth.py",
+          "sha256": "74daf140e0efd00082ec536200aa1d18d7b1ca516b6aa70a3cb96439f4d4e88b",
+          "bytes": 6137
+        },
+        {
+          "path": "LICENSE",
+          "url": "https://raw.githubusercontent.com/mit-han-lab/smoothquant/c61476d728e42ae0d8a35e7e78494edcac3237b5/LICENSE",
+          "sha256": "461e568b2ba8b2d9ab6a055746590a5bd2d030211dd751acba01cdf78511c06d",
+          "bytes": 1068
+        }
+      ]
+    },
+    {
+      "method": "PTQ4ViT",
+      "paper": "https://arxiv.org/abs/2111.12293",
+      "repository": "https://github.com/hahnyuan/PTQ4ViT",
+      "commit": "b42c790c2811e7835d435a9f9a6c64a079a7483a",
+      "license": "not declared",
+      "files": [
+        {
+          "path": "quant_layers/matmul.py",
+          "url": "https://raw.githubusercontent.com/hahnyuan/PTQ4ViT/b42c790c2811e7835d435a9f9a6c64a079a7483a/quant_layers/matmul.py",
+          "sha256": "5ae5076c795a9ee0cb426e0bdee3c369042deb3bbcfb22643985f0cf626be224",
+          "bytes": 37964
+        },
+        {
+          "path": "quant_layers/linear.py",
+          "url": "https://raw.githubusercontent.com/hahnyuan/PTQ4ViT/b42c790c2811e7835d435a9f9a6c64a079a7483a/quant_layers/linear.py",
+          "sha256": "8276cf58955083fa19cc46dd4cfded8aebb0ce01128b67c0f5921d2d39500943",
+          "bytes": 37581
+        },
+        {
+          "path": "utils/quant_calib.py",
+          "url": "https://raw.githubusercontent.com/hahnyuan/PTQ4ViT/b42c790c2811e7835d435a9f9a6c64a079a7483a/utils/quant_calib.py",
+          "sha256": "af5214f25239a6e7b6be1c485a3e5d44308be657f664cc6059d10c17305281cd",
+          "bytes": 16524
+        },
+        {
+          "path": "configs/PTQ4ViT.py",
+          "url": "https://raw.githubusercontent.com/hahnyuan/PTQ4ViT/b42c790c2811e7835d435a9f9a6c64a079a7483a/configs/PTQ4ViT.py",
+          "sha256": "3e0072c5b98a7ed3d2cca11da23223bcad0181b36c1a3e5f275ba0974d1c5317",
+          "bytes": 3196
+        },
+        {
+          "path": "quant_layers/conv.py",
+          "url": "https://raw.githubusercontent.com/hahnyuan/PTQ4ViT/b42c790c2811e7835d435a9f9a6c64a079a7483a/quant_layers/conv.py",
+          "sha256": "a71f2691e49fd8615eda14c8592fdc8f072c44fa5df744978af569432416e164",
+          "bytes": 33366
+        }
+      ]
+    },
+    {
+      "method": "FQ-ViT",
+      "paper": "https://arxiv.org/abs/2111.13824",
+      "repository": "https://github.com/megvii-research/FQ-ViT",
+      "commit": "5daf5915c715dc21d6afcd64e661652030e640ab",
+      "license": "Apache-2.0",
+      "files": [
+        {
+          "path": "models/ptq/observer/ptf.py",
+          "url": "https://raw.githubusercontent.com/megvii-research/FQ-ViT/5daf5915c715dc21d6afcd64e661652030e640ab/models/ptq/observer/ptf.py",
+          "sha256": "d23193ceaf09e232ba46330a9b326230c7c8181702eb993fae0c69c5a1b07b1a",
+          "bytes": 2596
+        },
+        {
+          "path": "models/ptq/quantizer/log2.py",
+          "url": "https://raw.githubusercontent.com/megvii-research/FQ-ViT/5daf5915c715dc21d6afcd64e661652030e640ab/models/ptq/quantizer/log2.py",
+          "sha256": "fc1fa911b911d7ce382f14ba86692cf10c1b830c4cd8ad2aa8328015df7896a5",
+          "bytes": 730
+        },
+        {
+          "path": "LICENSE",
+          "url": "https://raw.githubusercontent.com/megvii-research/FQ-ViT/5daf5915c715dc21d6afcd64e661652030e640ab/LICENSE",
+          "sha256": "c71d239df91726fc519c6eb72d318ec65820627232b2f796219e87dcf35d0ab4",
+          "bytes": 11357
+        },
+        {
+          "path": "config.py",
+          "url": "https://raw.githubusercontent.com/megvii-research/FQ-ViT/5daf5915c715dc21d6afcd64e661652030e640ab/config.py",
+          "sha256": "368cc4fca977afc7a02016930584b21298077849ee3218cb47b7d38bce5fb1d4",
+          "bytes": 1504
+        },
+        {
+          "path": "test_quant.py",
+          "url": "https://raw.githubusercontent.com/megvii-research/FQ-ViT/5daf5915c715dc21d6afcd64e661652030e640ab/test_quant.py",
+          "sha256": "0e19db46dc3d63c3d3f38d356efbd0a160f689d831758c5a4add3b644c188798",
+          "bytes": 8891
+        },
+        {
+          "path": "models/vit_quant.py",
+          "url": "https://raw.githubusercontent.com/megvii-research/FQ-ViT/5daf5915c715dc21d6afcd64e661652030e640ab/models/vit_quant.py",
+          "sha256": "a5623008e7390ea30bca1db35f0543e04ff9dd8f9e55f7ea720c397d7f694df5",
+          "bytes": 21326
+        },
+        {
+          "path": "models/layers_quant.py",
+          "url": "https://raw.githubusercontent.com/megvii-research/FQ-ViT/5daf5915c715dc21d6afcd64e661652030e640ab/models/layers_quant.py",
+          "sha256": "e427c0802ba94ebc90c0e6d52ee7f947616b0e44f2fe6d66ae92b2929eb5afa6",
+          "bytes": 11426
+        },
+        {
+          "path": "models/ptq/layers.py",
+          "url": "https://raw.githubusercontent.com/megvii-research/FQ-ViT/5daf5915c715dc21d6afcd64e661652030e640ab/models/ptq/layers.py",
+          "sha256": "4dcde6048cb7de5833b2594df2b6ed7176fbd05cc389f02652bcc5b958bed0c7",
+          "bytes": 10938
+        },
+        {
+          "path": "models/ptq/observer/minmax.py",
+          "url": "https://raw.githubusercontent.com/megvii-research/FQ-ViT/5daf5915c715dc21d6afcd64e661652030e640ab/models/ptq/observer/minmax.py",
+          "sha256": "ee09ade2f2ef6cb4b0423b25273080ba0c4238fde6eacef0d6d9fd967f029e0a",
+          "bytes": 1777
+        },
+        {
+          "path": "models/ptq/quantizer/uniform.py",
+          "url": "https://raw.githubusercontent.com/megvii-research/FQ-ViT/5daf5915c715dc21d6afcd64e661652030e640ab/models/ptq/quantizer/uniform.py",
+          "sha256": "ae0e2310ea623d7aa43ca145045378d2ec38f31ea4f06b8b47d43b8d5080bf29",
+          "bytes": 1492
+        },
+        {
+          "path": "models/ptq/observer/base.py",
+          "url": "https://raw.githubusercontent.com/megvii-research/FQ-ViT/5daf5915c715dc21d6afcd64e661652030e640ab/models/ptq/observer/base.py",
+          "sha256": "bc9782248efa49fc12ad37f5f4b34e81a9fe2ee10678603bad9688ff39b6f64c",
+          "bytes": 1104
+        }
+      ]
+    },
+    {
+      "method": "RepQ-ViT",
+      "paper": "https://arxiv.org/abs/2212.08254",
+      "repository": "https://github.com/zkkli/RepQ-ViT",
+      "commit": "a160561b9233945e6680132f129d13041b787318",
+      "license": "Apache-2.0",
+      "files": [
+        {
+          "path": "classification/test_quant.py",
+          "url": "https://raw.githubusercontent.com/zkkli/RepQ-ViT/a160561b9233945e6680132f129d13041b787318/classification/test_quant.py",
+          "sha256": "bbe63d7d267d66e2eb5a0386439643a32378d8b5bc197b4741568e0e6153ba77",
+          "bytes": 8490
+        },
+        {
+          "path": "classification/quant/quantizer.py",
+          "url": "https://raw.githubusercontent.com/zkkli/RepQ-ViT/a160561b9233945e6680132f129d13041b787318/classification/quant/quantizer.py",
+          "sha256": "eaa7170d2ab32d61933f88384e79b602d1a5489fc1ec91b16f9987998faa7578",
+          "bytes": 7268
+        },
+        {
+          "path": "LICENSE",
+          "url": "https://raw.githubusercontent.com/zkkli/RepQ-ViT/a160561b9233945e6680132f129d13041b787318/LICENSE",
+          "sha256": "c71d239df91726fc519c6eb72d318ec65820627232b2f796219e87dcf35d0ab4",
+          "bytes": 11357
+        },
+        {
+          "path": "classification/quant/quant_modules.py",
+          "url": "https://raw.githubusercontent.com/zkkli/RepQ-ViT/a160561b9233945e6680132f129d13041b787318/classification/quant/quant_modules.py",
+          "sha256": "7a5116d344f845e9cf97a95984751a6b8797fbc2e3c38d378e3e68e6f9fd3418",
+          "bytes": 4812
+        },
+        {
+          "path": "classification/quant/quant_model.py",
+          "url": "https://raw.githubusercontent.com/zkkli/RepQ-ViT/a160561b9233945e6680132f129d13041b787318/classification/quant/quant_model.py",
+          "sha256": "239b7b43782de548ad10af73fec9d4f1d8afbc6cde8f41ff3fa0d872813d75d4",
+          "bytes": 2653
+        }
+      ]
+    },
+    {
+      "method": "GPTQ",
+      "paper": "https://arxiv.org/abs/2210.17323",
+      "repository": "https://github.com/IST-DASLab/gptq",
+      "commit": "2d65066eeb06a5c9ff5184d8cebdf33662c67faf",
+      "license": "Apache-2.0",
+      "files": [
+        {
+          "path": "gptq.py",
+          "url": "https://raw.githubusercontent.com/IST-DASLab/gptq/2d65066eeb06a5c9ff5184d8cebdf33662c67faf/gptq.py",
+          "sha256": "bb47468cc2c788577562751de414d76eeb9968ff1c6098e21153557ef3d154c7",
+          "bytes": 5475
+        },
+        {
+          "path": "quant.py",
+          "url": "https://raw.githubusercontent.com/IST-DASLab/gptq/2d65066eeb06a5c9ff5184d8cebdf33662c67faf/quant.py",
+          "sha256": "211528568b962b868d20fc58b55200b615f41ebd9f36b4d2d7e4a196a095ea5a",
+          "bytes": 7330
+        },
+        {
+          "path": "LICENSE",
+          "url": "https://raw.githubusercontent.com/IST-DASLab/gptq/2d65066eeb06a5c9ff5184d8cebdf33662c67faf/LICENSE",
+          "sha256": "c71d239df91726fc519c6eb72d318ec65820627232b2f796219e87dcf35d0ab4",
+          "bytes": 11357
+        }
+      ]
+    },
+    {
+      "method": "AdaLog",
+      "paper": "https://arxiv.org/abs/2407.12951v1",
+      "repository": "https://github.com/GoatWu/AdaLog",
+      "commit": "75a57d2515521bb1711159ea229d1a37665f3fed",
+      "license": "not declared in inspected numerical source",
+      "files": [
+        {
+          "path": "quantizers/logarithm.py",
+          "local_path": "shared/reference_sources/adalog_75a57d2/logarithm.py",
+          "sha256": "6b1afd861ec87f2952a2943fcbc15a883bff9a2f2e74c0b89588f162fa71566b",
+          "bytes": 5724,
+          "url": "https://raw.githubusercontent.com/GoatWu/AdaLog/75a57d2515521bb1711159ea229d1a37665f3fed/quantizers/logarithm.py"
+        },
+        {
+          "path": "quant_layers/linear.py",
+          "local_path": "shared/reference_sources/adalog_75a57d2/linear.py",
+          "sha256": "4047c6f859d4139528fbe28303de0aaf26107906443a0510a85289c5115891e4",
+          "bytes": 60752,
+          "url": "https://raw.githubusercontent.com/GoatWu/AdaLog/75a57d2515521bb1711159ea229d1a37665f3fed/quant_layers/linear.py"
+        }
+      ]
+    },
+    {
+      "method": "AdaRound",
+      "paper": "https://proceedings.mlr.press/v119/nagel20a.html",
+      "repository": "https://github.com/qualcomm/aimet",
+      "commit": "7b60b5253b0a983132c2930ee91c76df748511d9",
+      "license": "BSD-3-Clause (numerical source headers)",
+      "files": [
+        {
+          "path": "TrainingExtensions/torch/src/python/aimet_torch/v1/adaround/adaround_loss.py",
+          "local_path": "shared/reference_sources/aimet_adaround_7b60b525/adaround_loss.py",
+          "sha256": "e60fd6fe552d505b99967c7ac03297c74abb8424628f46be109c289654de688e",
+          "bytes": 6109,
+          "url": "https://raw.githubusercontent.com/qualcomm/aimet/7b60b5253b0a983132c2930ee91c76df748511d9/TrainingExtensions/torch/src/python/aimet_torch/v1/adaround/adaround_loss.py"
+        },
+        {
+          "path": "TrainingExtensions/torch/src/python/aimet_torch/v1/adaround/adaround_optimizer.py",
+          "local_path": "shared/reference_sources/aimet_adaround_7b60b525/adaround_optimizer.py",
+          "sha256": "d49b3ef83b7bc7770f85d92001df55469a2331e7b53a8a990caedb63e92bb447",
+          "bytes": 18367,
+          "url": "https://raw.githubusercontent.com/qualcomm/aimet/7b60b5253b0a983132c2930ee91c76df748511d9/TrainingExtensions/torch/src/python/aimet_torch/v1/adaround/adaround_optimizer.py"
+        },
+        {
+          "path": "TrainingExtensions/torch/src/python/aimet_torch/v1/adaround/adaround_wrapper.py",
+          "local_path": "shared/reference_sources/aimet_adaround_7b60b525/adaround_wrapper.py",
+          "sha256": "a1900ec18ba754c188a6e15eede9a5f0b78812dd1f72456bbfc1d02a34d01c69",
+          "bytes": 8879,
+          "url": "https://raw.githubusercontent.com/qualcomm/aimet/7b60b5253b0a983132c2930ee91c76df748511d9/TrainingExtensions/torch/src/python/aimet_torch/v1/adaround/adaround_wrapper.py"
+        },
+        {
+          "path": "TrainingExtensions/torch/src/python/aimet_torch/v1/adaround/adaround_weight.py",
+          "local_path": "shared/reference_sources/aimet_adaround_7b60b525/adaround_weight.py",
+          "sha256": "4cfc15b23756025038e5e856d5667b716820a82ed399cf9e855743f766ad767c",
+          "bytes": 36191,
+          "url": "https://raw.githubusercontent.com/qualcomm/aimet/7b60b5253b0a983132c2930ee91c76df748511d9/TrainingExtensions/torch/src/python/aimet_torch/v1/adaround/adaround_weight.py"
+        }
+      ]
+    },
+    {
+      "method": "GPTAQ v1",
+      "paper": "https://arxiv.org/abs/2504.02692v1",
+      "repository": "https://github.com/Intelligent-Computing-Lab-Panda/GPTAQ",
+      "commit": "d6bd2e41e9abc8f22a76d6ea789c450b6c143ced",
+      "license": "not declared in inspected numerical source",
+      "files": [
+        {
+          "path": "vit_quant/gptaq_utils.py",
+          "local_path": "shared/reference_sources/gptaq_d6bd2e4/gptaq_utils.py",
+          "sha256": "6d115a5c58a82d42c721bf36b9c1d5d51b595cea5d1c04f12a07a79792e1ecaf",
+          "bytes": 10095,
+          "url": "https://raw.githubusercontent.com/Intelligent-Computing-Lab-Panda/GPTAQ/d6bd2e41e9abc8f22a76d6ea789c450b6c143ced/vit_quant/gptaq_utils.py"
+        },
+        {
+          "path": "vit_quant/quant_utils.py",
+          "local_path": "shared/reference_sources/gptaq_d6bd2e4/quant_utils.py",
+          "sha256": "4c2da9afe870f965b8753bac7874eb162d3b88e9b181e712597c3972b68760de",
+          "bytes": 13270,
+          "url": "https://raw.githubusercontent.com/Intelligent-Computing-Lab-Panda/GPTAQ/d6bd2e41e9abc8f22a76d6ea789c450b6c143ced/vit_quant/quant_utils.py"
+        }
+      ]
+    }
+  ],
+  "local_references": [
+    {
+      "path": "ptq_training_free/src/dino_quant_baseline/gptq_reference.py",
+      "sha256": "2d8417421d64b61888fe8c537d25032de5fd2f0fe037df54f458938dac63d7ce"
+    },
+    {
+      "path": "ptq_training_free/src/dino_quant_baseline/gptq_quantizer.py",
+      "sha256": "4a9e9f6c6e8f543f23544eb91867cdfddd50c8d971f5eaee6f37c94da7cb0ca4"
+    },
+    {
+      "path": "ptq_training_free/third_party/ptq4vit_reference/quant_layers/matmul.py",
+      "sha256": "5ae5076c795a9ee0cb426e0bdee3c369042deb3bbcfb22643985f0cf626be224"
+    },
+    {
+      "path": "ptq_training_free/third_party/ptq4vit_reference/quant_layers/linear.py",
+      "sha256": "8276cf58955083fa19cc46dd4cfded8aebb0ce01128b67c0f5921d2d39500943"
+    },
+    {
+      "path": "ptq_training_free/third_party/repq_reference/classification/test_quant.py",
+      "sha256": "bbe63d7d267d66e2eb5a0386439643a32378d8b5bc197b4741568e0e6153ba77"
+    },
+    {
+      "path": "ptq_training_free/third_party/repq_reference/classification/quant/quantizer.py",
+      "sha256": "eaa7170d2ab32d61933f88384e79b602d1a5489fc1ec91b16f9987998faa7578"
+    },
+    {
+      "path": "ptq_training_free/experiments/fc2_equivalent_preprocess/README.md",
+      "sha256": "e4d6f268a8f17d08d3105b5399062ea75112bae4ed0dd73c09c661498b98782f"
+    },
+    {
+      "path": "ptq_training_free/src/dino_quant_baseline/ptq4vit_quant.py",
+      "sha256": "7b3683570db20800e1479385816b3b587c3534de7214eba7f90edd3db4ecfabf"
+    },
+    {
+      "path": "ptq_training_free/src/dino_quant_baseline/repq_quant.py",
+      "sha256": "21a8626efb3ea05021e3e55b032ec27230dcd1ab7dd17af7a6ead5970c875472"
+    },
+    {
+      "path": "ptq_training_free/src/dino_quant_baseline/dinov3_repq.py",
+      "sha256": "bace02fa0f3ed638a489ea3bdbb8fba3c1590eee350e32fdfaff64cdc44d50cf"
+    },
+    {
+      "path": "LowRank_W4A4_Vision_Research/.runtime_pkgs/model_assets_timm032/timm/models/vision_transformer.py",
+      "sha256": "eceebe0774853de8f89e7ae90eb2047ed1b84534694e52ada350489a3a1017f5"
+    },
+    {
+      "path": "LowRank_W4A4_Vision_Research/.runtime_pkgs/model_assets_timm032/timm-0.3.2.dist-info/LICENSE",
+      "sha256": "71b111620fa32c17a80ccd6db2da759d31a591e497d8b5f382174f59d1b59d49"
+    }
+  ],
+  "composition_validation": "Independent components plus ordinary v3 recipes; official operator/tiny graph parity, not published ImageNet accuracy. See ptq_agent_project/docs/RELIABILITY_CHANGES.md."
+}

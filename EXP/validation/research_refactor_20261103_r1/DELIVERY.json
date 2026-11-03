@@ -1,0 +1,67 @@
+{
+  "status": "passed",
+  "core_sha256": "2b2d4080d5b4101429f3bd25aa24dbb619de797238797b2380fbbb9f8ea98034",
+  "full_regression": {
+    "passed": 297,
+    "log": "full_final.log"
+  },
+  "real_llm_calls": 0,
+  "gpu_experiments": 0,
+  "historical_files_checked": 42015,
+  "historical_changes": [],
+  "artifacts": {
+    "REPORT.md": {
+      "bytes": 12332,
+      "sha256": "069edeeb459094da224dcfde7ee3f3f2f5cde19edcbf39224aa4e9eb4b5afa5a"
+    },
+    "PSEUDOCODE.md": {
+      "bytes": 4232,
+      "sha256": "83eb10452fef579e8a4ef5207e0b6021ccf735e8e1e8eff40ea663de31446598"
+    },
+    "changes.patch": {
+      "bytes": 204863,
+      "sha256": "cdabeb0d5fec591cea6cefb314c5544a6a1b08c157e1ba6bf5b618cd2bb66612"
+    },
+    "prompts.diff": {
+      "bytes": 43049,
+      "sha256": "d71b05f378e2e5bbf6e2ea5bbb39fce3e414a8f308e9d53a7e1c05704fd0cedb"
+    },
+    "full_final.log": {
+      "bytes": 35531,
+      "sha256": "6eacf53ce6361b95ce986de04510156651001f7d5b59ad2268d6f6fdb418606a"
+    },
+    "cpu_services_final/INTEGRATION_RESULT.json": {
+      "bytes": 50772,
+      "sha256": "76f17e88389906beb503113e413a9c788180dca8131ef7dc615b2dadd2e8b46b"
+    },
+    "REPLAY_RESULT.json": {
+      "bytes": 952,
+      "sha256": "4786599418ef6c45a714d7ef1684b54c2fd5c20e4fd4ca61d771ea6cc63c3307"
+    },
+    "replay_migration.json": {
+      "bytes": 774,
+      "sha256": "06555b7bfa68fdcddf7ed7af7066429be98fbe29cee0231130e86c81cb7cb1a3"
+    },
+    "context_before.json": {
+      "bytes": 929556,
+      "sha256": "d668eb05c0a6f4aa600abbf6c82c997309c57910548d27a7d4d4a57bb6f77c49"
+    },
+    "context_after_final.json": {
+      "bytes": 651210,
+      "sha256": "667b9684717fda785d7c2d9469f31aa536c0120472f6ce7fbb75d1f75872cefd"
+    },
+    "complexity.json": {
+      "bytes": 5013,
+      "sha256": "30bc12937b038738602f8b3b34606d758bb10bfb1eb26ce4d192e0531ed1ccb9"
+    },
+    "protection.json": {
+      "bytes": 282,
+      "sha256": "d390946fea8e294faf258b53f9a8231f84af353f72c6033c4887318b7f5e7ac5"
+    },
+    "structure_final.json": {
+      "bytes": 106050,
+      "sha256": "e94718e967312c42fe1c2879283548fb6c5d931c8702e44603218fa8051d9732"
+    }
+  },
+  "limits": "Historical replay uses saved scientific fields after explicit protocol migration. No new true two-round research or measured real token savings."
+}

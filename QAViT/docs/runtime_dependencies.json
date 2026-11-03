@@ -1,0 +1,595 @@
+{
+  "policy": "Retained installed dependency trees; no install or upgrade during structural refactor. Package source provenance is historical, not a runtime import path.",
+  "packages": [
+    {
+      "group": "common",
+      "name": "addict",
+      "version": "2.4.0",
+      "metadata": ".runtime_pkgs/common/addict-2.4.0.dist-info/METADATA",
+      "licenses": [
+        ".runtime_pkgs/common/addict-2.4.0.dist-info/LICENSE"
+      ]
+    },
+    {
+      "group": "common",
+      "name": "certifi",
+      "version": "2026.7.22",
+      "metadata": ".runtime_pkgs/common/certifi-2026.7.22.dist-info/METADATA",
+      "licenses": [
+        ".runtime_pkgs/common/certifi-2026.7.22.dist-info/licenses/LICENSE"
+      ]
+    },
+    {
+      "group": "common",
+      "name": "charset-normalizer",
+      "version": "3.5.1",
+      "metadata": ".runtime_pkgs/common/charset_normalizer-3.5.1.dist-info/METADATA",
+      "licenses": [
+        ".runtime_pkgs/common/charset_normalizer-3.5.1.dist-info/licenses/LICENSE"
+      ]
+    },
+    {
+      "group": "common",
+      "name": "cityscapesScripts",
+      "version": "2.2.4",
+      "metadata": ".runtime_pkgs/common/cityscapesScripts-2.2.4.dist-info/METADATA",
+      "licenses": [
+        ".runtime_pkgs/common/cityscapesScripts-2.2.4.dist-info/LICENSE"
+      ]
+    },
+    {
+      "group": "common",
+      "name": "ftfy",
+      "version": "6.3.1",
+      "metadata": ".runtime_pkgs/common/ftfy-6.3.1.dist-info/METADATA",
+      "licenses": [
+        ".runtime_pkgs/common/ftfy-6.3.1.dist-info/licenses/LICENSE.txt"
+      ]
+    },
+    {
+      "group": "common",
+      "name": "idna",
+      "version": "3.19",
+      "metadata": ".runtime_pkgs/common/idna-3.19.dist-info/METADATA",
+      "licenses": [
+        ".runtime_pkgs/common/idna-3.19.dist-info/licenses/LICENSE.md"
+      ]
+    },
+    {
+      "group": "common",
+      "name": "mmcv",
+      "version": "2.1.0",
+      "metadata": ".runtime_pkgs/common/mmcv-2.1.0.dist-info/METADATA",
+      "licenses": [
+        ".runtime_pkgs/common/mmcv-2.1.0.dist-info/LICENSE",
+        ".runtime_pkgs/common/mmcv-2.1.0.dist-info/LICENSES.md"
+      ]
+    },
+    {
+      "group": "common",
+      "name": "mmengine",
+      "version": "0.10.7",
+      "metadata": ".runtime_pkgs/common/mmengine-0.10.7.dist-info/METADATA",
+      "licenses": [
+        ".runtime_pkgs/common/mmengine-0.10.7.dist-info/LICENSE"
+      ]
+    },
+    {
+      "group": "common",
+      "name": "numpy",
+      "version": "1.26.4",
+      "metadata": ".runtime_pkgs/common/numpy-1.26.4.dist-info/METADATA",
+      "licenses": [
+        ".runtime_pkgs/common/numpy-1.26.4.dist-info/LICENSE.txt"
+      ]
+    },
+    {
+      "group": "common",
+      "name": "numpy",
+      "version": "2.2.6",
+      "metadata": ".runtime_pkgs/common/numpy-2.2.6.dist-info/METADATA",
+      "licenses": [
+        ".runtime_pkgs/common/numpy-2.2.6.dist-info/LICENSE.txt"
+      ]
+    },
+    {
+      "group": "common",
+      "name": "opencv-python",
+      "version": "4.8.1.78",
+      "metadata": ".runtime_pkgs/common/opencv_python-4.8.1.78.dist-info/METADATA",
+      "licenses": [
+        ".runtime_pkgs/common/opencv_python-4.8.1.78.dist-info/LICENSE.txt",
+        ".runtime_pkgs/common/opencv_python-4.8.1.78.dist-info/LICENSE-3RD-PARTY.txt"
+      ]
+    },
+    {
+      "group": "common",
+      "name": "opencv-python",
+      "version": "5.0.0.93",
+      "metadata": ".runtime_pkgs/common/opencv_python-5.0.0.93.dist-info/METADATA",
+      "licenses": [
+        ".runtime_pkgs/common/opencv_python-5.0.0.93.dist-info/LICENSE-3RD-PARTY.txt",
+        ".runtime_pkgs/common/opencv_python-5.0.0.93.dist-info/LICENSE.txt"
+      ]
+    },
+    {
+      "group": "common",
+      "name": "packaging",
+      "version": "26.3",
+      "metadata": ".runtime_pkgs/common/packaging-26.3.dist-info/METADATA",
+      "licenses": [
+        ".runtime_pkgs/common/packaging-26.3.dist-info/licenses/LICENSE",
+        ".runtime_pkgs/common/packaging-26.3.dist-info/licenses/LICENSE.APACHE",
+        ".runtime_pkgs/common/packaging-26.3.dist-info/licenses/LICENSE.BSD"
+      ]
+    },
+    {
+      "group": "common",
+      "name": "pillow",
+      "version": "12.3.0",
+      "metadata": ".runtime_pkgs/common/pillow-12.3.0.dist-info/METADATA",
+      "licenses": [
+        ".runtime_pkgs/common/pillow-12.3.0.dist-info/licenses/LICENSE"
+      ]
+    },
+    {
+      "group": "common",
+      "name": "platformdirs",
+      "version": "4.11.5",
+      "metadata": ".runtime_pkgs/common/platformdirs-4.11.5.dist-info/METADATA",
+      "licenses": [
+        ".runtime_pkgs/common/platformdirs-4.11.5.dist-info/licenses/LICENSE"
+      ]
+    },
+    {
+      "group": "common",
+      "name": "prettytable",
+      "version": "3.18.0",
+      "metadata": ".runtime_pkgs/common/prettytable-3.18.0.dist-info/METADATA",
+      "licenses": [
+        ".runtime_pkgs/common/prettytable-3.18.0.dist-info/licenses/LICENSE"
+      ]
+    },
+    {
+      "group": "common",
+      "name": "pyquaternion",
+      "version": "0.9.9",
+      "metadata": ".runtime_pkgs/common/pyquaternion-0.9.9.dist-info/METADATA",
+      "licenses": [
+        ".runtime_pkgs/common/pyquaternion-0.9.9.dist-info/LICENSE.txt"
+      ]
+    },
+    {
+      "group": "common",
+      "name": "PyYAML",
+      "version": "6.0.3",
+      "metadata": ".runtime_pkgs/common/pyyaml-6.0.3.dist-info/METADATA",
+      "licenses": [
+        ".runtime_pkgs/common/pyyaml-6.0.3.dist-info/licenses/LICENSE"
+      ]
+    },
+    {
+      "group": "common",
+      "name": "regex",
+      "version": "2026.8.31",
+      "metadata": ".runtime_pkgs/common/regex-2026.8.31.dist-info/METADATA",
+      "licenses": [
+        ".runtime_pkgs/common/regex-2026.8.31.dist-info/licenses/LICENSE.txt"
+      ]
+    },
+    {
+      "group": "common",
+      "name": "requests",
+      "version": "2.34.2",
+      "metadata": ".runtime_pkgs/common/requests-2.34.2.dist-info/METADATA",
+      "licenses": [
+        ".runtime_pkgs/common/requests-2.34.2.dist-info/licenses/NOTICE",
+        ".runtime_pkgs/common/requests-2.34.2.dist-info/licenses/LICENSE"
+      ]
+    },
+    {
+      "group": "common",
+      "name": "rich",
+      "version": "15.0.0",
+      "metadata": ".runtime_pkgs/common/rich-15.0.0.dist-info/METADATA",
+      "licenses": [
+        ".runtime_pkgs/common/rich-15.0.0.dist-info/licenses/LICENSE"
+      ]
+    },
+    {
+      "group": "common",
+      "name": "scipy",
+      "version": "1.11.4",
+      "metadata": ".runtime_pkgs/common/scipy-1.11.4.dist-info/METADATA",
+      "licenses": [
+        ".runtime_pkgs/common/scipy-1.11.4.dist-info/LICENSE.txt"
+      ]
+    },
+    {
+      "group": "common",
+      "name": "termcolor",
+      "version": "3.3.0",
+      "metadata": ".runtime_pkgs/common/termcolor-3.3.0.dist-info/METADATA",
+      "licenses": [
+        ".runtime_pkgs/common/termcolor-3.3.0.dist-info/licenses/COPYING.txt"
+      ]
+    },
+    {
+      "group": "common",
+      "name": "tomli",
+      "version": "2.4.1",
+      "metadata": ".runtime_pkgs/common/tomli-2.4.1.dist-info/METADATA",
+      "licenses": [
+        ".runtime_pkgs/common/tomli-2.4.1.dist-info/licenses/LICENSE"
+      ]
+    },
+    {
+      "group": "common",
+      "name": "tqdm",
+      "version": "4.70.0",
+      "metadata": ".runtime_pkgs/common/tqdm-4.70.0.dist-info/METADATA",
+      "licenses": []
+    },
+    {
+      "group": "common",
+      "name": "urllib3",
+      "version": "2.7.0",
+      "metadata": ".runtime_pkgs/common/urllib3-2.7.0.dist-info/METADATA",
+      "licenses": [
+        ".runtime_pkgs/common/urllib3-2.7.0.dist-info/licenses/LICENSE.txt"
+      ]
+    },
+    {
+      "group": "common",
+      "name": "wcwidth",
+      "version": "0.8.3",
+      "metadata": ".runtime_pkgs/common/wcwidth-0.8.3.dist-info/METADATA",
+      "licenses": [
+        ".runtime_pkgs/common/wcwidth-0.8.3.dist-info/licenses/LICENSE"
+      ]
+    },
+    {
+      "group": "common",
+      "name": "yapf",
+      "version": "0.43.0",
+      "metadata": ".runtime_pkgs/common/yapf-0.43.0.dist-info/METADATA",
+      "licenses": [
+        ".runtime_pkgs/common/yapf-0.43.0.dist-info/LICENSE"
+      ]
+    },
+    {
+      "group": "classification",
+      "name": "timm",
+      "version": "0.3.2",
+      "metadata": ".runtime_pkgs/classification/timm-0.3.2.dist-info/METADATA",
+      "licenses": [
+        ".runtime_pkgs/classification/timm-0.3.2.dist-info/LICENSE"
+      ]
+    },
+    {
+      "group": "segmentation",
+      "name": "mmseg",
+      "version": "vendored source; see source inventory",
+      "metadata": null,
+      "licenses": [
+        ".runtime_pkgs/segmentation/mmseg/LICENSE"
+      ]
+    },
+    {
+      "group": "segmentation",
+      "name": "timm",
+      "version": "1.0.20",
+      "metadata": ".runtime_pkgs/segmentation/timm-1.0.20.dist-info/METADATA",
+      "licenses": [
+        ".runtime_pkgs/segmentation/timm-1.0.20.dist-info/licenses/LICENSE"
+      ]
+    }
+  ],
+  "source_inventory": {
+    "directories": [
+      {
+        "source": "/root/data-fs/projects/LowRank_W4A4_Vision_Research/.runtime_pkgs/PIL",
+        "destination": "/root/data-fs/projects/Quantization_Agent_for_ViTs/QAViT/.runtime_pkgs/common/PIL",
+        "files": 114
+      },
+      {
+        "source": "/root/data-fs/projects/LowRank_W4A4_Vision_Research/.runtime_pkgs/addict",
+        "destination": "/root/data-fs/projects/Quantization_Agent_for_ViTs/QAViT/.runtime_pkgs/common/addict",
+        "files": 2
+      },
+      {
+        "source": "/root/data-fs/projects/LowRank_W4A4_Vision_Research/.runtime_pkgs/addict-2.4.0.dist-info",
+        "destination": "/root/data-fs/projects/Quantization_Agent_for_ViTs/QAViT/.runtime_pkgs/common/addict-2.4.0.dist-info",
+        "files": 6
+      },
+      {
+        "source": "/root/data-fs/projects/LowRank_W4A4_Vision_Research/.runtime_pkgs/certifi",
+        "destination": "/root/data-fs/projects/Quantization_Agent_for_ViTs/QAViT/.runtime_pkgs/common/certifi",
+        "files": 7
+      },
+      {
+        "source": "/root/data-fs/projects/LowRank_W4A4_Vision_Research/.runtime_pkgs/certifi-2026.7.22.dist-info",
+        "destination": "/root/data-fs/projects/Quantization_Agent_for_ViTs/QAViT/.runtime_pkgs/common/certifi-2026.7.22.dist-info",
+        "files": 6
+      },
+      {
+        "source": "/root/data-fs/projects/LowRank_W4A4_Vision_Research/.runtime_pkgs/charset_normalizer",
+        "destination": "/root/data-fs/projects/Quantization_Agent_for_ViTs/QAViT/.runtime_pkgs/common/charset_normalizer",
+        "files": 15
+      },
+      {
+        "source": "/root/data-fs/projects/LowRank_W4A4_Vision_Research/.runtime_pkgs/charset_normalizer-3.5.1.dist-info",
+        "destination": "/root/data-fs/projects/Quantization_Agent_for_ViTs/QAViT/.runtime_pkgs/common/charset_normalizer-3.5.1.dist-info",
+        "files": 7
+      },
+      {
+        "source": "/root/data-fs/projects/LowRank_W4A4_Vision_Research/.runtime_pkgs/cityscapesScripts-2.2.4.dist-info",
+        "destination": "/root/data-fs/projects/Quantization_Agent_for_ViTs/QAViT/.runtime_pkgs/common/cityscapesScripts-2.2.4.dist-info",
+        "files": 8
+      },
+      {
+        "source": "/root/data-fs/projects/LowRank_W4A4_Vision_Research/.runtime_pkgs/cityscapesscripts",
+        "destination": "/root/data-fs/projects/Quantization_Agent_for_ViTs/QAViT/.runtime_pkgs/common/cityscapesscripts",
+        "files": 67
+      },
+      {
+        "source": "/root/data-fs/projects/LowRank_W4A4_Vision_Research/.runtime_pkgs/cv2",
+        "destination": "/root/data-fs/projects/Quantization_Agent_for_ViTs/QAViT/.runtime_pkgs/common/cv2",
+        "files": 86
+      },
+      {
+        "source": "/root/data-fs/projects/LowRank_W4A4_Vision_Research/.runtime_pkgs/ftfy",
+        "destination": "/root/data-fs/projects/Quantization_Agent_for_ViTs/QAViT/.runtime_pkgs/common/ftfy",
+        "files": 10
+      },
+      {
+        "source": "/root/data-fs/projects/LowRank_W4A4_Vision_Research/.runtime_pkgs/ftfy-6.3.1.dist-info",
+        "destination": "/root/data-fs/projects/Quantization_Agent_for_ViTs/QAViT/.runtime_pkgs/common/ftfy-6.3.1.dist-info",
+        "files": 7
+      },
+      {
+        "source": "/root/data-fs/projects/LowRank_W4A4_Vision_Research/.runtime_pkgs/idna",
+        "destination": "/root/data-fs/projects/Quantization_Agent_for_ViTs/QAViT/.runtime_pkgs/common/idna",
+        "files": 11
+      },
+      {
+        "source": "/root/data-fs/projects/LowRank_W4A4_Vision_Research/.runtime_pkgs/idna-3.19.dist-info",
+        "destination": "/root/data-fs/projects/Quantization_Agent_for_ViTs/QAViT/.runtime_pkgs/common/idna-3.19.dist-info",
+        "files": 6
+      },
+      {
+        "source": "/root/data-fs/projects/LowRank_W4A4_Vision_Research/.runtime_pkgs/mmcv",
+        "destination": "/root/data-fs/projects/Quantization_Agent_for_ViTs/QAViT/.runtime_pkgs/common/mmcv",
+        "files": 522
+      },
+      {
+        "source": "/root/data-fs/projects/LowRank_W4A4_Vision_Research/.runtime_pkgs/mmcv-2.1.0.dist-info",
+        "destination": "/root/data-fs/projects/Quantization_Agent_for_ViTs/QAViT/.runtime_pkgs/common/mmcv-2.1.0.dist-info",
+        "files": 8
+      },
+      {
+        "source": "/root/data-fs/projects/LowRank_W4A4_Vision_Research/.runtime_pkgs/mmengine",
+        "destination": "/root/data-fs/projects/Quantization_Agent_for_ViTs/QAViT/.runtime_pkgs/common/mmengine",
+        "files": 157
+      },
+      {
+        "source": "/root/data-fs/projects/LowRank_W4A4_Vision_Research/.runtime_pkgs/mmengine-0.10.7.dist-info",
+        "destination": "/root/data-fs/projects/Quantization_Agent_for_ViTs/QAViT/.runtime_pkgs/common/mmengine-0.10.7.dist-info",
+        "files": 7
+      },
+      {
+        "source": "/root/data-fs/projects/LowRank_W4A4_Vision_Research/.runtime_pkgs/numpy",
+        "destination": "/root/data-fs/projects/Quantization_Agent_for_ViTs/QAViT/.runtime_pkgs/common/numpy",
+        "files": 906
+      },
+      {
+        "source": "/root/data-fs/projects/LowRank_W4A4_Vision_Research/.runtime_pkgs/numpy-1.26.4.dist-info",
+        "destination": "/root/data-fs/projects/Quantization_Agent_for_ViTs/QAViT/.runtime_pkgs/common/numpy-1.26.4.dist-info",
+        "files": 6
+      },
+      {
+        "source": "/root/data-fs/projects/LowRank_W4A4_Vision_Research/.runtime_pkgs/numpy-2.2.6.dist-info",
+        "destination": "/root/data-fs/projects/Quantization_Agent_for_ViTs/QAViT/.runtime_pkgs/common/numpy-2.2.6.dist-info",
+        "files": 6
+      },
+      {
+        "source": "/root/data-fs/projects/LowRank_W4A4_Vision_Research/.runtime_pkgs/numpy.libs",
+        "destination": "/root/data-fs/projects/Quantization_Agent_for_ViTs/QAViT/.runtime_pkgs/common/numpy.libs",
+        "files": 3
+      },
+      {
+        "source": "/root/data-fs/projects/LowRank_W4A4_Vision_Research/.runtime_pkgs/opencv_python-4.8.1.78.dist-info",
+        "destination": "/root/data-fs/projects/Quantization_Agent_for_ViTs/QAViT/.runtime_pkgs/common/opencv_python-4.8.1.78.dist-info",
+        "files": 8
+      },
+      {
+        "source": "/root/data-fs/projects/LowRank_W4A4_Vision_Research/.runtime_pkgs/opencv_python-5.0.0.93.dist-info",
+        "destination": "/root/data-fs/projects/Quantization_Agent_for_ViTs/QAViT/.runtime_pkgs/common/opencv_python-5.0.0.93.dist-info",
+        "files": 8
+      },
+      {
+        "source": "/root/data-fs/projects/LowRank_W4A4_Vision_Research/.runtime_pkgs/opencv_python.libs",
+        "destination": "/root/data-fs/projects/Quantization_Agent_for_ViTs/QAViT/.runtime_pkgs/common/opencv_python.libs",
+        "files": 34
+      },
+      {
+        "source": "/root/data-fs/projects/LowRank_W4A4_Vision_Research/.runtime_pkgs/packaging",
+        "destination": "/root/data-fs/projects/Quantization_Agent_for_ViTs/QAViT/.runtime_pkgs/common/packaging",
+        "files": 23
+      },
+      {
+        "source": "/root/data-fs/projects/LowRank_W4A4_Vision_Research/.runtime_pkgs/packaging-26.3.dist-info",
+        "destination": "/root/data-fs/projects/Quantization_Agent_for_ViTs/QAViT/.runtime_pkgs/common/packaging-26.3.dist-info",
+        "files": 7
+      },
+      {
+        "source": "/root/data-fs/projects/LowRank_W4A4_Vision_Research/.runtime_pkgs/pillow-12.3.0.dist-info",
+        "destination": "/root/data-fs/projects/Quantization_Agent_for_ViTs/QAViT/.runtime_pkgs/common/pillow-12.3.0.dist-info",
+        "files": 9
+      },
+      {
+        "source": "/root/data-fs/projects/LowRank_W4A4_Vision_Research/.runtime_pkgs/pillow.libs",
+        "destination": "/root/data-fs/projects/Quantization_Agent_for_ViTs/QAViT/.runtime_pkgs/common/pillow.libs",
+        "files": 18
+      },
+      {
+        "source": "/root/data-fs/projects/LowRank_W4A4_Vision_Research/.runtime_pkgs/platformdirs",
+        "destination": "/root/data-fs/projects/Quantization_Agent_for_ViTs/QAViT/.runtime_pkgs/common/platformdirs",
+        "files": 10
+      },
+      {
+        "source": "/root/data-fs/projects/LowRank_W4A4_Vision_Research/.runtime_pkgs/platformdirs-4.11.5.dist-info",
+        "destination": "/root/data-fs/projects/Quantization_Agent_for_ViTs/QAViT/.runtime_pkgs/common/platformdirs-4.11.5.dist-info",
+        "files": 5
+      },
+      {
+        "source": "/root/data-fs/projects/LowRank_W4A4_Vision_Research/.runtime_pkgs/prettytable",
+        "destination": "/root/data-fs/projects/Quantization_Agent_for_ViTs/QAViT/.runtime_pkgs/common/prettytable",
+        "files": 6
+      },
+      {
+        "source": "/root/data-fs/projects/LowRank_W4A4_Vision_Research/.runtime_pkgs/prettytable-3.18.0.dist-info",
+        "destination": "/root/data-fs/projects/Quantization_Agent_for_ViTs/QAViT/.runtime_pkgs/common/prettytable-3.18.0.dist-info",
+        "files": 6
+      },
+      {
+        "source": "/root/data-fs/projects/LowRank_W4A4_Vision_Research/.runtime_pkgs/pyquaternion",
+        "destination": "/root/data-fs/projects/Quantization_Agent_for_ViTs/QAViT/.runtime_pkgs/common/pyquaternion",
+        "files": 2
+      },
+      {
+        "source": "/root/data-fs/projects/LowRank_W4A4_Vision_Research/.runtime_pkgs/pyquaternion-0.9.9.dist-info",
+        "destination": "/root/data-fs/projects/Quantization_Agent_for_ViTs/QAViT/.runtime_pkgs/common/pyquaternion-0.9.9.dist-info",
+        "files": 6
+      },
+      {
+        "source": "/root/data-fs/projects/LowRank_W4A4_Vision_Research/.runtime_pkgs/pyyaml-6.0.3.dist-info",
+        "destination": "/root/data-fs/projects/Quantization_Agent_for_ViTs/QAViT/.runtime_pkgs/common/pyyaml-6.0.3.dist-info",
+        "files": 6
+      },
+      {
+        "source": "/root/data-fs/projects/LowRank_W4A4_Vision_Research/.runtime_pkgs/regex",
+        "destination": "/root/data-fs/projects/Quantization_Agent_for_ViTs/QAViT/.runtime_pkgs/common/regex",
+        "files": 5
+      },
+      {
+        "source": "/root/data-fs/projects/LowRank_W4A4_Vision_Research/.runtime_pkgs/regex-2026.8.31.dist-info",
+        "destination": "/root/data-fs/projects/Quantization_Agent_for_ViTs/QAViT/.runtime_pkgs/common/regex-2026.8.31.dist-info",
+        "files": 7
+      },
+      {
+        "source": "/root/data-fs/projects/LowRank_W4A4_Vision_Research/.runtime_pkgs/requests",
+        "destination": "/root/data-fs/projects/Quantization_Agent_for_ViTs/QAViT/.runtime_pkgs/common/requests",
+        "files": 20
+      },
+      {
+        "source": "/root/data-fs/projects/LowRank_W4A4_Vision_Research/.runtime_pkgs/requests-2.34.2.dist-info",
+        "destination": "/root/data-fs/projects/Quantization_Agent_for_ViTs/QAViT/.runtime_pkgs/common/requests-2.34.2.dist-info",
+        "files": 7
+      },
+      {
+        "source": "/root/data-fs/projects/LowRank_W4A4_Vision_Research/.runtime_pkgs/rich",
+        "destination": "/root/data-fs/projects/Quantization_Agent_for_ViTs/QAViT/.runtime_pkgs/common/rich",
+        "files": 101
+      },
+      {
+        "source": "/root/data-fs/projects/LowRank_W4A4_Vision_Research/.runtime_pkgs/rich-15.0.0.dist-info",
+        "destination": "/root/data-fs/projects/Quantization_Agent_for_ViTs/QAViT/.runtime_pkgs/common/rich-15.0.0.dist-info",
+        "files": 5
+      },
+      {
+        "source": "/root/data-fs/projects/LowRank_W4A4_Vision_Research/.runtime_pkgs/scipy",
+        "destination": "/root/data-fs/projects/Quantization_Agent_for_ViTs/QAViT/.runtime_pkgs/common/scipy",
+        "files": 1261
+      },
+      {
+        "source": "/root/data-fs/projects/LowRank_W4A4_Vision_Research/.runtime_pkgs/scipy-1.11.4.dist-info",
+        "destination": "/root/data-fs/projects/Quantization_Agent_for_ViTs/QAViT/.runtime_pkgs/common/scipy-1.11.4.dist-info",
+        "files": 6
+      },
+      {
+        "source": "/root/data-fs/projects/LowRank_W4A4_Vision_Research/.runtime_pkgs/scipy.libs",
+        "destination": "/root/data-fs/projects/Quantization_Agent_for_ViTs/QAViT/.runtime_pkgs/common/scipy.libs",
+        "files": 3
+      },
+      {
+        "source": "/root/data-fs/projects/LowRank_W4A4_Vision_Research/.runtime_pkgs/termcolor",
+        "destination": "/root/data-fs/projects/Quantization_Agent_for_ViTs/QAViT/.runtime_pkgs/common/termcolor",
+        "files": 4
+      },
+      {
+        "source": "/root/data-fs/projects/LowRank_W4A4_Vision_Research/.runtime_pkgs/termcolor-3.3.0.dist-info",
+        "destination": "/root/data-fs/projects/Quantization_Agent_for_ViTs/QAViT/.runtime_pkgs/common/termcolor-3.3.0.dist-info",
+        "files": 5
+      },
+      {
+        "source": "/root/data-fs/projects/LowRank_W4A4_Vision_Research/.runtime_pkgs/tomli",
+        "destination": "/root/data-fs/projects/Quantization_Agent_for_ViTs/QAViT/.runtime_pkgs/common/tomli",
+        "files": 5
+      },
+      {
+        "source": "/root/data-fs/projects/LowRank_W4A4_Vision_Research/.runtime_pkgs/tomli-2.4.1.dist-info",
+        "destination": "/root/data-fs/projects/Quantization_Agent_for_ViTs/QAViT/.runtime_pkgs/common/tomli-2.4.1.dist-info",
+        "files": 5
+      },
+      {
+        "source": "/root/data-fs/projects/LowRank_W4A4_Vision_Research/.runtime_pkgs/tqdm",
+        "destination": "/root/data-fs/projects/Quantization_Agent_for_ViTs/QAViT/.runtime_pkgs/common/tqdm",
+        "files": 33
+      },
+      {
+        "source": "/root/data-fs/projects/LowRank_W4A4_Vision_Research/.runtime_pkgs/tqdm-4.70.0.dist-info",
+        "destination": "/root/data-fs/projects/Quantization_Agent_for_ViTs/QAViT/.runtime_pkgs/common/tqdm-4.70.0.dist-info",
+        "files": 7
+      },
+      {
+        "source": "/root/data-fs/projects/LowRank_W4A4_Vision_Research/.runtime_pkgs/urllib3",
+        "destination": "/root/data-fs/projects/Quantization_Agent_for_ViTs/QAViT/.runtime_pkgs/common/urllib3",
+        "files": 38
+      },
+      {
+        "source": "/root/data-fs/projects/LowRank_W4A4_Vision_Research/.runtime_pkgs/urllib3-2.7.0.dist-info",
+        "destination": "/root/data-fs/projects/Quantization_Agent_for_ViTs/QAViT/.runtime_pkgs/common/urllib3-2.7.0.dist-info",
+        "files": 5
+      },
+      {
+        "source": "/root/data-fs/projects/LowRank_W4A4_Vision_Research/.runtime_pkgs/wcwidth",
+        "destination": "/root/data-fs/projects/Quantization_Agent_for_ViTs/QAViT/.runtime_pkgs/common/wcwidth",
+        "files": 49
+      },
+      {
+        "source": "/root/data-fs/projects/LowRank_W4A4_Vision_Research/.runtime_pkgs/wcwidth-0.8.3.dist-info",
+        "destination": "/root/data-fs/projects/Quantization_Agent_for_ViTs/QAViT/.runtime_pkgs/common/wcwidth-0.8.3.dist-info",
+        "files": 5
+      },
+      {
+        "source": "/root/data-fs/projects/LowRank_W4A4_Vision_Research/.runtime_pkgs/yaml",
+        "destination": "/root/data-fs/projects/Quantization_Agent_for_ViTs/QAViT/.runtime_pkgs/common/yaml",
+        "files": 18
+      },
+      {
+        "source": "/root/data-fs/projects/LowRank_W4A4_Vision_Research/.runtime_pkgs/yapf",
+        "destination": "/root/data-fs/projects/Quantization_Agent_for_ViTs/QAViT/.runtime_pkgs/common/yapf",
+        "files": 30
+      },
+      {
+        "source": "/root/data-fs/projects/LowRank_W4A4_Vision_Research/.runtime_pkgs/yapf-0.43.0.dist-info",
+        "destination": "/root/data-fs/projects/Quantization_Agent_for_ViTs/QAViT/.runtime_pkgs/common/yapf-0.43.0.dist-info",
+        "files": 8
+      },
+      {
+        "source": "/root/data-fs/projects/LowRank_W4A4_Vision_Research/.runtime_pkgs/yapf_third_party",
+        "destination": "/root/data-fs/projects/Quantization_Agent_for_ViTs/QAViT/.runtime_pkgs/common/yapf_third_party",
+        "files": 22
+      }
+    ],
+    "selection": "Only distributions imported by real reference task, plus their sibling binary libraries and distribution metadata; no version changes, no installs."
+  },
+  "model_sources": {
+    "deit": {
+      "path": "tools/model_sources/deit",
+      "license": "tools/model_sources/deit/LICENSE",
+      "commit": "7e160fe43f0252d17191b71cbb5826254114ea5b"
+    }
+  }
+}

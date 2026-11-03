@@ -1,0 +1,45 @@
+{
+  "assembled_prompts": {
+    "arbitrate": "ebabf49edfab702393694f110832580f02849abc91f7a57e6ece1762066aee42",
+    "code": "be20a29a9a4a61a1b45253134c8de09dafcf50f015c6c0c20ee79a0724dd5601",
+    "evolve": "2cfdf1fb314347563bf1e9a8ada36ff2ba187bfed150c8b7dc72df5871f0b7a1",
+    "experiment_approval": "34c942c8d4152b3bb63b4a55b865edcff0192ab3b3f08ccf59f6e7b86823204d",
+    "generate": "d26047e6d8f6701259077a139826b6f83d7c4d715acabcc63cb40bfdb7d9ea63",
+    "interpret": "80935d5219664b357c95dbfd368648b68c6b283d11c057742d1caca6ac054907",
+    "plan_l3": "fc47db0da3956d03360fb93561a45dfecf4a07213136c32b29a90c14a305ac72",
+    "position": "3757f9b5b61722d7bad8124c3bd41ce66f8cdaed6d75fb40d8c7a918395ccda5",
+    "rank": "495e84f5abbc545d3ed9b1ee6a8967c6be94afe08509dc9721d9d324b17dd19e",
+    "record": "7b24a0825f1bdb988feb04494731f7e82f821454c02d043074411cbb8930a55e",
+    "reference": "f2ec5f829d260ceb4415a6880507e81b704a69b3b625174f98902a99d1a05629",
+    "safeguard": "329ac0e2a680b98be52eaf9a411f49dd5d6b5205099118cbcf3d663ce49def3f",
+    "screen": "cb32fba7c7a97acdfbd8ba2496436f5fb27b5bdfbed0dfeb9f44e992d73c9242",
+    "supervise": "df6e270ade1059a1c20b9c76f53b8ae4cdbce6acf4892ddb5869b22a839ee39d"
+  },
+  "explicit_fix_source": "EXP/validation/parent_evolution_20261029_r1/prompts.diff; authorized parent/final workflow update, 2026-10-29; EXP/validation/serial_debate_memory_20261029_r1/prompts.diff; authorized serial debate/shared science/fixed verdict update, 2026-10-29; EXP/validation/experiment_inputs_20261029_r1/prompts.diff; authorized experiment input and Brief-scope alignment, 2026-10-29",
+  "explicit_prompt_fixes": {
+    "generate": "8fa5e64f0f5d8ec9271122510d1e39995edf31118edc119e600945b47011908a",
+    "evolve": "71c4f87bc135a2cad0f1ae23576cabc3a20235fe6df77646a7309556fbe8c9bd",
+    "screen": "ac959f56a1dca86d72cc1d7c210ada56bd14a7ee7fc2521762182bb63bfcc16f",
+    "position": "ac604436c3d09741ffeabb57d45b073acfa2836d0718cb28220897b3807692db",
+    "arbitrate": "1eb16fd5706fa02a096afacf6af7125f209f3cc544ea013badbf5e03209c005f",
+    "rank": "66e8da44437067011b65cd22c14dd4f39cfc357a7c59e39b0c7babd558090c54",
+    "experiment_approval": "f83652b69496ebabdb171b47ca8f930306ce7f33c3fb75bb447162e09f0a4ba1",
+    "plan_l3": "763768ab70ea1cfb9163d8f456d625c27473e105189a2c0c559b7705008e4541",
+    "record": "d241b36339747a2890b9c27358d02ce3b12a2a4d261c0f9051f4c00200591c3a",
+    "code": "13e3c26e315f4158bcf4a6cfb34f452bc82128829621df50c568cb786952c309",
+    "reference": "858b332f8bca5f44aeef7dd6d8b3783ca94d9d947be2b7927fb6300a0f361c2c",
+    "safeguard": "6705017c8606e8fe065871fa5eb7d5b08664f777fc2d72fbf2f13e5238a70890",
+    "supervise": "6977a664022a35857b760e8bb2df21c236dea24415b3b383fb1614f48a29e514",
+    "interpret": "a873af2642e391f3ca2a006dacaeb581b352ff17b6940475ce2bc319c75104b8"
+  },
+  "prompt_sha256": "259b92b5df62985f14c642eb5c7a8646f2bfe026675b95ba0ee0722c8a77740a",
+  "roles_sha256": "4626c8f2653c790e888d09cf55eb3e5e4a2340758c6cfa0ce56bbce79befc0a1",
+  "source": "task-start snapshot, 2026-10-28T13:32Z; no prompt/roles edits in readiness task",
+  "source_core_sha256": "decf4a6fec906c08a9b503690f40db5e881c33b4a6215c72f345027d06f6006e",
+  "input_delivery_changes": {
+    "record": "2026-10-30: batch source_refs bounds new review objects, not access to old basis; exact bound prior fields are direct/required, old basis excluded from reviewed_refs; scientific strategy unchanged. Previous batch-reading baseline b1967608c6e84ebce23c9896a4e1dc916dd01ef850c651c1db7fc299da5403f9"
+  },
+  "interface_simplification_note": "20261031: align actual Memory/input, single experiment draft and conditional code handoff; explicit actionable-path check for undetermined. No other role research strategy changes. See EXP/validation/interface_simplification_20261031_r1/changes.patch.",
+  "real_research_followup_note": "20261031 real tiny trace: preserve scientific decisions; scope may be copied only from identical Evidence scopes; align single-scope constraint and preserve comparisons in analysis/feedback. See EXP/validation/real_research_tiny_20261031_r1/prompts.diff.",
+  "research_refactor_note": "2026-11-03 authorized research simplification: 3-field scientific Recorder, host provenance/identity, minimal intent input and experimental reasoning. Full diff and validation in EXP/validation/research_refactor_20261103_r1/changes.patch."
+}

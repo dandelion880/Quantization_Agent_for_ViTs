@@ -1,0 +1,41 @@
+{
+  "schema_version": "qavit.research/2",
+  "name": "vit_research_v2",
+  "purpose": "research",
+  "enable_l3": true,
+  "research_brief": {
+    "scientific_question": "请填写具体ViT量化研究问题；此文件是模板，填写模型适配器和评价协议后使用。",
+    "goals": {
+      "description": "由用户给出目标，Agent在搜索空间中决定具体算法和量化配置。"
+    },
+    "model": {
+      "adapter": {},
+      "scope": {}
+    },
+    "hard_constraints": {},
+    "search_space": {},
+    "evaluation_protocol": {},
+    "unresolved_inputs": [
+      "model adapter",
+      "evaluation protocol",
+      "user goals and search space"
+    ]
+  },
+  "budget": {
+    "max_rounds": 10,
+    "wall_seconds": 21600
+  },
+  "runtime": {
+    "cpu_threads": 4,
+    "allowed_gpus": [
+      0
+    ],
+    "llm_concurrency": 1,
+    "experiment_concurrency": 1,
+    "task_timeout_seconds": 600
+  },
+  "llm": {
+    "provider": "codex_subscription",
+    "max_transport_retries": 2
+  }
+}

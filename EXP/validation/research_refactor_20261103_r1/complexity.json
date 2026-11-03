@@ -1,0 +1,233 @@
+{
+  "changed_files": 45,
+  "changed_file_line_totals": {
+    "framework_py": {
+      "old": 2367,
+      "new": 2560
+    },
+    "changed_production_py": {
+      "old": 2802,
+      "new": 3033
+    },
+    "prompt_md": {
+      "old": 408,
+      "new": 334
+    },
+    "current_docs": {
+      "old": 315,
+      "new": 330
+    },
+    "tests_py": {
+      "old": 3273,
+      "new": 3479
+    }
+  },
+  "assembled_prompts": {
+    "generate": {
+      "before_characters": 4218,
+      "after_characters": 3570,
+      "before_required": [
+        "round",
+        "slot",
+        "hypothesis_type",
+        "title",
+        "research_question",
+        "mechanism",
+        "intervention",
+        "predictions",
+        "implementation",
+        "validation_design",
+        "sources",
+        "mechanism_relations",
+        "feedback_used",
+        "scope"
+      ],
+      "after_required": [
+        "title",
+        "research_question",
+        "mechanism",
+        "intervention",
+        "predictions",
+        "implementation",
+        "validation_design",
+        "sources",
+        "mechanism_relations",
+        "scope"
+      ]
+    },
+    "evolve": {
+      "before_characters": 4113,
+      "after_characters": 3349,
+      "before_required": [
+        "round",
+        "slot",
+        "hypothesis_type",
+        "title",
+        "research_question",
+        "mechanism",
+        "intervention",
+        "predictions",
+        "implementation",
+        "validation_design",
+        "sources",
+        "mechanism_relations",
+        "feedback_used",
+        "scope"
+      ],
+      "after_required": [
+        "title",
+        "research_question",
+        "mechanism",
+        "intervention",
+        "predictions",
+        "implementation",
+        "validation_design",
+        "sources",
+        "mechanism_relations",
+        "scope"
+      ]
+    },
+    "screen": {
+      "before_characters": 3606,
+      "after_characters": 3048,
+      "before_required": [
+        "phase",
+        "rationale",
+        "evidence_refs",
+        "uncertainties"
+      ],
+      "after_required": [
+        "rationale",
+        "eligible",
+        "hard_rejection_reasons",
+        "similarity_analysis",
+        "evidence_gaps"
+      ]
+    },
+    "position": {
+      "before_characters": 3907,
+      "after_characters": 3319,
+      "before_required": [
+        "phase",
+        "rationale",
+        "evidence_refs",
+        "uncertainties"
+      ],
+      "after_required": [
+        "rationale"
+      ]
+    },
+    "arbitrate": {
+      "before_characters": 4439,
+      "after_characters": 3883,
+      "before_required": [
+        "phase",
+        "rationale",
+        "evidence_refs",
+        "uncertainties"
+      ],
+      "after_required": [
+        "rationale"
+      ]
+    },
+    "rank": {
+      "before_characters": 4131,
+      "after_characters": 3575,
+      "before_required": [
+        "phase",
+        "rationale",
+        "evidence_refs",
+        "uncertainties"
+      ],
+      "after_required": [
+        "rationale"
+      ]
+    },
+    "experiment_approval": {
+      "before_characters": 4018,
+      "after_characters": 3450,
+      "before_required": [
+        "phase",
+        "rationale",
+        "evidence_refs",
+        "uncertainties"
+      ],
+      "after_required": [
+        "rationale"
+      ]
+    },
+    "plan_l3": {
+      "before_characters": 4907,
+      "after_characters": 3518,
+      "before_required": null,
+      "after_required": null
+    },
+    "record": {
+      "before_characters": 6006,
+      "after_characters": 3325,
+      "before_required": [
+        "round",
+        "scientific_analysis",
+        "judgment_audit",
+        "predictive_metrics",
+        "knowledge_updates",
+        "recurring_failures",
+        "blind_spots",
+        "next_questions",
+        "generation_guidance",
+        "evidence_refs"
+      ],
+      "after_required": [
+        "scientific_analysis",
+        "next_questions",
+        "generation_guidance"
+      ]
+    },
+    "code": {
+      "before_characters": 3511,
+      "after_characters": 2901,
+      "before_required": null,
+      "after_required": null
+    },
+    "reference": {
+      "before_characters": 3569,
+      "after_characters": 2959,
+      "before_required": null,
+      "after_required": null
+    },
+    "safeguard": {
+      "before_characters": 3823,
+      "after_characters": 3194,
+      "before_required": [
+        "phase",
+        "rationale",
+        "evidence_refs",
+        "uncertainties"
+      ],
+      "after_required": [
+        "rationale"
+      ]
+    },
+    "supervise": {
+      "before_characters": 2888,
+      "after_characters": 2199,
+      "before_required": null,
+      "after_required": null
+    },
+    "interpret": {
+      "before_characters": 3636,
+      "after_characters": 3073,
+      "before_required": [
+        "phase",
+        "rationale",
+        "evidence_refs",
+        "uncertainties"
+      ],
+      "after_required": [
+        "rationale"
+      ]
+    }
+  },
+  "numeric_config_files_checked": 64,
+  "numeric_config_changes": []
+}

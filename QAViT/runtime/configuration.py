@@ -1,0 +1,46 @@
+"""运行输入校验与角色模型配置；模型默认值唯一来自 configs/models.json。"""
+from core.cards import ContractError, ROLES, validate_payload
+from core.journal import read_json
+from runtime.paths import QAVIT
+
+
+def model_defaults():
+    return read_json(QAVIT / "configs/models.json")
+
+
+def config_check(config):
+    if config.get("schema_version") != "qavit.research/2":
+        raise ContractError("不是 v2 研究配置")
+    validate_payload("ResearchBrief", config["research_brief"])
+    if config["research_brief"].get("unresolved_inputs"):
+        raise ContractError("研究模板仍有待填写输入: " + str(config["research_brief"]["unresolved_inputs"]))
+    if config.get("purpose") not in ("research", "validation", "infrastructure_test"):
+        raise ContractError("必须明确本次运行用途")
+    settings = config.setdefault("llm", {})
+    settings.setdefault("provider", "codex_subscription")
+    settings.setdefault("agent_models", model_defaults())
+    if set(settings["agent_models"]) != set(ROLES):
+        raise ContractError("需配置全部七角色模型路由")
+    for value in settings["agent_models"].values():
+        if not isinstance(value, (list, tuple)) or len(value) != 2 or not all(isinstance(v, str) and v for v in value):
+            raise ContractError("模型路由须为 [model, effort]")
+    runtime = config.setdefault("runtime", {})
+    runtime.setdefault("cpu_threads", 4)
+    runtime.setdefault("llm_concurrency", 1)
+    runtime.setdefault("experiment_concurrency", 1)
+    runtime.setdefault("task_timeout_seconds", 600)
+    for key in ("cpu_threads", "experiment_concurrency"):
+        if type(runtime[key]) is not int or runtime[key] < 1:
+            raise ContractError("运行资源需要正整数: " + key)
+    if runtime["task_timeout_seconds"] <= 0:
+        raise ContractError("任务超时必须为正数")
+    if any(type(gpu) is not int or gpu < 0 for gpu in runtime.get("allowed_gpus", [])):
+        raise ContractError("GPU编号必须为非负整数")
+    if runtime["llm_concurrency"] != 1:
+        raise ContractError("首版订阅传输使用串行锁；尚未验证并行模型调用")
+    if config.get("enable_l3") is not True and config.get("enable_l3") is not False:
+        raise ContractError("请明确本次运行是否启用 L3；验证配置必须关闭")
+    if config["purpose"] == "validation" and config["enable_l3"]:
+        raise ContractError("本版小规模验证禁止启动完整 L3")
+    return config
+
