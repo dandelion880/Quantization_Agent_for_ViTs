@@ -9,7 +9,8 @@ from importlib.util import find_spec
 import re
 from runtime.paths import ROOT
 from core.cards import ContractError, canonical, fingerprint, make_card, validate_payload, validate_schema, TEXT, PAYLOAD_SCHEMAS
-from core.journal import file_sha256, read_json, atomic_json
+from core.journal import file_sha256, read_json, atomic_json, journal_read
+from core.evidence import project_observations, selected_leaves, pointer
 from core.debate import ranking_table, validate_verdict
 from agents.roles import tools_for, submission_schema
 from tools.experiments import SERVICES
@@ -42,7 +43,7 @@ class RoleInteraction:
         """Only these host-assigned handoffs authorize an otherwise unregistered code source."""
         purpose, context = task['inputs']['purpose'], task['inputs']['context']
         if purpose == 'safeguard':
-            values = [context.get('candidate'), context.get('reference')]
+            values = [context.get('candidate')]
         elif purpose == 'code':
             values = [context.get('revision_feedback', {}).get('previous_candidate')]
         else:
@@ -60,22 +61,21 @@ class RoleInteraction:
             current = tasks.get(current['inputs'].get('parent_task'))
         return None
 
+    def task_card_entitled(self, task, body, ref):
+        return (body['task_id'] == task['task_id'] or body['inputs'].get('parent_task') == task['task_id']
+                or ref in task['inputs']['refs']
+                or ref == task['inputs']['context'].get('revision_feedback', {}).get('execution_task_ref')
+                or (body['inputs'].get('purpose') in ('code',)
+                    and (body.get('result') or {}).get('artifact') in self.bound_code_sources(task))
+                or (body['kind'] == 'literature' and body['state'] == 'completed'))
+
     def can_read_card(self, task, card):
         sequence = self.read_view(task)['sequence']
         if self.journal.cards.get(card['id'], {}).get('sequence', sequence + 1) > sequence:
             return False
         purpose = task['inputs']['purpose']
-        if purpose == 'reference':
-            return card['id'] in task['inputs']['refs'] and card['kind'] in {'ResearchBrief', 'ExperimentCard'}
         if card['kind'] == 'TaskCard':
-            body = card['payload']
-            entitled = (body['task_id'] == task['task_id'] or body['inputs'].get('parent_task') == task['task_id']
-                    or card['id'] in task['inputs']['refs']
-                    or card['id'] == task['inputs']['context'].get('revision_feedback', {}).get('execution_task_ref')
-                    or (body['inputs'].get('purpose') in ('code', 'reference')
-                        and (body.get('result') or {}).get('artifact') in self.bound_code_sources(task))
-                    or (body['kind'] == 'literature' and body['state'] == 'completed'))
-            if not entitled:
+            if not self.task_card_entitled(task, card['payload'], card['id']):
                 return False  # 无读取资格的工程记录无需再遍历其历史版本与科研出处。
         if task.get('_acl_tasks_sequence') != sequence:
             task['_acl_tasks_sequence'] = sequence
@@ -132,13 +132,81 @@ class RoleInteraction:
             ref = next((r for r, v in self.journal.card_versions.items() if v == version), ref)
         card = self.journal.card(ref)
         if not self.can_read_card(task, card):
-            raise ContractError('提交快照/权限拒绝读取：独立参考规格隔离及同回合立场隔离适用于所有入口')
+            raise ContractError('提交快照/权限拒绝读取：同回合立场隔离适用于所有入口')
         return card
+
+    def normalize_optional_analysis(self, task, submitted):
+        """Optional scientific appendices are independent; preserve rejected rows verbatim."""
+        from core.cards import OPTIONAL_ANALYSIS_FIELDS, PAYLOAD_SCHEMAS, STRINGS, OBJECT
+        content = deepcopy(submitted)
+        if 'submission_issues' in content:
+            raise ContractError('submission_issues 由程序逐条检查生成')
+        kind = TASKS[task['inputs']['purpose']]['output']
+        contract = PAYLOAD_SCHEMAS.get(kind, {})
+        props = deepcopy(contract.get('properties', {}))
+        required = set(contract.get('required', []))
+        if kind == 'ReviewDecisionCard':
+            props.update(uncertainties=STRINGS, similarity_analysis=TEXT, evidence_gaps=STRINGS,
+                         arguments=STRINGS, objections=STRINGS, responses_to_prior=STRINGS,
+                         key_predictions=STRINGS, changed_judgments={'type':'array','items':OBJECT},
+                         next_questions=STRINGS, continuation_assessment=OBJECT,
+                         decisive_reason=TEXT, selection_basis=TEXT)
+        issues = []
+        for field in OPTIONAL_ANALYSIS_FIELDS.get(kind, ()):
+            schema = props[field]
+            default = [] if schema.get('type') == 'array' else {} if field == 'scope' else ''
+            if field not in content:
+                if field in required:
+                    content[field] = default
+                continue
+            value = content.pop(field)
+            rows = value if isinstance(value, list) and schema.get('type') == 'array' else [value]
+            accepted = []
+            prediction_ids = set()
+            for index, original in enumerate(rows):
+                try:
+                    row = self.resolve_card_refs(task, deepcopy(original))
+                    if field == 'predictions' and isinstance(row, dict):
+                        row.setdefault('id', 'p' + str(index + 1))
+                        if row['id'] in prediction_ids:
+                            raise ContractError('预测 ID 重复')
+                    validate_schema(row, schema.get('items', {}) if isinstance(value, list) and schema.get('type') == 'array' else schema, field)
+                    if isinstance(row, dict):
+                        for ref in row.get('evidence_refs', []):
+                            if self.journal.card(ref)['kind'] != 'EvidenceCard':
+                                raise ContractError('evidence_refs 只能指向 EvidenceCard')
+                        if field == 'judgment_audit' and self.journal.card(row['judgment_ref'])['kind'] not in ('HypothesisCard', 'ReviewDecisionCard'):
+                            raise ContractError('judgment_ref 必须指向科研判断')
+                        if field == 'feedback_used' and row.get('metareview_ref') and self.journal.card(row['metareview_ref'])['kind'] != 'MetareviewCard':
+                            raise ContractError('metareview_ref 必须指向科学复盘')
+                    for claim_id, revision in self.prior_basis_pairs(row):
+                        self.prior_basis_field(task, claim_id, revision)
+                    accepted.append(row)
+                    if field == 'predictions':
+                        prediction_ids.add(row['id'])
+                except (ContractError, KeyError, TypeError) as exc:
+                    issues.append({'field':field, 'index':index, 'submission':deepcopy(original), 'issue':str(exc)})
+            if schema.get('type') == 'array':
+                content[field] = accepted
+            elif accepted:
+                content[field] = accepted[0]
+            elif field in required:
+                content[field] = default
+        if issues:
+            content['submission_issues'] = issues
+        return content
 
     def bind_submission(self, task, content):
         """固定身份和短引用在单一边界编译；错误身份、未来与私有来源仍拒绝。"""
-        content = deepcopy(content)
         purpose, context = task['inputs']['purpose'], task['inputs']['context']
+        if purpose == 'arbitrate':
+            # Check an explicit scientific decision conflict before optional
+            # appendix repair can remove an unrelated malformed detail.
+            validate_verdict(content, context['exchange'])
+        if purpose == 'record':
+            content = deepcopy(content)
+            content.pop('reviewed_refs', None)  # Legacy declaration is neither evidence of reading nor a rejection.
+        content = self.normalize_optional_analysis(task, content)
         bindings = {}
         if purpose in ('generate', 'evolve'):
             bindings = {k: context[k] for k in ('round', 'slot', 'hypothesis_type')}
@@ -158,13 +226,26 @@ class RoleInteraction:
                 bindings['side'] = context['side']
             content.setdefault('evidence_refs', [])
             content.setdefault('uncertainties', [])
-        content = self.resolve_card_refs(task, content)
+            if purpose == 'screen':
+                content.setdefault('hard_rejection_reasons', [])
+        if purpose == 'record':
+            # 知识条目单独解析引用；一条错误来源不能丢弃整份科学分析。
+            claims = content.pop('knowledge_updates', [])
+            issues = content.pop('submission_issues', [])
+            content = self.resolve_card_refs(task, content)
+            content['knowledge_updates'] = claims
+            if issues: content['submission_issues'] = issues
+        else:
+            issues = content.pop('submission_issues', [])
+            content = self.resolve_card_refs(task, content)
+            if issues: content['submission_issues'] = issues
         for key, value in bindings.items():
             if key in content and content[key] != value:
                 raise ContractError('提交与宿主固定身份冲突: ' + key)
             content[key] = value
         if purpose == 'record':
-            content = self.memory.prepare_metareview(content, context['recording_batch'], context['round'])
+            content = self.memory.prepare_metareview(content, context['recording_batch'], context['round'],
+                resolve_claim=lambda claim: self.resolve_card_refs(task, claim))
         return content
 
     def resolve_card_refs(self, task, content):
@@ -207,11 +288,8 @@ class RoleInteraction:
         rows = task.get('tool_results', [])
         if not rows:
             return
-        tasks = self.queue.snapshot()
         for row in rows:
-            if row['task'] not in tasks:
-                raise ContractError('未知任务: ' + row['task'])
-            child = tasks[row['task']]
+            child = self.queue.get(row['task'])
             yield row, child, child.get('result')
 
     def read_ranges(self, task, ref, field, digest):
@@ -279,7 +357,7 @@ class RoleInteraction:
         return exact
 
     def present_card(self, card):
-        """不做科学摘要；仅移除工程封套，重型身份保留精确字段入口。"""
+        """客观事实投影；来源不变，统计概览不代替科研解释或完整原件。"""
         if card['kind'] == 'TaskCard':
             body = card['payload']
             status = {k: deepcopy(body[k]) for k in ('task_id', 'key', 'kind', 'state', 'error', 'outputs') if k in body}
@@ -296,9 +374,12 @@ class RoleInteraction:
             return {'id': card['id'], 'kind': card['kind'], 'version': card['version'],
                     'payload': status,
                     'read_card': {'ref': card['id']}, 'presentation': 'engineering status; full immutable source on demand'}
-        value = deepcopy(card)
+        # Do not copy megabytes of observations just to replace them with a view.
+        value = ({**deepcopy({k: v for k, v in card.items() if k != 'payload'}),
+                  'payload': deepcopy({k: v for k, v in card['payload'].items() if k != 'observations'})}
+                 if card['kind'] == 'EvidenceCard' else deepcopy(card))
         if card['kind'] == 'ExperimentCard':
-            execution = value['payload']['execution']
+            execution = value['payload'].get('execution', {})
             research_contract = execution.get('research_quantization_contract')
             if (research_contract is not None and self.brief['id'] in card['refs']
                     and research_contract == self.brief['payload'].get('quantization_contract')):
@@ -310,35 +391,15 @@ class RoleInteraction:
                     'read_card': {'ref': card['id'], 'field': '/payload/execution/measurement_implementation'},
                     'sha256': fingerprint(execution['measurement_implementation'])}
         if card['kind'] == 'EvidenceCard':
-            def numeric_container(item):
-                # Tables and named scalar statistics stay in the scientific view.
-                # Only dense numeric arrays, or dictionaries composed of them, move to exact references.
-                if isinstance(item, list) and item:
-                    return all((isinstance(v, (int, float)) and not isinstance(v, bool))
-                               or (isinstance(v, list) and numeric_container(v)) for v in item)
-                return isinstance(item, dict) and bool(item) and all(numeric_container(v) for v in item.values())
-
-            repeated = {}
-            def observations(item, field):
-                if numeric_container(item) and len(canonical(item)) > self.DIRECT_CHARACTERS:
-                    return {'read_card': {'ref': card['id'], 'field': field}, 'sha256': fingerprint(item)}
-                # Keep the first complete value; identical replay counters need not recur 100 times.
-                # Canonical content is the key, so this is exact reuse, never a scientific summary.
-                if isinstance(item, (dict, list)):
-                    text = canonical(item)
-                    if len(text) > 1000:
-                        if text in repeated:
-                            return {'read_card': {'ref': card['id'], 'field': repeated[text]},
-                                    'sha256': fingerprint(item)}
-                        repeated[text] = field
-                if isinstance(item, dict):
-                    return {k: observations(v, field + '/' + k.replace('~', '~0').replace('/', '~1'))
-                            for k, v in item.items()}
-                if isinstance(item, list):
-                    return [observations(v, field + '/' + str(i)) for i, v in enumerate(item)]
-                return item
-
-            value['payload']['observations'] = observations(card['payload']['observations'], '/payload/observations')
+            cache = getattr(self, '_observation_views', None)
+            if cache is None:
+                cache = self._observation_views = {}
+            key = (card['id'], card['content_sha256'])
+            if key not in cache:
+                if len(cache) >= 16:
+                    cache.pop(next(iter(cache)))
+                cache[key] = project_observations(card['payload']['observations'], card['id'])
+            value['payload']['observations'] = deepcopy(cache[key])
             provenance = value['payload']['provenance']
             for key in ('data_identity', 'model_identity'):
                 if key in provenance:
@@ -354,6 +415,58 @@ class RoleInteraction:
                         'sha256': fingerprint(provenance['resolved_execution'])}
         return value
 
+    def recorder_card(self, card):
+        """A batch view of scientific changes, purposes and outcomes, without card envelopes."""
+        if card['kind'] not in ('HypothesisCard', 'ReviewDecisionCard', 'ExperimentCard', 'EvidenceCard'):
+            return self.present_card(card)
+        view = self.present_card(card)
+        payload = view['payload']
+        if card['kind'] == 'ExperimentCard':
+            payload = {k: v for k, v in payload.items() if k not in ('execution', 'resources', 'validation')}
+            from core.evidence_scope import card_scope
+            payload['actual_conditions'] = card_scope(card)
+            payload['execution_conditions'] = {k: deepcopy(v) for k, v in card['payload'].get('execution', {}).items()
+                if k not in ('backend', 'measurement_implementation', 'research_quantization_contract')}
+            payload['execution_source'] = {'read_card': {'ref': card['id'], 'field': '/payload/execution'}}
+        elif card['kind'] == 'EvidenceCard':
+            from core.evidence_scope import card_scope
+            payload = {k: v for k, v in payload.items() if k not in ('resources', 'artifacts', 'provenance')}
+            payload['actual_conditions'] = card_scope(card)
+            payload['provenance_source'] = {'read_card': {'ref': card['id'], 'field': '/payload/provenance'}}
+            # Provenance may contain scientific limitations; engineering identities have
+            # exact sources, while status/source/conditions are always delivered.
+            for key in ('limitations', 'warnings', 'failure', 'error', 'comparison', 'protocol_hash'):
+                if key in card['payload']['provenance']:
+                    payload[key] = deepcopy(card['payload']['provenance'][key])
+        payload = {k: v for k, v in payload.items() if v not in (None, '', [], {})}
+        from core.memory import short_field
+        for key, original in list(payload.items()):
+            if key == 'observations':
+                continue  # Already a bounded objective view; keep actual outcomes directly usable.
+            source = '/payload/' + key
+            if key == 'actual_conditions':
+                source = '/payload/scope' if 'scope' in card['payload'] else '/payload/provenance'
+            elif key == 'execution_conditions':
+                source = '/payload/execution'
+            elif key in ('execution_source', 'provenance_source'):
+                continue
+            elif key not in card['payload'] and key in card['payload'].get('provenance', {}):
+                source = '/payload/provenance/' + key
+            payload[key] = short_field(original, card['id'], source,
+                limit=1600 if key in ('mechanism', 'rationale', 'intervention', 'actual_conditions') else 1000)
+        return {'id': card['id'], 'kind': card['kind'], 'version': card['version'],
+                'payload': payload, 'read_card': {'ref': card['id']},
+                'presentation': 'batch scientific body; exact immutable source on demand'}
+
+    def historical_experiment_refs(self, task):
+        """An explicit research note marks older tool material as revisitable history."""
+        values = list(self.result_values(task))
+        boundary = max((i for i, (_, child, _) in enumerate(values)
+            if child['kind'] == 'experiment_request' and child['inputs'].get('research_note')), default=-1)
+        explicit = set(task['inputs']['refs'])
+        return {ref for i, (_, child, _) in enumerate(values) if i < boundary
+                and child['kind'] == 'experiment_request' for ref in child['outputs'] if ref not in explicit}
+
     def required_refs(self, task):
         purpose, c = task['inputs']['purpose'], task['inputs']['context']
         refs = list(task['inputs']['refs'])
@@ -361,11 +474,23 @@ class RoleInteraction:
             refs = refs if c.get('previous_review_pending') else [self.brief['id']]
         elif purpose == 'record':
             refs = []
-            for ref in c['recording_batch']['scientific_refs']:
-                card = self.journal.card(ref)
-                if (card['kind'] in ('HypothesisCard', 'EvidenceCard') or
-                    (card['kind'] == 'ReviewDecisionCard' and card['payload']['phase'] in
-                     ('verdict', 'ranking', 'interpretation'))):
+            batch_refs = c['recording_batch']['scientific_refs']
+            experiments = {ref: self.journal.card(ref) for ref in batch_refs
+                           if self.journal.cards[ref]['kind'] == 'ExperimentCard'}
+            measured = {self.journal.card(ref)['payload']['experiment_ref'] for ref in batch_refs
+                        if self.journal.cards[ref]['kind'] == 'EvidenceCard'}
+            # Execution purpose/conditions accompany Evidence below. The original
+            # request is already bound by that execution; only unfulfilled requests
+            # or executions without Evidence need a separate purpose record.
+            paired_requests = {card['payload'].get('request_ref') for card in experiments.values()}
+            for ref in measured:
+                paired_requests.add(self.journal.card(ref)['payload'].get('request_ref'))
+            for ref in batch_refs:
+                kind = self.journal.cards[ref]['kind']
+                if (kind in ('HypothesisCard', 'EvidenceCard') or
+                    (kind == 'ExperimentCard' and ref not in measured and ref not in paired_requests) or
+                    (kind == 'ReviewDecisionCard' and self.journal.card(ref)['payload']['phase'] in
+                     ('position', 'verdict', 'ranking', 'interpretation'))):
                     refs.append(ref)
         elif purpose == 'evolve':
             refs = [r for r in refs if self.journal.card(r)['kind'] != 'MetareviewCard']
@@ -379,18 +504,53 @@ class RoleInteraction:
                     or self.journal.card(r)['payload'].get('exchange', 0) >= c.get('exchange', 1) - 1]
         elif purpose == 'supervise':
             refs = [r for r in refs if self.journal.card(r)['kind'] == 'TaskCard']
+        historical = self.historical_experiment_refs(task)
         for row, child, result in self.result_values(task):
             if child['kind'] == 'experiment_request':
-                refs.extend(child['outputs'])
+                refs.extend(ref for ref in child['outputs'] if ref not in historical)
         # 明确的出处依赖，不扫描全库推断科学相关性。
-        # 实验审批/解释可能继承 Generation 的反馈引用；引用不等于要求重灌完整复盘。
+        # 实验解释可能继承 Generation 的反馈引用；引用不等于要求重灌完整复盘。
         # 必需反馈字段由 reminders 单独交付，完整历史正文仍可按引用读取。
-        selected = list(dict.fromkeys(r for r in refs if self.journal.card(r)['kind'] != 'MetareviewCard'))
+        selected = list(dict.fromkeys(r for r in refs if self.journal.cards.get(r, {}).get('kind') != 'MetareviewCard'))
         for ref in list(selected):
-            card = self.journal.card(ref)
-            if card['kind'] == 'EvidenceCard':
-                selected.append(card['payload']['experiment_ref'])
+            if self.journal.cards.get(ref, {}).get('kind') == 'EvidenceCard':
+                selected.append(self.journal.card(ref)['payload']['experiment_ref'])
         return list(dict.fromkeys(selected))
+
+    def supporting_evidence_refs(self, task, card):
+        """Explicit scientific support for this object, not its entire provenance graph.
+
+        Request cards inherit the researcher's current subjects. Coding/Safeguard
+        therefore receive those subjects' declared evidence too, without replaying
+        all archived input refs, prior trials or historical feedback bodies.
+        """
+        if card['kind'] not in ('HypothesisCard', 'ReviewDecisionCard', 'ExperimentCard'):
+            return []
+        payloads = [(card['payload'], card['kind'] == 'ExperimentCard')]
+        if card['kind'] == 'ExperimentCard':
+            original = card['payload'].get('original_request')
+            if isinstance(original, dict):
+                payloads.append((original, True))
+            for ref in card['refs']:
+                if self.journal.cards.get(ref, {}).get('kind') in ('HypothesisCard', 'ReviewDecisionCard'):
+                    subject = self.require_visible(task, ref)
+                    payloads.append((subject['payload'], False))
+        refs = []
+        def rows(value):
+            return value if isinstance(value, list) else []
+        for payload, is_experiment in payloads:
+            refs.extend(rows(payload.get('evidence_refs')))
+            refs.extend(row.get('ref') for row in rows(payload.get('sources')) if isinstance(row, dict))
+            # Research cards permit free scientific extensions named execution.
+            # Only a real experiment's structured fields declare execution inputs.
+            execution = payload.get('execution') if is_experiment else None
+            if not isinstance(execution, dict):
+                continue
+            refs.extend(rows(execution.get('trial_evidence_refs')))
+            for key in ('trial_bindings', 'profile_evidence_bindings'):
+                refs.extend(row.get('evidence_ref') for row in rows(execution.get(key)) if isinstance(row, dict))
+        return list(dict.fromkeys(ref for ref in refs
+            if isinstance(ref, str) and self.journal.cards.get(ref, {}).get('kind') == 'EvidenceCard'))
 
     @staticmethod
     def prior_basis_pairs(payload):
@@ -464,8 +624,6 @@ class RoleInteraction:
                 'read_card': {'ref': latest}, 'required': False,
                 'policy': '全局复盘入口；仅明确关联本对象或分配给本任务的反馈为必读。'}
         purpose = task['inputs']['purpose']
-        if purpose == 'reference':
-            return
         # purpose 已选定的处理对象与出处分别绑定：共享 Evidence 不把另一方案变成当前对象。
         automatic = purpose not in ('record', 'supervise')
         selected = set(self.required_refs(task)) if automatic else set()
@@ -489,7 +647,7 @@ class RoleInteraction:
         evidence = {r for r in provenance if self.journal.card(r)['kind'] == 'EvidenceCard'}
         feedback = memory.setdefault('bound_feedback', [])
         seen = set()
-        def field(ref, pointer, reason):
+        def field(ref, pointer, reason, display_limit=None):
             if any(r == ref and (pointer == p or pointer.startswith(p + '/')) for r, p in seen):
                 return
             descendants = {(r, p) for r, p in seen if r == ref and p.startswith(pointer + '/')}
@@ -503,7 +661,17 @@ class RoleInteraction:
             value = self.card_field(card, pointer)
             text, digest = canonical(value), fingerprint(value)
             entry = {'read_card': {'ref': ref, 'field': pointer}, 'reason': reason, 'sha256': digest}
-            if len(text) <= self.DIRECT_CHARACTERS:
+            duplicate = next((row for row in feedback if row.get('sha256') == digest and 'value' in row), None)
+            if duplicate:
+                entry['body_location'] = {'same_value_as': duplicate['read_card']}
+            elif display_limit is not None:
+                from core.memory import short_field
+                entry['value'] = short_field(value, ref, pointer, limit=display_limit)
+                if entry['value'] == value:
+                    memory.setdefault('field_manifest', []).append({'ref': ref, 'field': pointer, 'sha256': digest})
+                else:
+                    entry['required'] = False
+            elif len(text) <= self.DIRECT_CHARACTERS:
                 entry['value'] = deepcopy(value)
                 memory.setdefault('field_manifest', []).append({'ref': ref, 'field': pointer, 'sha256': digest})
             else:
@@ -515,7 +683,7 @@ class RoleInteraction:
                 memory['required_reads'].append({'ref': ref, 'field': pointer, 'sha256': digest,
                     'total_characters': len(text), 'next_offset': int(stop) if stop < len(text) else None,
                     'reason': reason})
-                entry['required'] = True
+                entry['required'] = False
             feedback.append(entry)
         if purpose == 'record':
             for ref, pointer, source, claim_id in self.recorder_prior_basis(task):
@@ -525,6 +693,8 @@ class RoleInteraction:
                 card = self.require_visible(task, ref)
                 if card['kind'] == 'MetareviewCard':
                     for key in ('generation_guidance', 'next_questions', 'recurring_failures', 'blind_spots'):
+                        if key not in card['payload']:
+                            continue
                         field(ref, '/payload/' + key, '宿主为本轮 Generation 绑定的前轮反馈；其余复盘按需读取')
         # 较早交锋的整卡保持按需；已记录的限制字段不按条数/年龄删除。
         # 不推断未结构化文字是否已解决，rationale 和明确问题/条件字段保守保留原文。
@@ -554,12 +724,14 @@ class RoleInteraction:
                 and payload.get('exchange', 0) < task['inputs']['context'].get('exchange', 1) - 1)
             binding = {'ref': ref, 'version': card['version'], 'read_card': {'ref': ref}, 'reason': reason}
             if ref in demoted or old_exchange:
-                binding.update(required=False, body='optional history; exact issue/condition fields retained')
-                for key in ('rationale', 'uncertainties', 'objections', 'responses_to_prior', 'next_questions',
+                binding.update(required=False, body='optional history; exact issue/condition fields retained',
+                    history_record={k: deepcopy(payload[k]) for k in ('phase', 'exchange', 'outcome', 'side') if k in payload})
+                for key in ('rationale', 'responses_to_prior', 'uncertainties', 'objections', 'next_questions',
                             'evidence_gaps', 'hard_rejection_reasons', 'limitations', 'counterevidence',
                             'conditions', 'applicability', 'unresolved_questions', 'scope'):
                     if key in payload and payload[key]:
-                        field(ref, '/payload/' + key, '当前对象较早交锋的已记录问题/条件；未结构化解决状态保守保留')
+                        field(ref, '/payload/' + key, '当前对象较早交锋的已记录问题/条件；未结构化解决状态保守保留',
+                              display_limit=1000 if key in ('rationale', 'responses_to_prior') else None)
             else:
                 deliver(ref)
                 binding['body'] = 'current bound feedback; full source'
@@ -589,6 +761,7 @@ class RoleInteraction:
             pointer = '/payload/result' if card['kind'] == 'TaskCard' else '/payload'
             field(ref, pointer, '宿主为本任务明确分配的反馈')
 
+    @journal_read
     def context(self, task):
         task = deepcopy(task)
         # Reuse verified shared ancestry only during this fixed read snapshot, never across calls.
@@ -597,7 +770,7 @@ class RoleInteraction:
         purpose, inputs = task['inputs']['purpose'], task['inputs']
         sequence = task['_read_view']['sequence']
         memory = {'memory_version': self.journal.memory_version, 'cards': [], 'required_reads': [],
-                  'read_manifest': {'refs': [], 'policy': '必需短正文直接提供；required_reads 未完成不得提交。目录不是已读正文。'}}
+                  'read_manifest': {'refs': [], 'policy': '必需短正文直接提供；required_reads 提供按需深读入口，不阻塞提交。目录不是已读正文。'}}
         context = {'run_id': self.journal.run_id, 'task_id': task['task_id'], 'task': deepcopy(inputs['context']),
                    'read_view': task['_read_view'], 'memory': memory,
                    'interface_reference': str(ROOT / 'QAViT/docs/EXECUTION.md'),
@@ -635,25 +808,61 @@ class RoleInteraction:
                     failures.append(self.present_card(card))
             memory['engineering'] = {'counts': counts, 'failures': failures,
                                      'all_sources': context['task']['recording_batch']['source_index']}
+        bodies = self.complete_tool_bodies(task)
         delivered, presented = set(), {}
-        def deliver(ref, location=None):
+        def deliver(ref, location=None, *, expand_support=True):
             if ref in delivered:
                 return
             card = self.require_visible(task, ref)
-            view = self.present_card(card)
-            text = canonical(card['payload'])
+            view = self.recorder_card(card) if purpose == 'record' else self.present_card(card)
             body = view['payload'] if card['kind'] == 'EvidenceCard' else view
             # 每个角色都必须完整接收 Brief；有界全文直送省去仅为读取任务的模型回合。
             direct_limit = 2 * self.DIRECT_CHARACTERS if card['kind'] == 'ResearchBrief' else self.DIRECT_CHARACTERS
             if card['kind'] == 'ExperimentCard':
                 direct_limit = 4 * self.PAGE_CHARACTERS
             if purpose == 'record' and card['kind'] in ('HypothesisCard', 'ReviewDecisionCard'):
-                direct_limit = 4 * self.PAGE_CHARACTERS
+                direct_limit = 2 * self.PAGE_CHARACTERS
             if card['kind'] == 'EvidenceCard':
-                # A bounded table of scalar results must not fall back to paging megabytes of array state.
-                bulk_refs = body['observations'] != card['payload']['observations']
-                direct_limit = (16 if bulk_refs else 1) * self.PAGE_CHARACTERS
-            if len(canonical(body)) > direct_limit:
+                def required_text(value, path):
+                    if isinstance(value, dict) and value.get('complete') is False and 'read_card' in value:
+                        source = value['read_card']
+                        original = self.card_field(card, source['field'])
+                        if isinstance(original, str):
+                            stop = 0
+                            for start, end in sorted(self.read_ranges(task, ref, source['field'], fingerprint(original))):
+                                if start > stop: break
+                                stop = max(stop, end)
+                            length = len(canonical(original))
+                            memory['required_reads'].append({**source, 'sha256': fingerprint(original),
+                                'total_characters': length, 'next_offset': int(stop) if stop < length else None,
+                                'reason': '长科学文本按需读取；展示预算不阻塞提交'})
+                    if isinstance(value, dict):
+                        return {k: required_text(v, pointer(path, k)) for k, v in value.items()}
+                    if isinstance(value, list):
+                        return [required_text(v, pointer(path, i)) for i, v in enumerate(value)]
+                    if not isinstance(value, str) or len(canonical(value)) <= self.PAGE_CHARACTERS:
+                        return value
+                    # Retain an exact deep-read entry for long scientific prose,
+                    # without imposing completion of neighboring arrays or pages.
+                    try:
+                        if self.card_field(card, path) != value:
+                            return value
+                    except ContractError:
+                        return value
+                    text, digest, stop = canonical(value), fingerprint(value), 0
+                    for start, end in sorted(self.read_ranges(task, ref, path, digest)):
+                        if start > stop:
+                            break
+                        stop = max(stop, end)
+                    memory['required_reads'].append({'ref': ref, 'field': path, 'sha256': digest,
+                        'total_characters': len(text), 'next_offset': int(stop) if stop < len(text) else None,
+                        'reason': 'Evidence 原文长字段按当前判断需要读取；分页完成度不阻塞提交'})
+                    return {'read_card': {'ref': ref, 'field': path}, 'sha256': digest, 'required': False}
+                view['payload'] = required_text(body, '/payload')
+            # Objective statistics are bounded too; coverage and exact source selectors
+            # remain visible. Display allowances never become reading/submission gates.
+            if card['kind'] != 'EvidenceCard' and len(canonical(body)) > direct_limit:
+                text = canonical(card['payload'])
                 digest = fingerprint(card['payload'])
                 stop = 0
                 for start, end in sorted(self.read_ranges(task, ref, '/payload', digest)):
@@ -662,12 +871,12 @@ class RoleInteraction:
                     stop = max(stop, end)
                 memory['required_reads'].append({'ref': ref, 'field': '/payload', 'sha256': digest,
                     'total_characters': len(text), 'next_offset': int(stop) if stop < len(text) else None,
-                    'reason': 'purpose=' + purpose + ' 的明确处理对象；须分段/同批读取完整正文'})
-                view = {**self.retriever.entry(card), 'id': ref, 'required': True, 'body_location': 'read_card /payload'}
+                    'reason': 'purpose=' + purpose + ' 的明确处理对象；可分段/同批按需深读'})
+                view = {**self.retriever.entry(card), 'id': ref, 'required': False, 'body_location': 'read_card /payload'}
             else:
                 key = 'refs' if view == card else 'projected_refs'
                 memory['read_manifest'].setdefault(key, []).append(ref)
-            if view != card and self.read_ranges(task, ref, '', fingerprint(card)) == [(0, float('inf'))]:
+            if view != card and any(g['ref'] == ref and not g['field'] for g in bodies):
                 view = {'id': ref, 'version': card['version'], 'body_location': 'tool_results complete immutable card'}
             presented[ref] = view
             if location is None:
@@ -676,30 +885,70 @@ class RoleInteraction:
                 container, key = location
                 container[key] = view
             delivered.add(ref)
+            if card['kind'] == 'EvidenceCard':
+                # Its real conditions always accompany a measurement. Do not walk
+                # backwards through that experiment into an unbounded trial history.
+                deliver(card['payload']['experiment_ref'], expand_support=False)
+            elif expand_support and purpose not in ('record', 'supervise'):
+                for source in self.supporting_evidence_refs(task, card):
+                    deliver(source, expand_support=False)
         deliver(self.brief['id'], (context, 'research_brief'))
-        if purpose in ('code', 'reference', 'safeguard'):
-            deliver(inputs['context']['experiment_ref'], (context, 'frozen_experiment'))
+        if purpose in ('code', 'safeguard'):
+            deliver(inputs['context'].get('request_ref', inputs['context']['experiment_ref']), (context, 'original_request'))
+            if inputs['context']['experiment_ref'] != inputs['context'].get('request_ref'):
+                deliver(inputs['context']['experiment_ref'], (context, 'frozen_experiment'))
         if purpose == 'evolve':
             context['task'].pop('parent_hypothesis', None)
             deliver(inputs['context']['parent_ref'], (context['task'], 'parent_hypothesis'))
         for ref in self.required_refs(task):
             deliver(ref)
-        if purpose != 'reference':
-            page = self.retriever.retrieve(task['role'], sequence=sequence, visible=lambda c: self.can_read_card(task, c))
-            memory['directory'] = page
-            state = self.memory.snapshot(sequence)
-            latest = page['latest_metareview_ref']
-            self.deliver_bound_feedback(task, memory, state, latest, deliver)
-            if purpose == 'supervise':
-                memory['program_state'] = {k: v for k, v in state['L1'].items() if k != 'open_questions'}
-            if purpose in ('record', 'generate', 'evolve', 'supervise'):
-                memory['recording_status'] = self.memory.recording_status(sequence)
+        history = []
+        for ref in sorted(self.historical_experiment_refs(task)):
+            card = self.require_visible(task, ref)
+            if card['kind'] != 'EvidenceCard':
+                continue
+            entry = self.retriever.entry(card)
+            history.append({k: v for k, v in entry.items() if k in
+                ('ref', 'kind', 'status', 'measurement_source', 'scope', 'body', 'read_card')})
+        if history:
+            memory['research_history'] = {'previous_results': history,
+                'meaning': 'Earlier experiment facts remain available alongside the current research note; full specs and raw data are on demand.'}
+        page = self.retriever.retrieve(task['role'], sequence=sequence, limit=4, visible=lambda c: self.can_read_card(task, c),
+                                       include_body=False)
+        # Explicit retrieval returns usable bodies; the automatic navigation directory
+        # shares already bound bodies and does not inject unrelated card text.
+        for entry in page.get('entries', []):
+            entry.pop('body', None)
+        memory['directory'] = page
+        state = self.memory.snapshot(sequence)
+        if state['L2'] and purpose in ('generate', 'evolve', 'screen', 'position', 'arbitrate', 'rank', 'record'):
+            memory['knowledge_directory'] = {'retrieve_memory': {'query': {'layer': 'L2'}, 'limit': 8},
+                'meaning': '按需查询可见知识状态、复盘时点和后续证据；明确绑定的旧知识保持原版本，不自动替换或注入无关结论。'}
+        latest = page['latest_metareview_ref']
+        self.deliver_bound_feedback(task, memory, state, latest, deliver)
+        if purpose in ('generate', 'evolve', 'screen', 'position', 'arbitrate', 'rank', 'record', 'supervise'):
+            memory['current_research_state'] = self.memory.current_research_state(
+                sequence, visible=lambda c: self.can_read_card(task, c), excluded_refs=delivered, compact=True)
+            review = memory['current_research_state'].get('latest_review', {})
+            for key in ('scientific_analysis', 'generation_guidance', 'blind_spots'):
+                source = {'ref': review.get('ref'), 'field': '/payload/' + key}
+                if key in review and any(row['read_card'] == source for row in memory.get('bound_feedback', [])):
+                    review[key] = {'read_card': source, 'body_location': 'memory.bound_feedback'}
+            for finding in memory['current_research_state'].get('latest_findings', []):
+                ref = finding.get('ref')
+                if ref in presented:
+                    finding.clear()
+                    finding.update(ref=ref, body_location='memory.cards', read_card={'ref': ref})
+        if purpose == 'supervise':
+            memory['program_state'] = {k: v for k, v in state['L1'].items() if k != 'open_questions'}
+        if purpose in ('record', 'generate', 'evolve', 'supervise'):
+            memory['recording_status'] = self.memory.recording_status(sequence, visible=lambda c: self.can_read_card(task, c))
         budget = self.budget.input_receipt()
         context.update(available_seconds=budget['remaining_seconds'], budget_receipt=budget)
         if 'literature_fetch' in TASKS[purpose]['tools']:
             context['literature_capabilities'] = {'pdf_text_extraction': find_spec('pypdf') is not None,
                 'pdf_dependency': 'pypdf', 'note': 'PDF 解析依赖未安装时只能保留原件，不能声称读过正文；HTTP/解析失败保留为未核实。'}
-        if purpose in ('code', 'reference', 'safeguard'):
+        if purpose in ('code', 'safeguard'):
             context['numeric_imports'] = sorted(NUMERIC_IMPORTS)
             context['code_interface'] = (ROOT / 'QAViT/docs/CODE_INTERFACES.md').read_text()
             context['public_interface_assets'] = [str(ROOT / 'QAViT/tools/ptq_agent/execution' / name)
@@ -708,7 +957,9 @@ class RoleInteraction:
             from tools.profiling import PROFILE_NAMES
             context['services'] = {**SERVICES, 'profile': {**SERVICES['profile'], 'tools': list(PROFILE_NAMES)}}
             context['experiment_interface'] = (ROOT / 'QAViT/docs/EXPERIMENT_INPUTS.md').read_text()
-            context['method_catalog'] = [{k: row[k] for k in ('id', 'targets', 'document')}
+            context['method_catalog'] = [{**{k: row[k] for k in ('id', 'title', 'targets', 'document')},
+                'applicable_questions': row.get('tags', []),
+                'read_asset': {'asset': 'methods/' + row['document']}}
                 for row in read_json(ROOT / 'QAViT/docs/methods/index.json')['methods']]
             draft = inputs['context'].get('experiment_draft')
             if inputs['context'].get('experiment_ref'):
@@ -717,9 +968,7 @@ class RoleInteraction:
             context['data_receipt'] = data_receipt(self.brief['payload'], (draft or {}).get('execution'), evidence=evidence)
             context['data_receipt']['selection_source'] = (inputs['context'].get('experiment_ref') or 'context.task.experiment_draft.execution') if draft else '尚未提交本实验数据选择'
         if purpose == 'safeguard':
-            for key, artifact in (('candidate_source', inputs['context']['candidate']),
-                                  ('independent_reference_source', inputs['context']['reference'])):
-                self.deliver_asset(task, context, key, artifact)
+            self.deliver_asset(task, context, 'candidate_source', inputs['context']['candidate'])
         if purpose == 'code' and inputs['context'].get('revision_feedback', {}).get('previous_candidate'):
             self.deliver_asset(task, context, 'previous_candidate_source', inputs['context']['revision_feedback']['previous_candidate'])
         if purpose == 'rank':
@@ -738,10 +987,16 @@ class RoleInteraction:
                 stop = max(stop, end)
             memory['required_reads'].append({'ref': ref, 'field': field, 'sha256': digest,
                 'total_characters': len(canonical(value)), 'next_offset': int(stop) if stop < len(canonical(value)) else None,
-                'reason': '当前任务的必需字段'})
-            context['task'][key] = {'read_card': {'ref': ref, 'field': field}, 'required': True}
-        bodies = self.complete_tool_bodies(task)
+                'reason': '当前任务的长字段深读入口'})
+            context['task'][key] = {'read_card': {'ref': ref, 'field': field}, 'required': False}
         self.coalesce_feedback(memory, presented, bodies)
+        notes = [(child, child['inputs']['research_note']) for _, child, _ in self.result_values(task)
+                 if child['kind'] == 'experiment_request' and child['inputs'].get('research_note')]
+        if notes:
+            child, note = notes[-1]
+            memory['research_continuity'] = {'current_note': note,
+                'read_card': {'ref': child['task_card'], 'field': '/payload/inputs/research_note'},
+                'meaning': 'Researcher-authored working understanding; source evidence retains independent status.'}
         context['tool_results'] = self.compact_results(task, presented, memory.get('asset_locations', {}), memory.get('field_manifest', []), bodies)
         handle_refs = set(delivered)
         handle_refs.update(row['ref'] for row in memory.get('directory', {}).get('entries', []))
@@ -752,11 +1007,14 @@ class RoleInteraction:
                 handle_refs.update(r for r in (result.get('ref'), result.get('id')) if r in self.journal.cards)
         memory['source_handles'] = {self.retriever.handle(r): r for r in sorted(handle_refs)
                                     if r in self.journal.card_versions and self.can_read_card(task, self.journal.card(r))}
-        context['reading_instructions'] = ('按 purpose 使用已交付正文；required_reads/required_assets 是必读而非建议。'
-            'Evidence 的大型纯数值数组/状态以精确字段入口和哈希交付，按科研需要读取；逐项标量统计不作摘要。'
-            '完全相同的重复结构仅保留首次正文，后续引用该字段与哈希；不同统计值全部保留。'
+        context['reading_instructions'] = ('按 purpose 使用已交付正文；required_reads/required_assets 是未完整交付材料的深读入口，按当前判断需要读取，不以分页完成度阻塞提交。'
+            'Evidence 大型表格/数组默认给有界客观统计、展示覆盖、正负混合提醒、极值位置和哈希入口；未展示指标可能含反证。均值仅描述性，不是合并科研指标；概览不表示已读全部行。'
+            '用 read_card 的 select 按位点、token、指标与数值范围定位；取消 select 即可完整分页读原件。'
             '可同批调用多次 read_card/read_asset 或分页 retrieve_memory；无需每次先检索。'
             '同一正文只在一个位置提供，续调保留已读分段；历史原件可按目录读取。反馈不是冻结规格或角色策略。')
+        context['reading_instructions'] += (' source_refs 是已归档来源，evidence_refs/sources.ref 是研究者实际采用的支持；'
+            '当前假说、裁决和实验请求明确采用的 Evidence 主动交付有界观测及真实实验条件；来源链不自动展开为全历史。'
+            'recording_status 区分事实归档与待完成复盘，knowledge_directory 保留结论状态、复盘时点及新证据检索入口。')
         return context
 
     def deliver_asset(self, task, context, key, artifact):
@@ -780,7 +1038,7 @@ class RoleInteraction:
             for start, end in sorted(ranges):
                 if start > stop: break
                 stop = max(stop, end)
-            context[key] = {'asset': str(path), 'sha256': digest, 'required': True}
+            context[key] = {'asset': str(path), 'sha256': digest, 'required': False}
             context['memory'].setdefault('required_assets', []).append({**context[key], 'total_characters': len(text),
                 'next_offset': stop if stop < len(text) else None})
 
@@ -788,7 +1046,12 @@ class RoleInteraction:
         """完整且核对过的工具正文范围；选最宽范围的一处交付，不凭裸 ID。"""
         groups = {}
         paths = {str(self.journal.card_path(r)): r for r in self.journal.cards}
-        for _, child, result in self.result_values(task):
+        values = list(self.result_values(task))
+        note_boundary = max((i for i, (_, child, _) in enumerate(values)
+            if child['kind'] == 'experiment_request' and child['inputs'].get('research_note')), default=-1)
+        for index, (_, child, result) in enumerate(values):
+            if index < note_boundary:
+                continue
             if child['kind'] != 'host_tool' or child['state'] != 'completed' or not isinstance(result, dict):
                 continue
             name = child['inputs']['name']
@@ -857,15 +1120,26 @@ class RoleInteraction:
                 entry.update(body_location=location, version=self.journal.card(ref)['version'])
                 moved.add((ref, pointer))
         memory['field_manifest'] = [f for f in memory.get('field_manifest', []) if (f['ref'], f['field']) not in moved]
+        review = memory.get('current_research_state', {}).get('latest_review', {})
+        ref = review.get('ref')
+        for key in ('scientific_analysis', 'generation_guidance', 'blind_spots'):
+            path = '/payload/' + key
+            if key in review and any(g['ref'] == ref and (not g['field'] or path == g['field']
+                    or path.startswith(g['field'] + '/')) for g in bodies):
+                review[key] = {'read_card': {'ref': ref, 'field': path},
+                               'body_location': 'tool_results complete body'}
 
     def compact_results(self, task, delivered, asset_locations=None, delivered_fields=(), complete_bodies=None):
         result, seen = [], set()
         asset_locations = asset_locations or {}
         values = list(self.result_values(task))
+        note_boundary = max((i for i, (_, child, _) in enumerate(values)
+            if child['kind'] == 'experiment_request' and child['inputs'].get('research_note')), default=-1)
         complete_bodies = self.complete_tool_bodies(task) if complete_bodies is None else complete_bodies
         paths = {str(self.journal.card_path(r)): r for r in self.journal.cards}
         full_refs = {r for r, view in delivered.items() if view == self.journal.card(r)}
-        full_refs |= {v['id'] for _, _, v in values if isinstance(v, dict) and v.get('id') in self.journal.cards
+        full_refs |= {v['id'] for index, (_, _, v) in enumerate(values) if index >= note_boundary
+                      and isinstance(v, dict) and v.get('id') in self.journal.cards
                       and v == self.journal.card(v['id'])}
         direct_full = {r for r, view in delivered.items() if view == self.journal.card(r)}
         card_paths = {str(self.journal.card_path(ref)): ref for ref in full_refs}
@@ -890,7 +1164,7 @@ class RoleInteraction:
             return (type(start) is int and start >= 0 and isinstance(part, str)
                     and value.get('sha256') == digest and value.get('total_characters') == len(text)
                     and text[start:start + len(part)] == part)
-        for row, child, value in values:
+        for index, (row, child, value) in enumerate(values):
             item = {k: deepcopy(row[k]) for k in ('task', 'state', 'call_id', 'name', 'outputs', 'error') if k in row}
             item['source_ref'] = child['task_card']
             if child['kind'] == 'host_tool':
@@ -899,10 +1173,23 @@ class RoleInteraction:
                     'read_card': {'ref': child['task_card'], 'field': '/payload/inputs/arguments'}}
             elif child['kind'] == 'literature':
                 item['arguments'] = {k: child['inputs'][k] for k in ('query', 'url') if k in child['inputs']}
+            elif child['kind'] == 'experiment_request':
+                item['question'] = child['inputs']['draft']['question']
+                if child['inputs'].get('research_note'):
+                    item['research_note'] = {'read_card': {'ref': child['task_card'], 'field': '/payload/inputs/research_note'},
+                        'body_location': 'memory.research_continuity' if index == note_boundary else 'historical research note'}
             ref = value.get('ref', value.get('id')) if isinstance(value, dict) else None
             field = value.get('field', '') if isinstance(value, dict) else ''
             if isinstance(value, dict) and value.get('asset') in paths:
                 ref, field = paths[value['asset']], ''
+            if (index < note_boundary and child['kind'] == 'host_tool' and child['state'] == 'completed'
+                    and child['inputs']['name'] in ('read_card', 'read_asset', 'retrieve_memory')):
+                item['result'] = {'read_card': {'ref': child['task_card'], 'field': '/payload/result'},
+                    'sha256': fingerprint(value), 'body_location': 'history preceding explicit research_note',
+                    'source_ref': ref, 'field': field,
+                    'meaning': 'Historical read; current note and bound evidence remain visible. Original is available on demand.'}
+                result.append(item)
+                continue
             covering = next((g for g in complete_bodies if child['task_id'] in g['covered_tasks'] and g['ref'] == ref and
                 (not g['field'] or field == g['field'] or field.startswith(g['field'] + '/'))), None)
             if covering and child['task_id'] not in covering['tasks']:
@@ -957,7 +1244,7 @@ class RoleInteraction:
         allowed = {}
         purpose, sequence = task['inputs']['purpose'], self.read_view(task)['sequence']
         public = {str((ROOT / 'QAViT/tools/ptq_agent/execution' / name).resolve())
-                  for name in PUBLIC_INTERFACE_FILES} if purpose in ('code', 'reference', 'safeguard') else set()
+                  for name in PUBLIC_INTERFACE_FILES} if purpose in ('code', 'safeguard') else set()
         static = self.read_view(task).get('static_assets')
         if static is None:
             paths = [p for p in (ROOT / 'QAViT/docs').rglob('*') if p.suffix in ('.md', '.json', '.txt')]
@@ -966,24 +1253,36 @@ class RoleInteraction:
                       any(root in p.resolve().parents for root in (ROOT / 'reference', ROOT / 'QAViT/docs'))}
         allowed.update(static)
         allowed.update({path: file_sha256(path) for path in public})
-        cards = [self.journal.card(ref) for ref, entry in self.journal.cards.items() if entry['sequence'] <= sequence]
+        refs = [ref for ref, entry in self.journal.cards.items() if entry['sequence'] <= sequence]
+        cards = [self.journal.card(ref) for ref in refs if self.journal.cards[ref]['kind'] != 'TaskCard']
         tasks = self.visible_task_snapshots(sequence)
+        # Committed queue snapshots already contain engineering ownership. Do not reload
+        # every historical TaskCard to rediscover it; validate actual cards before any grant.
+        task_bodies = {e['task']['task_card']: e['task'] for e in self.journal.events
+                       if e['commit_sequence'] <= sequence and e['type'] == 'task_snapshot'}
+        for ref in refs:
+            if self.journal.cards[ref]['kind'] == 'TaskCard' and ref not in task_bodies:
+                task_bodies[ref] = self.journal.card(ref)['payload']
         # Ownership comes from host outputs, never from arbitrary path mentions in science prose.
         # The first committed owner wins: a visible re-reference cannot launder a private file.
-        owners = {str(self.journal.card_path(c['id']).resolve()): (c, file_sha256(self.journal.card_path(c['id']))) for c in cards}
+        # Only files actually granted below need a byte hash; private historical TaskCards do not.
+        owners = {str(self.journal.card_path(ref).resolve()): (ref, None) for ref in refs}
         def register(owner, values):
             for path, digest in self.asset_references(values).items():
                 owners.setdefault(path, (owner, digest))
-        for card in cards:
-            body = card['payload']
-            if card['kind'] == 'EvidenceCard' and card['author'] == 'program':
-                register(card, body.get('artifacts', []))
-            elif card['kind'] == 'TaskCard':
+        science = {c['id']: c for c in cards}
+        for ref in refs:
+            if ref in science:
+                card = science[ref]
+                if card['kind'] == 'EvidenceCard' and card['author'] == 'program':
+                    register(ref, card['payload'].get('artifacts', []))
+            else:
+                body = task_bodies[ref]
                 current = tasks.get(body['task_id'])
-                owner = self.journal.card(current['task_card']) if current else card
-                if body['inputs'].get('purpose') in ('code', 'reference'):
+                owner = current['task_card'] if current else ref
+                if body['inputs'].get('purpose') in ('code',):
                     register(owner, (body.get('result') or {}).get('artifact'))
-                if body['kind'] in ('literature', 'experiment', 'verification'):
+                if body['kind'] in ('literature', 'experiment'):
                     register(owner, body.get('result'))
                     receipts = (body.get('result') or {}).get('receipts', {})
                     if isinstance(receipts, dict):
@@ -991,53 +1290,59 @@ class RoleInteraction:
                 if body.get('request_path'):
                     directory = Path(body['request_path']).parent
                     register(owner, [{'path': str(directory / name)} for name in ('request.json', 'result.json', 'worker.log')])
+        def permitted(ref):
+            if ref in task_bodies and not self.task_card_entitled(task, task_bodies[ref], ref):
+                return False
+            return self.can_read_card(task, self.journal.card(ref))
+        grants = {ref: permitted(ref) for ref in {owner for owner, _ in owners.values()}}
         for path, (owner, digest) in owners.items():
-            if self.can_read_card(task, owner) and (purpose != 'reference' or path == str(self.journal.card_path(owner['id']).resolve())):
+            if grants[owner]:
                 allowed[path] = digest
-        if purpose != 'reference':
-            # 发布后的测量原件随 Evidence 开放；仅允许真正产出该 Evidence 的数值任务。
-            # 科研正文提及的任意路径、候选源码或另一分支的私有证据不能借此开放。
-            for card in cards:
-                if card['kind'] != 'EvidenceCard' or card['author'] != 'program' or not self.can_read_card(task, card):
-                    continue
-                for item in card['payload']['artifacts']:
-                    path = str(Path(item['path']).resolve())
-                    owner, _ = owners.get(path, (card, None))
-                    body = owner['payload']
-                    if (owner['id'] == card['id'] or (owner['kind'] == 'TaskCard' and body['kind'] == 'experiment'
-                            and card['id'] in body['outputs']
-                            and body['inputs'].get('experiment_ref') == card['payload']['experiment_ref'])):
-                        allowed[path] = item['sha256']
-        if purpose != 'reference':
-            # Code manifests are written and content-bound by the host. A mere path/hash pair
-            # is insufficient; the manifest's frozen experiment must itself be visible.
-            candidates = self.asset_references(self.bound_code_sources(task))
-            for card in cards:
-                if card['kind'] == 'TaskCard' and self.can_read_card(task, card):
-                    candidates.update(self.asset_references((card['payload'].get('result') or {}).get('artifact')))
-            for path in candidates:
-                # Manifest validation proves identity, not permission to bypass its producer.
-                if path in owners and not self.can_read_card(task, owners[path][0]):
-                    continue
-                source = Path(path)
-                if source.name != 'implementation.py' or source.parent.parent != self.run_dir / 'code':
-                    continue
-                manifest_path = source.with_name('manifest.json')
-                if not manifest_path.is_file():
-                    continue
-                manifest = read_json(manifest_path)
-                ref = manifest.get('experiment_ref')
-                if ref not in self.journal.cards:
-                    continue
-                spec = self.journal.card(ref)
-                if (self.can_read_card(task, spec) and manifest.get('path') == str(source)
-                        and manifest.get('experiment_sha256') == spec['content_sha256']
-                        and manifest.get('source_sha256') == file_sha256(source)):
-                    allowed[path] = manifest['source_sha256']
+        # 发布后的测量原件随 Evidence 开放；仅允许真正产出该 Evidence 的数值任务。
+        # 科研正文提及的任意路径、候选源码或另一分支的私有证据不能借此开放。
+        for card in cards:
+            if card['kind'] != 'EvidenceCard' or card['author'] != 'program' or not self.can_read_card(task, card):
+                continue
+            for item in card['payload']['artifacts']:
+                path = str(Path(item['path']).resolve())
+                owner_ref, _ = owners.get(path, (card['id'], None))
+                owner = self.journal.card(owner_ref)
+                body = owner['payload']
+                if (owner['id'] == card['id'] or (owner['kind'] == 'TaskCard' and body['kind'] == 'experiment'
+                        and card['id'] in body['outputs']
+                        and body['inputs'].get('experiment_ref') == card['payload']['experiment_ref'])):
+                    allowed[path] = item['sha256']
+        # Code manifests are written and content-bound by the host. A mere path/hash pair
+        # is insufficient; the manifest's frozen experiment must itself be visible.
+        candidates = self.asset_references(self.bound_code_sources(task))
+        for ref in task_bodies:
+            if grants.get(ref):
+                card = self.journal.card(ref)
+                candidates.update(self.asset_references((card['payload'].get('result') or {}).get('artifact')))
+        for path in candidates:
+            # Manifest validation proves identity, not permission to bypass its producer.
+            if path in owners and not grants[owners[path][0]]:
+                continue
+            source = Path(path)
+            if source.name != 'implementation.py' or source.parent.parent != self.run_dir / 'code':
+                continue
+            manifest_path = source.with_name('manifest.json')
+            if not manifest_path.is_file():
+                continue
+            manifest = read_json(manifest_path)
+            ref = manifest.get('experiment_ref')
+            if ref not in self.journal.cards:
+                continue
+            spec = self.journal.card(ref)
+            if (self.can_read_card(task, spec) and manifest.get('path') == str(source)
+                    and manifest.get('experiment_sha256') == spec['content_sha256']
+                    and manifest.get('source_sha256') == file_sha256(source)):
+                allowed[path] = manifest['source_sha256']
         return {path: digest or file_sha256(path) for path, digest in allowed.items() if Path(path).is_file()
                 and (path in public or any(root in Path(path).parents
                                            for root in (self.run_dir, ROOT / 'reference', ROOT / 'QAViT/docs')))}
 
+    @journal_read
     def host_tool(self, task):
         inputs = task['inputs']
         name, args = inputs['name'], inputs['arguments']
@@ -1050,8 +1355,22 @@ class RoleInteraction:
         validate_schema(args, schemas[name], name)
         if name == 'read_card':
             card = self.require_visible(parent, args['ref'])
-            field = args.get('field', '')
+            field = args.get('field', '/payload/observations' if 'select' in args else '')
             value = self.card_field(card, field)
+            if 'select' in args:
+                if card['kind'] != 'EvidenceCard':
+                    raise ContractError('read_card.select 仅用于 EvidenceCard；其它卡片按 field 读取')
+                start, limit = args.get('offset', 0), min(args.get('limit', 20), 50)
+                rows, total = [], 0
+                for row in selected_leaves(value, field, args['select']):
+                    if start <= total < start + limit:
+                        rows.append(row)
+                    total += 1
+                return {'ref': card['id'], 'field': field, 'sha256': fingerprint(value),
+                    'select': args['select'], 'entries': rows, 'total': total, 'offset': start,
+                    'next_offset': start + limit if start + limit < total else None,
+                    'read_sequence': self.read_view(parent)['sequence'],
+                    'meaning': '精确筛选的原始标量；field 可直接读取原文，未将筛选结果视作完整原件'}
             text = canonical(value)
             if not field and 'offset' not in args and 'limit' not in args and len(text) <= self.PAGE_CHARACTERS:
                 return card
@@ -1060,7 +1379,7 @@ class RoleInteraction:
                     'text': text[start:start + limit], 'total_characters': len(text),
                     'next_offset': start + limit if start + limit < len(text) else None}
         if name == 'retrieve_memory':
-            query = deepcopy(args['query'])
+            query = deepcopy(args.get('query') or {})
             if 'evidence_ids' in query:
                 aliases = {self.retriever.handle(r): r for r in self.journal.card_versions}
                 query['evidence_ids'] = [aliases.get(r, r) for r in query['evidence_ids']]
@@ -1075,7 +1394,7 @@ class RoleInteraction:
                 path = (ROOT / 'QAViT/docs' / args['asset']).resolve()
             allowed = self.authorized_assets(parent)
             if str(path) not in allowed or not path.is_file():
-                raise ContractError('资产读取限本调用已提交授权来源；独立参考/立场隔离禁止目录旁路')
+                raise ContractError('资产读取限本调用已提交授权来源；立场隔离禁止目录旁路')
             expected = allowed[str(path)]
             digest = file_sha256(path)
             if expected and digest != expected:
@@ -1111,7 +1430,8 @@ class RoleInteraction:
             name, args = call["name"], call["arguments"]
             if name == "request_experiment":
                 identifier = self.queue.enqueue(key, "experiment_request", role="supervisor", inputs={
-                    "draft": drafts[call["id"]], "requester": task["role"], "refs": task["inputs"]["refs"],
+                    "draft": drafts[call["id"]], "original_request": deepcopy(args["experiment"]), "requester": task["role"], "refs": task["inputs"]["refs"],
+                    **({'research_note': args['research_note']} if args.get('research_note') else {}),
                     "call_id": call["id"], "parent_task": task["task_id"]})
             elif name in ("literature_search", "literature_fetch"):
                 identifier = self.queue.enqueue(key, "literature", inputs={
@@ -1129,26 +1449,29 @@ class RoleInteraction:
     def validate_review(self, task, payload):
         purpose = task["inputs"]["purpose"]
         # 身份由 bind_submission 核对，screening 结构/资格一致性由完整卡片合同核对。
-        if purpose == "position":
-            for field in ("arguments", "objections", "responses_to_prior", "key_predictions"):
-                if field not in payload:
-                    raise ContractError("辩论立场缺少 " + field)
         if purpose == "arbitrate":
-            validate_verdict(payload, task["inputs"]["context"]["exchange"])
             if payload["outcome"] == "ineligible":
                 raise ContractError("硬性不合格由筛查阶段决定，辩论不能偷偷跳过审查")
-        if purpose in ("experiment_approval", "safeguard") and type(payload.get("approved")) is not bool:
+        if purpose == "safeguard" and type(payload.get("approved")) is not bool:
             raise ContractError("批准结果必须为 boolean")
         if purpose == "safeguard":
-            for field in ("fidelity", "numerical_correctness", "experimental_validity"):
-                if not payload.get(field):
-                    raise ContractError("Safeguard 缺少完整三项审查")
-            if payload["approved"] and task["inputs"]["context"]["numerical"]["status"] != "passed":
-                raise ContractError("实际数值验证失败，LLM 不得放行")
+            experiment = self.journal.card(task['inputs']['context']['experiment_ref'])
+            candidate = task['inputs']['context']['candidate']
+            from tools.safeguards import verify_artifact
+            verify_artifact(candidate, experiment)
+            binding = {'experiment_ref': experiment['id'], 'experiment_sha256': experiment['content_sha256'],
+                       'request_ref': candidate['experiment_ref'], 'request_sha256': candidate['experiment_sha256'],
+                       'source_sha256': candidate['source_sha256']}
+            if 'reviewed_binding' in payload and payload['reviewed_binding'] != binding:
+                raise ContractError('Safeguard.reviewed_binding 与当前审查输入冲突')
+            payload['reviewed_binding'] = binding
+
 
 
     def scientific_refs(self, payload, task):
         refs = set(payload.get("evidence_refs", []))
+        # Explicitly used sources are distinct from all archived tool outcomes.
+        refs.update(row['ref'] for row in payload.get('sources', []) if row.get('ref') in self.journal.cards)
         for row in (payload.get("knowledge_updates", []) + payload.get("judgment_audit", [])
                     + payload.get('predictive_metrics', []) + payload.get('changed_judgments', [])):
             refs.update(row.get("evidence_refs", []))
@@ -1160,7 +1483,8 @@ class RoleInteraction:
         for row in payload.get("feedback_used", []):
             if row.get("metareview_ref"):
                 refs.add(row["metareview_ref"])
-        for claim_id, revision in self.prior_basis_pairs(payload):
+        published = {k: v for k, v in payload.items() if k not in ('pending_knowledge_updates', 'submission_issues')}
+        for claim_id, revision in self.prior_basis_pairs(published):
             self.prior_basis_field(task, claim_id, revision)
             refs.add(revision)
         for ref in refs:
@@ -1177,7 +1501,20 @@ class RoleInteraction:
         content = decision.get('content') if isinstance(decision, dict) else None
         return content if isinstance(content, dict) else None
 
+    @classmethod
+    def merge_submission_patch(cls, task, content):
+        """所有角色只修本任务已拒稿的必要顶层字段；不会重做科研推理。"""
+        prior = cls.rejected_draft(task)
+        if (not isinstance(prior, dict) or set(content) != {'repair_patch'}
+                or not isinstance(content['repair_patch'], dict)):
+            raise ContractError('repair_patch 仅能修复本任务上次被拒的完整提交')
+        if any(key.startswith(field + suffix) for key in content['repair_patch']
+               for field in prior for suffix in ('.', '[')):
+            raise ContractError('repair_patch 仅替换顶层字段；数组或对象须提供完整修正值，不使用嵌套路径')
+        return {**deepcopy(prior), **deepcopy(content['repair_patch'])}
 
+
+    @journal_read
     def submit(self, task, content, receipt_path, *, author=None):
         if not isinstance(content, dict):
             raise ContractError("submit.content 必须是对象")
@@ -1185,21 +1522,8 @@ class RoleInteraction:
         task = deepcopy(task)
         task['_read_view'] = self.read_view(task)
         purpose, context = task["inputs"]["purpose"], task["inputs"]["context"]
-        if task.get('request_path'):
-            delivered = read_json(task['request_path'])['spec']['context']['memory']
-            missing_reads = [r for r in delivered.get('required_reads', []) + delivered.get('required_assets', [])
-                             if r['next_offset'] is not None]
-            if missing_reads:
-                raise ContractError('尚有未读完的必需材料；按 required_reads/required_assets 分段读取后提交: ' + canonical(missing_reads))
-        if purpose == 'record' and 'repair_patch' in content:
-            prior = self.rejected_draft(task)
-            if not isinstance(prior, dict) or not isinstance(content['repair_patch'], dict) or set(content) != {'repair_patch'}:
-                raise ContractError('Recorder repair_patch 仅能修复本任务上次被拒的完整提交')
-            if any(key.startswith(field + suffix) for key in content['repair_patch']
-                   for field in PAYLOAD_SCHEMAS['MetareviewCard']['properties'] for suffix in ('.', '[')):
-                raise ContractError('repair_patch 仅替换 Meta-review 顶层字段，不支持 knowledge_updates[0].scope 等路径；'
-                                    '请用 {repair_patch:{knowledge_updates:[完整修正数组]}} 或提交完整正文')
-            content = {**deepcopy(prior), **content['repair_patch']}
+        if 'repair_patch' in content:
+            content = self.merge_submission_patch(task, content)
         schema = submission_schema(purpose)
         if schema and purpose != 'plan_l3':
             validate_schema(content, schema, 'scientific_submission')
@@ -1223,7 +1547,7 @@ class RoleInteraction:
             content = {k: v for k, v in content.items() if k != "verdict_revisions"}
         refs = set(task["inputs"]["refs"])
         cards, events = [], []
-        if purpose in ("code", "reference"):
+        if purpose in ("code",):
             experiment = self.journal.card(context["experiment_ref"])
             artifact = write_artifact(self.run_dir, experiment, content, task["role"])
             self.queue.finish(task["task_id"], result={"artifact": artifact, "receipt": str(receipt_path)})
@@ -1232,10 +1556,16 @@ class RoleInteraction:
             self.queue.finish(task["task_id"], result=content)
             return
         if purpose == "plan_l3":
+            if 'defer_reason' in content:
+                if set(content) != {'defer_reason'} or not isinstance(content['defer_reason'], str) or not content['defer_reason'].strip():
+                    raise ContractError('延期只能提交非空 defer_reason；不能同时提交执行草案或伪称实验完成')
+                self.queue.finish(task['task_id'], result={'defer_reason': content['defer_reason']})
+                return
+            original_request = deepcopy(content)
             content = self.broker.preflight(self.resolve_card_refs(task, content))
             if content["level"] != "L3":
                 raise ContractError("正式计划必须明确 L3")
-            self.queue.finish(task["task_id"], result={"draft": content})
+            self.queue.finish(task["task_id"], result={"draft": content, "original_request": original_request})
             return
         kind = TASKS[purpose]["output"]
         validate_payload(kind, content)
@@ -1254,10 +1584,6 @@ class RoleInteraction:
                 refs.update(parents)
                 if not content.get("improvement_objective"):
                     raise ContractError("H4 需要明确基于辩论/证据的改进目标")
-            assigned = [r for r in task['inputs']['refs'] if self.journal.cards[r]['kind'] == 'MetareviewCard']
-            if purpose == "generate" and assigned:
-                if not any(row.get("metareview_ref") == assigned[-1] and row.get("change") for row in content["feedback_used"]):
-                    raise ContractError("下一轮 Generation 必须具体说明如何使用上一轮 Meta-review，不接受仅列引用")
         if kind == "ReviewDecisionCard":
             self.validate_review(task, content)
         if purpose == "rank":
@@ -1266,9 +1592,12 @@ class RoleInteraction:
             selected = content.get("selected_slot")
             if selected not in context["eligible"] and not (selected is None and not context["eligible"]):
                 raise ContractError("所选方案未通过资格审查")
-            if (not isinstance(content.get("selection_basis"), str) or not content["selection_basis"].strip()
-                    or type(content.get("provisional")) is not bool):
-                raise ContractError("排名必须说明选择依据与是否暂定")
+            # The submitted rationale already carries the scientific basis; the
+            # downstream handoff keeps a literal mirror when no separate basis is supplied.
+            content.setdefault("selection_basis", content["rationale"])
+            content.setdefault("provisional", table["requires_provisional_basis"])
+            if type(content["provisional"]) is not bool:
+                raise ContractError("provisional 若提交必须为 boolean")
             winners = [slot for slot, wins in table["wins"].items() if wins == len(context["eligible"]) - 1]
             if winners and selected != winners[0]:
                 raise ContractError("必须选择已结案裁决中直接战胜其余所有合格方案的全胜者")
@@ -1314,6 +1643,7 @@ class RoleInteraction:
                 evidence_refs=content["evidence_refs"], selection={"slot": context["selection"], "review_ref": context["selection_ref"]}))
             events.append({'type': 'recorder_batch_completed', **batch, 'metareview_ref': card['id'],
                            'analysis_scope': content['analysis_scope'],
+                           'pending_knowledge_count': len(content.get('pending_knowledge_updates', [])),
                            'analyzed_judgment_refs': sorted({r['judgment_ref'] for r in content['judgment_audit']})})
             if not staged.exists():
                 atomic_json(staged, card)  # 可恢复的待发布响应，不是事实/成功游标。

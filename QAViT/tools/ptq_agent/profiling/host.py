@@ -154,26 +154,26 @@ class ProfileHost:
 
     def validate_experiment(self, plan):
         from ..execution.plugin_contracts import site_id
+        from ..execution.contracts import normalize_plan
+        plan = normalize_plan(plan)
         shapes = self.shapes()
-        rows = validate_plan(self.backend, plan, self.config, detect(self.backend), shapes)
+        rows = validate_plan(self.backend, plan, self.config, detect(self.backend), shapes,
+                             allow_unknown_shapes=True)
         # 和外层执行器使用同一数值 hash；只改理由/引用也仍是重复实验。
         key = plan_key(plan)
         repeated = [row["trial"] for row in self.state.get("tested_plan_keys", []) if row["key"] == key]
         require(not repeated, f"数值配置重复于已提交候选：{repeated}；请修改数值方案或明确 stop。",
                 code="duplicate_candidate")
-        # 通道/分组轴需要实测形状，不能把仅通过 schema 的草案称作可执行。
-        # per_tensor 不依赖轴，仍允许按需 profile，而不强制全模型统计。
+        # Preparation captures missing shapes in this request before numeric use.
         missing = [site_id(layer) for layer in plan["layers"]
                    if layer["activation"] and layer["activation"]["granularity"] != "per_tensor"
                    and not shapes.get(site_id(layer))]
-        require(not missing, f"缺少依赖量化轴的实测激活形状：{missing}。"
-                "普通模块用 profile_distribution；语义位点用 profile_plugin_sites，"
-                "读取 calibration 样本后再提交。此校验不消耗候选次数。", code="missing_profile")
         resources = check_resources(self.backend, plan, self.config, self.run_dir.parent)
         return {
             "valid": True,
             "configuration_hash": fingerprint(plan),
             "site_checks": rows,
+            "shape_checks_deferred_to_prepare": missing,
             "resources": resources,
         }
 

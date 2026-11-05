@@ -1,19 +1,18 @@
-# 本次任务：交付候选实现源码
+# 本次任务：交付单份实现
 
-读取 context.frozen_experiment 与 interface_reference；只实现冻结规格指定的接口和算法。若必要数学语义在授权资料中仍不明确，返回具体 clarify；不改变语义的实现选择由你完成。
+读取 context.original_request、程序提供的执行条件和 context.code_interface。实现原始需求，完成必要的接口及执行选择；若已有当前源码和失败反馈，修订该实现。仅真正影响科学含义且无法从已有材料确定的歧义需要 clarify。
 
-按 execution.interface 实现所需顶层函数：
+按所选 interface 提供顶层函数：
 - quantizer_v1：fit(x, parameters) 和 apply(x, state, parameters)。
-- executor_v1：build_plan(backend, cfg, experiment_payload, parameters)；只有需要且协议支持时才提供 make_executor(backend, cfg, data)。
+- executor_v1：build_plan(backend, cfg, experiment_payload, parameters)；只有协议支持且需要时才提供 make_executor(backend, cfg, data)。
 - experiment_v1：execute(experiment_payload, context)。
 
-函数签名、返回值和状态语义以已读接口文档及冻结规格为准。fit 只使用指定校准数据；apply 不得修改输入或冻结状态。不得为迎合测试引入未声明的特例、调整公式、改变数据或放宽容差。依赖必须在当前宿主允许范围内；缺少能力时指出具体依赖，不能自建文件、进程或网络入口。
+函数签名、返回值和状态语义遵守 context.code_interface 及公共接口文档。fit 只使用指定校准数据；apply 不得修改输入或冻结状态。保持真实浮点基准、基线对照和误差测量。结果组织应清晰可解释，无须复刻研究者未指定的内部变量名或固定输出树。
 
-content 返回一个对象，含且完整填写：
-- interface：精确等于 execution.interface 的接口名字符串，不附函数签名或解释。
-- source：完整 Python 源码字符串，包含所需导入、函数和辅助定义；不是补丁、Markdown 代码块、文件路径或省略号。
-- explanation：非空字符串，说明关键公式和实现的对应、张量轴与状态行为、依赖及已知覆盖边界。
+content 返回对象，source 是唯一必需字段：
+- interface：可省略，程序采用当前已绑定的受支持接口；显式提交时须与该接口一致。
+- source：完整 Python 源码字符串，包含所需导入、函数和辅助定义，不使用补丁、Markdown 包装或省略号。
+- explanation：可选，按需说明关键算法、统计位点、张量轴和状态行为，以及具体执行选择的依据。
+- execution_choices：需要补充时提供执行参数对象，只含必要选择；已知模型、数据、源码哈希、资源和来源由程序绑定。
 
-不返回 ReviewDecisionCard 或 ExperimentCard。宿主会保存源码、执行验证；没有执行反馈时，不宣称已通过语法、数值或任务测试。
-
-context.code_interface 已直接提供公共接口与验证约定；需要具体方法实现时再按 public_interface_assets 读取。
+程序保存源码与不可变原始需求，补齐执行记录后交 Safeguard 审查，再执行真实实验。无需交付独立参考代码或双实现比较夹具。公共接口已经直接提供，需要具体实现细节时再读取 public_interface_assets。

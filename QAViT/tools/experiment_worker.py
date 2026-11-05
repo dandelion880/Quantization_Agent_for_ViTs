@@ -12,10 +12,20 @@ from tools.profiling import profile_host, register_trials, restore_profile_evide
 from tools.safeguards import validate_approval
 
 
-def backend_and_data(execution):
+def tensor_state(value):
+    import torch
+    if torch.is_tensor(value):
+        return {"dtype": str(value.dtype), "shape": list(value.shape), "values": value.detach().cpu().tolist()}
+    if isinstance(value, dict):
+        return {str(k): tensor_state(v) for k, v in value.items()}
+    if isinstance(value, (list, tuple)):
+        return [tensor_state(v) for v in value]
+    return value
+
+
+def backend_configuration(execution):
+    """Resolve the existing effective numerical configuration without loading assets."""
     from ptq_agent.configuration import load_config
-    from ptq_agent.backends.server import ServerBackend
-    from ptq_agent.execution.evaluation import VerifiedManifestData
     adapter = execution["backend"]
     path = adapter.get("config_asset", {}).get("path") or adapter.get("config_path")
     if path:
@@ -36,6 +46,14 @@ def backend_and_data(execution):
     cfg["constraints"].update(precision_mode="mixed", allowed_formats=list(FORMATS),
                               fixed_weight_format=None, fixed_activation_format=None, fixed_layers={})
     cfg["backend"].update(deepcopy(adapter.get("backend_overrides", {})))
+    return cfg
+
+
+def backend_and_data(execution):
+    from ptq_agent.backends.server import ServerBackend
+    from ptq_agent.execution.evaluation import VerifiedManifestData
+    adapter = execution["backend"]
+    cfg = backend_configuration(execution)
     if adapter.get("kind") in ("fixture", "factory"):
         factory = adapter.get("factory_asset", {}).get("path")
         if not factory:
@@ -56,9 +74,9 @@ def backend_and_data(execution):
     return backend, cfg, VerifiedManifestData(backend, cfg)
 
 
-def plan_constraints(plan, choices, backend=None, cfg=None, contract=None):
+def plan_constraints(plan, choices, backend=None, cfg=None, contract=None, *, native=True):
     from core.execution_contract import check_plan
-    return check_plan(plan, choices, backend, cfg, contract)
+    return check_plan(plan, choices, backend, cfg, contract, native=native)
 
 
 def module_from_approval(approval, experiment):
@@ -141,7 +159,7 @@ def profile_service(experiment, backend, cfg, data, directory):
             artifacts.append(asset(host.run_dir / reference))
     return {"observations": {"tool": name, "result": result["data"]},
             "artifacts": artifacts,
-            "sample_selection": {"split": "calibration", **{k: args[k] for k in ("count", "offset", "seed") if k in args}},
+            "sample_selection": deepcopy(measured),
             "execution_facts": {"measurement_kind": "profile_measurement" if parameters else "unverified_scope",
                                 "data": measured, "sites": sorted(sites), "parameters": parameters}}
 
@@ -154,7 +172,6 @@ def tensor_probe(experiment, backend, cfg, data, directory, approval):
     from ptq_agent.execution.plugin_contracts import WEIGHT_KINDS
     from ptq_agent.execution.model import forward
     from ptq_agent.execution.evaluation import OutputErrors
-    from tools.verification_worker import tensor_state
     spec = experiment["payload"]["execution"]
     sid = spec["site"]
     catalog = site_catalog(backend, cfg)
@@ -272,8 +289,10 @@ def tensor_probe(experiment, backend, cfg, data, directory, approval):
             "sample_selection": {"calibration_ids": selected.ids("calibration"), "evaluation": spec.get("evaluation")},
             "quantizer_state_sha256": state_before,
             "execution_facts": {"measurement_kind": "local_activation_probe", "quantization": {
-                sid: {"weight": None, "activation": {"bits": params["bits"], "granularity": params["granularity"],
-                                                       "axis": params.get("axis")}, "activation_method": spec.get("method", "approved_plugin")}},
+                sid: {"weight": None, "activation": deepcopy(qs),
+                      "activation_method": "approved_plugin" if approval else spec["method"],
+                      **({"method_options": deepcopy(options)} if not approval else {})}},
+                "parameters": deepcopy(params),
                 "data": {"calibration": {"split": "calibration", "sample_count": len(selected.ids("calibration")),
                                           "sample_ids": selected.ids("calibration"), "full_dataset": False},
                          **({"pilot": {"split": spec["evaluation"]["split"], "sample_count": counts["samples"],
@@ -282,7 +301,9 @@ def tensor_probe(experiment, backend, cfg, data, directory, approval):
 
 
 def evaluate_services(experiment, backend, cfg, data, directory, approval):
-    from ptq_agent.execution.pipeline import QuantizationExecutor
+    from ptq_agent.execution.pipeline import QuantizationExecutor, plan_uses_calibration
+    from ptq_agent.execution.model import RTNExecutor
+    from core.execution_contract import validate_plan_schema
     from ptq_agent.execution.evaluation import Evaluator
     from ptq_agent.execution.capabilities import validate_plan, detect
     from tools.evaluating import evaluate
@@ -290,39 +311,81 @@ def evaluate_services(experiment, backend, cfg, data, directory, approval):
     spec = experiment["payload"]["execution"]
     choices = spec["resolved_choices"]
     from ptq_agent.execution.plugin_contracts import site_id
+    native = True
+    model_files = []
+    preparation_reads = {}
     if spec["service"] == "quantize_evaluate":
+        from tools.runtime_interface import ObservedData
         plugin = module_from_approval(approval, experiment) if spec.get('requires_code') else None
         plan = (plugin.build_plan(backend, deepcopy(cfg), deepcopy(experiment["payload"]), deepcopy(spec.get("parameters", {})))
                 if plugin else deepcopy(spec['plan']))
-        coverage = plan_constraints(plan, choices, backend, cfg, spec.get("quantization_contract"))
-        validate_plan(backend, plan, cfg, detect(backend), {})
-        selection = data_view(data, spec["calibration"], "calibration")
-        factory = getattr(plugin, "make_executor", QuantizationExecutor)
-        executor = factory(backend, deepcopy(cfg), selection)
+        selection = data_view(data, spec["calibration"], "calibration") if spec.get("calibration") else data
+        observed = ObservedData(selection)
+        factory = getattr(plugin, "make_executor", RTNExecutor)
+        executor = factory(backend, deepcopy(cfg), observed)
+        native = type(executor) in (RTNExecutor, QuantizationExecutor)
+        if native:
+            plan = validate_plan_schema(plan)
+            if type(executor) is QuantizationExecutor and plan["schema_version"] == 2 and not executor.diagnostic:
+                # An explicitly returned built-in factory has the same declared
+                # protocol range as direct/default built-in execution.
+                factory = RTNExecutor
+                executor = factory(backend, deepcopy(cfg), observed)
+        coverage = plan_constraints(plan, choices, backend, cfg, spec.get("quantization_contract"), native=native)
+        if native:
+            validate_plan(backend, plan, cfg, detect(backend), {}, allow_unknown_shapes=True)
+            if plan_uses_calibration(plan) and not spec.get('calibration'):
+                raise ContractError("原生量化执行器需要明确 calibration 数据视图")
         model, weights, activations, audit = executor.prepare(plan, {})
-        verifier = QuantizationExecutor(backend, cfg, selection)
-        verifier.input_shapes = executor.input_shapes
-        verifier.audit(model, plan)
+        verifier = factory(backend, deepcopy(cfg), observed)
+        if native:
+            verifier.input_shapes = executor.input_shapes
+            verifier.audit(model, plan)
         model_dir = directory / "model"
         executor.export(model, plan, weights, activations, model_dir, audit)
-        # 独立宿主 loader/audit；插件的 load 不能自行证明其导出正确。
+        model_files = sorted(p for p in model_dir.rglob('*') if p.is_file())
+        if not model_files:
+            raise ContractError("执行器未生成可重载的实际模型资产")
+        calibration_ids = list(dict.fromkeys(observed.reads.get('calibration', [])))
+        # 原生 manifest 的 calibration_ids 记录真实捕获，而非可用数据池。
+        if native:
+            exported_manifest = read_json(model_dir / 'manifest.json')
+            exported_manifest['calibration_ids'] = calibration_ids
+            exported_manifest.pop('content_sha256', None)
+            exported_manifest['content_sha256'] = fingerprint(exported_manifest)
+            atomic_json(model_dir / 'manifest.json', exported_manifest)
+        frozen_files = {str(p.relative_to(model_dir)): file_sha256(p) for p in model_files}
         loaded, manifest = verifier.load(model_dir)
+        preparation_reads = {split: {"split": split, "sample_ids": list(dict.fromkeys(ids)),
+            "sample_count": len(set(ids)), "full_dataset": split == "final" and list(dict.fromkeys(ids)) == data.ids(split)
+                and data.identity.get("full_validation") is True}
+            for split, ids in observed.reads.items()}
+        if not native:
+            calibration_ids = list(dict.fromkeys(observed.reads.get('calibration', [])))
+        if loaded is model:
+            raise ContractError("执行器 load 必须返回实际重建实例，不能复用导出前模型")
+        if frozen_files != {str(p.relative_to(model_dir)): file_sha256(p)
+                            for p in model_dir.rglob('*') if p.is_file()}:
+            raise ContractError("执行器重载改写了已导出的模型资产")
         reload_check = Evaluator(backend, cfg, data).reload_check(model, loaded, split="search")
         model = loaded
-        plan = manifest["plan"]
-        coverage = plan_constraints(plan, choices, backend, cfg, spec.get("quantization_contract"))
-        verifier.audit(model, plan)
+        if native:
+            plan = manifest["plan"]
+            coverage = plan_constraints(plan, choices, backend, cfg, spec.get("quantization_contract"))
+            verifier.audit(model, plan)
+        else:
+            reload_check['loader'] = 'approved_custom_executor'
     else:
-        executor = QuantizationExecutor(backend, cfg, data)
+        executor = RTNExecutor(backend, cfg, data)
         model_dir = Path(spec["model_dir"])
         model, manifest = executor.load(model_dir)
         plan = manifest["plan"]
         coverage = plan_constraints(plan, choices, backend, cfg, spec.get("quantization_contract"))
+        calibration_ids = manifest["calibration_ids"]
         reload_check = {"scope": "existing artifact validated by loader; no new export"}
     from core.execution_contract import check_fp_state
     check_fp_state(model, backend, spec.get("quantization_contract", {}))
     reload_check.update(host_verified=True, evaluated_instance="reloaded")
-    calibration_ids = manifest["calibration_ids"]
     if spec.get("calibration"):
         if calibration_ids != data_view(data, spec["calibration"], "calibration").ids("calibration"):
             raise ContractError("导出包实际校准样本与冻结 calibration 视图不一致")
@@ -330,7 +393,8 @@ def evaluate_services(experiment, backend, cfg, data, directory, approval):
     evaluations = {}
     for requested in spec["evaluations"]:
         if requested["kind"] == "classification":
-            value = evaluate(backend, cfg, data, model, plan, requested["split"], requested.get("count"), None)
+            value = evaluate(backend, cfg, data, model, plan, requested["split"], requested.get("count"), None,
+                             **({"native": False, "sites": coverage["declared_sites"]} if not native else {}))
             atomic_json(directory / "classification.json", value)
             evaluations["classification"] = {"metrics": {k: v for k, v in value["metrics"].items()
                                                            if isinstance(v, (int, float, bool)) or v is None},
@@ -354,17 +418,15 @@ def evaluate_services(experiment, backend, cfg, data, directory, approval):
         raise ContractError("评测改变了候选模型状态")
     files = [asset(p) for p in sorted(directory.glob("*.json")) if p.name not in ("request.json", "started.json", "result.json")]
     if model_dir.parent == directory:
-        files.extend(asset(model_dir / n) for n in ("manifest.json", "weights.pt"))
+        files.extend(asset(p) for p in model_files or sorted(p for p in model_dir.rglob('*') if p.is_file()))
     return {"observations": {"evaluations": evaluations, "coverage": coverage, "reload": reload_check,
-                              "representation": "reference_qdq; native_low_precision_kernel_not_verified"},
-            "artifacts": files, "model_ref": fingerprint({n: file_sha256(model_dir / n) for n in ("manifest.json", "weights.pt")}),
+                              "representation": (plan["execution"]["mode"] if native else "approved_custom_executor") + "; native_low_precision_kernel_not_verified"},
+            "artifacts": files, "model_ref": fingerprint({str(p.relative_to(model_dir)): file_sha256(p)
+                                                          for p in model_dir.rglob('*') if p.is_file()}),
             "model_dir": str(model_dir), "sample_selection": {k: v["sample_ids"] for k, v in evaluations.items()},
-            "execution_facts": {"measurement_kind": "full_model", "quantization": {
-                site_id(row):
-                    {k: deepcopy(row[k]) for k in ("weight", "activation", "weight_method", "activation_method", "weight_calibration", "activation_calibration", "options") if k in row}
-                for row in plan["layers"]},
-                "data": {"calibration": {"split": "calibration", "sample_count": len(calibration_ids),
-                                          "sample_ids": calibration_ids, "full_dataset": False},
+            "execution_facts": {"measurement_kind": "full_model", "quantization": deepcopy(coverage["quantization"]),
+                "data": {**preparation_reads, **({"calibration": {"split": "calibration", "sample_count": len(calibration_ids),
+                                          "sample_ids": calibration_ids, "full_dataset": False}} if calibration_ids else {}),
                          **{name: {k: deepcopy(row[k]) for k in ("split", "sample_count", "sample_ids", "full_dataset")}
                             for name, row in evaluations.items()}}, "plan_sha256": fingerprint(plan)}}
 
@@ -414,7 +476,7 @@ def run_experiment(request, directory):
             # 标准评测由宿主从导出包重新加载并执行；不接受插件自报重载或分类成绩。
             standard = any(r["kind"] in ("classification", "ade_frozen") for r in spec.get("evaluations", []))
             reload_required = (spec.get("result_protocol", {}).get("reload_before_evaluation")
-                               or spec.get("reload_before_evaluation") or payload["validation"].get("export_reload"))
+                               or spec.get("reload_before_evaluation") or payload.get("validation", {}).get("export_reload"))
             if payload["level"] == "L3" and (standard or reload_required or spec.get("measurement_kind") == "full_model"):
                 if not result.get("model_dir"):
                     raise ContractError("custom_experiment L3 缺少供宿主重载核验的 model_dir")

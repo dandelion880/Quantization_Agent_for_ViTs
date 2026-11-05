@@ -34,24 +34,27 @@ class CodeRepairRegression(TempCase):
         task = wf.queue.claim(wf.tasks()[key]['task_id'])
         wf.queue.finish(task['task_id'], result=result or {}, outputs=[card['id']] if card else [], cards=[card] if card else [])
 
-    def review_attempt(self, wf, tid, *, approve=False, numerical_result=None):
+    def review_attempt(self, wf, tid, *, approve=False):
+        from tools.safeguards import write_artifact
         task = wf.queue.get(tid)
         revision = task.get('code_revision', 0)
         code = 'fixture/request/code' + (f'/revision{revision}' if revision else '')
-        self.complete(wf, code, result={'artifact': {'source_sha256': f'fixture-candidate-{revision}', 'interface': 'quantizer_v1', 'path': '/fixture/not-executed'}})
-        ref = 'fixture/request/reference' + (f'/revision{revision}' if revision else '')
-        if wf.tasks()[ref]['state'] != 'completed':
-            self.complete(wf, ref, result={'artifact': {'source_sha256': 'fixture-reference', 'interface': 'quantizer_v1', 'path': '/fixture/not-executed'}})
+        request = wf.journal.card(task['request_ref'])
+        source = f"# revision {revision}\ndef fit(x, p):\n    return {{}}\ndef apply(x, state, p):\n    return x\n"
+        artifact = write_artifact(wf.run_dir, request, {'source': source, 'interface': 'quantizer_v1'}, 'coding')
+        self.complete(wf, code, result={'artifact': artifact})
         self.progress(wf, tid)
-        numerical = next(t for t in wf.tasks().values() if t['kind'] == 'verification' and t['state'] not in ('completed','failed','cancelled'))
-        self.complete(wf, numerical['key'], result=numerical_result or {'status': 'passed', 'cases': [{'fixture': True}]})
-        self.progress(wf, tid)
-        safeguard = next(t for t in wf.tasks().values() if t['inputs'].get('purpose') == 'safeguard' and t['state'] not in ('completed','failed','cancelled'))
-        card = make_card('ReviewDecisionCard', wf.journal.run_id, review('safeguard', approved=approve,
-            fidelity='fixture rejection or acceptance', numerical_correctness='fixture only', experimental_validity='fixture only'))
+        task = wf.queue.get(tid)
+        experiment = wf.journal.card(task['experiment_ref'])
+        safeguard = next(t for t in wf.tasks().values() if t['inputs'].get('purpose') == 'safeguard'
+                         and t['state'] not in ('completed', 'failed', 'cancelled'))
+        binding = {'experiment_ref': experiment['id'], 'experiment_sha256': experiment['content_sha256'],
+                   'request_ref': request['id'], 'request_sha256': request['content_sha256'],
+                   'source_sha256': artifact['source_sha256']}
+        card = make_card('ReviewDecisionCard', wf.journal.run_id,
+                        review('safeguard', approved=approve, reviewed_binding=binding))
         self.complete(wf, safeguard['key'], card=card)
-        with patch('core.experiment_requests.approval_receipt', return_value={'candidate': {'source_sha256': f'fixture-candidate-{revision}', 'interface': 'quantizer_v1'}}):
-            self.progress(wf, tid)
+        self.progress(wf, tid)
         return card
 
     def test_rejection_returns_to_coding_and_resume_does_not_duplicate(self):
@@ -62,20 +65,17 @@ class CodeRepairRegression(TempCase):
         self.progress(wf, tid)
         revised = wf.tasks()['fixture/request/code/revision1']
         self.assertEqual(revised['inputs']['context']['revision_feedback']['review_ref'], rejected['id'])
-        self.assertNotIn('revision_feedback', wf.tasks()['fixture/request/reference']['inputs']['context'])
-        self.assertNotIn('revision_feedback', wf.tasks()['fixture/request/reference/revision1']['inputs']['context'])
-        self.assertEqual(wf.tasks()['fixture/request/reference/revision1']['inputs']['refs'], wf.tasks()['fixture/request/reference']['inputs']['refs'])
+        self.assertFalse(any(t['inputs'].get('purpose') == 'reference' for t in wf.tasks().values()))
         before = set(wf.tasks())
         restored = Workflow(wf.run_dir)
         restored.queue.ready()
         self.assertEqual(restored.queue.get(tid)['state'], 'waiting')
         self.assertEqual(set(restored.tasks()), before)
-        self.assertEqual(len(restored.journal.find_cards('ExperimentCard')), 1)
+        self.assertEqual(len(restored.journal.find_cards('ExperimentCard')), 2)
         self.review_attempt(restored, tid, approve=True)
         self.assertIn('fixture/request/execute/revision1', restored.tasks())
-        verifications = [t for t in restored.tasks().values() if t['kind'] == 'verification']
-        self.assertEqual(len(verifications), 2)
-        self.assertNotEqual(verifications[0]['inputs']['candidate'], verifications[1]['inputs']['candidate'])
+        self.assertFalse(any(t['kind'] == 'verification' for t in restored.tasks().values()))
+        self.assertEqual(len(restored.journal.find_cards('ExperimentCard')), 3)
 
     def test_repeated_rejections_are_bounded_and_never_execute(self):
         wf, tid = self.setup_request()
@@ -88,45 +88,6 @@ class CodeRepairRegression(TempCase):
         self.assertEqual(len(wf.journal.find_cards('ReviewDecisionCard')), 3)
         self.assertEqual(len(wf.journal.find_cards('EvidenceCard')), 0)
 
-    def test_reference_revision_receives_only_its_own_execution_failure(self):
-        self.check_reference_failure_delivery('reference')
-
-    def test_candidate_failure_does_not_reach_independent_reference(self):
-        self.check_reference_failure_delivery('candidate')
-
-    def test_string_comparison_failure_is_not_a_reference_execution_error(self):
-        wf,tid=self.setup_request()
-        self.review_attempt(wf,tid,numerical_result={'status':'rejected',
-            'reference_sha256':'fixture-reference',
-            'failure':'structure mismatch at $.observations.coverage; COMPARISON_SECRET'})
-        self.progress(wf,tid)
-        context=wf.tasks()['fixture/request/reference/revision1']['inputs']['context']
-        self.assertEqual(set(context),{'experiment_ref'})
-        self.assertNotIn('COMPARISON_SECRET',str(context))
-        self.assertEqual(wf.queue.get(tid)['state'],'waiting')
-
-    def check_reference_failure_delivery(self, side):
-        wf,tid=self.setup_request()
-        self.review_attempt(wf,tid,numerical_result={'status':'rejected',
-            'reference_sha256':'fixture-reference', 'candidate_sha256':'CANDIDATE_SECRET',
-            'cases':[{'candidate_output':'COMPARISON_SECRET'}],
-            'failure':{'side':side,'error':{'type':'ValueError','message':'own runtime error',
-                                           'extra':'DO_NOT_FORWARD'}}})
-        self.progress(wf,tid)
-        initial=wf.tasks()['fixture/request/reference']
-        revised=wf.tasks()['fixture/request/reference/revision1']
-        context=revised['inputs']['context']
-        self.assertEqual(revised['inputs']['refs'],initial['inputs']['refs'])
-        self.assertNotIn('revision_feedback',context)
-        if side=='reference':
-            self.assertEqual(set(context),{'experiment_ref','self_execution_failure'})
-            failure=context['self_execution_failure']
-            self.assertEqual(failure['source_sha256'],'fixture-reference')
-            self.assertEqual(failure['error'],{'type':'ValueError','message':'own runtime error'})
-        else:self.assertEqual(set(context),{'experiment_ref'})
-        self.assertNotIn('SECRET',str(context));self.assertNotIn('DO_NOT_FORWARD',str(context))
-        self.assertEqual(len(wf.journal.find_cards('EvidenceCard')),0)
-
     def test_runtime_interface_failure_revises_and_revalidates_without_replaying_failed_code(self):
         wf, tid = self.setup_request()
         for revision in range(3):
@@ -135,8 +96,7 @@ class CodeRepairRegression(TempCase):
             wf.queue.ready()
             child = wf.queue.claim(wf.tasks()[key]['task_id'])
             wf.queue.fail(child['task_id'], {'code': 'TypeError', 'message': 'unhashable type: dict'})
-            with patch('core.experiment_requests.approval_receipt', return_value={'candidate': {'source_sha256': f'fixture-candidate-{revision}', 'interface': 'quantizer_v1'}}):
-                self.progress(wf, tid)
+            self.progress(wf, tid)
             if revision < 2:
                 self.assertEqual(wf.queue.get(tid)['code_revision'], revision + 1)
                 self.progress(wf, tid)
@@ -149,9 +109,9 @@ class CodeRepairRegression(TempCase):
                 self.assertEqual(set(wf.tasks()), set(restored.tasks()))
                 wf = restored
         self.assertEqual(wf.queue.get(tid)['state'], 'failed')
-        self.assertEqual(len([t for t in wf.tasks().values() if t['kind'] == 'verification']), 3)
+        self.assertFalse(any(t['kind'] == 'verification' for t in wf.tasks().values()))
         self.assertEqual(len([t for t in wf.tasks().values() if t['kind'] == 'experiment']), 3)
-        self.assertEqual(len(wf.journal.find_cards('ExperimentCard')), 1)
+        self.assertEqual(len(wf.journal.find_cards('ExperimentCard')), 4)
         self.assertEqual(len(wf.journal.find_cards('EvidenceCard')), 0)
 
     def test_specification_clarification_returns_to_original_requester_after_restore(self):
@@ -165,20 +125,19 @@ class CodeRepairRegression(TempCase):
         wf.queue.change(tid, 'waiting', patch={'inputs': {**request['inputs'], 'parent_task': parent}})
         child = wf.tasks()['fixture/request/code/revision1']
         wf.queue.ready(); wf.queue.claim(child['task_id'])
-        question = {'question': 'Frozen validation cases miss required boundary; revise specification?', 'reason': 'Changing implementation cannot repair fixed cases'}
+        question = {'question': 'Original requirement leaves the statistical axis ambiguous; clarify axis?', 'reason': 'Scientific interpretation changes with the axis'}
         wf.queue.change(child['task_id'], 'needs_clarification', patch={'clarification': question})
         restored = Workflow(wf.run_dir)
         restored.advance(); restored.queue.ready()
         self.assertEqual(restored.queue.get(tid)['result']['clarification'], question)
         self.assertEqual(restored.queue.get(tid)['result']['review_ref'], rejected['id'])
         self.assertEqual(restored.queue.get(child['task_id'])['state'], 'cancelled')
-        self.assertEqual(restored.tasks()['fixture/request/reference/revision1']['state'], 'cancelled')
         self.assertEqual(restored.queue.get(parent)['state'], 'ready')
         self.assertEqual(restored.queue.get(parent)['tool_results'][-1]['result']['reason'], 'frozen_specification_clarification')
         before = restored.journal.sequence
         restored.return_code_clarifications()
         self.assertEqual(restored.journal.sequence, before)
-        self.assertEqual(len(restored.journal.find_cards('ExperimentCard')), 1)
+        self.assertEqual(len(restored.journal.find_cards('ExperimentCard')), 2)
         self.assertEqual(len(restored.journal.find_cards('EvidenceCard')), 0)
 
 

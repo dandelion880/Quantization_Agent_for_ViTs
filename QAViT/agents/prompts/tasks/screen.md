@@ -8,11 +8,11 @@
 
 提交 ReviewDecisionCard payload：
 - eligible 为 boolean。
-- hard_rejection_reasons 为字符串数组；eligible=false 时必须非空，每项对应具体硬拒绝理由；没有硬拒绝时为 []。
-- similarity_analysis 为非空字符串，说明已核实的机制关系及未核实部分。
-- evidence_gaps 为字符串数组，指出会影响判断的具体缺口。
+- hard_rejection_reasons 为字符串数组；eligible=false 时必须非空，每项对应具体硬拒绝理由；没有硬拒绝时可省略或为 []，程序补齐。
+- similarity_analysis 为可选字符串，说明已核实的机制关系及未核实部分。
+- evidence_gaps 为可选字符串数组，指出会影响判断的具体缺口。
 - rationale 为非空字符串，说明资格结论及关键依据。
-- evidence_refs 为实际引用的EvidenceCard 短句柄或完整 ID 数组，可为 []。
-- uncertainties 为字符串数组，可为 []。
+- evidence_refs 为实际引用的EvidenceCard 短句柄或完整 ID 数组，可省略或为 []。
+- uncertainties 为字符串数组，可省略或为 []。
 
 不要在本任务中给最终排名，也不要以要求先达到某项性能阈值的方式排除未测试候选。

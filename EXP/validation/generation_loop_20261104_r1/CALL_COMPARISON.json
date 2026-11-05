@@ -1,0 +1,14 @@
+{
+  "method": "Successful-path task count from before/after implementation and after real CPU harness; no actual LLM/token savings measured",
+  "experiment_requests": 6,
+  "numerical_experiment_workers_after": 5,
+  "exact_cache_reuses_after": 1,
+  "routine_judger_approval_tasks_before_per_request": 1,
+  "routine_judger_interpretation_tasks_before_per_request": 1,
+  "routine_judger_tasks_after": 0,
+  "removed_routine_judger_tasks_for_same_requests": 12,
+  "coding_reference_safeguard_tasks_after": 3,
+  "numerical_verification_tasks_after": 1,
+  "actual_new_llm_calls": 0,
+  "actual_new_tokens": null
+}

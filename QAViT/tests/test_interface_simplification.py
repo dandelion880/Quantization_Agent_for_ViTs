@@ -107,13 +107,16 @@ class InterfaceSimplification(TempCase):
         draft = experiment_payload()
         del brief['hard_constraints']['training']
         del draft['execution']['resolved_choices']['training']
-        with self.assertRaisesRegex(ContractError, 'training'):
-            preflight_experiment(draft, brief)
-        for key in ('bits', 'signed', 'granularity', 'axis', 'group_size'):
+        self.assertFalse(preflight_experiment(draft, brief)['execution']['resolved_choices']['training'])
+        for key in ('bits', 'granularity', 'axis', 'group_size'):
             bad = experiment_payload()
             del bad['execution']['parameters'][key]
-            with self.subTest(field=key), self.assertRaises(ContractError):
-                preflight_experiment(bad, validation_config()['research_brief'])
+            checked = preflight_experiment(bad, validation_config()['research_brief'])
+            self.assertIn(key, checked['execution']['parameters'])
+        bad = experiment_payload()
+        del bad['execution']['parameters']['signed']
+        with self.assertRaises(ContractError):
+            preflight_experiment(bad, brief)
         bad = experiment_payload()
         bad['execution']['resolved_choices']['training'] = True
         with self.assertRaisesRegex(ContractError, 'training'):
@@ -164,29 +167,20 @@ class InterfaceSimplification(TempCase):
         self.assertEqual(wf.queue.get(request_id)['state'], 'failed')
         self.assertEqual(wf.journal.find_cards('EvidenceCard'), [])
 
-    def test_frozen_count_offset_and_fixture_capacity_checked_before_coding(self):
-        draft = experiment_payload()
-        execution = draft['execution']
-        execution.update(service='custom_experiment', interface='experiment_v1', requires_code=True)
-        execution['calibration']['count'] = 8
-        execution['resolved_choices']['calibration_samples'] = 8
-        draft['validation']['interface_cases'] = [{'seed': 1, 'shape': [1, 4, 8],
-            'sites': [execution['site']], 'counts': {'calibration': 2, 'search': 4, 'final': 2}}]
-        with self.assertRaisesRegex(ContractError, r'interface_cases\[0\].*calibration.*8.*2'):
-            preflight_experiment(draft, validation_config()['research_brief'])
-        draft['validation']['interface_cases'][0]['counts']['calibration'] = 8
-        good = preflight_experiment(draft, validation_config()['research_brief'])
-        self.assertEqual(good['execution']['calibration']['count'], 8)
-        execution['calibration']['offset'] = 1
-        with self.assertRaisesRegex(ContractError, 'interface_cases'):
-            preflight_experiment(draft, validation_config()['research_brief'])
+    def test_new_code_request_needs_no_runtime_fixture_or_frozen_execution(self):
+        draft = {'question':'Measure a new statistic', 'measurements':['finite output statistic']}
+        prepared = preflight_experiment(draft, validation_config()['research_brief'])
+        self.assertEqual(prepared['stage'], 'request')
+        self.assertEqual(prepared['validation'], {})
+        self.assertTrue(prepared['execution']['requires_code'])
+        self.assertNotIn('backend', prepared['execution'])
 
     def test_public_executor_is_readable_only_at_engineering_boundary(self):
         wf = self.workflow(1)
         experiment = wf.broker.freeze(experiment_payload(), requester='judger')
         wf.journal.commit('fixture/spec', cards=[experiment])
         public = QAVIT / 'tools/ptq_agent/execution/pipeline.py'
-        for purpose in ('code', 'reference', 'screen'):
+        for purpose in ('code', 'screen'):
             with self.subTest(purpose=purpose):
                 task = self.task(wf, purpose, {'experiment_ref': experiment['id']}, [wf.brief['id'], experiment['id']])
                 body = wf.request_body(task)
@@ -194,8 +188,6 @@ class InterfaceSimplification(TempCase):
                 self.assertEqual(str(public) in permissions, purpose != 'screen')
                 self.assertNotIn(str(QAVIT / 'runtime/driver.py'), permissions)
                 self.assertNotIn(str(QAVIT / 'agents/interaction.py'), permissions)
-                if purpose == 'reference':
-                    self.assertNotIn('directory', body['spec']['context']['memory'])
                 if purpose != 'screen':
                     wf.receive_tools(task, {'tool_calls': [{'id': purpose, 'name': 'read_asset',
                         'arguments': {'asset': str(public), 'offset': 0, 'limit': 12000}}]}, 'cpu-public')
@@ -205,11 +197,12 @@ class InterfaceSimplification(TempCase):
                     self.assertIn('class QuantizationExecutor', child['result']['text'])
                 wf.queue.change(task['task_id'], 'cancelled')
 
-    def test_undetermined_needs_explicit_actionability_assessment(self):
+    def test_undetermined_allows_omitted_assessment_but_rejects_explicit_action_conflict(self):
         payload = review('verdict', outcome='undetermined', decisive_reason='CPU fixture', next_questions=[])
         payload.pop('continuation_assessment')
-        with self.assertRaisesRegex(ContractError, 'continuation_assessment'):
-            validate_verdict(payload, 1)
+        validate_verdict(payload, 1)
+        payload['continuation_assessment'] = {'reason': 'No discriminating path is known.'}
+        validate_verdict(payload, 1)
         payload['continuation_assessment'] = {'experiment_available': False,
             'next_dispute_available': False, 'reason': 'No discriminating path in this CPU fixture.'}
         validate_verdict(payload, 1)
@@ -261,9 +254,6 @@ class InterfaceSimplification(TempCase):
         atomic_json(path, body)
         wf.queue.change(task['task_id'], 'running', patch={'request_path': str(path)})
         task = wf.queue.get(task['task_id'])
-        with self.assertRaisesRegex(ContractError, '未读完'):
-            wf.submit(task, review('screening', eligible=True, hard_rejection_reasons=[],
-                                 similarity_analysis='CPU', evidence_gaps=[]), 'CPU')
         calls = [{'name': 'read_card', 'arguments': {'ref': card['id'], 'field': '/payload', 'offset': offset}}
                  for offset in range(0, len(canonical(payload)), 12000)]
         wf.receive_tools(task, asdict(decode(body['spec'], batch_final(calls))), 'CPU-pages')
@@ -300,18 +290,18 @@ class InterfaceSimplification(TempCase):
             decode(spec, batch_final([{'name': 'read_card', 'arguments': {'ref': 'not-used'}}]))
         self.assertEqual(caught.exception.stage, 'outer_schema')
 
-    def test_import_capabilities_match_actual_gate_without_expanding_it(self):
+    def test_import_capabilities_match_declared_numeric_support(self):
         from tools.safeguards import inspect_source, NUMERIC_IMPORTS
         wf = self.workflow(1)
         experiment = wf.broker.freeze(experiment_payload(), requester='judger')
         wf.journal.commit('fixture/spec', cards=[experiment])
-        task = self.task(wf, 'reference', {'experiment_ref': experiment['id']}, [wf.brief['id'], experiment['id']])
+        task = self.task(wf, 'code', {'experiment_ref': experiment['id']}, [wf.brief['id'], experiment['id']])
         context = wf.request_body(task)['spec']['context']
         self.assertEqual(set(context['numeric_imports']), NUMERIC_IMPORTS)
-        for module in ('time', 'hashlib', 'os', 'subprocess'):
+        for module in ('os', 'subprocess', 'socket', 'pathlib', 'ctypes'):
             with self.subTest(module=module), self.assertRaises(ContractError):
                 inspect_source('import ' + module + '\ndef execute(p,c): return {}', 'experiment_v1')
-        inspect_source('import math\ndef execute(p,c): return {}', 'experiment_v1')
+        inspect_source('import math, time, hashlib, contextlib, operator, bisect\ndef execute(p,c): return {}', 'experiment_v1')
 
     def test_builtin_plan_reuses_execution_without_coding_and_unknown_plan_rejected(self):
         from tests.test_execution_contracts import full_fixture

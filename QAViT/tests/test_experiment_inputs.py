@@ -167,19 +167,17 @@ class DataReceiptRegression(InputCase):
         cards = [make_card("ReviewDecisionCard", wf.journal.run_id, review("interpretation", rationale=f"fixture {i}")) for i in range(12)]
         spec = make_card("ExperimentCard", wf.journal.run_id, experiment_payload())
         wf.journal.commit("fixture/science", cards=[*cards, spec])
-        for purpose in ("generate", "plan_l3", "experiment_approval", "reference", "record"):
-            context = {"round": 1, "experiment_draft": experiment_payload()} if purpose == "experiment_approval" else {"round": 1}
+        for purpose in ("generate", "plan_l3", "code", "record"):
+            context = {"round": 1}
             refs = [wf.brief["id"]]
-            if purpose == "reference": context["experiment_ref"] = spec["id"]; refs.append(spec["id"])
+            if purpose == "code": context["experiment_ref"] = spec["id"]; refs.append(spec["id"])
             task = wf.queue.get(wf.enqueue_role("fixture/" + purpose, purpose, refs=refs, context=context))
             value = wf.context(task)
             with self.subTest(purpose=purpose):
-                self.assertEqual("data_receipt" in value, purpose in ("generate", "plan_l3", "experiment_approval"))
+                self.assertEqual("data_receipt" in value, purpose in ("generate", "plan_l3"))
                 self.assertIn("budget_receipt", value)
                 self.assertNotIn("scientific_index", value["memory"])
                 self.assertEqual({c["id"] for c in cards} <= {c["id"] for c in value["memory"]["cards"]}, purpose == "record")
-                if purpose == "experiment_approval":
-                    self.assertEqual(value["data_receipt"]["selected_data"]["calibration"], {"split": "calibration", "count": 2})
                 if purpose == "plan_l3": self.assertIsNone(value["data_receipt"]["selected_data"]["calibration"])
 
 
@@ -281,8 +279,9 @@ class BriefEvaluationRegression(InputCase):
         brief["evaluation_protocol"] = {"kind": "custom statistics; no classification/segmentation requirement"}
         draft = self.draft([])
         draft["execution"].update(service="custom_experiment", requires_code=True, interface="experiment_v1")
+        self.assertEqual(preflight_experiment(draft, brief)['stage'], 'request')
         with self.assertRaisesRegex(ContractError, "L3 缺少可核验"):
-            preflight_experiment(draft, brief)
+            preflight_experiment(draft, brief, executable=True)
         brief["evaluation_protocol"]["required_results"] = [{"path": "statistic", "schema": {"type": "number"}}]
         draft["validation"]["interface_cases"] = [{"seed": 1, "shape": [1, 4, 8], "sites": ["blocks.0.mlp.fc2"],
             "counts": {"calibration": 2, "search": 4, "final": 2}}]

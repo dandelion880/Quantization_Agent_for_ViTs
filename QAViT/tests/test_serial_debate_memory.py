@@ -196,15 +196,16 @@ class SerialDebateMemoryRegression(infrastructure.TempCase):
                 shown = visible[cards[1]["id"]]['payload']['observations']
                 self.assertEqual({k:v for k,v in shown.items() if k != 'raw'},
                                  {k:v for k,v in cards[1]['payload']['observations'].items() if k != 'raw'})
-                self.assertEqual(shown['raw'], {'read_card': {'ref': cards[1]['id'],
-                    'field': '/payload/observations/raw'}, 'sha256': fingerprint(cards[1]['payload']['observations']['raw'])})
+                self.assertEqual(shown['raw']['read_card'], {'ref': cards[1]['id'], 'field': '/payload/observations/raw'})
+                self.assertEqual(shown['raw']['sha256'], fingerprint(cards[1]['payload']['observations']['raw']))
+                self.assertEqual(shown['raw']['numeric_summary']['/*']['maximum']['value'], 24999)
                 self.assertIn(cards[1]['id'], context['memory']['read_manifest']['projected_refs'])
                 self.assertNotIn(cards[1]["id"], {r["ref"] for r in context["memory"]["required_reads"]})
                 full = self.full_card(wf, task, cards[1]["id"])
                 self.assertEqual(full["payload"]["observations"]["raw"][-1], 24999)
                 self.assertEqual(context["tool_results"][-1]["outputs"], [cards[1]["id"], cards[3]["id"]])
 
-    def test_shared_index_and_reads_preserve_position_and_reference_boundaries(self):
+    def test_shared_index_preserves_positions_and_code_receives_original_request(self):
         wf = self.workflow(1)
         wf.budget.start_round(1)
         cards = self.science(wf, "isolation")
@@ -228,19 +229,16 @@ class SerialDebateMemoryRegression(infrastructure.TempCase):
         self.assertNotIn(hidden["id"], {c["id"] for c in retrieved["cards"]})
         joined = self.debate_task(wf, "arbitrate")
         self.assertIn(hidden["id"], self.index(wf, joined))
-        ref_id = wf.enqueue_role("fixture/reference", "reference", refs=[wf.brief["id"], cards[0]["id"]],
-                                 context={"experiment_ref": cards[0]["id"]})
-        reference = wf.queue.get(ref_id)
-        context = wf.context(reference)
-        memory = context["memory"]
-        self.assertEqual(memory["cards"], [])
+        code_id = wf.enqueue_role("fixture/code", "code", refs=[wf.brief["id"], cards[0]["id"]],
+                                  context={"experiment_ref": cards[0]["id"], "request_ref": cards[0]["id"]})
+        coding = wf.queue.get(code_id)
+        context = wf.context(coding)
         self.assertEqual(context["research_brief"]["id"], wf.brief["id"])
-        self.assertEqual(context["frozen_experiment"]["id"], cards[0]["id"])
-        self.assertNotIn("directory", memory)
-        with self.assertRaisesRegex(ContractError, "独立参考"):
-            self.read(wf, reference, "read_card", ref=cards[1]["id"])
-        with self.assertRaisesRegex(ContractError, "资产读取限"):
-            self.read(wf, reference, "read_asset", asset=str(wf.journal.card_path(cards[1]["id"])))
+        self.assertEqual(context["original_request"]["id"], cards[0]["id"])
+        self.assertIn("directory", context["memory"])
+        self.assertEqual(self.read(wf, coding, "read_card", ref=cards[1]["id"]), cards[1])
+        from agents.tasks import TASKS
+        self.assertNotIn('reference', TASKS)
 
     def test_late_evidence_cannot_replace_any_final_outcome_or_repeat_close(self):
         for outcome in ("A", "B", "tie", "undetermined"):

@@ -1,0 +1,128 @@
+{
+  "status": "implemented_and_validated",
+  "source_sha256": "47f7363a1b09e6657498673b711754ba425a54facc44b3fa4b533210e58eacfa",
+  "validation": {
+    "full_suite": {
+      "tests": 393,
+      "passed": true,
+      "seconds": 290.743,
+      "log": "regression_verified.log",
+      "scope": "Before final two directory/doc-discovery display adjustments"
+    },
+    "final_targeted": {
+      "tests": 64,
+      "passed": true,
+      "seconds": 46.082,
+      "log": "final_directory_verified.log",
+      "scope": "Final source: interfaces, state, context, ACL, delivery, two rounds, single implementation real CPU worker"
+    },
+    "structure": {
+      "passed": true,
+      "python_files": 142,
+      "source_files": 204,
+      "artifact": "structure_final.json"
+    },
+    "git_diff_check": "passed"
+  },
+  "history": {
+    "source": "/root/data-fs/projects/Quantization_Agent_for_ViTs/EXP/runs/deitb_static_w4a4_two_rounds_20261031_r1/run",
+    "journal_sequence_before": 4437,
+    "journal_sequence_after": 4437,
+    "repetitions": 3,
+    "mode": "read_only; no model calls",
+    "results": [
+      {
+        "purpose": "record",
+        "before_characters": 257597,
+        "after_characters": 211706,
+        "character_change_percent": -17.815036665799678,
+        "before_assembly_median_seconds": 12.760450881905854,
+        "after_assembly_median_seconds": 9.891170316375792,
+        "assembly_change_percent": -22.48573026207611,
+        "before_required_read_entries": 0,
+        "after_required_read_entries": 0
+      },
+      {
+        "purpose": "generate",
+        "before_characters": 51441,
+        "after_characters": 50395,
+        "character_change_percent": -2.0333974844968017,
+        "before_assembly_median_seconds": 8.67303269263357,
+        "after_assembly_median_seconds": 9.590419012121856,
+        "assembly_change_percent": 10.577457182508576,
+        "before_required_read_entries": 0,
+        "after_required_read_entries": 0
+      },
+      {
+        "purpose": "position",
+        "before_characters": 105449,
+        "after_characters": 105184,
+        "character_change_percent": -0.2513063186943443,
+        "before_assembly_median_seconds": 10.1520088724792,
+        "after_assembly_median_seconds": 11.279662182554603,
+        "assembly_change_percent": 11.107686412019667,
+        "before_required_read_entries": 1,
+        "after_required_read_entries": 1
+      }
+    ]
+  },
+  "projection": {
+    "raw_characters": 184767,
+    "before_characters": 55044,
+    "after_characters": 5966,
+    "before_median_ms": 57.97618627548218,
+    "after_median_ms": 70.66446542739868
+  },
+  "retrieval": {
+    "before": {
+      "host_calls_to_obtain_metric": 2,
+      "delivered_characters": 1758,
+      "seconds": [
+        0.002744383178651333,
+        0.0009485548362135887,
+        0.0009645503014326096,
+        0.0009438516572117805,
+        0.0009458307176828384,
+        0.0009296871721744537,
+        0.0009363982826471329
+      ],
+      "median_seconds": 0.0009458307176828384
+    },
+    "after": {
+      "host_calls_to_obtain_metric": 1,
+      "delivered_characters": 1834,
+      "seconds": [
+        0.0020298026502132416,
+        0.0029045473784208298,
+        0.0018772231414914131,
+        0.001906263642013073,
+        0.0018813684582710266,
+        0.0019173761829733849,
+        0.0018680617213249207
+      ],
+      "median_seconds": 0.001906263642013073
+    },
+    "limits": [
+      "scripted client condition, no inference calls",
+      "characters are not tokens",
+      "fixture metric is not measured science"
+    ]
+  },
+  "engineering_only_additional_recorder_tasks": 0,
+  "real_model_calls": 0,
+  "actual_tokens": null,
+  "actual_model_latency": null,
+  "actual_inference_cost": null,
+  "preserved": [
+    "historical runs and reports",
+    "Journal representation",
+    "datasets/checkpoints/evaluation protocol",
+    "roles and scientific workflow"
+  ],
+  "limitations": [
+    "Offline characters are not tokens; no true end-to-end/model benefit measured.",
+    "Generation/position assembly was slower by about 11% despite slightly smaller input.",
+    "Recorder still has a large scientific batch; exact source expansion may add reads when needed.",
+    "CPU timings are three in-process repetitions, not a controlled statistical latency study."
+  ]
+}

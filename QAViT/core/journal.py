@@ -5,6 +5,7 @@
 """
 from contextlib import contextmanager
 from copy import deepcopy
+from functools import wraps
 import fcntl
 import hashlib
 import os
@@ -74,6 +75,15 @@ class ConcurrentCommit(ContractError):
     pass
 
 
+def journal_read(method):
+    """Reuse verification only within one host operation, including nested helpers."""
+    @wraps(method)
+    def wrapped(self, *args, **kwargs):
+        with self.journal.read_session():
+            return method(self, *args, **kwargs)
+    return wrapped
+
+
 class Journal:
     def __init__(self, root, run_id):
         self.root, self.run_id = Path(root).resolve(), run_id
@@ -82,6 +92,7 @@ class Journal:
         self.commits, self.events, self.cards, self.keys = [], [], {}, {}
         self.memory_version = 0
         self.card_versions = {}
+        self._read_cache = None
         self.refresh()
 
     @property
@@ -94,11 +105,38 @@ class Journal:
     def card(self, ref):
         if ref not in self.cards:
             raise ContractError("未提交或未知卡片引用: " + str(ref))
-        value = read_json(self.card_path(ref))
+        path = self.card_path(ref)
+        signature = None
+        if self._read_cache is not None:
+            stat = path.stat()
+            signature = (stat.st_dev, stat.st_ino, stat.st_size, stat.st_mtime_ns, stat.st_ctime_ns)
+            cached = self._read_cache.get(ref)
+            if cached and cached[0] == signature:
+                return deepcopy(cached[1])
+        value = read_json(path)
         validate_card(value)
         if value["content_sha256"] != self.cards[ref]["sha256"]:
             raise ContractError("已提交卡片被改写: " + ref)
+        if self._read_cache is not None:
+            self._read_cache[ref] = (signature, deepcopy(value))
         return value
+
+    @contextmanager
+    def read_session(self):
+        """A bounded operation cache; never a second fact source or permission cache.
+
+        Every new operation revalidates file content; a changed inode/size/mtime/ctime
+        also forces revalidation inside the operation. Returned values are independent.
+        """
+        with self._mutex:
+            nested = self._read_cache is not None
+            if not nested:
+                self._read_cache = {}
+            try:
+                yield
+            finally:
+                if not nested:
+                    self._read_cache = None
 
     def refresh(self):
         with self._mutex:
@@ -130,6 +168,8 @@ class Journal:
                         self.memory_version += 1
                         self.card_versions[card["id"]] = self.memory_version
                     self.cards[entry["ref"]] = dict(entry, sequence=seq, kind=card["kind"])
+                    if card['kind'] == 'TaskCard':
+                        self.cards[entry['ref']].update(task_kind=card['payload']['kind'], state=card['payload']['state'])
                 self.commits.append(commit)
                 self.keys[commit["key"]] = commit
                 self.events.extend(dict(event, commit_sequence=seq) for event in commit["events"])

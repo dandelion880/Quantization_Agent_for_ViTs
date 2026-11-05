@@ -21,7 +21,8 @@ class FeedbackOverlap(TempCase):
         card=self.publish_meta(wf,value,[chosen['id']])
         task,c=self.begin(wf,self.task(wf,refs=[chosen['id']],round=2,hypothesis_ref=chosen['id']))
         self.assertEqual(canonical(c).count('UNIQUE_DEFAULT_AUDIT'),1)
-        self.assertNotIn('EXPANDED_ONLY_INFORMATION',canonical(c))
+        # Short latest-review guidance is now available in L1; long originals stay on demand.
+        self.assertEqual(canonical(c).count('EXPANDED_ONLY_INFORMATION'), 0 if large else 1)
         return wf,task,card
 
     def assert_once(self,wf,task):

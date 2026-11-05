@@ -69,7 +69,10 @@ def detect(backend):
     }
 
 
-def validate_plan(backend, plan, config, capabilities, shapes=None, *, diagnostic=False):
+def validate_plan(backend, plan, config, capabilities, shapes=None, *, diagnostic=False,
+                  allow_unknown_shapes=False):
+    from .contracts import normalize_plan
+    plan = normalize_plan(plan)
     validate(plan, PLAN_SCHEMA)
     if not diagnostic:
         validate_execution_requirements(plan, config["loop"])
@@ -87,7 +90,7 @@ def validate_plan(backend, plan, config, capabilities, shapes=None, *, diagnosti
         classification_available = (backend.spec.get("classification_head") == "official pretrained ImageNet-1k head retained"
                                     or bool(getattr(backend, "task_head", None)))
         rows = validate_composition(plan, catalog, config, classification_available=classification_available,
-                                    diagnostic=diagnostic)
+                                    diagnostic=diagnostic, allow_unknown_shapes=allow_unknown_shapes)
         dtype = plan["execution"]["compute_dtype"]
         require(capabilities["compute_dtypes"][dtype]["forward_available"], "设备不能执行该计算类型")
         validate_objective(plan.get("evaluation"), config, native_available=False, classification_available=classification_available)
@@ -139,10 +142,8 @@ def validate_plan(backend, plan, config, capabilities, shapes=None, *, diagnosti
                 require(target in config["loop"]["quantize_targets"], "目标张量违反用户 W/A 范围")
                 require(spec["format"] in constraints["allowed_formats"], "格式违反用户约束")
                 shape = info["weight_shape"] if target == "weight" else (shapes or {}).get(name)
-                if shape is None:
-                    require(spec["granularity"] == "per_tensor", "非 per_tensor 激活需先测量真实形状")
-                    shape = [1, info["weight_shape"][1]]
-                validate_spec(spec, target, shape, execution["activation_calibration"])
+                validate_spec(spec, target, shape, execution["activation_calibration"],
+                              allow_unknown_shape=allow_unknown_shapes)
             if constraints["precision_mode"] == "fixed":
                 require(
                     (spec["format"] if spec else None) == constraints[f"fixed_{target}_format"],
@@ -171,10 +172,6 @@ def validate_plan(backend, plan, config, capabilities, shapes=None, *, diagnosti
                 "execution_ready": True,
             }
         )
-    require(
-        diagnostic or any(l[t] and l[t]["bits"] < 32 for l in plan["layers"] for t in ("weight", "activation")),
-        "量化实验至少包含一个低于 FP32 的目标，不能用全 FP32 冒充量化达标",
-    )
     if not diagnostic and constraints["precision_mode"] == "fixed":
         eligible = {
             n

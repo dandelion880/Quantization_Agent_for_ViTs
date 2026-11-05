@@ -49,7 +49,7 @@ class CodeAssetOwnershipRegression(TempCase):
         rid, code, artifact = self.produced_code(wf, spec, other)
         draft = experiment_payload(); draft['scope']['path'] = artifact['path']
         wf.broker.preflight(draft)
-        tid = wf.enqueue_role('approval-descendant', 'experiment_approval', refs=[wf.brief['id']],
+        tid = wf.enqueue_role('interpret-descendant', 'interpret', refs=[wf.brief['id']],
             context={'experiment_draft': draft, 'requester': 'generation'}, parent_task=own['task_id'])
         task, _ = self.begin(wf, wf.queue.get(tid))
         self.assertTrue(wf.can_read_card(task, spec))
@@ -60,11 +60,8 @@ class CodeAssetOwnershipRegression(TempCase):
         wf = self.workflow(1); spec = self.public_spec(wf)
         own = self.debate_task(wf)
         rid, code, artifact = self.produced_code(wf, spec, own)
-        reference = write_artifact(wf.run_dir, spec, {'interface': 'quantizer_v1',
-            'source': self.code_source('REFERENCE_CODE')}, 'safeguard')
         tid = wf.enqueue_role('bound-safeguard', 'safeguard', refs=[wf.brief['id'], spec['id']],
-            context={'experiment_ref': spec['id'], 'candidate': artifact, 'reference': reference,
-                     'numerical': {'status': 'passed'}}, parent_task=rid)
+            context={'experiment_ref': spec['id'], 'candidate': artifact}, parent_task=rid)
         task, _ = self.begin(wf, wf.queue.get(tid))
         self.assertTrue(wf.can_read_card(task, wf.journal.card(code['task_card'])))
         self.assertIn('PRIVATE_CODE_OWNER', self.read(wf, task, 'read_asset', asset=artifact['path'])['text'])
@@ -74,14 +71,13 @@ class CodeAssetOwnershipRegression(TempCase):
         artifact = write_artifact(wf.run_dir, spec, {'interface': 'quantizer_v1',
             'source': self.code_source('UNREGISTERED_FIXTURE')}, 'coding')
         draft = experiment_payload(); draft['scope']['path'] = artifact['path']
-        tid = wf.enqueue_role('unbound-approval', 'experiment_approval', refs=[wf.brief['id']],
+        tid = wf.enqueue_role('unbound-interpret', 'interpret', refs=[wf.brief['id']],
             context={'experiment_draft': draft, 'requester': 'generation'})
         task, _ = self.begin(wf, wf.queue.get(tid))
         with self.assertRaises(ContractError): self.read(wf, task, 'read_asset', asset=artifact['path'])
         wf.queue.finish(tid)
         tid = wf.enqueue_role('fixture-safeguard', 'safeguard', refs=[wf.brief['id'], spec['id']],
-            context={'experiment_ref': spec['id'], 'candidate': artifact, 'reference': artifact,
-                     'numerical': {'status': 'passed'}})
+            context={'experiment_ref': spec['id'], 'candidate': artifact})
         task, _ = self.begin(wf, wf.queue.get(tid))
         self.assertIn('UNREGISTERED_FIXTURE', self.read(wf, task, 'read_asset', asset=artifact['path'])['text'])
 
@@ -90,8 +86,7 @@ class CodeAssetOwnershipRegression(TempCase):
         own, other = self.debate_task(wf), self.debate_task(wf, side='B')
         rid, code, artifact = self.produced_code(wf, spec, other)
         tid = wf.enqueue_role('opposite-bound-safeguard', 'safeguard', refs=[wf.brief['id'], spec['id']],
-            context={'experiment_ref': spec['id'], 'candidate': artifact, 'reference': artifact,
-                     'numerical': {'status': 'passed'}}, parent_task=own['task_id'])
+            context={'experiment_ref': spec['id'], 'candidate': artifact}, parent_task=own['task_id'])
         task = wf.queue.get(tid)
         self.assertFalse(wf.can_read_card(task, wf.journal.card(code['task_card'])))
         self.assertNotIn(artifact['path'], wf.authorized_assets(task))

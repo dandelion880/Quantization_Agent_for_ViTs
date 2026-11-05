@@ -7,9 +7,9 @@ from copy import deepcopy
 from dataclasses import replace
 import torch
 from ..profiling.programs import ProfilePrograms, error_metrics
-from ..schemas import STR, arr, obj, require, fingerprint
+from ..schemas import STR, arr, obj, require, fingerprint, validate
 from ..registry import ToolDefinition
-from .contracts import PLUGIN_PLAN_SCHEMA, OPTIONAL_SPEC
+from .contracts import PLUGIN_PLAN_INPUT_SCHEMA, OPTIONAL_SPEC_INPUT, SPEC, normalize_plan
 from .capabilities import detect, validate_plan
 from .codecs import DTYPES, fit, qdq
 
@@ -57,7 +57,7 @@ def register_execution_tools(self):
         ToolDefinition(
             "validate_experiment",
             "核验 v3 配置的位点、组合、格式、粒度、硬件和资源；plan 与本会话 draft 引用二选一。compose 已执行相同预检。",
-            obj({"plan": PLUGIN_PLAN_SCHEMA, "draft": STR}, []),
+            obj({"plan": PLUGIN_PLAN_INPUT_SCHEMA, "draft": STR}, []),
             free,
             ("profiling",),
             self.validate_plan_or_draft,
@@ -70,6 +70,11 @@ def register_execution_tools(self):
     programs = ProfilePrograms(self)
 
     def sensitivity(modules, variants, count, seed, offset):
+        variants = normalize_plan({"schema_version": 2, "layers": variants})["layers"]
+        for variant in variants:
+            for target in ("weight", "activation"):
+                if variant[target] is not None:
+                    validate(variant[target], SPEC)
         keys = [fingerprint({k: v for k, v in item.items() if k != 'name'}) for item in variants]
         require(len(keys) == len(set(keys)),
                 '变体数值配置重复；name 只是标签，不能用改名选择算法。profile_sensitivity 仅执行 RTN；'
@@ -123,7 +128,8 @@ def register_execution_tools(self):
                     plan = {'schema_version': 3, 'unlisted_modules': 'keep_fp', 'preprocess': [],
                             'execution': deepcopy(execution),
                             'layers': [layer], 'unresolved': []}
-                    validate_plan(self.backend, plan, local_configs[name], cap, diagnostic=True)
+                    validate_plan(self.backend, plan, local_configs[name], cap, diagnostic=True,
+                                  allow_unknown_shapes=True)
                     plans[name, variant['name']] = plan
             rows, shapes, ids = [], {}, None
             dtype = DTYPES[execution['compute_dtype']]
@@ -205,9 +211,9 @@ def register_execution_tools(self):
             {
                 "name": STR,
                 "method": {"enum": ["rtn"]},
-                "weight": OPTIONAL_SPEC,
-                "activation": OPTIONAL_SPEC,
-            }
+                "weight": OPTIONAL_SPEC_INPUT,
+                "activation": OPTIONAL_SPEC_INPUT,
+            }, ["name", "weight", "activation"]
         ),
         minItems=1,
         maxItems=8,

@@ -8,7 +8,7 @@ from unittest.mock import patch
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from core.cards import ContractError, make_card, fingerprint, validate_payload
-from core.evidence_scope import canonical_scope, validate_claim_scope, matches
+from core.evidence_scope import canonical_scope, validate_claim_scope, bind_claim_scope, matches
 from core.execution_contract import check_plan, validate_plan_schema
 from core.journal import atomic_json
 from core.memory import MemoryRetriever
@@ -69,7 +69,7 @@ class PlanContractTests(unittest.TestCase):
         self.brief, self.draft, self.plan = full_fixture()
 
     def frozen(self):
-        return preflight_experiment(self.draft, self.brief)["execution"]
+        return preflight_experiment(self.draft, self.brief, executable=True)["execution"]
 
     def check(self, plan):
         spec = self.frozen()
@@ -80,8 +80,8 @@ class PlanContractTests(unittest.TestCase):
         self.assertEqual(self.check(self.plan)["weight_sites"], 2)
         self.assertEqual(spec["quantization_contract"]["parameters"], {"p": .91})
         self.assertEqual(spec["quantization_contract"]["specs"]["activation"]["bits"], 6)
-        payload = preflight_experiment(self.draft, self.brief)
-        self.assertEqual(preflight_experiment(payload, self.brief), payload)
+        payload = preflight_experiment(self.draft, self.brief, executable=True)
+        self.assertEqual(preflight_experiment(payload, self.brief, executable=True), payload)
 
     def test_deleted_site_null_target_and_duplicate_site_fail(self):
         for mutation in (lambda p: p["layers"].pop(), lambda p: p["layers"][0].update(weight=None),
@@ -108,14 +108,18 @@ class PlanContractTests(unittest.TestCase):
             brief, draft, _ = full_fixture()
             target = draft["execution"]["resolved_choices"] if where == "choices" else brief["hard_constraints"] if where == "brief" else brief["quantization_contract"]
             target[key] = value
-            with self.subTest(key=key), self.assertRaises(ContractError): preflight_experiment(draft, brief)
+            with self.subTest(key=key), self.assertRaises(ContractError): preflight_experiment(draft, brief, executable=True)
 
-    def test_missing_parameter_binding_and_parameter_mirror_conflict_fail(self):
+    def test_custom_parameters_need_no_binding_but_mirror_conflicts_fail(self):
         self.brief["quantization_contract"]["parameter_bindings"] = []
-        with self.assertRaisesRegex(ContractError, "parameter_bindings"): self.frozen()
+        self.assertEqual(self.frozen()["parameters"], {"p": .91})
         self.brief, self.draft, _ = full_fixture()
         self.draft["execution"]["resolved_choices"]["p"] = .99
         with self.assertRaisesRegex(ContractError, "冲突"): self.frozen()
+
+    def test_fixed_parameters_populate_execution_mirror(self):
+        self.draft['execution'].pop('parameters')
+        self.assertEqual(self.frozen()['parameters'], {'p': .91})
 
     def test_plan_schema_runs_before_capture_or_device_capability(self):
         self.plan["execution"]["compute_dtype"] = "float32"
@@ -147,7 +151,7 @@ class ReloadAndInterfaceTests(TempCase):
         from ptq_agent.execution.pipeline import QuantizationExecutor
         from tools.evaluating import evaluate
         brief, draft, plan = full_fixture()
-        payload = preflight_experiment(draft, brief)
+        payload = preflight_experiment(draft, brief, executable=True)
         backend, cfg, data = backend_and_data(payload["execution"])
         loaded = []
         original_load = QuantizationExecutor.load
@@ -218,58 +222,18 @@ class ReloadAndInterfaceTests(TempCase):
             with self.subTest(bug=bug), self.assertRaises((ContractError, TypeError)):
                 execute_custom(SimpleNamespace(execute=execute), payload, backend, cfg, data, self.root)
 
-    def test_isolated_numerical_service_requires_runtime_interface_cases(self):
-        import time
-        from tools.safeguards import write_artifact, approval_receipt
-        from runtime.task_worker import verification
+    def test_custom_preflight_requires_no_model_or_math_fixture(self):
         payload, _ = self.interface()
-        payload["validation"] = {"mathematics": "sum finite values; interface case executes the declared CPU model",
-            "atol": 1e-5, "rtol": 1e-5, "cases": [{"seed": 3, "context": {"activations": [1., 2.]}}],
-            "interface_cases": [{"seed": 3, "shape": [1, 5, 8], "sites": ["blocks.0.mlp.fc2"],
-                                 "counts": {"calibration": 2, "search": 4, "final": 2}}]}
-        candidate_source = '''def execute(payload, context):
-    if "activations" in context:
-        return {"observations": {"value": sum(context["activations"])}}
-    values = []
-    for image, sample_id in context["data"].batches("calibration"):
-        value = context["backend"].forward_model(context["reference_model"], image)
-        values.append(float(value.sum().item()))
-    return {"observations": {"value": sum(values)}}
-'''
-        reference_source = '''def execute(payload, context):
-    if "activations" in context:
-        total = 0.
-        for value in context["activations"]:
-            total += value
-        return {"observations": {"value": total}}
-    total = 0.
-    for batch in context["data"].batches("calibration"):
-        image, identifier = batch
-        total += float(context["backend"].forward_model(context["reference_model"], image).sum().item())
-    return {"observations": {"value": total}}
-'''
-        card = make_card("ExperimentCard", "interface_fixture", payload)
-        reference = write_artifact(self.root, card, {"interface": "experiment_v1", "source": reference_source}, "safeguard")
-        for name, source in (("valid", candidate_source), ("bad_split", candidate_source.replace(
-                '.batches("calibration")', '.batches(payload["execution"]["calibration"])'))):
-            candidate = write_artifact(self.root, card, {"interface": "experiment_v1", "source": source}, "coding")
-            directory = self.root / name; directory.mkdir()
-            result = verification({"experiment": card, "candidate": candidate, "reference": reference,
-                                   "deadline_unix": time.time() + 40}, directory)
-            self.assertEqual(result["status"], "passed" if name == "valid" else "rejected", result)
-            if name == "valid":
-                self.assertEqual(len(result["interface_cases"]), 1)
-            else:
-                self.assertIn("split", str(result["failure"]))
-                approved = make_card("ReviewDecisionCard", "interface_fixture", review("safeguard", approved=True,
-                    fidelity="deliberate bad approval", numerical_correctness="bad", experimental_validity="bad"))
-                with self.assertRaises(ContractError): approval_receipt(card, candidate, reference, result, approved)
+        payload.pop("validation")
+        checked = preflight_experiment(payload, validation_config()["research_brief"], executable=True)
+        self.assertEqual(checked["validation"], {})
+        self.assertNotIn("interface_cases", checked["validation"])
 
     def test_fp_exception_parameter_is_checked_on_actual_model(self):
         from core.execution_contract import check_fp_state
         import torch
         brief, draft, _ = full_fixture()
-        spec = preflight_experiment(draft, brief)["execution"]
+        spec = preflight_experiment(draft, brief, executable=True)["execution"]
         backend, _, _ = backend_and_data(spec)
         model = deepcopy(backend.model)
         check_fp_state(model, backend, spec["quantization_contract"])
@@ -287,6 +251,83 @@ class EvidenceBoundaryTests(TempCase):
                     "data": {"calibration": {"split": "calibration", "sample_count": 2,
                                               "sample_ids": ["a", "b"], "full_dataset": False}}}}}
         return spec, data
+
+    def test_scope_binds_code_and_measurement_identity_but_not_artifact_location(self):
+        payload, data = self.measured()
+        payload['execution'].update(requires_code=True, measurement_implementation={'files': {'worker.py': 'v1'}})
+        artifact = {'source_sha256': 'source-one', 'interface': 'quantizer_v1', 'id': 'job-one', 'path': '/one'}
+        data['provenance']['code_artifact'] = artifact
+        scope = canonical_scope({'payload': payload}, data)
+        repeated = deepcopy(data)
+        repeated['provenance']['code_artifact'].update(id='job-two', path='/two')
+        self.assertEqual(canonical_scope({'payload': payload}, repeated), scope)
+        self.assertEqual(bind_claim_scope({}, [scope, canonical_scope({'payload': payload}, repeated)]), scope)
+        repeated['provenance']['code_artifact']['source_sha256'] = 'source-two'
+        other = canonical_scope({'payload': payload}, repeated)
+        with self.assertRaisesRegex(ContractError, '范围不同'):
+            bind_claim_scope({}, [scope, other])
+        payload['execution']['measurement_implementation']['files']['worker.py'] = 'v2'
+        with self.assertRaisesRegex(ContractError, '范围不同'):
+            bind_claim_scope({}, [scope, canonical_scope({'payload': payload}, data)])
+        partial = deepcopy(scope)
+        partial['implementation']['code'].pop('source_sha256')
+        with self.assertRaisesRegex(ContractError, 'implementation'):
+            validate_claim_scope(partial, scope)
+
+    def test_scope_keeps_different_consumed_parameters_and_method_options_separate(self):
+        payload, data = self.measured()
+        facts = data['provenance']['execution_facts']
+        facts['parameters'] = {'bits': 4, 'signed': True, 'group_size': None, 'alpha': .5}
+        facts['quantization']['blocks.0.mlp.fc2']['method_options'] = {'clip_ratio': .99}
+        first = canonical_scope({'payload': payload}, data)
+        for change in (lambda f: f['parameters'].update(alpha=.7),
+                       lambda f: f['parameters'].update(signed=False),
+                       lambda f: f['quantization']['blocks.0.mlp.fc2']['method_options'].update(clip_ratio=.9)):
+            altered = deepcopy(data)
+            change(altered['provenance']['execution_facts'])
+            with self.assertRaisesRegex(ContractError, '范围不同'):
+                bind_claim_scope({}, [first, canonical_scope({'payload': payload}, altered)])
+
+    def test_probe_records_full_consumed_spec_and_broker_binds_implementation(self):
+        from tools.experiment_worker import run_experiment
+        from ptq_agent.execution.recipes import spec as quant_spec
+        wf = self.workflow(1)
+        experiment = wf.broker.freeze(experiment_payload(), requester='generation')
+        wf.journal.commit('fixture/spec', cards=[experiment])
+        # Worker protection is process-scoped: never install Landlock in unittest's process.
+        import time
+        from core.journal import read_json
+        tid = wf.queue.enqueue('probe', 'experiment', inputs={'experiment_ref': experiment['id']})
+        try:
+            wf.dispatch()
+            deadline = time.monotonic() + 40
+            while wf.queue.get(tid)['state'] == 'running' and time.monotonic() < deadline:
+                time.sleep(.1)
+                wf.poll()
+            task = wf.queue.get(tid)
+            self.assertEqual(task['state'], 'completed', task.get('error'))
+            directory = Path(task['request_path']).parent
+            data = read_json(directory / 'result.json')['data']
+        finally:
+            wf.runtime.stop()
+        facts = data['provenance']['execution_facts']
+        params = experiment['payload']['execution']['parameters']
+        self.assertEqual(facts['parameters'], params)
+        self.assertEqual(facts['quantization']['blocks.0.mlp.fc2']['activation'],
+                         quant_spec(params['bits'], params['signed'], params['granularity'], params['axis'], params['group_size']))
+        self.assertEqual(facts['quantization']['blocks.0.mlp.fc2']['method_options'], {})
+        receipt = {'experiment_ref': experiment['id'], 'experiment_sha256': experiment['content_sha256'],
+                   'execution_id': 'cpu-numeric-probe', 'status': 'completed', 'resources': {}, 'data': data}
+        receipt_path = directory / 'receipt.json'
+        atomic_json(receipt_path, receipt)
+        evidence = wf.broker.evidence(experiment, receipt, receipt_path)
+        self.assertIn('measurement_sha256', evidence['payload']['scope']['implementation'])
+        wf.broker.validate_evidence_for(experiment, evidence)
+        # 封装边界夹具：验证代码元数据取自宿主参数，而非 worker 原始 provenance。
+        artifact = {'source_sha256': 'fixture-source', 'interface': 'quantizer_v1'}
+        bound = wf.broker.evidence(experiment, receipt, receipt_path, code_artifact=artifact)
+        self.assertEqual(bound['payload']['scope']['implementation']['code'], artifact)
+        self.assertNotIn('code_artifact', data['provenance'])
 
     def test_scope_comes_from_verified_local_facts_and_never_target_w4(self):
         spec, data = self.measured()
@@ -407,8 +448,10 @@ class EvidenceBoundaryTests(TempCase):
 class InputFeedbackTests(TempCase):
     def test_wrong_query_types_and_whitespace_reasons_fail_as_contract_errors(self):
         memory = MemoryRetriever(self.journal())
-        for query in ([], "x", {}, {"text": {}}, {"text": " "}, {"evidence_ids": "id"}, {"evidence_ids": [""]}):
+        for query in ([], "x", {"text": {}}, {"evidence_ids": "id"}, {"evidence_ids": [""]}):
             with self.subTest(query=query), self.assertRaises(ContractError): memory.retrieve("judger", query=query)
+        for query in ({}, {"text": " "}):
+            self.assertEqual(memory.retrieve("judger", query=query)["entries"], [])
         for reasons in ([""], ["   "], [None], [{}], "reason", []):
             with self.subTest(reasons=reasons), self.assertRaises(ContractError):
                 validate_payload("ReviewDecisionCard", review("screening", eligible=False,

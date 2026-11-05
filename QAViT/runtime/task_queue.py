@@ -45,17 +45,21 @@ class GlobalTaskQueue:
         self.journal = journal
         self._tasks, self._event_index = {}, 0
 
-    def snapshot(self):
+    def _refresh_tasks(self):
         self.journal.refresh()
         for event in self.journal.events[self._event_index:]:
             if event["type"] == "task_snapshot":
                 self._tasks[event["task"]["task_id"]] = deepcopy(event["task"])
         self._event_index = len(self.journal.events)
+        return self._tasks
+
+    def snapshot(self):
+        self._refresh_tasks()
         return deepcopy(self._tasks)
 
     def get(self, task_id):
         try:
-            return self.snapshot()[task_id]
+            return deepcopy(self._refresh_tasks()[task_id])
         except KeyError:
             raise ContractError("未知任务: " + task_id) from None
 
@@ -105,10 +109,10 @@ class GlobalTaskQueue:
                              expected_sequence=seq)
 
     def promote(self):
-        for task_id, task in self.snapshot().items():
+        for task_id, task in list(self._refresh_tasks().items()):
             if task["state"] not in ("pending", "retry", "waiting"):
                 continue
-            tasks = self.snapshot()
+            tasks = self._refresh_tasks()
             if task["state"] == "waiting":
                 waiting = task.get("waiting_for", [])
                 if waiting and all(tasks[x]["state"] in TERMINAL for x in waiting):
@@ -124,7 +128,8 @@ class GlobalTaskQueue:
                             row["result"] = {"complete_result_asset": str(self.journal.card_path(child["task_card"])),
                                              "summary": "大型原始工具结果按完整TaskCard引用提供；使用read_asset分页读取。"}
                     self.change(task_id, "ready", patch={"tool_results": results, "waiting_for": [],
-                                                         "step": task["step"] + 1, "retry_count": 0})
+                                                         "step": task["step"] + 1, "retry_count": 0,
+                        **({"repair_count": 0, "repair_feedback": {}} if task["kind"] == "llm" else {})})
             elif all(tasks[x]["state"] == "completed" for x in task["depends_on"]):
                 if task.get("retry_after", 0) <= time.time():
                     self.change(task_id, "ready")

@@ -1,4 +1,8 @@
-"""真实 Coding/Safeguard 服务验证及明确标注的错误注入；不启动研究大循环。"""
+"""Single real Generation→Coding→Safeguard→Evidence→Generation smoke, no research loop.
+
+Reuses the explicitly selected input's model/data/resources. No scripted model decisions,
+reference implementation or numerical oracle. Output must be a new EXP directory.
+"""
 from pathlib import Path
 import argparse
 import json
@@ -8,77 +12,76 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from runtime.paths import ROOT
 from core.journal import read_json, atomic_json
 from core.workflow import Workflow
-from tools.safeguards import write_artifact, approval_receipt
-from tests.support import validation_config, experiment_payload
-from tests.test_infrastructure import NumericalSafeguard
-
-
-def drive(workflow, ids):
-    while True:
-        workflow.budget.check()
-        workflow.poll()
-        tasks = [workflow.queue.get(i) for i in ids]
-        if all(t["state"] == "completed" for t in tasks):
-            return tasks
-        if any(t["state"] in ("failed", "needs_clarification") for t in tasks):
-            raise RuntimeError(str([{k: t.get(k) for k in ("key", "state", "error", "clarification")} for t in tasks]))
-        workflow.dispatch()
-        time.sleep(.1)
 
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument("--output", required=True)
-    parser.add_argument("--parent-budget", required=True)
+    parser.add_argument('--output', required=True)
+    parser.add_argument('--config', required=True)
+    parser.add_argument('--wall-seconds', type=int, default=1800)
+    parser.add_argument('--question-file', help='UTF-8 scientific request for this one-experiment validation')
     args = parser.parse_args()
-    config = validation_config()
-    config["budget"]["parent_deadline_unix"] = read_json(args.parent_budget)["deadline_unix"]
-    workflow = Workflow(args.output, config)
-    payload = experiment_payload()
-    payload["execution"].update(requires_code=True, interface="quantizer_v1")
-    payload["validation"] = {"mathematics": "FP32 per_tensor symmetric integer QDQ: s=max(max(abs(calibration))/(2^(bits-1)-1),1e-12); Q(x)=s*clip(round_ties_even(x/s),-2^(bits-1),2^(bits-1)-1). fit(calibration,parameters) returns frozen state; apply(x,state,parameters) cannot modify either input/state. bits comes from parameters, not a hidden constant. No training.",
-        "atol": 1e-6, "rtol": 1e-6, "invariants": ["code_count", "frozen_state", "finite"], "cases": [
-            {"seed": 1, "values": [-20, -8, -7.5, -1.5, -.5, 0, .5, 1.5, 6.5, 7, 20], "calibration_values": [-7, 7]},
-            {"seed": 2, "shape": [32, 32], "distribution": "uniform", "scale": 3, "calibration_values": [-1, 1]},
-            {"seed": 3, "values": [0, 0, 0], "calibration_values": [0, 0]}]}
-    card = workflow.broker.freeze(payload, requester="user")
-    workflow.journal.commit("validation/frozen_spec", cards=[card])
-    refs = [workflow.brief["id"], card["id"]]
-    result = {"real_llm_used": True, "scope": "Coding and Safeguard service test; explicit user test specification; no research round"}
+    directory = Path(args.output).resolve()
+    if directory.exists() or ROOT / 'EXP' not in directory.parents:
+        parser.error('output must be a new EXP directory')
+    config = read_json(args.config)
+    config.update(name=directory.name, purpose='validation', enable_l3=False)
+    config['budget'].update(wall_seconds=args.wall_seconds, max_rounds=1,
+                            closeout_reserve_seconds=0, shutdown_reserve_seconds=15)
+    config['budget'].pop('parent_deadline_unix', None)
+    brief = config['research_brief']
+    brief['scientific_question'] = (
+        '本次只验证一次真实局部研究链，不开启完整研究轮次。请在生成H1前调用一次request_experiment：'
+        '以真实DeiT的blocks.0.attn.proj输入为统计位点，新增一份quantizer_v1实现：'
+        '用规定32张calibration图像捕获的激活绝对值的0.995分位数拟合对称per_tensor静态4-bit scale，'
+        'scale=max(quantile(abs(x),0.995)/7,1e-12)，round ties-to-even后裁剪到[-8,7]再反量化。'
+        '用同一FP32模型和相同输入测量输入及局部算子输出relative MSE，不训练、不读final、不做整网评估。'
+        '这次明确要求Coding实现该fit/apply算法以检验新代码链。请求只需question、measurements和'
+        '必要科学约束，execution可仅指定service=tensor_probe、requires_code=true、site；'
+        '参数选择交Coding补全，不填内部身份、scope、资源、validation、预测或fixture。'
+        '拿到真实Evidence后，回到当前Generation任务分析它，提交一个范围严格限于该局部测量的H1；'
+        '不得继续申请第二个实验，不声称量化全模型精度或硬件收益。')
+    if args.question_file:
+        brief['scientific_question'] = Path(args.question_file).read_text(encoding='utf-8')
+    brief['goals'] = {'validation': 'one local implementation chain and original researcher interpretation only'}
+    brief.pop('experiment_example', None)
+    wf = Workflow(directory, config)
+    parent = wf.enqueue_role('smoke/generate', 'generate', refs=[wf.brief['id']],
+        context={'round':1,'slot':'H1','hypothesis_type':'existing_method'})
+    result = {'status':'incomplete','real_llm_used':True,'full_research_loop_started':False}
     try:
-        ids = [workflow.enqueue_role("candidate", "code", refs=refs, context={"experiment_ref": card["id"]}),
-               workflow.enqueue_role("independent_reference", "reference", refs=refs, context={"experiment_ref": card["id"]})]
-        candidate_task, reference_task = drive(workflow, ids)
-        candidate, reference = candidate_task["result"]["artifact"], reference_task["result"]["artifact"]
-        def verify(key, artifact):
-            identifier = workflow.queue.enqueue(key, "verification", role="safeguard", inputs={"experiment_ref": card["id"], "candidate": artifact, "reference": reference}, resource_keys=workflow.experiment_resources(card))
-            return drive(workflow, [identifier])[0]["result"]
-        numerical = verify("numeric_candidate", candidate)
-        identifier = workflow.enqueue_role("review_candidate", "safeguard", refs=refs, context={"experiment_ref": card["id"], "candidate": candidate, "reference": reference, "numerical": numerical})
-        review_task = drive(workflow, [identifier])[0]
-        review = workflow.journal.card(review_task["outputs"][0])
-        approval = approval_receipt(card, candidate, reference, numerical, review)
-        identifier = workflow.queue.enqueue("approved_experiment", "experiment", inputs={"experiment_ref": card["id"], "approval": approval}, resource_keys=workflow.experiment_resources(card))
-        evidence = drive(workflow, [identifier])[0]["outputs"][0]
-        wrong = write_artifact(workflow.run_dir, card, {"source": NumericalSafeguard.CANDIDATE.replace("torch.round", "torch.floor"),
-            "interface": "quantizer_v1", "explanation": "TEST HARNESS deliberate floor fault; this source is NOT produced by Coding LLM"}, "program")
-        rejection = verify("numeric_fault_injection", wrong)
-        assert rejection["status"] == "rejected", rejection
-        identifier = workflow.enqueue_role("review_fault_injection", "safeguard", refs=refs, context={"experiment_ref": card["id"], "candidate": wrong, "reference": reference, "numerical": rejection})
-        rejected_task = drive(workflow, [identifier])[0]
-        rejected = workflow.journal.card(rejected_task["outputs"][0])
-        assert rejected["payload"]["approved"] is False
-        result.update(status="passed", candidate=candidate, independent_reference=reference, numerical=numerical,
-                      approved_review=review["id"], evidence_ref=evidence, fault_injection={"source": "explicit test harness", "artifact": wrong,
-                      "numerical": rejection, "real_safeguard_review": rejected["id"], "experiment_launched": False})
+        while True:
+            wf.budget.check()
+            wf.poll()
+            task = wf.queue.get(parent)
+            if task['state'] == 'completed':
+                break
+            blocked = [t for t in wf.queue.snapshot().values() if t['state']=='needs_clarification']
+            if task['state'] in ('failed','cancelled') or blocked:
+                raise RuntimeError(str({'parent':task, 'clarifications':blocked}))
+            requests = [t for t in wf.queue.snapshot().values() if t['kind']=='experiment_request']
+            if len(requests)>1:
+                raise RuntimeError('smoke budget allows only one research request')
+            wf.dispatch()
+            time.sleep(.2)
+        tasks = list(wf.queue.snapshot().values())
+        evidence = wf.journal.find_cards('EvidenceCard')
+        assert len(evidence)==1 and evidence[0]['payload']['measurement_source']=='real', 'missing real Evidence'
+        assert not any(t['kind']=='verification' or t['inputs'].get('purpose')=='reference' for t in tasks)
+        researcher = wf.journal.card(task['outputs'][0])
+        assert evidence[0]['id'] in researcher['refs'], 'researcher did not cite returned Evidence'
+        reviews = [c for c in wf.journal.find_cards('ReviewDecisionCard') if c['payload'].get('phase')=='safeguard']
+        assert reviews and reviews[-1]['payload']['approved']
+        result.update(status='passed',evidence_refs=[e['id'] for e in evidence],
+                      researcher_ref=researcher['id'],safeguard_refs=[r['id'] for r in reviews],
+                      tasks=[{k:t.get(k) for k in ('key','kind','state','outputs')} for t in tasks],
+                      observations=evidence[0]['payload']['observations'])
     except BaseException as exc:
-        result.update(status="incomplete", error={"code": type(exc).__name__, "message": str(exc)})
+        result['error']={'code':type(exc).__name__,'message':str(exc)}
         raise
     finally:
-        workflow.runtime.stop()
-        atomic_json(workflow.run_dir / "service_validation.json", result)
-        print(json.dumps(result, ensure_ascii=False))
+        wf.runtime.stop()
+        atomic_json(directory/'service_validation.json',result)
+        print(json.dumps(result,ensure_ascii=False))
 
-
-if __name__ == "__main__":
-    main()
+if __name__ == '__main__': main()

@@ -238,9 +238,8 @@ class QueueAndBudget(TempCase):
 
         workflow = self.workflow(1)
         for index, (kind, signum, expired) in enumerate([
-                ('verification', signal.SIGALRM, True),
-                ('experiment', signal.SIGALRM, True),
-                ('verification', signal.SIGTERM, False),
+                                ('experiment', signal.SIGALRM, True),
+                ('experiment', signal.SIGTERM, False),
                 ('llm', signal.SIGALRM, False)]):
             with self.subTest(kind=kind, signum=signum):
                 identifier = workflow.queue.enqueue('signal/' + str(index), kind)
@@ -432,12 +431,12 @@ class PureSemantics(unittest.TestCase):
         result = plan_constraints(plan, {"weight_bits": 8, "activation_bits": 4, "compute_dtype": "FP32"})
         self.assertEqual(result["weight_sites"], 1)
 
-    def test_numeric_oracle_rejects_nonfinite_and_tolerance_violation(self):
-        from runtime.task_worker import numeric_comparison
-        numeric_comparison({"values": [1., 2.]}, {"values": [1., 2.]}, 0, 0)
-        for left in ({"values": [1., 3.]}, {"values": [float("nan"), 2.]}, {"other": [1., 2.]}):
-            with self.assertRaises(ContractError):
-                numeric_comparison(left, {"values": [1., 2.]}, 1e-6, 1e-6)
+    def test_retired_dual_implementation_worker_is_unavailable(self):
+        from runtime.task_worker import work
+        from agents.tasks import TASKS
+        self.assertNotIn('reference', TASKS)
+        with self.assertRaisesRegex(ContractError, '未知工作进程任务类型'):
+            work({'kind': 'verification'}, Path('.'))
 
     def test_cycle_uncertainty_and_early_stop(self):
         matches = {"-".join(p): {"outcome": "A"} for p in INITIAL_PAIRS}
@@ -457,60 +456,58 @@ class PureSemantics(unittest.TestCase):
             check_constraints({"hard_constraints": {"training": False}}, {"training": True})
 
 
-class NumericalSafeguard(TempCase):
-    CANDIDATE = '''import torch
-def fit(x, p):
-    return {"scale": (x.abs().max() / (2 ** (p["bits"] - 1) - 1)).clamp_min(1e-12)}
-def apply(x, state, p):
-    q = torch.round(x / state["scale"])
-    return q.clamp(-2 ** (p["bits"] - 1), 2 ** (p["bits"] - 1) - 1) * state["scale"]
-'''
-    REFERENCE = '''import numpy as np
-import torch
-def fit(x, p):
-    a = x.detach().cpu().numpy().astype(np.float32)
-    s = np.maximum(np.max(np.abs(a)) / np.float32(2 ** (p["bits"] - 1) - 1), np.float32(1e-12))
-    return {"s": torch.tensor(float(s), dtype=torch.float32)}
-def apply(x, state, p):
-    a = x.detach().cpu().numpy().astype(np.float32)
-    s = np.float32(state["s"].item())
-    z = np.rint(a / s)
-    z = np.minimum(np.maximum(z, np.float32(-2 ** (p["bits"] - 1))), np.float32(2 ** (p["bits"] - 1) - 1))
-    return torch.from_numpy((z * s).astype(np.float32))
-'''
+class ImplementationApproval(TempCase):
+    SOURCE = "def fit(x, parameters):\n    return {}\ndef apply(x, state, parameters):\n    return x\n"
 
-    def verify(self, source):
-        from tools.safeguards import write_artifact
-        from runtime.task_worker import verification
+    def approved(self, approved=True):
+        from tools.safeguards import write_artifact, approval_receipt
         payload = experiment_payload()
-        payload["execution"].update(requires_code=True, interface="quantizer_v1")
-        payload["validation"] = {"mathematics": "s=max(max(abs(calibration))/(2^(bits-1)-1),1e-12); Q(x)=s*clip(round_ties_even(x/s),-2^(bits-1),2^(bits-1)-1)",
-            "atol": 1e-6, "rtol": 1e-6, "invariants": ["code_count", "frozen_state", "finite"], "cases": [
-                {"seed": 1, "values": [-20, -8, -7.5, -1.5, -.5, 0, .5, 1.5, 6.5, 7, 20], "calibration_values": [-7, 7]},
-                {"seed": 2, "shape": [32, 32], "distribution": "uniform", "scale": 3, "calibration_values": [-1, 1]},
-                {"seed": 3, "values": [0, 0, 0], "calibration_values": [0, 0]}]}
-        card = make_card("ExperimentCard", "numeric_fixture", payload, author="judger")
-        candidate = write_artifact(self.root, card, {"source": source, "interface": "quantizer_v1", "explanation": "explicit test candidate"}, "coding")
-        reference = write_artifact(self.root, card, {"source": self.REFERENCE, "interface": "quantizer_v1", "explanation": "independent NumPy oracle of frozen equation"}, "safeguard")
-        directory = self.root / "verification"; directory.mkdir()
-        result = verification({"experiment": card, "candidate": candidate, "reference": reference,
-                               "deadline_unix": time.time() + 45}, directory)
-        return card, candidate, reference, result
+        payload['execution'].update(requires_code=True, interface='quantizer_v1')
+        card = make_card('ExperimentCard', 'approval_fixture', payload)
+        candidate = write_artifact(self.root, card, {'interface': 'quantizer_v1', 'source': self.SOURCE}, 'coding')
+        binding = {'experiment_ref': card['id'], 'experiment_sha256': card['content_sha256'],
+                   'request_ref': card['id'], 'request_sha256': card['content_sha256'],
+                   'source_sha256': candidate['source_sha256']}
+        verdict = make_card('ReviewDecisionCard', 'approval_fixture',
+            review('safeguard', approved=approved, reviewed_binding=binding))
+        return card, candidate, approval_receipt(card, candidate, verdict)
 
-    def test_separate_fp32_reference_accepts_correct_quantization(self):
-        _, _, _, result = self.verify(self.CANDIDATE)
-        self.assertEqual(result["status"], "passed", result)
-        self.assertEqual(len(result["cases"]), 3)
+    def test_worker_distinguishes_host_interface_failure_from_implementation(self):
+        from runtime.task_worker import failure_origin
+        source = self.root / 'implementation.py'
+        source.write_text("def execute():\n    raise TypeError('implementation argument')\n")
+        namespace = {}
+        exec(compile(source.read_text(), str(source), 'exec'), namespace)
+        request = {'approval': {'candidate': {'path': str(source)}}}
+        try:
+            namespace['execute']()
+        except TypeError as exc:
+            self.assertEqual(failure_origin(exc, request), 'implementation')
+        try:
+            raise TypeError('host interface failed before invoking plugin')
+        except TypeError as exc:
+            self.assertEqual(failure_origin(exc, request), 'host')
 
-    def test_wrong_rounding_is_blocked_even_if_llm_approves(self):
-        from tools.safeguards import approval_receipt
-        card, candidate, reference, result = self.verify(self.CANDIDATE.replace("torch.round", "torch.floor"))
-        self.assertEqual(result["status"], "rejected", result)
-        self.assertIn("数值不符", result["failure"])
-        verdict = make_card("ReviewDecisionCard", "numeric_fixture", review("safeguard", approved=True,
-            fidelity="deliberately incorrect scripted approval", numerical_correctness="incorrect", experimental_validity="incorrect"), author="safeguard")
-        with self.assertRaises(ContractError):
-            approval_receipt(card, candidate, reference, result, verdict)
+    def test_single_source_approval_needs_no_numerical_or_reference_record(self):
+        from tools.safeguards import validate_approval
+        card, _, approval = self.approved()
+        validate_approval(approval, card)
+        self.assertNotIn('reference', approval)
+        self.assertNotIn('numerical', approval)
+
+    def test_rejection_and_changed_code_or_execution_invalidate_approval(self):
+        from tools.safeguards import validate_approval
+        with self.assertRaisesRegex(ContractError, '未批准'):
+            self.approved(False)
+        card, artifact, approval = self.approved()
+        changed = deepcopy(card['payload'])
+        changed['execution']['seed'] += 1
+        altered = make_card('ExperimentCard', card['run_id'], changed)
+        with self.assertRaisesRegex(ContractError, '执行条件'):
+            validate_approval(approval, altered)
+        Path(artifact['path']).write_text(self.SOURCE + '# revision\n')
+        with self.assertRaisesRegex(ContractError, '源码哈希'):
+            validate_approval(approval, card)
 
 
 if __name__ == "__main__":

@@ -48,7 +48,7 @@ def audit():
         except Exception as exc:
             errors.append({'module': name, 'error': str(exc)})
     from ptq_agent.execution.task_programs import SOURCE_FILES
-    dynamic = [QAVIT / 'runtime/task_worker.py', QAVIT / 'tools/verification_worker.py',
+    dynamic = [QAVIT / 'runtime/task_worker.py',
                QAVIT / 'tools/experiment_worker.py', QAVIT / 'tools/vision_models.py',
                QAVIT / 'tools/ptq_agent/execution/program_worker.py', QAVIT / 'tests/fixtures.py']
     dynamic += [QAVIT / 'tools/ptq_agent' / p for p in SOURCE_FILES]

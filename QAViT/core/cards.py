@@ -64,25 +64,27 @@ PAYLOAD_SCHEMAS = {
         "hypothesis_type": {"enum": ["existing_method", "engineering", "new_algorithm", "evolved"]},
         "title": TEXT, "research_question": TEXT, "mechanism": TEXT,
         "intervention": {"type": ["object", "string"]},
-        "predictions": {"type": "array", "minItems": 1, "items": object_schema({
+        "predictions": {"type": "array", "items": object_schema({
             "id": TEXT, "statement": TEXT, "measurement": TEXT, "falsification": TEXT,
-        }, ["id", "statement", "measurement", "falsification"])},
+        }, ["id", "statement"])},
         "implementation": {"type": ["object", "string"]},
         "validation_design": {"type": ["object", "string"]},
-        "sources": {"type": "array", "minItems": 1, "items": OBJECT},
+        "sources": {"type": "array", "items": OBJECT},
         "mechanism_relations": {"type": "array", "items": object_schema({
             "relation": TEXT, "target": TEXT, "explanation": TEXT,
         }, ["relation", "target", "explanation"])},
         "feedback_used": {"type": "array", "items": OBJECT}, "scope": OBJECT,
+        "evidence_refs": STRINGS,
     }, ["round", "slot", "hypothesis_type", "title", "research_question", "mechanism",
-        "intervention", "predictions", "implementation", "validation_design", "sources",
-        "mechanism_relations", "feedback_used", "scope"]),
+        "intervention", "predictions", "sources", "mechanism_relations", "feedback_used", "scope"]),
     "ReviewDecisionCard": object_schema({
         "phase": {"enum": ["screening", "position", "verdict", "ranking", "interpretation",
                             "experiment_approval", "safeguard", "reference_design", "revision"]},
         "rationale": TEXT, "evidence_refs": STRINGS, "uncertainties": STRINGS,
     }, ["phase", "rationale", "evidence_refs", "uncertainties"]),
     "ExperimentCard": object_schema({
+        "stage": {"enum": ["request", "execution"]},
+        "request_ref": TEXT, "request_sha256": TEXT,
         "level": {"enum": ["L1", "L2", "L3"]}, "question": TEXT,
         "prediction": TEXT, "measurements": {"type": "array", "minItems": 1},
         "controls": OBJECT, "decision_impact": TEXT, "execution": OBJECT,
@@ -93,8 +95,8 @@ PAYLOAD_SCHEMAS = {
                                       "configuration_difference": OBJECT},
                                      ["requested", "purpose", "configuration_difference"]),
         "scope": OBJECT, "validation": OBJECT,
-    }, ["level", "question", "prediction", "measurements", "controls", "decision_impact",
-        "execution", "resources", "replication", "scope", "validation"]),
+    }, ["level", "question", "measurements", "controls",
+        "execution", "resources", "replication", "scope"]),
     "EvidenceCard": object_schema({
         "experiment_ref": TEXT, "execution_fingerprint": TEXT,
         "status": {"enum": ["completed", "failed", "interrupted"]},
@@ -109,11 +111,16 @@ PAYLOAD_SCHEMAS = {
         "judgment_audit": {"type": "array", "items": OBJECT},
         "predictive_metrics": {"type": "array", "items": OBJECT},
         "knowledge_updates": {"type": "array", "items": OBJECT},
+        "pending_knowledge_updates": {"type": "array", "items": object_schema({
+            "index": {"type": "integer", "minimum": 0}, "submission": {}, "issue": TEXT,
+            "status": {"const": "pending_verification"}, "claim_id": TEXT,
+        }, ["index", "submission", "issue", "status"])},
         "recurring_failures": STRINGS, "blind_spots": STRINGS,
-        "next_questions": STRINGS, "generation_guidance": TEXT,
+        "next_questions": STRINGS, "resolved_questions": STRINGS, "abandoned_questions": STRINGS,
+        "generation_guidance": {"type": "string"},
         "evidence_refs": STRINGS, "reviewed_refs": {**STRINGS, "uniqueItems": True},
     }, ["round", "scientific_analysis", "judgment_audit", "predictive_metrics", "knowledge_updates",
-        "recurring_failures", "blind_spots", "next_questions", "generation_guidance", "evidence_refs"]),
+        "recurring_failures", "blind_spots", "generation_guidance", "evidence_refs"]),
     "TaskCard": object_schema({
         "task_id": TEXT, "kind": TEXT, "role": {"type": ["string", "null"]},
         "inputs": OBJECT, "depends_on": STRINGS, "state": TEXT,
@@ -128,7 +135,7 @@ PAYLOAD_SCHEMAS["ReviewDecisionCard"]["allOf"] = [{
     "if": {"properties": {"phase": {"const": "screening"}}, "required": ["phase"]},
     "then": object_schema({"eligible": {"type": "boolean"}, "hard_rejection_reasons": STRINGS,
                            "similarity_analysis": TEXT, "evidence_gaps": STRINGS},
-                          ["eligible", "hard_rejection_reasons", "similarity_analysis", "evidence_gaps"])
+                          ["eligible", "hard_rejection_reasons"])
 }]
 
 PAYLOAD_SCHEMAS["ResearchBrief"]["properties"].update(quantization_contract=OBJECT, fixed_quantization=OBJECT)
@@ -138,7 +145,7 @@ PAYLOAD_SCHEMAS["ExperimentCard"]["properties"]["execution"] = object_schema({
     "evaluations": {"type": "array", "items": OBJECT}, "reload_before_evaluation": {"type": "boolean"},
 }, ["service", "resolved_choices"])
 PAYLOAD_SCHEMAS["MetareviewCard"]["properties"]["knowledge_updates"]["items"] = object_schema({
-    "claim_id": TEXT, "text": TEXT, "status": {"enum": ["hypothesis", "observed_once", "replicated", "refuted", "conditional"]},
+    "claim_id": TEXT, "text": TEXT, "status": {"enum": ["hypothesis", "observed_once", "replicated", "refuted", "conditional", "abandoned"]},
     "scope": {**OBJECT, "minProperties": 1}, "evidence_refs": STRINGS, "rationale": TEXT,
     "replication_analysis": TEXT, "supersedes": TEXT,
 }, ["claim_id", "text", "status", "scope", "evidence_refs", "rationale"])
@@ -146,9 +153,18 @@ PAYLOAD_SCHEMAS["MetareviewCard"]["properties"]["judgment_audit"]["items"] = obj
     "judgment_ref": TEXT, "assessment": TEXT, "evidence_refs": STRINGS, "reasoning": TEXT,
 }, ["judgment_ref", "assessment", "evidence_refs", "reasoning"])
 
-MEMORY_QUERY_SCHEMA = object_schema({"text": TEXT, "evidence_ids": {**STRINGS, "minItems": 1},
-    "browse": {"const": True}, "kind": {"enum": list(KINDS)}, "layer": {"enum": ["L0", "L2"]}}, [])
-MEMORY_QUERY_SCHEMA["minProperties"] = 1
+OPTIONAL_ANALYSIS_FIELDS = {
+    'HypothesisCard': ('predictions', 'sources', 'mechanism_relations', 'feedback_used', 'scope',
+                       'implementation', 'validation_design'),
+    'ReviewDecisionCard': ('uncertainties', 'similarity_analysis', 'evidence_gaps',
+                           'arguments', 'objections', 'responses_to_prior', 'key_predictions', 'changed_judgments', 'next_questions', 'continuation_assessment',
+                           'decisive_reason', 'selection_basis'),
+    'MetareviewCard': ('judgment_audit', 'predictive_metrics', 'recurring_failures', 'blind_spots',
+                       'next_questions', 'resolved_questions', 'abandoned_questions', 'generation_guidance'),
+}
+
+MEMORY_QUERY_SCHEMA = object_schema({"text": {"type": "string"}, "evidence_ids": {**STRINGS, "minItems": 1},
+    "browse": {"const": True}, "kind": {"enum": list(KINDS)}, "layer": {"enum": ["L0", "L1", "L2"]}}, [])
 MEMORY_QUERY_SCHEMA["additionalProperties"] = {"anyOf": [TEXT, {"type": ["number", "boolean", "null"]},
     {"type": "array", "minItems": 1, "items": {"anyOf": [TEXT, {"type": ["number", "boolean", "null"]},
                                                                   {"type": "object", "minProperties": 1}]}},
@@ -173,7 +189,14 @@ ENVELOPE = object_schema({
 def validate_payload(kind, payload):
     if kind not in PAYLOAD_SCHEMAS:
         raise ContractError("未知卡片类型 " + str(kind))
-    errors = sorted(Draft202012Validator(PAYLOAD_SCHEMAS[kind]).iter_errors(payload),
+    schema = PAYLOAD_SCHEMAS[kind]
+    if kind == "ExperimentCard" and payload.get("stage") == "request":
+        # 原始需求独立持久化；执行字段只有 Coding 交付后才绑定。
+        schema = deepcopy(schema)
+        schema["required"] = ["question", "measurements"]
+        schema["properties"]["execution"]["required"] = []
+        schema["properties"]["resources"]["required"] = []
+    errors = sorted(Draft202012Validator(schema).iter_errors(payload),
                     key=lambda x: str(list(x.path)))
     if errors:
         err = errors[0]
@@ -186,7 +209,7 @@ def validate_payload(kind, payload):
         ids = [p["id"] for p in payload["predictions"]]
         if len(ids) != len(set(ids)):
             raise ContractError("预测 ID 重复")
-    if kind == "ExperimentCard":
+    if kind == "ExperimentCard" and payload.get("stage") != "request":
         if payload["replication"]["requested"] and not payload["replication"]["purpose"].strip():
             raise ContractError("重复验证必须说明科学目的")
         if not payload["execution"].get("service"):

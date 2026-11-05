@@ -88,47 +88,30 @@ def validate_contract(value):
                 or binding["target"] not in TARGETS or type(binding["as_list"]) is not bool
                 or any(not isinstance(binding[k], str) or not binding[k].strip() for k in ("parameter", "site", "field"))):
             raise ContractError("parameter_bindings 需要 parameter/site/target/field/as_list")
-        if binding["field"] not in {"percentiles", "scale_values", "zero_values", "factors"}:
-            raise ContractError("未识别的冻结参数校准绑定字段")
-    from ptq_agent.execution.contracts import PLUGIN_PLAN_SCHEMA
-    props = PLUGIN_PLAN_SCHEMA["properties"]
-    layer_props = props["layers"]["items"]["properties"]
-    def partial(schema):
-        schema = deepcopy(schema)
-        schema.pop("required", None)
-        return schema
-    def check(item, schema, path):
-        error = next(Draft202012Validator(schema).iter_errors(item), None)
-        if error:
-            raise ContractError(path + ": " + error.message)
+    # An execution contract describes intent. The native plan schema is applied
+    # only when a native plan is actually consumed, never as an algorithm registry.
     for target, spec in value.get("specs", {}).items():
-        schema = partial(layer_props[target]["anyOf"][1])
-        # 合同不把内置执行器格式白名单变成新 quantizer 的科学搜索空间。
-        # 返回数值 plan 时仍单独执行完整的注册 Schema。
-        schema["properties"].update(bits={"type": "integer", "minimum": 1},
-            format={"type": "string", "minLength": 1}, granularity={"type": "string", "minLength": 1},
-            axis={"type": ["integer", "null"]})
-        check(spec, schema, "specs." + target)
-    check(value.get("execution", {}), partial(props["execution"]), "quantization_contract.execution")
+        if "bits" in spec and (type(spec["bits"]) is not int or spec["bits"] < 1):
+            raise ContractError("specs." + target + ".bits 必须是正整数")
+        for key in ("format", "granularity", "scale"):
+            if key in spec and (not isinstance(spec[key], str) or not spec[key].strip()):
+                raise ContractError("specs." + target + "." + key + " 必须是非空字符串")
     for target, method in value.get("methods", {}).items():
-        check(method, layer_props[target + "_method"], "methods." + target)
+        if not isinstance(method, str) or not method.strip():
+            raise ContractError("methods." + target + " 必须是非空字符串")
     for target, calibration in value.get("calibrations", {}).items():
-        check(calibration, layer_props[target + "_calibration"], "calibrations." + target)
+        if not isinstance(calibration, dict):
+            raise ContractError("calibrations." + target + " 必须是对象")
     for sid, row in value.get("site_overrides", {}).items():
         for key, item in row.items():
-            schema = layer_props[key]
-            if key in TARGETS and isinstance(item, dict):
-                schema = partial(schema["anyOf"][1])
-            if key.endswith("_calibration"):
-                schema = partial(schema)
-            check(item, schema, "site_overrides." + sid + "." + key)
-    for key in ("preprocess", "operators", "unlisted_modules"):
-        if key in value:
-            check(value[key], props[key], "quantization_contract." + key)
+            if key.endswith("_method") and (not isinstance(item, str) or not item.strip()):
+                raise ContractError("site_overrides." + sid + "." + key + " 必须是非空字符串")
+            if key.endswith("_calibration") and not isinstance(item, dict):
+                raise ContractError("site_overrides." + sid + "." + key + " 必须是对象")
     return value
 
 
-def aliases(source, *, strict=False, validate=True):
+def aliases(source, *, strict=False, validate=True, require_targets=True):
     """兼容已有字段名称，但只在这里转换一次。未知必需字段直接返回错误。"""
     if not isinstance(source, dict):
         raise ContractError("执行选择必须是对象")
@@ -168,8 +151,11 @@ def aliases(source, *, strict=False, validate=True):
         handled.add("quantization_scope")
     if "target_activation_calibration" in source:
         if not source.get("target_site"):
-            raise ContractError("target_activation_calibration 缺少 target_site")
-        merge(result, {"site_overrides": {source["target_site"]: {"activation_calibration": source["target_activation_calibration"]}}})
+            if require_targets:
+                raise ContractError("target_activation_calibration 缺少 target_site")
+            validate_contract({"calibrations": {"activation": source["target_activation_calibration"]}})
+        else:
+            merge(result, {"site_overrides": {source["target_site"]: {"activation_calibration": source["target_activation_calibration"]}}})
         handled.update(("target_activation_calibration", "target_site"))
     if "other_calibrations" in source:
         merge(result, {"calibrations": {t: {"strategy": source["other_calibrations"]} for t in TARGETS}})
@@ -185,61 +171,99 @@ def aliases(source, *, strict=False, validate=True):
     return validate_contract(result) if validate else result
 
 
-def freeze_contract(execution, brief):
-    """把研究目标与本次执行分别保存；局部实验不会自动获得全网覆盖声明。"""
-    own = aliases(execution["resolved_choices"])
+def declared_contract(execution, *, require_targets=True):
+    """Check only choices already supplied, before the original request is immutable."""
+    choices = execution.get("resolved_choices", {})
+    own = aliases(choices, require_targets=require_targets)
     merge(own, validate_contract(execution.get("quantization_contract", {})))
     merge(own, aliases({k: v for k, v in execution.items() if k.startswith("required_")}, strict=True))
-    goals = aliases(brief.get("hard_constraints", {}), strict=True, validate=False)
-    # hard_constraints 的允许集合/数值区间仍按原语义；冻结为本次明确选择。
-    def resolve(rule, actual, path):
-        if isinstance(rule, list):
-            if not any(equal(actual, option) for option in rule):
-                raise ContractError(path + " 缺少允许集合中的明确选择")
-            return deepcopy(actual)
-        if isinstance(rule, dict) and rule and set(rule) <= {"min", "max"}:
-            if type(actual) not in (int, float) or any(
-                    actual < bound if key == "min" else actual > bound for key, bound in rule.items()):
-                raise ContractError(path + " 缺少范围内的明确选择")
-            return actual
-        if isinstance(rule, dict):
-            return {key: resolve(child, (actual or {}).get(key), path + "." + key) for key, child in rule.items()}
-        return deepcopy(rule)
-    for key in ("specs", "methods", "execution", "parameters"):
-        if key in goals:
-            goals[key] = resolve(goals[key], own.get(key, {}), "hard_constraints." + key)
-    validate_contract(goals)
-    merge(goals, aliases(brief.get("fixed_quantization", {}), strict=True))
-    merge(goals, validate_contract(brief.get("quantization_contract", {})))
-    merge(goals, aliases({k: v for k, v in brief.items() if k.startswith("required_")}, strict=True))
-    # 完整模型服务必须继承目标覆盖；局部诊断仅对实际执行目标应用约束。
-    full = (execution["service"] in ("quantize_evaluate", "evaluate_artifact")
-            or execution.get("measurement_kind") == "full_model"
-            or any(row.get("kind") in ("classification", "ade_frozen") for row in execution.get("evaluations", [])
-                   if isinstance(row, dict)))
-    selected = deepcopy(goals)
-    if not full:
-        for key in ("required_sites", "required_site_targets", "required_kinds", "preprocess", "operators", "site_overrides", "fp_exceptions"):
-            selected.pop(key, None)
-        # 完整模型的阶段顺序不宣称为局部统计的执行事实。
-        selected["execution"] = {k: v for k, v in selected.get("execution", {}).items()
-                                  if k in ("compute_dtype", "activation_calibration")}
-    merge(selected, own)
     params = execution.get("parameters", {})
     if not isinstance(params, dict):
         raise ContractError("execution.parameters 必须是对象")
-    for key, value in selected.get("parameters", {}).items():
-        if key not in params or not equal(value, params[key]):
-            raise ContractError("冻结参数与 execution.parameters 不一致: " + key)
-    # 原参数镜像可用于审计，但不代替明确的参数到计划绑定。
-    for key in (params.keys() & execution["resolved_choices"].keys()) - {"granularity"}:
-        if not equal(params[key], execution["resolved_choices"][key]):
+    for key in (params.keys() & choices.keys()) - {"granularity"}:
+        if not equal(params[key], choices[key]):
             raise ContractError("execution.parameters 与 resolved_choices 冲突: " + key)
-    if full:
-        for key in params:
-            if key not in {b["parameter"] for b in selected.get("parameter_bindings", [])}:
-                raise ContractError("冻结参数缺少宿主可核验的 parameter_bindings: " + key)
-        merge(selected, {"parameters": params})
+    merge(own, {"parameters": params})
+    return own
+
+
+def research_contracts(brief):
+    hard = aliases(brief.get("hard_constraints", {}), strict=True, validate=False)
+    fixed = aliases(brief.get("fixed_quantization", {}), strict=True)
+    merge(fixed, validate_contract(deepcopy(brief.get("quantization_contract", {}))))
+    merge(fixed, aliases({k: v for k, v in brief.items() if k.startswith("required_")}, strict=True))
+    return hard, fixed
+
+
+def declared_rules(rules, supplied):
+    """Project existing rules onto supplied fields; missing choices remain undecided."""
+    return {key: (declared_rules(rule, supplied[key])
+        if isinstance(rule, dict) and isinstance(supplied[key], dict) and not set(rule) <= {'min', 'max'}
+        else deepcopy(rule)) for key, rule in rules.items() if key in supplied}
+
+
+def uses_quantization_contract(execution):
+    if execution['service'] == 'profile':
+        from tools.profiling import uses_calibration
+        return uses_calibration(execution)
+    return True
+
+
+def freeze_contract(execution, brief, *, level=None):
+    """把研究目标与本次执行分别保存；局部实验不会自动获得全网覆盖声明。"""
+    if not uses_quantization_contract(execution):
+        # 能力/目录读取没有量化或校准过程，不把研究目标写成已执行事实。
+        execution['quantization_contract'] = {}
+        execution['research_quantization_contract'] = deepcopy(brief.get('quantization_contract', {}))
+        return execution
+    own = declared_contract(execution)
+    # Brief quantization fields describe the final candidate. Exploration may
+    # observe the whole model while intervening locally, ablating or keeping FP.
+    # L3 is the existing final-candidate stage; no extra mode or approval is needed.
+    hard, fixed = research_contracts(brief)
+    # Preserve the declared target without demanding exploratory choices for it.
+    goals = deepcopy(hard)
+    for key, value in fixed.items():
+        if isinstance(value, dict) and isinstance(goals.get(key), dict):
+            goals[key].update(deepcopy(value))
+        else:
+            goals[key] = deepcopy(value)
+    selected = {}
+    if level == "L3":
+        actual = deepcopy(fixed)
+        merge(actual, own)
+        def resolve(rule, actual, path):
+            if isinstance(rule, list):
+                if not any(equal(actual, option) for option in rule):
+                    raise ContractError(path + " 缺少允许集合中的明确选择")
+                return deepcopy(actual)
+            if isinstance(rule, dict) and rule and set(rule) <= {"min", "max"}:
+                if type(actual) not in (int, float) or any(
+                        actual < bound if key == "min" else actual > bound for key, bound in rule.items()):
+                    raise ContractError(path + " 缺少范围内的明确选择")
+                return actual
+            if isinstance(rule, dict):
+                return {key: resolve(child, (actual or {}).get(key), path + "." + key)
+                        for key, child in rule.items()}
+            return deepcopy(rule)
+        selected = deepcopy(hard)
+        # Only hard-constraint choices use allowed-set/range semantics.
+        for key in ("specs", "methods", "execution", "parameters"):
+            if key in hard:
+                selected[key] = resolve(hard[key], actual.get(key, {}), "hard_constraints." + key)
+        merge(selected, fixed)
+    merge(selected, own)
+    params = execution.setdefault("parameters", {})
+    if not isinstance(params, dict):
+        raise ContractError("execution.parameters 必须是对象")
+    for key, value in selected.get("parameters", {}).items():
+        if key not in params:
+            params[key] = deepcopy(value)
+        elif not equal(value, params[key]):
+            raise ContractError("冻结参数与 execution.parameters 不一致: " + key)
+    # Every parameter is passed to the implementation and recorded. Native
+    # parameter_bindings, when supplied, are checked at native-plan consumption.
+    merge(selected, {"parameters": params})
     execution["quantization_contract"] = validate_contract(selected)
     execution["research_quantization_contract"] = goals
     if execution["service"] == "tensor_probe":
@@ -262,7 +286,12 @@ def freeze_contract(execution, brief):
 
 
 def validate_plan_schema(plan):
-    from ptq_agent.execution.contracts import PLAN_SCHEMA
+    from ptq_agent.execution.contracts import PLAN_SCHEMA, normalize_plan
+    from ptq_agent.schemas import PTQError
+    try:
+        plan = normalize_plan(plan)
+    except PTQError as exc:
+        raise ContractError(str(exc)) from exc
     # 使用完整 JSON Schema，早于 detect、capture、prepare 和任何校准前向。
     error = next(Draft202012Validator(PLAN_SCHEMA).iter_errors(plan), None)
     if error:
@@ -271,6 +300,7 @@ def validate_plan_schema(plan):
         raise ContractError("plan Schema " + ".".join(map(str, detail.path)) + ": " + detail.message)
     if plan["unresolved"]:
         raise ContractError("计划仍有未解决的必需执行约束: " + str(plan["unresolved"]))
+    return plan
 
 
 def compare_fields(expected, actual, path):
@@ -283,25 +313,78 @@ def compare_fields(expected, actual, path):
             raise ContractError(path + "." + key + " 与冻结选择不一致")
 
 
-def check_plan(plan, choices, backend=None, cfg=None, contract=None):
-    from ptq_agent.execution.plugin_contracts import site_id, WEIGHT_KINDS, KINDS
-    validate_plan_schema(plan)
+def check_plan(plan, choices, backend=None, cfg=None, contract=None, *, native=True):
+    from ptq_agent.execution.plugin_contracts import site_id, KINDS
     contract = validate_contract(deepcopy(contract)) if contract is not None else aliases(choices)
-    actual = {site_id(row): row for row in plan["layers"]}
-    if len(actual) != len(plan["layers"]):
+    if native:
+        plan = validate_plan_schema(plan)
+    else:
+        if not isinstance(plan, dict):
+            raise ContractError("自定义执行器 plan 必须为对象")
+        rows = plan.get("layers", [])
+        described = (isinstance(rows, list) and isinstance(plan.get("execution", {}), dict)
+            and all(isinstance(row, dict) and isinstance(row.get("module"), str) and row["module"].strip()
+                and isinstance(row.get("kind", "linear"), str)
+                and all(row.get(t) is None or isinstance(row[t], dict)
+                    and type(row[t].get("bits")) is int and row[t]["bits"] > 0 for t in TARGETS)
+                for row in rows))
+        structural = (any(contract.get(k) for k in ("specs", "methods", "calibrations", "required_sites",
+            "required_site_targets", "required_kinds", "site_overrides", "parameter_bindings", "execution"))
+            or any(k in contract for k in ("preprocess", "operators", "unlisted_modules"))
+            or bool(contract.get("fp_exceptions", {}).get("sites")))
+        if not structural and (not described or not rows):
+            # The custom implementation owns its plan representation. Without
+            # structural intent, do not reinterpret similarly named algorithm fields.
+            if backend is not None:
+                modules = dict(backend.model.named_modules())
+                for module in contract.get('fp_exceptions', {}).get('modules', []):
+                    if module not in modules:
+                        raise ContractError("FP 例外引用未知模块: " + module)
+            return {"required_sites": [], "covered_sites": [], "weight_sites": 0, "activation_sites": 0,
+                    "quantization": {}, "declared_sites": [], "plan": deepcopy(plan), "contract": deepcopy(contract)}
+        if (not isinstance(plan, dict) or not isinstance(plan.get("layers", []), list)
+                or not isinstance(plan.get("execution", {}), dict)):
+            raise ContractError("自定义执行器 plan 必须为对象；提供 layers/execution 时须为数组/对象")
+        for row in plan.get("layers", []):
+            if (not isinstance(row, dict) or not isinstance(row.get("module"), str) or not row["module"].strip()
+                    or not isinstance(row.get("kind", "linear"), str)):
+                raise ContractError("自定义计划位点需要实际 module 和 kind")
+            for target in TARGETS:
+                spec = row.get(target)
+                if spec is not None:
+                    if not isinstance(spec, dict) or type(spec.get("bits")) is not int or spec["bits"] < 1:
+                        raise ContractError("自定义计划量化位点需要正整数 bits")
+    rows = plan.get("layers", [])
+    if not native and not rows and any(contract.get(key) for key in ("specs", "methods", "calibrations")):
+        raise ContractError("明确量化规格缺少可核验的实际位点描述")
+    actual = {site_id(row): row for row in rows}
+    if len(actual) != len(rows):
         raise ContractError("实际计划包含重复量化位点")
+    for target in TARGETS:
+        stated = any(target in contract.get(key, {}) for key in ("specs", "methods", "calibrations"))
+        fp = contract.get("specs", {}).get(target, {}).get("bits") == 32
+        if stated and not fp and not any(row.get(target) is not None for row in rows):
+            raise ContractError("明确量化选择没有实际执行目标: " + target)
     catalog = None
     if backend is not None:
         from ptq_agent.execution.sites import site_catalog
         catalog = site_catalog(backend, cfg)
-        if set(actual) - set(catalog):
+        if native and set(actual) - set(catalog):
             raise ContractError("实际计划包含未知位点")
+        if not native:
+            modules = dict(backend.model.named_modules())
+            if any(row["module"] not in modules for row in actual.values()):
+                raise ContractError("自定义计划包含模型中不存在的模块")
     required = set(contract.get("required_sites", [])) | set(contract.get("required_site_targets", {}))
     kinds = contract.get("required_kinds", [])
-    if set(kinds) - set(KINDS) or (kinds and catalog is None):
-        raise ContractError("required_kinds 未识别或缺少模型目录，不能跳过覆盖检查")
-    for kind in kinds:
+    if native and set(kinds) - set(KINDS):
+        raise ContractError("required_kinds 未识别的内置位点类型")
+    # Preflight has no model catalog. The worker repeats this check with the
+    # actual backend before capture/execution and expands required kinds there.
+    for kind in kinds if catalog is not None else ():
         sites = {sid for sid, info in catalog.items() if info["kind"] == kind and not info["protected"]}
+        if not sites and not native and kind not in KINDS:
+            sites = {sid for sid, row in actual.items() if row.get("kind") == kind}
         if not sites:
             raise ContractError("必需量化 kind 在模型中没有可执行位点: " + kind)
         required |= sites
@@ -320,7 +403,14 @@ def check_plan(plan, choices, backend=None, cfg=None, contract=None):
     for sid, row in actual.items():
         targets = contract.get("required_site_targets", {}).get(sid)
         if targets is None:
-            targets = TARGETS if row.get("kind", "linear") in WEIGHT_KINDS else ("activation",)
+            declared = {**contract.get("specs", {}),
+                        **{t: spec for t, spec in overrides.get(sid, {}).items() if t in TARGETS}}
+            targets = tuple(t for t, spec in declared.items()
+                            if spec is not None and spec.get("bits", 1) < 32)
+            if not declared:
+                targets = tuple(t for t in TARGETS if row.get(t) is not None and row[t]["bits"] < 32)
+            if sid in required and not targets:
+                raise ContractError("指定量化位点没有实际量化目标: " + sid)
         for target in TARGETS:
             spec = row.get(target)
             if sid in required and target in targets and (spec is None or spec["bits"] >= 32):
@@ -337,24 +427,28 @@ def check_plan(plan, choices, backend=None, cfg=None, contract=None):
             if calibration is not None:
                 compare_fields(calibration, row.get(target + "_calibration", {}), sid + "." + target + "_calibration")
         compare_fields(overrides.get(sid, {}), row, sid)
-    compare_fields(contract.get("execution", {}), plan["execution"], "plan.execution")
+    compare_fields(contract.get("execution", {}), plan.get("execution", {}), "plan.execution")
     for key in ("preprocess", "operators", "unlisted_modules"):
         if key in contract and not equal(contract[key], plan.get(key, [] if key == "operators" else None)):
             raise ContractError("plan." + key + " 与冻结选择不一致")
     fp = contract.get("fp_exceptions", {})
     for sid, targets in fp.get("sites", {}).items():
-        if catalog is not None and sid not in catalog:
+        if catalog is not None and sid not in catalog and (native or sid not in actual):
             raise ContractError("FP 例外引用未知位点: " + sid)
         if any(actual.get(sid, {}).get(t) is not None for t in targets):
             raise ContractError("FP 例外被量化: " + sid)
     for module in fp.get("modules", []):
         if backend is not None and module not in dict(backend.model.named_modules()):
             raise ContractError("FP 例外引用未知模块: " + module)
-        if any(r["module"] == module or r["module"].startswith(module + ".") for r in plan["layers"] + plan.get("operators", []) + plan.get("preprocess", [])):
+        if any(r["module"] == module or r["module"].startswith(module + ".") for r in rows + plan.get("operators", []) + plan.get("preprocess", [])):
             raise ContractError("FP 例外模块被干预: " + module)
     return {"required_sites": sorted(required), "covered_sites": sorted(actual),
-            "weight_sites": sum(r.get("weight") is not None for r in plan["layers"]),
-            "activation_sites": sum(r.get("activation") is not None for r in plan["layers"]),
+            "weight_sites": sum(r.get("weight") is not None for r in rows),
+            "activation_sites": sum(r.get("activation") is not None for r in rows),
+            "quantization": {sid: {k: deepcopy(row[k]) for k in ("weight", "activation", "method", "weight_method",
+                "activation_method", "weight_calibration", "activation_calibration", "options") if k in row}
+                for sid, row in actual.items()},
+            "declared_sites": [{"module": row["module"], "site_id": sid} for sid, row in actual.items()],
             "plan": deepcopy(plan), "contract": deepcopy(contract)}
 
 

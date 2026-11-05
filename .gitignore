@@ -26,6 +26,14 @@
 !/EXP/validation/research_refactor_20261103_r1/DELIVERY.json
 !/EXP/validation/research_refactor_20261103_r1/REPLAY_RESULT.json
 !/EXP/validation/research_refactor_20261103_r1/complexity.json
+!/EXP/validation/generation_loop_20261104_r1/
+!/EXP/validation/generation_loop_20261104_r1/REPORT.md
+!/EXP/validation/generation_loop_20261104_r1/PSEUDOCODE.md
+!/EXP/validation/generation_loop_20261104_r1/DELIVERY.json
+!/EXP/validation/generation_loop_20261104_r1/REPLAY_RESULT.json
+!/EXP/validation/generation_loop_20261104_r1/complexity.json
+!/EXP/validation/generation_loop_20261104_r1/HISTORICAL_EVIDENCE.json
+!/EXP/validation/generation_loop_20261104_r1/CALL_COMPARISON.json
 
 # Credentials and machine-local configuration. Never put real secrets in
 # tracked source/configuration; ignore rules cannot inspect file contents.
@@ -141,3 +149,28 @@ coverage.xml
 *.swo
 *~
 .DS_Store
+
+# Reviewed concise delivery artifacts for the single implementation transition.
+!/EXP/validation/single_implementation_20261105_r1/
+!/EXP/validation/single_implementation_20261105_r1/REPORT.md
+!/EXP/validation/single_implementation_20261105_r1/PSEUDOCODE.md
+!/EXP/validation/single_implementation_20261105_r1/DELIVERY.json
+
+# Reviewed concise artifacts for the research gate cleanup.
+!/EXP/validation/research_gates_20261105_r1/
+!/EXP/validation/research_gates_20261105_r1/REPORT.md
+!/EXP/validation/research_gates_20261105_r1/PSEUDOCODE.md
+!/EXP/validation/research_gates_20261105_r1/DELIVERY.json
+
+# Concise memory/Recorder optimization delivery; raw validation stays local.
+!/EXP/validation/memory_recorder_20261105_r1/
+!/EXP/validation/memory_recorder_20261105_r1/REPORT.md
+!/EXP/validation/memory_recorder_20261105_r1/PSEUDOCODE.md
+!/EXP/validation/memory_recorder_20261105_r1/DELIVERY.json
+
+# Reviewed concise delivery for consistent agent handoffs and numerical protocols.
+!/EXP/validation/end_to_end_repair_20261105_r1/
+!/EXP/validation/end_to_end_repair_20261105_r1/REPORT.md
+!/EXP/validation/end_to_end_repair_20261105_r1/ROOT_CAUSES.md
+!/EXP/validation/end_to_end_repair_20261105_r1/PSEUDOCODE.md
+!/EXP/validation/end_to_end_repair_20261105_r1/DELIVERY.json

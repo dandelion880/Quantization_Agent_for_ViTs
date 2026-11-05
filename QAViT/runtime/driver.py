@@ -7,8 +7,8 @@
 from pathlib import Path
 from copy import deepcopy
 import time
-from core.cards import ContractError, fingerprint, PAYLOAD_SCHEMAS
-from core.journal import atomic_json, file_lock, read_json
+from core.cards import ContractError, fingerprint
+from core.journal import atomic_json, file_lock, read_json, journal_read
 from runtime.budget import BudgetExhausted, RequestBudgetInsufficient
 from runtime.subscription import structured_output_error
 from agents.roles import role_spec
@@ -17,6 +17,7 @@ from tools.experiments import verify_assets
 
 
 class WorkflowDriver:
+    @journal_read
     def request_body(self, task):
         inputs = task["inputs"]
         if task["kind"] == "llm":
@@ -30,12 +31,12 @@ class WorkflowDriver:
             return {"kind": "llm", "spec": role_spec(task["role"], inputs["purpose"], context,
                         self.config["llm"], messages=messages), 'read_permissions': permissions,
                     "estimated_seconds": min(self.config["runtime"]["task_timeout_seconds"], self.budget.snapshot()["remaining_seconds"])}
-        if task["kind"] in ("experiment", "verification"):
+        if task["kind"] == "experiment":
             experiment = self.journal.card(inputs["experiment_ref"])
             verify_assets(experiment["payload"]["execution"])
             resources = experiment["payload"]["resources"]
             return {"kind": task["kind"], "experiment": experiment, "approval": inputs.get("approval"),
-                    "candidate": inputs.get("candidate"), "reference": inputs.get("reference"),
+                    "candidate": inputs.get("candidate"),
                     "gpu": resources.get("gpu"), "cpu_threads": resources["cpu_threads"],
                     "estimated_seconds": resources["estimated_seconds"]}
         if task["kind"] == "literature":
@@ -67,15 +68,25 @@ class WorkflowDriver:
             active = [t for t in self.queue.snapshot().values() if t["state"] == "running"]
             if task["kind"] == "llm" and any(t["kind"] == "llm" for t in active):
                 continue
-            if task["kind"] in ("experiment", "verification") and sum(t["kind"] in ("experiment", "verification") for t in active) >= self.config["runtime"]["experiment_concurrency"]:
+            if task["kind"] == "experiment" and sum(t["kind"] == "experiment" for t in active) >= self.config["runtime"]["experiment_concurrency"]:
                 continue
             refs = task["inputs"].get("refs", []) + ([task["inputs"]["experiment_ref"]] if task["inputs"].get("experiment_ref") else [])
             versions = {ref: self.journal.card(ref)["content_sha256"] for ref in refs}
             if task["kind"] == "experiment":
                 experiment = self.journal.card(task["inputs"]["experiment_ref"])
-                verify_assets(experiment["payload"]["execution"])
+                try:
+                    verify_assets(experiment["payload"]["execution"])
+                except ContractError as exc:
+                    # An intervention can invalidate a frozen request. Preserve its
+                    # rejection and return it through the existing parent task path.
+                    self.queue.claim(task["task_id"], input_versions=versions)
+                    self.queue.fail(task["task_id"], {"code": type(exc).__name__, "message": str(exc)})
+                    count += 1
+                    continue
+            if task["kind"] == "experiment":
+                experiment = self.journal.card(task["inputs"]["experiment_ref"])
                 approval = task["inputs"].get("approval")
-                cached = self.broker.cached(experiment, code_artifact=approval["candidate"] if approval else None)
+                cached = self.cached_experiment(experiment, task, approval)
                 if cached:
                     self.queue.claim(task["task_id"], input_versions=versions)
                     self.queue.finish(task["task_id"], outputs=[cached["id"]], result={"cache_reused": True})
@@ -199,8 +210,7 @@ class WorkflowDriver:
                             prior_response = prior_feedback.get('rejected_response', {})
                             prior_decision = prior_response.get('decision') if isinstance(prior_response, dict) else None
                             prior_draft = self.rejected_draft(current)
-                            if (task['inputs']['purpose'] == 'record'
-                                    and prior_feedback.get('task_id', task['task_id']) == task['task_id']
+                            if (prior_feedback.get('task_id', task['task_id']) == task['task_id']
                                     and isinstance(prior_decision, dict) and prior_decision.get('action') == 'submit'
                                     and isinstance(prior_draft, dict) and 'repair_patch' not in prior_draft):
                                 # The undecodable attempt is separate from the last parsed draft.
@@ -208,7 +218,7 @@ class WorkflowDriver:
                                 feedback['rejected_response'] = deepcopy(prior_feedback['rejected_response'])
                                 feedback['rejected_response_receipt'] = prior_feedback.get('rejected_response_receipt', prior_feedback.get('rejected_receipt'))
                                 feedback['instruction'] += ' rejected_response 保留本任务上次完整被拒稿；可提交 {repair_patch:{问题字段:修正值}}，其余字段沿用该稿。'
-                        if (task['inputs']['purpose'] == 'record' and isinstance(response, dict)
+                        if (isinstance(response, dict)
                                 and isinstance(response.get('decision'), dict)
                                 and response['decision'].get('action') == 'submit'):
                             patch = response['decision'].get('content', {})
@@ -216,15 +226,19 @@ class WorkflowDriver:
                             if (isinstance(patch, dict) and set(patch) == {'repair_patch'} and isinstance(patch['repair_patch'], dict)
                                     and isinstance(prior, dict)):
                                 feedback['rejected_response'] = deepcopy(response)
-                                updates = patch['repair_patch']
-                                if any(key.startswith(field + suffix) for key in updates
-                                       for field in PAYLOAD_SCHEMAS['MetareviewCard']['properties'] for suffix in ('.', '[')):
-                                    updates = {}  # 错误路径仍在原回执，不污染可恢复的完整草稿。
-                                feedback['rejected_response']['decision']['content'] = {**prior, **updates}
-                            feedback['instruction'] += ' repair_patch 只替换顶层字段；修复知识时提供 {repair_patch:{knowledge_updates:[完整修正数组]}}，不使用嵌套路径。其余字段沿用被拒正文。'
+                                try:
+                                    merged = self.merge_submission_patch(task, patch)
+                                except ContractError:
+                                    merged = prior  # 错误路径保存在回执，不污染可恢复完整稿。
+                                feedback['rejected_response']['decision']['content'] = merged
+                            feedback['instruction'] += ' 可用 repair_patch 只替换必要顶层字段；数组或对象提供完整修正值，不使用嵌套路径。其余科学内容沿用被拒正文。'
                         self.queue.change(task["task_id"], "retry", patch={"repair_count": current.get("repair_count", 0) + 1,
+                            "contract_error_count": current.get("contract_error_count", current.get("repair_count", 0)) + 1,
                             "repair_feedback": feedback, "retry_after": time.time()})
                     else:
+                        if task["kind"] == "llm":
+                            self.queue.change(task["task_id"], "running", patch={
+                                "contract_error_count": current.get("contract_error_count", current.get("repair_count", 0)) + 1})
                         self.queue.fail(task["task_id"], {"code": "contract_error", "message": str(exc), "receipt": str(path)})
                 else:
                     raise
@@ -237,14 +251,41 @@ class WorkflowDriver:
         if task["state"] != "needs_clarification" or not text.strip():
             raise ContractError("需回答待澄清任务，不能改写已完成科研决定")
         answers = task.get("user_answers", []) + [{"question": task["clarification"], "answer": text, "at": time.time()}]
-        self.queue.change(task_id, "ready", patch={"user_answers": answers, "clarification": None, "step": task["step"] + 1})
+        self.queue.change(task_id, "ready", patch={"user_answers": answers, "clarification": None,
+            "step": task["step"] + 1, "repair_count": 0, "repair_feedback": {}})
 
 
     def retry_failed(self, reason):
         if not reason.strip():
             raise ContractError("显式重试需说明原因，不重置预算或历史尝试")
-        for task in self.queue.snapshot().values():
-            if task["state"] == "failed":
+        tasks = self.queue.snapshot()
+        # A returned failure is part of the researcher's history, not unfinished
+        # work. Reopening it after a revised plan would replay superseded science.
+        settled = {row['task'] for task in tasks.values() for row in task.get('tool_results', [])}
+        settled.update(t['inputs']['previous_request_task'] for t in tasks.values()
+                       if t['inputs'].get('previous_request_task'))
+        settled.update(t['inputs']['context']['previous_request_task'] for t in tasks.values()
+                       if t['inputs'].get('context', {}).get('previous_request_task'))
+        settled.update(t['task_id'] for t in tasks.values()
+                       if t['kind'] == 'experiment_request' and t['state'] == 'completed')
+        settled.update(child for t in tasks.values() if t['kind'] == 'llm' and t['state'] == 'waiting'
+                       for child in t.get('waiting_for', []) if tasks[child]['kind'] == 'experiment_request')
+        for task in tasks.values():
+            if task['kind'] != 'experiment_request' or not task.get('code_revision'):
+                continue
+            suffix = '/revision' + str(task['code_revision'])
+            for child in tasks.values():
+                if child['inputs'].get('parent_task') != task['task_id']:
+                    continue
+                if (child['kind'] == 'experiment' or child['inputs'].get('purpose') in ('code', 'safeguard')) and not child['key'].endswith(suffix):
+                    settled.add(child['task_id'])
+        while True:
+            expanded = settled | {t['task_id'] for t in tasks.values() if t['inputs'].get('parent_task') in settled}
+            if expanded == settled:
+                break
+            settled = expanded
+        for task in tasks.values():
+            if task["state"] == "failed" and task['task_id'] not in settled:
                 self.queue.change(task["task_id"], "ready", patch={"explicit_retry_reason": reason})
 
 
@@ -258,7 +299,8 @@ class WorkflowDriver:
         attempts = [r["l3_outcome"] for r in rounds if r["l3_outcome"]["task_refs"]]
         value = {"schema_version": "qavit.report/2", "run_id": self.journal.run_id,
                  "status": status, "error": error, "workflow_completed": status == "completed",
-                 "formal_validation_success": status == "completed" and bool(attempts) and all(r["formal_validation_success"] for r in attempts),
+                 "formal_validation_success": bool(attempts) and all(r["formal_validation_success"] for r in attempts),
+                 "numerical_validation_status": "validated" if attempts and all(r["formal_validation_success"] for r in attempts) else "not_validated",
                  "tasks": counts, "budget": self.budget.snapshot(), "memory": self.memory.snapshot(),
                  "rounds": rounds,
                  "clarifications": [{"task_id": t["task_id"], **t["clarification"]} for t in tasks.values() if t["state"] == "needs_clarification"],
@@ -270,7 +312,7 @@ class WorkflowDriver:
                  "index_warning": getattr(self.journal, "index_error", None),
                  "pending_recording": self.memory.recording_batch(),
                  "recording_status": self.memory.recording_status(),
-                 "scientific_review_complete": not self.memory.recording_batch()['source_refs'],
+                 "scientific_review_complete": not self.memory.recording_batch()['review_required'],
                  "journal": self.journal.audit()}
         return value
 
@@ -305,14 +347,19 @@ class WorkflowDriver:
                     if closing:
                         number = next(e["round"] for e in self.journal.events if e["type"] == "budget_closeout_started")
                         batch = self.memory.recording_batch()
+                        if not batch['review_required']:
+                            status, error = 'budget_stopped', '事实已归档；没有新增待综合科研材料'
+                            break
                         if self.recording_deferred(batch):
                             status, error = 'budget_stopped', '事实已归档；同一批科学复盘已延期，不重复消耗收尾额度'
                             break
                         # 独立收尾任务避免覆盖中断的 Recorder，也不伪造 round_finished。
                         key = f"r{number:03d}/budget_record"
                         if key not in self.tasks():
-                            self.enqueue_recorder(number, incomplete=True, key=key)
-                        recorded = self.tasks()[key]
+                            identifier = self.enqueue_recorder(number, incomplete=True, key=key)
+                            recorded = self.queue.get(identifier)
+                        else:
+                            recorded = self.tasks()[key]
                         if recorded["state"] == 'completed' or self.defer_recorder(recorded):
                             status, error = "budget_stopped", "科研预算结束；收尾 Recorder 状态: " + recorded["state"]
                             break
@@ -347,7 +394,7 @@ class WorkflowDriver:
                 committed = False
                 try:
                     pending = self.memory.recording_batch()
-                    if pending['source_refs']:
+                    if pending['review_required']:
                         self.event('recorder_pending', f'recorder/pending/{self.journal.sequence}', batch=pending, reason=status)
                     self.event("run_status", f"status/stop/{self.journal.sequence}", status=status, error=error)
                     committed = True

@@ -53,11 +53,11 @@ PLAN_SCHEMA = obj(
                     "method": {"enum": ["rtn"]},
                     "weight": OPTIONAL_SPEC,
                     "activation": OPTIONAL_SPEC,
-                    "reason": STR,
-                    "evidence": arr(STR, minItems=1, uniqueItems=True),
-                }
+                    "reason": {"type": "string"},
+                    "evidence": arr(STR, uniqueItems=True),
+                }, ["module", "method", "weight", "activation"]
             ),
-            minItems=1,
+            minItems=0,
             maxItems=512,
         ),
         "unresolved": arr(STR, maxItems=32),
@@ -110,36 +110,96 @@ def validate_loop(options):
                 f"请明确达标门槛 {field} 或 min_top1")
 
 
-def validate_spec(spec, target, shape, activation_calibration="static", *, activation_axis=None):
+def normalize_plan(plan):
+    """Canonicalize only uniquely determined built-in representation fields.
+
+    The caller chooses whether it is using the built-in executor. Custom plans
+    must never pass through this function merely because they contain layers.
+    Scientific choices (method, format, axis, calibration, order) remain explicit.
+    """
+    value = deepcopy(plan)
+    if not isinstance(value, dict) or value.get("schema_version") not in (2, 3):
+        return value  # The full schema produces the ordinary protocol error.
+
+    def determined(target, field, expected, path):
+        if field in target:
+            require(target[field] == expected and type(target[field]) is type(expected),
+                    f"{path}.{field}={target[field]!r} 与已确定值 {expected!r} 冲突",
+                    path=path + "." + field)
+        else:
+            target[field] = expected
+
+    determined(value, "unlisted_modules", "keep_fp", "$")
+    if value["schema_version"] == 3 and isinstance(value.get("execution"), dict):
+        determined(value["execution"], "mode", "reference_qdq", "$.execution")
+    if not isinstance(value.get("layers"), list):
+        return value
+    from .plugin_contracts import KINDS, WEIGHT_KINDS
+    for index, row in enumerate(value["layers"]):
+        if not isinstance(row, dict):
+            continue
+        path = f"$.layers[{index}]"
+        if value["schema_version"] == 2:
+            determined(row, "method", "rtn", path)
+        elif row.get("kind") in KINDS and row["kind"] not in WEIGHT_KINDS:
+            determined(row, "weight", None, path)
+        for target in ("weight", "activation"):
+            spec = row.get(target)
+            if target in row and spec is None and value["schema_version"] == 3:
+                determined(row, target + "_method", None, path)
+            if not isinstance(spec, dict):
+                continue
+            spec_path = path + "." + target
+            if isinstance(spec.get("format"), str) and spec["format"] in FORMATS:
+                fmt = spec["format"]
+                determined(spec, "bits", FORMATS[fmt], spec_path)
+                determined(spec, "scale", "none" if fmt in RAW_FLOATS else "minmax", spec_path)
+                if fmt in RAW_FLOATS:
+                    determined(spec, "granularity", "per_tensor", spec_path)
+                if fmt.startswith("UINT") or not fmt.startswith("INT"):
+                    determined(spec, "symmetric", not fmt.startswith("UINT"), spec_path)
+                if fmt in BLOCKS:
+                    determined(spec, "granularity", "per_group", spec_path)
+                    determined(spec, "group_size", BLOCKS[fmt], spec_path)
+            if spec.get("granularity") == "per_tensor":
+                determined(spec, "axis", None, spec_path)
+            if spec.get("granularity") in ("per_tensor", "per_channel", "per_token"):
+                determined(spec, "group_size", None, spec_path)
+    return value
+
+
+def validate_spec(spec, target, shape, activation_calibration="static", *, activation_axis=None,
+                  allow_unknown_shape=False):
     validate(spec, SPEC)
     fmt, mode, axis = spec["format"], spec["granularity"], spec["axis"]
     require(spec["bits"] == FORMATS[fmt], "format/bits 不一致")
-    require(len(shape) >= 2 and all(int(n) > 0 for n in shape), "缺少有效张量形状")
+    require(shape is None or len(shape) >= 2 and all(int(n) > 0 for n in shape), "缺少有效张量形状")
+    require(shape is not None or mode == "per_tensor" or allow_unknown_shape,
+            "准备后仍缺少真实张量形状")
     if mode == "per_tensor":
         require(axis is None and spec["group_size"] is None, "per_tensor 的 axis/group_size 必须为 null")
     else:
-        require(type(axis) is int and 0 <= axis < len(shape),
+        require(type(axis) is int and axis >= 0 and (shape is None or axis < len(shape)),
                 f"量化轴越界：axis={axis}, shape={shape}", path="$.axis")
         if mode == "per_channel":
             # Linear 默认末轴；v3 位点目录显式给出转置 K / NCHW 的 feature 轴。
-            channel_axis = 0 if target == "weight" else (
+            channel_axis = 0 if target == "weight" else (None if shape is None else
                 len(shape) - 1 if activation_axis is None else activation_axis % len(shape))
             require(
-                axis == channel_axis,
+                channel_axis is None or axis == channel_axis,
                 f"channel 轴不符：axis={axis}, 该位点应为 {channel_axis}, shape={shape}",
                 path="$.axis",
             )
             require(spec["group_size"] is None, "per_channel 没有 group_size")
         elif mode == "per_group":
             require(
-                axis == len(shape) - 1
-                and spec["group_size"] is not None
-                and shape[axis] % spec["group_size"] == 0,
+                type(spec["group_size"]) is int and spec["group_size"] > 0
+                and (shape is None or axis == len(shape) - 1 and shape[axis] % spec["group_size"] == 0),
                 "group 必须沿最后一轴且整除该轴",
             )
         else:
             require(
-                target == "activation" and axis == len(shape) - 1 and spec["group_size"] is None,
+                target == "activation" and (shape is None or axis == len(shape) - 1) and spec["group_size"] is None,
                 "per_token 仅适用于输入激活，归约最后 feature 轴",
             )
         if target == "activation" and mode in ("per_group", "per_token"):
@@ -173,6 +233,38 @@ from .plugin_contracts import plan_schema, WEIGHT_METHODS, ACTIVATION_METHODS
 LEGACY_PLAN_SCHEMA = PLAN_SCHEMA
 PLUGIN_PLAN_SCHEMA = plan_schema(SPEC)
 PLAN_SCHEMA = {"anyOf": [LEGACY_PLAN_SCHEMA, PLUGIN_PLAN_SCHEMA]}
+
+
+def plan_input_schema(schema):
+    """Input may omit mirrors; persisted artifacts still use the full schema."""
+    value = deepcopy(schema)
+    def visit(node):
+        if isinstance(node, list):
+            for item in node:
+                visit(item)
+        elif isinstance(node, dict):
+            props = node.get("properties", {})
+            optional = set()
+            if "format" in props and "granularity" in props:
+                optional.update(("bits", "axis", "group_size", "scale", "symmetric", "granularity"))
+            if "weight" in props and "activation" in props:
+                optional.update(("weight_method", "activation_method", "weight"))
+                if props.get("method", {}).get("enum") == ["rtn"]:
+                    optional.add("method")
+            if props.get("unlisted_modules", {}).get("enum") == ["keep_fp"]:
+                optional.add("unlisted_modules")
+            if props.get("mode", {}).get("enum") == ["reference_qdq"]:
+                optional.add("mode")
+            if "required" in node:
+                node["required"] = [key for key in node["required"] if key not in optional]
+            for child in node.values():
+                visit(child)
+    visit(value)
+    return value
+
+
+PLUGIN_PLAN_INPUT_SCHEMA = plan_input_schema(PLUGIN_PLAN_SCHEMA)
+OPTIONAL_SPEC_INPUT = plan_input_schema(OPTIONAL_SPEC)
 LOOP_SCHEMA["properties"].update({
     "selection": {"enum": ["first_feasible", "best_accuracy"]},
     "stop_on_goal": {"type": "boolean"},

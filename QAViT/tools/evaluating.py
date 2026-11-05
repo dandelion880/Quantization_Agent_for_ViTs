@@ -33,7 +33,7 @@ class DataView:
                 yield self.data.backend.data_adapter.load_image(row).to(self.data.backend.device), row["sample_id"]
 
 
-def evaluate(backend, cfg, data, model, plan, split, count=None, shard=None):
+def evaluate(backend, cfg, data, model, plan, split, count=None, shard=None, *, native=True, sites=()):
     from ptq_agent.execution import evaluation as numerical
     view = DataView(data, split, count, shard)
     original = numerical.OutputErrors
@@ -43,7 +43,7 @@ def evaluate(backend, cfg, data, model, plan, split, count=None, shard=None):
     # 只增加归约所需证据字段，不改旧Evaluator任何计算、顺序或检查。
     numerical.OutputErrors = ErrorsWithSums
     try:
-        result = numerical.Evaluator(backend, cfg, view).evaluate(model, plan, split)
+        result = numerical.Evaluator(backend, cfg, view).evaluate(model, plan, split, native=native, sites=sites)
     finally:
         numerical.OutputErrors = original
     result["metrics"]["delta_top1_pp"] = (result["metrics"]["top1"] - result["metrics"]["baseline_top1"]

@@ -23,8 +23,8 @@ from ptq_agent.schemas import ToolCall
 PURPOSE_ROLES = {
     'generate': 'generation', 'evolve': 'evolution', 'screen': 'judger',
     'position': 'judger', 'arbitrate': 'judger', 'rank': 'judger',
-    'experiment_approval': 'judger', 'plan_l3': 'judger', 'record': 'recorder',
-    'code': 'coding', 'reference': 'safeguard', 'safeguard': 'safeguard',
+    'plan_l3': 'judger', 'record': 'recorder',
+    'code': 'coding', 'safeguard': 'safeguard',
     'supervise': 'supervisor', 'interpret': 'judger',
 }
 

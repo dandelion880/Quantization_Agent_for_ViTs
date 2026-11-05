@@ -36,7 +36,8 @@ class StructureContracts(unittest.TestCase):
         baseline = read_json(QAVIT / 'tests/data/prompt_readiness_baseline.json')
         expected_prompts = {**baseline['assembled_prompts'], **baseline.get('explicit_prompt_fixes', {})}
         config = config_check(validation_config())
-        self.assertEqual(set(TASKS), set(golden['prompts']))
+        # The historical golden includes the removed routine scientific approval task.
+        self.assertEqual(set(TASKS), set(golden['prompts']) - {'experiment_approval', 'reference'})
         self.assertEqual(config['llm']['agent_models'], model_defaults())
         self.assertNotIn('agent_models', read_json(QAVIT / 'configs/research.json')['llm'])
         self.assertNotIn('llm', read_json(QAVIT / 'configs/deitb_backend.json'))
@@ -44,6 +45,27 @@ class StructureContracts(unittest.TestCase):
             spec = role_spec(task['role'], purpose, {}, config['llm'])
             self.assertEqual(hashlib.sha256(spec['system_prompt'].encode()).hexdigest(), expected_prompts[purpose])
             self.assertEqual([t['name'] for t in spec['tools']], task['tools'])
+
+    def test_model_schemas_expose_science_without_persistent_identity_fields(self):
+        from agents.roles import submission_schema, TOOLS
+        from core.cards import validate_schema
+        draft = TOOLS['request_experiment']['parameters']['properties']['experiment']
+        validate_schema({'question': 'Measure the declared attention statistic',
+                         'measurements': ['paired statistic under unchanged baseline']}, draft, 'request')
+        for field in ('stage', 'request_ref', 'request_sha256', 'scope', 'validation'):
+            self.assertNotIn(field, draft['properties'])
+        self.assertNotIn('resolved_choices', draft['properties']['execution']['properties'])
+        self.assertNotIn('cpu_threads', draft['properties']['resources']['properties'])
+        self.assertNotIn('round', submission_schema('generate')['properties'])
+        self.assertNotIn('phase', submission_schema('safeguard')['properties'])
+        validate_schema({'approved': False, 'rationale': 'The implementation samples the wrong site'},
+                        submission_schema('safeguard'), 'review')
+        recorder = submission_schema('record')
+        self.assertIn('knowledge_updates', recorder['properties'])
+        self.assertNotIn('pending_knowledge_updates', recorder['properties'])
+        self.assertNotIn('round', recorder['properties'])
+        self.assertIn('execution_choices', submission_schema('code')['properties'])
+        self.assertNotIn('source_sha256', submission_schema('code')['properties'])
 
     def test_backend_config_keeps_numerical_resource_validation(self):
         from copy import deepcopy

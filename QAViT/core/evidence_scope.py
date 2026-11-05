@@ -5,7 +5,7 @@ from core.cards import ContractError, canonical, fingerprint
 
 VERSION = "qavit.evidence_scope/1"
 BOUNDARIES = ("model", "model_identity_sha256", "measurement_kind", "measurement_source",
-              "site", "weight_bits", "activation_bits", "quantization", "parameters", "data")
+              "site", "weight_bits", "activation_bits", "quantization", "parameters", "data", "implementation")
 
 
 def canonical_scope(experiment, data):
@@ -19,6 +19,16 @@ def canonical_scope(experiment, data):
               "model_identity_sha256": fingerprint(provenance.get("model_identity", {})),
               "measurement_kind": facts.get("measurement_kind", "unverified_scope"),
               "data": deepcopy(facts.get("data", {}))}
+    implementation = {}
+    if spec.get("measurement_implementation"):
+        implementation["measurement_sha256"] = fingerprint(spec["measurement_implementation"])
+    artifact = provenance.get("code_artifact")
+    if artifact:
+        implementation["code"] = {key: artifact[key] for key in ("source_sha256", "interface")}
+    elif spec.get("requires_code"):
+        raise ContractError("自定义实测范围缺少程序绑定的代码身份")
+    if implementation:
+        result["implementation"] = implementation
     quantization = facts.get("quantization", {})
     if facts.get("sites"):
         result["site"] = deepcopy(facts["sites"])
@@ -68,9 +78,45 @@ def validate_claim_scope(stated, measured):
     # 样本上的整体统计不能凭空推出子集统计；数据范围须原样绑定。
     if not equal_data(stated.get("data"), measured.get("data")):
         raise ContractError("知识数据范围必须与实际测量一致")
-    for key in ("quantization", "parameters"):
+    for key in ("quantization", "parameters", "implementation"):
         if key in measured and not equal_data(stated.get(key), measured[key]):
             raise ContractError("知识不得省略或改写实际量化规格/冻结参数: " + key)
+
+
+def bind_claim_scope(stated, measured_scopes):
+    """补全真实证据已经确定的边界；未知科学条件和显式冲突不能被覆盖。"""
+    if not measured_scopes:
+        if not isinstance(stated, dict) or not stated:
+            raise ContractError("没有明确 Evidence 的假说须说明科学适用条件")
+        return deepcopy(stated)
+    measured = measured_scopes[0]
+    if any(not equal_data(measured, scope) for scope in measured_scopes[1:]):
+        raise ContractError("Evidence 范围不同，不能绑定为单一共同范围；比较知识应逐份绑定各 Evidence 条件")
+    if stated is None:
+        stated = {}
+    if not isinstance(stated, dict):
+        raise ContractError("知识 scope 必须是科学条件对象")
+    if not contains(measured, stated):
+        # 指明最小冲突路径，避免要求模型重写整个 scope。
+        def conflict(actual, requested, path='scope'):
+            if isinstance(actual, dict) and isinstance(requested, dict):
+                for key, value in requested.items():
+                    if key not in actual:
+                        return path + '.' + key + ' 未在引用证据中核验'
+                    if not contains(actual[key], value):
+                        return conflict(actual[key], value, path + '.' + key)
+            return path + ': 声明=' + canonical(requested) + '，实测=' + canonical(actual)
+        raise ContractError('知识范围冲突: ' + conflict(measured, stated))
+
+    def complete(actual, requested):
+        result = deepcopy(actual)
+        for key, value in requested.items():
+            result[key] = (complete(actual[key], value) if isinstance(value, dict)
+                           else deepcopy(value))
+        return result
+    bound = complete(measured, stated)
+    validate_claim_scope(bound, measured)
+    return bound
 
 
 def equal_data(left, right):

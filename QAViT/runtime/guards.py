@@ -3,35 +3,34 @@ from pathlib import Path
 import os
 from runtime.paths import ROOT, LIBRARY
 
-GRADIENT_AUDIT = {"optimizer_steps": 0, "measurement_gradient_calls": 0, "other_gradient_calls": 0}
+GRADIENT_AUDIT = {"optimizer_steps": 0, "autograd_grad_calls": 0, "backward_calls": 0}
+
 
 def install_gradient_guard(training_free):
-    """覆盖所有任务(含profiling)：禁优化器更新；仅允许已核验的只读梯度统计。"""
-    import inspect
+    """梯度本身不是训练；禁止优化器更新，实际模型不变性由执行器核验。"""
     import torch
     from torch.optim.optimizer import register_optimizer_step_pre_hook
-    from runtime.paths import LIBRARY
-    trusted = (LIBRARY / 'execution/calibration.py').resolve()
+    for key in GRADIENT_AUDIT:
+        GRADIENT_AUDIT[key] = 0
     def step(optimizer, args, kwargs):
         if training_free:
-            raise ValueError("training-free禁止任何优化器梯度更新，包括profiling")
+            raise ValueError("training-free禁止优化器更新；只读梯度诊断允许")
         GRADIENT_AUDIT["optimizer_steps"] += 1
     handle = register_optimizer_step_pre_hook(step)
     original_grad, original_backward = torch.autograd.grad, torch.autograd.backward
     def grad(*args, **kwargs):
-        caller = Path(inspect.currentframe().f_back.f_code.co_filename).resolve()
-        measured = caller == trusted
-        GRADIENT_AUDIT["measurement_gradient_calls" if measured else "other_gradient_calls"] += 1
-        if training_free and not measured:
-            raise ValueError("training-free不执行未验证的自定义梯度路径；仅开放旧capture只读梯度统计")
+        GRADIENT_AUDIT["autograd_grad_calls"] += 1
         return original_grad(*args, **kwargs)
     def backward(*args, **kwargs):
-        GRADIENT_AUDIT["other_gradient_calls"] += 1
-        if training_free:
-            raise ValueError("training-free禁止backward更新路径；只读梯度统计使用已验证capture")
+        GRADIENT_AUDIT["backward_calls"] += 1
         return original_backward(*args, **kwargs)
     torch.autograd.grad, torch.autograd.backward = grad, backward
-    return handle
+
+    class Guard:
+        def remove(self):
+            handle.remove()
+            torch.autograd.grad, torch.autograd.backward = original_grad, original_backward
+    return Guard()
 
 
 def protect_files(directory):

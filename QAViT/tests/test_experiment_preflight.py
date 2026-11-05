@@ -15,6 +15,91 @@ from tools.experiments import preflight_experiment, resolve_execution
 
 
 class InterfaceFixtureRegression(unittest.TestCase):
+    def configured_fixture_inputs(self):
+        execution = {'backend': {'config_path': str(Path(__file__).resolve().parents[1] / 'configs/deitb_backend.json'),
+                                 'backend_overrides': {'calibration_samples': 32}}}
+        case = {'seed': 3, 'shape': [1, 5, 8], 'sites': ['blocks.0.mlp.fc1', 'blocks.0.mlp.fc2'],
+                'counts': {'calibration': 2, 'search': 1, 'final': 1}}
+        return execution, case
+
+    def test_frozen_backend_configuration_supports_real_prepare_without_mutation(self):
+        from tools.experiment_worker import backend_configuration
+        from tools.runtime_interface import interface_fixture
+        from ptq_agent.execution.pipeline import QuantizationExecutor
+        from tests.test_execution_contracts import plan_fixture
+        execution, case = self.configured_fixture_inputs()
+        original = deepcopy(execution)
+        effective = backend_configuration(execution)
+        backend, cfg, data = interface_fixture(execution, case)
+        self.assertEqual(cfg['constraints'], effective['constraints'])
+        self.assertEqual({k: v for k, v in cfg['loop'].items() if k != 'evaluation'},
+                         {k: v for k, v in effective['loop'].items() if k != 'evaluation'})
+        self.assertEqual(cfg['backend']['device'], 'cpu')
+        self.assertEqual(len(data.ids('calibration')), 2)
+        executor = QuantizationExecutor(backend, cfg, data)
+        plan = plan_fixture()
+        model, weights, activations, _ = executor.prepare(plan, {})
+        self.assertEqual(set(weights), set(case['sites']))
+        self.assertEqual(set(activations), set(case['sites']))
+        executor.audit(model, plan)
+        backend.reset()
+        self.assertEqual(execution, original)
+
+    def test_frozen_backend_mode_scope_method_and_protection_restrictions_remain(self):
+        from tools.experiment_worker import backend_configuration
+        from tools.runtime_interface import interface_fixture
+        from ptq_agent.execution.pipeline import QuantizationExecutor
+        from ptq_agent.schemas import PTQError
+        from tests.test_execution_contracts import plan_fixture
+        execution, case = self.configured_fixture_inputs()
+        restrictions = [('loop', 'execution_modes', ['native']),
+                        ('loop', 'scope_modules', ['blocks.0.mlp.fc1']),
+                        ('loop', 'allowed_activation_methods', ['rtn']),
+                        ('loop', 'quantize_targets', ['weight']),
+                        ('constraints', 'protected_modules', ['blocks.0.mlp.fc1'])]
+        for section, key, value in restrictions:
+            with self.subTest(key=key):
+                cfg = backend_configuration(execution)
+                cfg[section][key] = value
+                backend, passed, data = interface_fixture({'backend': {'config': cfg}}, case)
+                self.assertEqual(passed[section][key], value)
+                with self.assertRaises(PTQError):
+                    QuantizationExecutor(backend, passed, data).prepare(plan_fixture(), {})
+
+    def test_native_calibration_preserves_fixture_and_reset_rejects_mutation(self):
+        import torch
+        from tools.runtime_interface import interface_fixture
+        from ptq_agent.execution.pipeline import QuantizationExecutor, build_model
+        from ptq_agent.schemas import PTQError
+        from tests.test_execution_contracts import plan_fixture
+        case = {'seed': 3, 'shape': [1, 5, 8],
+                'sites': ['blocks.0.mlp.fc1', 'blocks.0.mlp.fc2'],
+                'counts': {'calibration': 2, 'search': 1, 'final': 1}}
+        backend, cfg, data = interface_fixture({}, case)
+        plan = plan_fixture()
+        model = build_model(backend, plan)
+        executor = QuantizationExecutor(backend, cfg, data)
+        weights, activations, report = executor.fit_model(model, plan)
+        self.assertEqual(set(weights), set(case['sites']))
+        self.assertEqual(set(activations), set(case['sites']))
+        backend.reset()
+        for mutation in ('training', 'gradient', 'weight', 'buffer'):
+            with self.subTest(mutation=mutation):
+                original = deepcopy(backend.model)
+                if mutation == 'training':
+                    backend.model.train()
+                elif mutation == 'gradient':
+                    next(backend.model.parameters()).requires_grad_(True)
+                elif mutation == 'weight':
+                    with torch.no_grad():
+                        next(backend.model.parameters()).add_(1)
+                else:
+                    backend.model.register_buffer('unexpected', torch.ones(1))
+                with self.assertRaises(PTQError):
+                    backend.reset()
+                backend.model = original
+                backend.reset()
+
     def test_native_catalog_matches_constructed_fixture_without_inventing_targets(self):
         from tools.runtime_interface import interface_fixture
         from ptq_agent.execution.sites import site_catalog
@@ -81,7 +166,7 @@ class CalibrationPreflight(unittest.TestCase):
         self.draft = experiment_payload()
 
     def check(self, draft=None):
-        return preflight_experiment(self.draft if draft is None else draft, self.brief)
+        return preflight_experiment(self.draft if draft is None else draft, self.brief, executable=True)
 
     def test_legacy_count_completes_only_known_view_and_is_idempotent(self):
         del self.draft["execution"]["calibration"]
@@ -91,7 +176,7 @@ class CalibrationPreflight(unittest.TestCase):
         self.assertEqual(self.check(value), value)
         self.assertEqual(self.draft, original)
         self.assertEqual(value["execution"]["resolved_choices"], original["execution"]["resolved_choices"])
-        self.assertEqual({k: v for k, v in value.items() if k != "execution"},
+        self.assertEqual({k: v for k, v in value.items() if k not in ("execution", "stage")},
                          {k: v for k, v in original.items() if k != "execution"})
 
     def test_canonical_view_generates_mirror_and_preserves_extensions(self):
@@ -103,11 +188,13 @@ class CalibrationPreflight(unittest.TestCase):
         self.assertEqual(value["calibration"], {"split": "calibration", "count": 1,
                                                "offset": 1, "identity_note": "explicit subset"})
 
-    def test_missing_count_does_not_inherit_backend_pool_or_protocol(self):
+    def test_missing_count_inherits_explicit_protocol_not_backend_pool(self):
         del self.draft["execution"]["calibration"]
         del self.draft["execution"]["resolved_choices"]["calibration_samples"]
         self.brief["evaluation_protocol"]["calibration_samples"] = 8
-        with self.assertRaisesRegex(ContractError, r"execution.calibration.count 缺失.*不能从后端"):
+        self.assertEqual(self.check()["execution"]["calibration"]["count"], 8)
+        del self.brief["evaluation_protocol"]["calibration_samples"]
+        with self.assertRaisesRegex(ContractError, "execution.calibration.count 缺失"):
             self.check()
 
     def test_explicit_count_conflict_names_both_fields_without_mutation(self):
@@ -128,7 +215,7 @@ class CalibrationPreflight(unittest.TestCase):
                     with self.assertRaisesRegex(ContractError, "execution.*" + field):
                         self.check(draft)
         self.draft["execution"]["calibration"] = None
-        with self.assertRaisesRegex(ContractError, "execution.calibration 必须是对象"):
+        with self.assertRaisesRegex(ContractError, "execution.calibration"):
             self.check()
 
     def test_fixed_split_conflict_is_not_silently_ignored_by_worker(self):
@@ -159,20 +246,22 @@ class CalibrationPreflight(unittest.TestCase):
 
     def test_missing_scientific_choices_require_repair(self):
         self.brief['hard_constraints'].pop('training')  # No unique user-supplied value to inherit.
-        for path in (("seed",), ("resolved_choices", "training"), ("parameters", "bits")):
+        self.brief['hard_constraints'].pop('activation_bits')
+        for path in (("parameters", "bits"),):
             with self.subTest(path=path):
                 draft = deepcopy(self.draft)
                 target = draft["execution"]
                 for part in path[:-1]:
                     target = target[part]
                 del target[path[-1]]
+                draft["execution"]["resolved_choices"].pop("activation_bits", None)
                 with self.assertRaisesRegex(ContractError, "execution." + ".".join(path)):
                     self.check(draft)
 
     def test_existing_constraints_and_service_levels_remain_enforced(self):
         self.brief["hard_constraints"]["calibration_samples"] = 1
-        with self.assertRaisesRegex(ContractError, "calibration_samples.*硬约束"):
-            self.check()
+        self.assertEqual(self.check()['execution']['calibration']['count'], 2)
+        # Explicit exploratory sampling does not have to copy final-candidate calibration.
         del self.brief["hard_constraints"]["calibration_samples"]
         self.draft["level"] = "L3"
         with self.assertRaisesRegex(ContractError, "level=L3.*tensor_probe"):
@@ -264,14 +353,14 @@ class DraftRepairRegression(TempCase):
             wf.queue.ready()
             trial = wf.queue.claim(tid)
             wf.progress_request(trial)
-            freeze.assert_called_once()
+            freeze.assert_not_called()  # Only immutable request is saved before Coding.
         self.assertEqual(len(wf.journal.find_cards("ExperimentCard")), 1)
-        self.assertEqual(wf.queue.get(tid)["state"], "waiting")  # 下一步仍为 Coding / 独立参考。
+        self.assertEqual(wf.queue.get(tid)["state"], "waiting")
         self.assertEqual(wf.queue.get(task["task_id"])["attempt"], 2)
 
     def test_repair_limit_and_clarification_stay_in_original_task(self):
         wf, task, draft = self.plan()
-        del draft["execution"]["seed"]
+        draft["execution"]["calibration"]["count"] = 1
         for attempt in range(3):
             self.deliver(wf, task, self.submit_response(draft))
             state = wf.queue.get(task["task_id"])
@@ -286,9 +375,9 @@ class DraftRepairRegression(TempCase):
     def test_ambiguous_draft_can_clarify_without_completion(self):
         wf, task, draft = self.plan()
         draft["execution"].update(service="custom_experiment", interface="experiment_v1")
-        del draft["execution"]["calibration"]
+        draft["execution"]["calibration"]["count"] = 1
         self.deliver(wf, task, self.submit_response(draft))
-        self.assertIn("execution.calibration.split", wf.queue.get(task["task_id"])["repair_feedback"]["error"])
+        self.assertIn("calibration", wf.queue.get(task["task_id"])["repair_feedback"]["error"])
         wf.queue.ready()
         task = wf.queue.claim(task["task_id"])
         self.deliver(wf, task, {"decision": {"action": "clarify", "content": {
@@ -326,6 +415,33 @@ class DraftRepairRegression(TempCase):
             self.assertEqual(child["inputs"]["draft"]["execution"]["calibration"], {"split": "calibration", "count": 2})
         self.assertEqual(parent["conversation"][-1]["content"]["tool_calls"], fixed)
 
+    def test_custom_request_structure_error_returns_to_researcher_before_immutable_request(self):
+        wf = self.workflow(1)
+        tid = wf.enqueue_role('fixture/custom-request', 'generate', refs=[wf.brief['id']], context={})
+        wf.queue.ready(); task = wf.queue.claim(tid)
+        draft = {'question': 'Local weight error', 'measurements': ['weight error'],
+            'execution': {'service': 'custom_experiment', 'quantization_contract': {
+                'weight': {'bits': 3}, 'methods': {'weight': 'new_source_method'}}}}
+        calls = [{'id': 'local', 'name': 'request_experiment', 'arguments': {'experiment': draft}}]
+        self.deliver(wf, task, {'tool_calls': calls})
+        retry = wf.queue.get(tid)
+        self.assertEqual(retry['state'], 'retry')
+        self.assertIn("['weight']", retry['repair_feedback']['error'])
+        self.assertEqual(retry['repair_feedback']['rejected_response']['tool_calls'], calls)
+        self.assertEqual(wf.journal.find_cards('ExperimentCard'), [])
+        self.assertEqual(len(wf.tasks()), 1)
+        repaired = deepcopy(calls)
+        contract = repaired[0]['arguments']['experiment']['execution']['quantization_contract']
+        contract['specs'] = {'weight': contract.pop('weight')}
+        wf.queue.ready(); task = wf.queue.claim(tid)
+        self.deliver(wf, task, {'tool_calls': repaired})
+        parent = wf.queue.get(tid)
+        self.assertEqual(parent['state'], 'waiting')
+        child = wf.queue.get(parent['waiting_for'][0])
+        self.assertEqual(child['inputs']['parent_task'], tid)
+        self.assertEqual(child['inputs']['original_request'], repaired[0]['arguments']['experiment'])
+        self.assertEqual(wf.journal.find_cards('ExperimentCard'), [])
+
     def test_freeze_and_resolver_reject_same_conflict_before_asset_binding(self):
         wf, _, draft = self.plan()
         draft["execution"]["calibration"]["count"] = 1
@@ -337,7 +453,7 @@ class DraftRepairRegression(TempCase):
                 with self.assertRaises(ContractError) as error:
                     action()
                 errors.append(str(error.exception))
-        self.assertEqual(len(set(errors)), 1)
+        self.assertTrue(all("calibration" in error and "冲突" in error for error in errors))
 
 
 if __name__ == "__main__":

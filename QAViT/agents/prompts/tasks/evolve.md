@@ -13,12 +13,13 @@
 提交 HypothesisCard 的 payload，包含：
 
 - title、research_question、mechanism：非空字符串，分别给出标题、问题和包含前提及替代解释的机制说明。
-- intervention、implementation、validation_design：各为对象或字符串，分别明确算法改动、实现路径、可区分解释的验证方案与决策影响。
-- predictions：非空数组，每项含非空字符串 statement、measurement、falsification；id 可省略由程序编号，说明相对父方案哪些预测改变、哪些仍保留。
-- sources：非空对象数组，说明实际来源、核实状态和支撑内容。
-- mechanism_relations：数组，每项含非空字符串 relation、target、explanation；说明继承、修改、互补或替代关系。
-- feedback_used：对象数组；使用 Meta-review 时写其完整 metareview_ref 和具体 change，没有可用反馈时为 []。
-- scope：对象，说明适用条件、未检验范围和与父方案范围的区别。
+- intervention：对象或字符串，明确算法改动。implementation、validation_design 可按需补充实现路径、验证方案与决策影响。
+- predictions：可选数组，可为空；每项给出 statement，measurement、falsification 按需说明。id 由程序编号；有明确预测时说明相对父方案的改变。
+- sources：可选对象数组，说明实际来源、核实状态和支撑内容。
+- evidence_refs：可选数组，仅列实际用于 H4 判断的 EvidenceCard 引用；sources.ref 可绑定具体来源，全部已归档事实不等于全部被使用或支持 H4。
+- mechanism_relations：可选数组，每项含非空字符串 relation、target、explanation；说明继承、修改、互补或替代关系。
+- feedback_used：可选对象数组；需要解释反馈对本方案的影响时填写，唯一绑定的 metareview_ref 由程序补齐；不要求为提交而采纳反馈。
+- scope：可选对象，说明适用条件、未检验范围和与父方案范围的区别。
 - improvement_objective：非空字符串，说明要解决的具体问题、预期改善及判断改善是否成立的办法。
 
 H4 的改进仍未测量时明确写为预测。完整定义与验证路径已经具备即可提交，不为取得支持结果而无限延长本任务。

@@ -183,12 +183,15 @@ class Workflow(RoleInteraction, ExperimentRequests, WorkflowDriver):
 
     def enqueue_recorder(self, number, *, incomplete=False, key=None):
         batch = self.memory.recording_batch()
+        if not batch['review_required']:
+            return None  # 工程状态已在 Journal；没有新的科学材料时无需模型复盘。
         if key:
             # 收尾复用用户已重试/回答的同批任务，不另开一个模型调用。
+            review_refs = set(batch['scientific_refs'] + batch.get('scientific_failure_refs', []))
             for task in self.queue.snapshot().values():
                 if (task['inputs'].get('purpose') == 'record'
                         and task['state'] in ('pending', 'ready', 'running', 'retry', 'waiting')
-                        and task['inputs']['context']['recording_batch']['batch_id'] == batch['batch_id']):
+                        and review_refs <= set(task['inputs']['context']['recording_batch']['source_refs'])):
                     return task['task_id']
         refs = batch['source_refs']
         ranking = self.result_card(self.tasks().get(f"r{number:03d}/rank"))
@@ -210,18 +213,22 @@ class Workflow(RoleInteraction, ExperimentRequests, WorkflowDriver):
             batch = task['inputs']['context']['recording_batch']
             self.event('recorder_deferred', 'recorder/deferred/' + task['task_card'],
                        batch_id=batch['batch_id'], source_refs=batch['source_refs'],
+                       review_refs=batch['scientific_refs'] + batch.get('scientific_failure_refs', []),
                        task_ref=task['task_card'], reason=task.get('error') or task.get('clarification'),
                        next_action='下一批 Recorder 合并未复盘来源；Generation 先使用原始事实并保留复盘缺口。')
             return True
         return False
 
     def recording_deferred(self, batch):
+        review_refs = set(batch['scientific_refs'] + batch.get('scientific_failure_refs', []))
         if any(t['inputs'].get('purpose') == 'record'
                and t['state'] in ('pending', 'ready', 'running', 'retry', 'waiting')
-               and t['inputs']['context']['recording_batch']['batch_id'] == batch['batch_id']
+               and review_refs <= set(t['inputs']['context']['recording_batch']['source_refs'])
                for t in self.queue.snapshot().values()):
             return False  # 显式重试/澄清回答恢复原任务，旧 deferred 事件不能将其跳过。
-        return any(e['type'] == 'recorder_deferred' and e['batch_id'] == batch['batch_id']
+        return any(e['type'] == 'recorder_deferred'
+                   and (e['batch_id'] == batch['batch_id']
+                        or (review_refs and review_refs <= set(e.get('review_refs', e['source_refs']))))
                    for e in self.journal.events)
 
 
@@ -274,11 +281,12 @@ class Workflow(RoleInteraction, ExperimentRequests, WorkflowDriver):
     def advance(self):
         """依已提交状态推进两阶段选择；恢复不重选父卡片或重复创建比赛。"""
         self.return_code_clarifications()
+        self.release_measured_requests()
         finished = {e["round"] for e in self.journal.events if e["type"] == "round_finished"}
         number = max(finished, default=0) + 1
         if number > self.budget.snapshot()["config"]["max_rounds"]:
             batch = self.memory.recording_batch()
-            if not batch['source_refs'] or self.recording_deferred(batch):
+            if not batch['review_required'] or self.recording_deferred(batch):
                 return True
             # 正常结尾接收迟到产出后仍处理剩余增量；沿用 Recorder 和原预算。
             identifier = self.enqueue_recorder(max(finished, default=1), key='closeout/record/' + batch['batch_id'])
@@ -352,28 +360,19 @@ class Workflow(RoleInteraction, ExperimentRequests, WorkflowDriver):
             return False
         selected = ranking["payload"]["selected_slot"]
         if self.config["enable_l3"] and selected:
-            plan_key = prefix + "/plan_l3"
-            self.enqueue_role(plan_key, "plan_l3", refs=[ranking["id"], ranking["payload"]["selected_hypothesis_ref"], self.brief["id"]],
-                              context={"round": number, "selection": selected, "selection_ref": ranking["id"],
-                                       "hypothesis_ref": ranking["payload"]["selected_hypothesis_ref"],
-                                       "selection_stage": "final", "gate": "remaining hard budget only"})
-            plan = self.tasks().get(plan_key)
-            if not plan or plan["state"] not in TERMINAL:
+            if not self.progress_planned_request(prefix + '/plan_l3', prefix + '/L3',
+                    refs=[ranking['id'], ranking['payload']['selected_hypothesis_ref'], self.brief['id']],
+                    context={'round': number, 'selection': selected, 'selection_ref': ranking['id'],
+                             'hypothesis_ref': ranking['payload']['selected_hypothesis_ref'],
+                             'selection_stage': 'final', 'gate': 'remaining hard budget only'}):
                 return False
-            if plan["state"] == "completed":
-                trial_key = prefix + "/L3"
-                self.queue.enqueue(trial_key, "experiment_request", role="supervisor", inputs={
-                    "draft": plan["result"]["draft"], "requester": "judger", "refs": plan["inputs"]["refs"]})
-                trial = self.tasks().get(trial_key)
-                if not trial or trial["state"] not in TERMINAL:
-                    return False
         if prefix + "/record" not in self.tasks():
             self.enqueue_recorder(number)
         recording_task = self.tasks().get(prefix + '/record')
         recorder = self.result_card(recording_task)
-        if recorder or self.defer_recorder(recording_task):
+        if recorder or self.defer_recorder(recording_task) or recording_task is None:
             self.event("round_finished", prefix + "/finished", round=number, metareview_ref=recorder['id'] if recorder else None,
-                       scientific_review='completed' if recorder else 'pending',
+                       scientific_review='completed' if recorder or recording_task is None else 'pending',
                        selection_ref=ranking["id"], selected_slot=selected)
             # round_finished 是内部事件，必须继续推进后继轮或终态；否则队列空闲
             # 会被主循环误判为 blocked，完成的最后一轮也永远无法结束。

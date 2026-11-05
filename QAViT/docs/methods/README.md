@@ -1,8 +1,8 @@
 # 可编辑的 PTQ 方法库
 
-本目录供人和 V2 角色通过 Profiling 工具阅读。`index.json` 是索引，每个 Markdown 是独立组件的说明；不提供整模型候选或论文配方。下文实现路径均相对 QAViT；来源索引中的外部路径保留历史溯源意义，不是框架运行依赖。
+本目录供人和 V2 角色直接通过 read_asset 阅读。`index.json` 是索引，每个 Markdown 是独立组件的说明；不提供整模型候选或论文配方。下文实现路径均相对 QAViT；来源索引中的外部路径保留历史溯源意义，不是框架运行依赖。
 
-V2 通过实验申请调用 `query_method_library(target, query)` 查索引，再按需 `read_method_document(method)`，或用 `methods:[...]` 一次完整读取1–8篇。query 是简单关键词过滤，兼容 `post_gelu` / `post-softmax` 等分隔写法，空字符串返回全部；未命中不会自动推荐方法，也不是语义搜索引擎。每个 Profiling 会话将实际文本和 SHA256 冻结在该会话目录的 `method_library.json`，人工修改从新会话起生效。
+V2 的 context.method_catalog 直接给出简短标题、适用问题和 `read_asset(asset="methods/<id>.md")` 入口；索引可直接读取 `read_asset(asset="methods/index.json")`。资料查阅不需要申请实验或进入 Coding/Safeguard。宿主按当前调用的授权快照绑定文件哈希。已有 Profiling `query_method_library` / `read_method_document` 仍用于数值会话中的文档查询兼容：query 是关键词过滤，空查询浏览全部；会话文本及 SHA256 保存于 method_library.json。它们不是科研角色查阅资料的前置步骤。
 
 | 编辑目标 | 位置 |
 |---|---|
@@ -23,4 +23,4 @@ V2 通过实验申请调用 `query_method_library(target, query)` 查索引，�
 
 V2 科研流程与实验申请入口见 [主 README](../../README.md)。本目录只描述数值组件；局部诊断模型不能导出，正式模型的完整覆盖门槛保持生效。
 
-数值工具保留 `loop.require_method_documents=true` 时的计划校验：需要本会话的索引查询、所选插件对应说明及calibration类说明的成功读取记录，并校验冻结文档的hash。它不强制使用某个插件，也不把文档当实测evidence；是否经过此校验取决于实际工具调用路径，不是 V2 的全局科研门槛。资料读取不保证理解或精度提升，实际作用仍需自主试验检验。
+`loop.require_method_documents` 仅保留旧配置兼容字段，当前科研与数值计划执行路径不以阅读记录判定能否提交或执行。`required_reads` 表示按需深读入口，不是阅读确认。文档不能代替实际测量；科学选择由研究角色负责，数值合同、真实范围、来源和重载检查继续执行。

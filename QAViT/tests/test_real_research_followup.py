@@ -8,7 +8,7 @@ from unittest.mock import patch
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from core.cards import ContractError, canonical, make_card, PAYLOAD_SCHEMAS
 from agents.roles import role_spec
-from tests.support import experiment_payload, meta, validation_config
+from tests.support import experiment_payload, hypothesis, meta, validation_config
 from tests.test_infrastructure import TempCase
 from tests import test_memory_delivery as memory_delivery
 
@@ -38,8 +38,8 @@ class RealResearchFollowup(TempCase):
         wf.journal.commit('fixture/' + evidence['id'], cards=[spec, evidence])
         return evidence
 
-    def record(self, wf, refs):
-        tid = wf.enqueue_recorder(1, incomplete=True)
+    def record(self, wf, refs, **kwargs):
+        tid = wf.enqueue_recorder(1, incomplete=True, **kwargs)
         task, _ = self.begin(wf, wf.queue.get(tid))
         batch = task['inputs']['context']['recording_batch']
         draft = meta(1, batch['judgment_refs'])
@@ -67,8 +67,10 @@ class RealResearchFollowup(TempCase):
         draft = deepcopy(before)
         draft['execution']['service'] = 'profile'
         draft['execution'].update(tool='query_structure', arguments={})
-        with self.assertRaisesRegex(ContractError, 'weight/activation'):
-            wf.broker.preflight(draft)
+        query = wf.broker.preflight(draft)
+        self.assertNotIn('calibration', query['execution'])
+        self.assertNotIn('calibration_samples', query['execution']['resolved_choices'])
+        self.assertEqual(query['execution']['quantization_contract'], {})
 
     def test_evidence_payload_boundary_keeps_all_science_without_envelope_paging(self):
         wf = self.workflow(1)
@@ -87,10 +89,6 @@ class RealResearchFollowup(TempCase):
         evidence = [self.evidence(wf), self.evidence(wf)]
         task, draft = self.record(wf, [c['id'] for c in evidence])
         raw = deepcopy(draft)
-        malformed = deepcopy(draft)
-        malformed['knowledge_updates'][0]['evidence_refs'] = [{}]
-        with self.assertRaisesRegex(ContractError, 'evidence_refs'):
-            wf.submit(task, malformed, 'unit fixture')
         wf.submit(task, draft, 'unit fixture')
         card = wf.result_card(wf.queue.get(task['task_id']))
         self.assertEqual(card['payload']['knowledge_updates'][0]['scope'], evidence[0]['payload']['scope'])
@@ -98,26 +96,107 @@ class RealResearchFollowup(TempCase):
         self.assertNotIn('scope', draft['knowledge_updates'][0])
         self.assertEqual(wf.memory.recording_batch()['source_refs'], [])
 
-    def test_different_scopes_are_not_merged_and_explicit_bad_scope_is_not_replaced(self):
+    def test_different_scopes_publish_comparison_with_each_actual_condition(self):
         wf = self.workflow(1)
         a, b = self.evidence(wf), self.evidence(wf, 'per_channel')
         task, draft = self.record(wf, [a['id'], b['id']])
-        with self.assertRaisesRegex(ContractError, '范围不同'):
-            wf.submit(task, draft, 'unit fixture')
-        draft['knowledge_updates'][0]['scope'] = deepcopy(a['payload']['scope'])
-        with self.assertRaises(ContractError):
-            wf.submit(task, draft, 'unit fixture')
-        self.assertFalse(wf.journal.find_cards('MetareviewCard'))
+        draft['knowledge_updates'].append({**deepcopy(draft['knowledge_updates'][0]),
+            'claim_id': 'valid', 'evidence_refs': [a['id']], 'scope': {'activation_bits': [3]}})
+        wf.submit(task, draft, 'unit fixture')
+        payload = wf.result_card(wf.queue.get(task['task_id']))['payload']
+        self.assertEqual(payload['scientific_analysis'], draft['scientific_analysis'])
+        self.assertEqual([c['claim_id'] for c in payload['knowledge_updates']], ['fixture', 'valid'])
+        arms = payload['knowledge_updates'][0]['scope']['comparison']
+        self.assertEqual({arm['evidence_ref']: arm['scope'] for arm in arms},
+                         {a['id']: a['payload']['scope'], b['id']: b['payload']['scope']})
+        self.assertNotIn('pending_knowledge_updates', payload)
+        self.assertEqual(set(wf.memory.snapshot()['L2']), {'fixture', 'valid'})
+        status = wf.memory.recording_status()
+        self.assertEqual(status['facts'], 'archived_in_journal')
+        self.assertEqual(status['scientific_review'], 'completed')
+        self.assertEqual(status['knowledge'], 'no_pending_updates')
+        self.assertEqual(status['pending_knowledge_count'], 0)
+        retrieved = wf.retriever.retrieve('generation', query={'layer': 'L2',
+            'quantization.fc2.activation.granularity': 'per_channel'})
+        self.assertEqual([row['claim_id'] for row in retrieved['entries']], ['fixture'])
+        self.assertEqual({arm['evidence_ref']: arm['matches_requested_conditions']
+                          for arm in retrieved['entries'][0]['comparison']}, {a['id']: False, b['id']: True})
+        from core.workflow import Workflow
+        recovered = Workflow(wf.run_dir)
+        recovered.submit(recovered.queue.get(task['task_id']), draft, 'replayed fixture')
+        self.assertEqual(len(recovered.journal.find_cards('MetareviewCard')), 1)
+        self.assertEqual(recovered.memory.recording_status()['pending_knowledge_count'], 0)
 
-    def test_scope_copy_does_not_bypass_test_double_or_missing_evidence_gates(self):
+    def test_partial_scope_binds_identity_data_and_quantization(self):
+        wf = self.workflow(1)
+        evidence = self.evidence(wf)
+        task, draft = self.record(wf, [evidence['id']])
+        draft['knowledge_updates'][0]['scope'] = {'activation_bits': 3,
+            'quantization': {'fc2': {'activation': {'bits': 3}}},
+            'data': {'calibration': {'sample_count': 1}}}
+        wf.submit(task, draft, 'unit fixture')
+        scope = wf.result_card(wf.queue.get(task['task_id']))['payload']['knowledge_updates'][0]['scope']
+        self.assertEqual(scope['model_identity_sha256'], 'fixture')
+        self.assertEqual(scope['data'], evidence['payload']['scope']['data'])
+        self.assertEqual(scope['quantization'], evidence['payload']['scope']['quantization'])
+
+    def test_bad_rows_are_local_including_scope_conflict_unknown_source_and_missing_science(self):
+        wf = self.workflow(1)
+        evidence = self.evidence(wf)
+        task, draft = self.record(wf, [evidence['id']])
+        good = deepcopy(draft['knowledge_updates'][0])
+        draft['knowledge_updates'] = [
+            {**good, 'scope': {'model_identity_sha256': 'wrong'}},
+            {**good, 'evidence_refs': ['EvidenceCard-missing@1']},
+            {**good, 'evidence_refs': [{}]},
+            {**good, 'status': 'unknown'},
+            'malformed row', good]
+        wf.submit(task, draft, 'unit fixture')
+        payload = wf.result_card(wf.queue.get(task['task_id']))['payload']
+        self.assertEqual(len(payload['knowledge_updates']), 1)
+        self.assertEqual(len(payload['pending_knowledge_updates']), 5)
+        self.assertIn('scope.model_identity_sha256', payload['pending_knowledge_updates'][0]['issue'])
+        self.assertEqual(payload['pending_knowledge_updates'][0]['submission']['scope'], {'model_identity_sha256': 'wrong'})
+        self.assertEqual(wf.memory.snapshot()['L2']['fixture']['scope']['model_identity_sha256'], 'fixture')
+
+    def test_test_double_is_archived_but_knowledge_stays_pending(self):
         wf = self.workflow(1)
         evidence = self.evidence(wf, source='test_double')
         task, draft = self.record(wf, [evidence['id']])
-        with self.assertRaisesRegex(ContractError, '模拟'):
-            wf.submit(task, draft, 'unit fixture')
-        draft['knowledge_updates'][0]['evidence_refs'] = []
-        with self.assertRaisesRegex(ContractError, '明确 Evidence'):
-            wf.submit(task, draft, 'unit fixture')
+        wf.submit(task, draft, 'unit fixture')
+        payload = wf.result_card(wf.queue.get(task['task_id']))['payload']
+        self.assertEqual(payload['knowledge_updates'], [])
+        self.assertIn('模拟', payload['pending_knowledge_updates'][0]['issue'])
+        self.assertEqual(wf.memory.snapshot()['L2'], {})
+        self.assertEqual(wf.journal.card(evidence['id']), evidence)
+
+    def test_no_evidence_does_not_invent_scope_or_knowledge(self):
+        wf = self.workflow(1)
+        judgment = make_card('HypothesisCard', wf.journal.run_id, hypothesis(1, 'H1'))
+        wf.journal.commit('unmeasured_scientific_source', cards=[judgment])
+        task, draft = self.record(wf, [])
+        wf.submit(task, draft, 'unit fixture')
+        payload = wf.result_card(wf.queue.get(task['task_id']))['payload']
+        self.assertFalse(payload['knowledge_updates'])
+        self.assertIn('明确 Evidence', payload['pending_knowledge_updates'][0]['issue'])
+
+    def test_existing_claim_revision_identity_is_completed_and_explicit_conflict_is_local(self):
+        wf = self.workflow(1)
+        evidence = self.evidence(wf)
+        task, draft = self.record(wf, [evidence['id']])
+        wf.submit(task, draft, 'unit fixture')
+        prior = wf.result_card(wf.queue.get(task['task_id']))
+        second = self.evidence(wf)
+        task, revised = self.record(wf, [second['id']], key='fixture/revision')
+        revised['knowledge_updates'][0]['text'] = 'Revised scientific explanation'
+        normalized = wf.memory.prepare_metareview(revised, task['inputs']['context']['recording_batch'], 1)
+        self.assertEqual(normalized['knowledge_updates'][0]['supersedes'], prior['id'])
+        revised['knowledge_updates'][0]['supersedes'] = 'MetareviewCard-wrong@1'
+        wf.submit(task, revised, 'unit fixture')
+        payload = wf.result_card(wf.queue.get(task['task_id']))['payload']
+        self.assertFalse(payload['knowledge_updates'])
+        self.assertTrue(payload['pending_knowledge_updates'])
+        self.assertEqual(wf.memory.snapshot()['L2']['fixture']['revision_ref'], prior['id'])
 
     def test_nested_repair_path_is_rejected_and_original_draft_survives_poll(self):
         wf = self.workflow(1)
@@ -145,8 +224,8 @@ class RealResearchFollowup(TempCase):
 
     def test_scope_optional_only_in_recorder_draft_not_immutable_card_schema(self):
         spec = role_spec('recorder', 'record', {}, validation_config()['llm'])
-        self.assertNotIn('scope', spec['context']['payload_contract']['properties']['knowledge_updates']['items']['required'])
-        self.assertIn('scope', PAYLOAD_SCHEMAS['MetareviewCard']['properties']['knowledge_updates']['items']['required'])
+        self.assertNotIn('scope', spec['context']['payload_contract']['properties']['knowledge_updates'].get('items', {}).get('required', []))
+        self.assertIn('scope', PAYLOAD_SCHEMAS['MetareviewCard']['properties']['knowledge_updates']['items'].get('required', []))
 
 
 if __name__ == '__main__':

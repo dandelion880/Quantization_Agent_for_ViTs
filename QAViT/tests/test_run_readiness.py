@@ -54,16 +54,16 @@ class ReadinessRegression(TempCase):
         self.assertNotIn('scientific_analysis', context['memory']['reminders'])
         self.assertEqual(wf.host_tool({'inputs': {'parent_task': tid, 'name': 'read_card', 'arguments': {'ref': card['id']}}}), card)
 
-    def test_reference_and_positions_keep_isolation(self):
+    def test_code_gets_request_and_positions_keep_isolation(self):
         wf = self.workflow(1)
         spec, evidence, old = self.evidence(wf)
-        tid = wf.enqueue_role('fixture/reference', 'reference', refs=[wf.brief['id'], spec['id']],
+        tid = wf.enqueue_role('fixture/code', 'code', refs=[wf.brief['id'], spec['id']],
                               context={'experiment_ref': spec['id']})
         task = wf.queue.get(tid)
         value = wf.context(task)
-        self.assertEqual(value['memory']['cards'], [])
         self.assertEqual(value['research_brief']['id'], wf.brief['id'])
-        self.assertEqual(value['frozen_experiment']['id'], spec['id'])
+        self.assertEqual(value['original_request']['id'], spec['id'])
+        self.assertIn('directory', value['memory'])
         other = make_card('ReviewDecisionCard', wf.journal.run_id, review('position',
                           round=1, pair=['H1','H2'], exchange=1, side='B'))
         wf.journal.commit('fixture/position', cards=[other])
@@ -130,7 +130,9 @@ class ReadinessRegression(TempCase):
         self.assertFalse(result['workflow_completed'])
         self.assertTrue(result['state_saved'])
         self.assertFalse(any(e['type']=='round_finished' for e in wf.journal.events))
-        self.assertEqual(len(wf.memory.snapshot()['L3']), 1)
+        self.assertEqual(len(wf.memory.snapshot()['L3']), 0)  # No science was produced before closeout.
+        self.assertTrue(result['scientific_review_complete'])
+        self.assertFalse(any(t['inputs'].get('purpose') == 'record' for t in wf.tasks().values()))
         self.assertEqual(wf.budget.snapshot()['deadline_unix'], deadline)
         self.assertEqual(sum(t['state']=='cancelled' for t in wf.tasks().values()), 3)
 

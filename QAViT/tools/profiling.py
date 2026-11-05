@@ -8,6 +8,19 @@ from ptq_agent.profiling.host import ProfileHost
 PROFILE_NAMES = ('query_structure', 'query_execution_capabilities', 'query_ptq_plugins', 'query_ptq_sites', 'profile_structure', 'profile_distribution', 'profile_hardware', 'profile_sensitivity', 'profile_plugin_sites', 'profile_ptq_candidates', 'profile_trial_diagnostics', 'profile_trial_ablation', 'read_profile_evidence', 'query_method_library', 'read_method_document')
 
 
+# 这些服务的实现实际从 calibration split 捕获样本；目录/能力/历史读取不捕获。
+CALIBRATION_PROFILE_NAMES = frozenset({
+    'profile_structure', 'profile_distribution', 'profile_hardware', 'profile_sensitivity',
+    'profile_plugin_sites', 'profile_ptq_candidates', 'profile_trial_diagnostics', 'profile_trial_ablation',
+})
+
+
+def uses_calibration(execution):
+    return (execution.get('tool') in CALIBRATION_PROFILE_NAMES
+            and not (execution.get('tool') == 'profile_distribution'
+                     and execution.get('arguments', {}).get('target') == 'weight'))
+
+
 def profile_host(backend, cfg, directory):
     """建立完整纯工具会话；计数只计量，时间行为保留。"""
     return ProfileHost(backend, cfg, directory)

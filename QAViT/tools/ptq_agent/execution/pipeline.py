@@ -186,6 +186,27 @@ def quantizers(model):
     return {m.ptq_site_id: m for m in model.modules() if isinstance(m, ActivationQuantizer)}
 
 
+def plan_uses_calibration(plan):
+    """Whether this native plan fits any state from image activations."""
+    if plan.get("preprocess"):
+        return True
+    for layer in plan.get("layers", []):
+        for target in ("weight", "activation"):
+            spec = layer.get(target)
+            if not spec:
+                continue
+            if calibration(layer, target)["strategy"] == "coordinate":
+                return True
+            if target == "activation":
+                if (plan["execution"]["activation_calibration"] == "static"
+                        and spec["format"] not in RAW_FLOATS):
+                    return True
+            elif (layer.get("weight_method") in ("gptq", "gptaq", "adaround")
+                  or calibration(layer, target)["strategy"] in ("search", "coordinate")):
+                return True
+    return False
+
+
 def equivalence(backend, model, data):
     count, errors = 0, OutputErrors()
     for x, _ in data.batches("calibration"):
@@ -392,17 +413,22 @@ class QuantizationExecutor:
         groups = {}
         for layer in plan["layers"]:
             groups.setdefault(operator_id(layer), []).append(layer)
-        seen = []
-        handles = [q.register_forward_pre_hook(lambda m, a: seen.append(m.ptq_site_id)) for q in qmap.values()]
-        try:
-            x, _ = next(iter(self.data.batches("calibration")))
-            forward(self.backend, model, x)
-        finally:
-            for h in handles:
-                h.remove()
-        positions = {sid: seen.index(sid) for sid in qmap if sid in seen}
-        require(set(positions) == set(qmap), "校准拓扑未覆盖所有量化位点")
-        groups = sorted(groups.values(), key=lambda rows: min(positions[site_id(l)] for l in rows))
+        if plan_uses_calibration(plan):
+            seen = []
+            handles = [q.register_forward_pre_hook(lambda m, a: seen.append(m.ptq_site_id)) for q in qmap.values()]
+            try:
+                x, _ = next(iter(self.data.batches("calibration")))
+                forward(self.backend, model, x)
+            finally:
+                for h in handles:
+                    h.remove()
+            positions = {sid: seen.index(sid) for sid in qmap if sid in seen}
+            require(set(positions) == set(qmap), "校准拓扑未覆盖所有量化位点")
+            groups = sorted(groups.values(), key=lambda rows: min(positions[site_id(l)] for l in rows))
+        else:
+            # Independent weight fitting (or a pure FP control) has no activation
+            # dependence whose topological order requires a calibration forward.
+            groups = list(groups.values())
         sequential = plan["execution"].get("within_stage", "parallel") == "sequential"
         order = plan["execution"]["order"]
         stages = ("activation", "weight") if order == "a_then_w" else ("weight", "activation")
@@ -483,7 +509,10 @@ class QuantizationExecutor:
 
     def prepare(self, plan, shapes):
         from .capabilities import validate_plan, detect
-        validate_plan(self.backend, plan, self.config, detect(self.backend), shapes, diagnostic=self.diagnostic)
+        from .contracts import normalize_plan
+        plan = normalize_plan(plan)
+        validate_plan(self.backend, plan, self.config, detect(self.backend), shapes,
+                      diagnostic=self.diagnostic, allow_unknown_shapes=True)
         # 只读真实形状探针；preview 需要按实际 feature 轴拟合，不猜 token 维。
         if any(p.get("observation") == "quantized_prefix" for p in plan["preprocess"]):
             probe_plan = deepcopy(plan)
@@ -497,10 +526,20 @@ class QuantizationExecutor:
         # 等价性 gate 使用 FP32，随后恢复用户声明的 compute dtype。该检查不包含量化误差。
         for q in quantizers(model).values():
             q.execution["compute_dtype"] = "FP32"
-        with semantic_edge_checks(self.backend, model, plan) as edge_calls:
-            fidelity = equivalence(self.backend, model, self.data)
-        fidelity["semantic_edge_calls"] = edge_calls
-        self.input_shapes = {sid: q.last_input_shape for sid, q in quantizers(model).items()}
+        if plan_uses_calibration(plan):
+            with semantic_edge_checks(self.backend, model, plan) as edge_calls:
+                fidelity = equivalence(self.backend, model, self.data)
+            fidelity["semantic_edge_calls"] = edge_calls
+        else:
+            fidelity = {"performed": False, "reason": "No image-dependent fitting; state audit and evaluation remain applicable."}
+            if any(l["activation"] and l["activation"]["granularity"] != "per_tensor" for l in plan["layers"]):
+                # Observe a real search input without fitting a calibration grid.
+                sample = next(iter(self.data.batches("search")), None)
+                require(sample is not None, "形状准备需要已有 search 数据样本", code="invalid_data")
+                forward(self.backend, model, sample[0])
+                fidelity["shape_observation"] = {"split": "search", "sample_ids": [sample[1]],
+                                                 "purpose": "shape_validation_only"}
+        self.input_shapes = {sid: q.last_input_shape for sid, q in quantizers(model).items() if hasattr(q, "last_input_shape")}
         for q in quantizers(model).values():
             q.execution = deepcopy(plan["execution"])
         validate_plan(self.backend, plan, self.config, detect(self.backend), self.input_shapes, diagnostic=self.diagnostic)
@@ -518,6 +557,8 @@ class QuantizationExecutor:
         return model, weights, params, audit
 
     def audit(self, model, plan):
+        from .contracts import normalize_plan
+        plan = normalize_plan(plan)
         qmap = quantizers(model)
         audit_operators(model, plan, qmap)
         require(set(qmap) == {site_id(l) for l in plan["layers"]}, "插件实际位点与配置不符", code="coverage_mismatch")
@@ -558,6 +599,8 @@ class QuantizationExecutor:
                 "all_parameters_frozen": True, "modules": list(qmap), "execution": deepcopy(plan["execution"])}
 
     def export(self, model, plan, records, params, directory, audit):
+        from .contracts import normalize_plan
+        plan = normalize_plan(plan)
         require(not self.diagnostic, "局部诊断模型不得导出为正式量化模型")
         require(audit == self.audit(model, plan), "导出前审计不一致")
         path = Path(directory)
@@ -590,7 +633,8 @@ class QuantizationExecutor:
             "runtime_config": {k: deepcopy(self.config[k]) for k in ("backend", "constraints", "loop")},
             "weights_sha256": file_sha256(path / "weights.pt"), "tensor_payload_bytes": tensor_bytes(payload),
             "file_bytes": (path / "weights.pt").stat().st_size,
-            "calibration_ids": self.data.ids("calibration"), "calibration_report": self.report, "audit": audit,
+            "calibration_ids": self.data.ids("calibration") if plan_uses_calibration(plan) else [],
+            "calibration_report": self.report, "audit": audit,
             "representation": "reference_qdq; packed weight codes; explicit activation grids and affine preprocessing; no native speedup claim",
         })
         atomic_json(path / "manifest.json", manifest)

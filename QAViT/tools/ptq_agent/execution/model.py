@@ -12,7 +12,7 @@ from ..storage import atomic_json, read_json
 from ..backends.server import file_sha256
 from ..profiling.evidence import seal
 from .codecs import DTYPES, ranges, view, validate_record, validate_params
-from .contracts import RAW_FLOATS
+from .contracts import RAW_FLOATS, normalize_plan
 from .capabilities import detect, validate_plan
 from .methods import get_method, versions
 
@@ -91,12 +91,17 @@ def calibrate(backend, plan, data):
         and plan["execution"]["activation_calibration"] == "static"
     }
     bounds, shapes, handles = {}, {}, []
+    activations = {l["module"]: l["activation"] for l in plan["layers"] if l["activation"]}
 
     def hook(name, spec):
         def observe(_module, args):
             x = args[0].detach()
             require(bool(torch.isfinite(x).all()), "校准激活非有限", code="numerical_error")
             shapes[name] = list(x.shape)
+            if name not in selected:
+                return
+            from .contracts import validate_spec
+            validate_spec(spec, "activation", shapes[name], plan["execution"]["activation_calibration"])
             lo, hi = ranges(view(x.to(torch.float64), spec), spec)
             lo, hi = lo.cpu(), hi.cpu()
             if name in bounds:
@@ -106,11 +111,16 @@ def calibrate(backend, plan, data):
         return observe
 
     try:
-        for name, spec in selected.items():
+        for name, spec in activations.items():
             handles.append(backend.model.get_submodule(name).register_forward_pre_hook(hook(name, spec)))
         if selected:
             for x, _ in data.batches("calibration"):
                 forward(backend, backend.model, x)
+        elif any(spec["granularity"] != "per_tensor" for spec in activations.values()):
+            # Dynamic grids need actual shape, not fitted calibration state.
+            sample = next(iter(data.batches("search")), None)
+            require(sample is not None, "形状准备需要已有 search 数据样本", code="invalid_data")
+            forward(backend, backend.model, sample[0])
     finally:
         for handle in handles:
             handle.remove()
@@ -146,11 +156,14 @@ class RTNExecutor:
         self.input_shapes = {}
 
     def prepare(self, plan, shapes):
+        plan = normalize_plan(plan)
         if plan.get("schema_version") == 3:
             from .pipeline import QuantizationExecutor
             self.plugin_executor = QuantizationExecutor(self.backend, self.config, self.data)
-            return self.plugin_executor.prepare(plan, shapes)
-        validate_plan(self.backend, plan, self.config, detect(self.backend), shapes)
+            result = self.plugin_executor.prepare(plan, shapes)
+            self.input_shapes = deepcopy(self.plugin_executor.input_shapes)
+            return result
+        validate_plan(self.backend, plan, self.config, detect(self.backend), shapes, allow_unknown_shapes=True)
         for layer in plan["layers"]:
             get_method(layer["method"])
         params, observed = calibrate(self.backend, plan, self.data)
@@ -169,6 +182,12 @@ class RTNExecutor:
         return model, records, params, audit
 
     def audit(self, model, plan):
+        plan = normalize_plan(plan)
+        if plan.get("schema_version") == 3:
+            from .pipeline import QuantizationExecutor
+            delegate = QuantizationExecutor(self.backend, self.config, self.data)
+            delegate.input_shapes = deepcopy(self.input_shapes)
+            return delegate.audit(model, plan)
         wrappers = {n: m for n, m in model.named_modules() if isinstance(m, QuantizedLinear)}
         require(
             set(wrappers) == {l["module"] for l in plan["layers"]},
@@ -215,6 +234,7 @@ class RTNExecutor:
         }
 
     def export(self, model, plan, records, params, directory, audit):
+        plan = normalize_plan(plan)
         if plan.get("schema_version") == 3:
             return self.plugin_executor.export(model, plan, records, params, directory, audit)
         require(audit == self.audit(model, plan), "导出前模型审计与准备阶段不同")
@@ -261,7 +281,7 @@ class RTNExecutor:
                 "weights_sha256": file_sha256(directory / "weights.pt"),
                 "tensor_payload_bytes": storage_bytes,
                 "file_bytes": (directory / "weights.pt").stat().st_size,
-                "calibration_ids": self.data.ids("calibration"),
+                "calibration_ids": self.data.ids("calibration") if params else [],
                 "audit": audit,
                 "representation": "packed_weights_with_scales; runtime behavior given by plan.execution",
             }
@@ -272,9 +292,16 @@ class RTNExecutor:
     def load(self, directory):
         directory = Path(directory)
         manifest = read_json(directory / "manifest.json")
+        plan_version = manifest.get("plan", {}).get("schema_version")
+        require((plan_version, manifest.get("schema_version")) in ((2, 1), (3, 2)),
+                "通用加载器仅支持标准 v2/v3 模型包；自定义模型包须由对应批准的 make_executor.load 加载",
+                code="unsupported_artifact")
         if manifest.get("plan", {}).get("schema_version") == 3:
             from .pipeline import QuantizationExecutor
-            return QuantizationExecutor(self.backend, self.config, self.data).load(directory)
+            self.plugin_executor = QuantizationExecutor(self.backend, self.config, self.data)
+            result = self.plugin_executor.load(directory)
+            self.input_shapes = deepcopy(self.plugin_executor.input_shapes)
+            return result
         require(
             manifest.get("content_sha256")
             == fingerprint({k: v for k, v in manifest.items() if k != "content_sha256"}),
@@ -296,6 +323,7 @@ class RTNExecutor:
             code="invalid_artifact",
         )
         plan = manifest["plan"]
+        self.input_shapes = deepcopy(manifest["input_shapes"])
         require(fingerprint(plan) == manifest["configuration_hash"], "产物配置不匹配")
         require(
             manifest.get("schema_version") == 1 and manifest.get("implementation") == versions(),

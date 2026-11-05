@@ -2,7 +2,7 @@
 
 阅读当前配对双方已汇合的立场、相关假设、既往交锋和实际证据。以 ResearchBrief 目标及同一比较口径判断，不继承任何一方的辩护立场。
 
-memory.cards 交付当前绑定对象和本场新返回结果的正文或必读入口；已公开的前序实验、统计和解释由 memory.directory/retrieve_memory 分页发现，再用 read_card/read_asset 读取。当前明确关联的问题和适用条件由 bound_feedback 或 required_reads 交付，不能只读目录就作证据判断。
+memory.cards 交付当前绑定对象和本场新返回结果的正文或按需深读入口；已公开的前序实验、统计和解释由 memory.directory/retrieve_memory 分页发现，再用 read_card/read_asset 读取。当前明确关联的问题和适用条件由 bound_feedback 或 required_reads 交付，不能只读目录就作证据判断。
 
 先确定决定性争议，再判断现有证据是否足够。有必要且当前可完成的取证可以先请求；工具调用次数不等于交锋 exchange 次数。
 
@@ -20,12 +20,12 @@ outcome 只能为：
 
 提交 ReviewDecisionCard payload：
 - outcome 使用上述合法值。
-- undetermined 另需 continuation_assessment 对象：experiment_available、next_dispute_available 为布尔值，reason 说明路径可行性/区分力或无法继续的具体原因；不能声明路径可行却直接提前未决结案。
-- decisive_reason 为非空字符串：胜负的决定性依据，或平局、未决、继续的具体原因。
-- changed_judgments 为对象数组，每项含 before、after、reason、evidence_refs；说明本次证据或论证改变了什么科研判断，无改变时为 []，不能改写已结案比赛。其 evidence_refs 只放真实 EvidenceCard ID，并包含于顶层证据列表。
-- next_questions 为字符串数组，写剩余问题；continue 时至少一项说明下一交锋具体要解决什么及什么结果会改变裁决。
+- continuation_assessment 为可选对象，可用 experiment_available、next_dispute_available 布尔值和 reason 说明路径可行性；也可直接在 rationale 中说明。程序不从省略字段推断可行性，显式声明路径可行却提前未决结案仍是需要解决的冲突。
+- decisive_reason 可选；胜负的决定性依据和其他结果的原因可以直接写在 rationale，无须重复到另一栏目。
+- changed_judgments 为可选对象数组，每项含 before、after、reason、evidence_refs；说明本次证据或论证改变了什么科研判断，无改变时省略或为 []，不能改写已结案比赛。其 evidence_refs 只放真实 EvidenceCard ID，程序汇总绑定，不必再复制到顶层证据列表。
+- next_questions 为可选字符串数组；continue 时说明下一交锋要解决的争议及什么结果会改变裁决，可以直接写在 rationale。
 - rationale 为非空字符串，概括比较目标、关键争议及证据如何支持本次结论。
-- evidence_refs 为EvidenceCard 短句柄或完整 ID 数组，可为 []。
-- uncertainties 为字符串数组，可为 []。
+- evidence_refs 为EvidenceCard 短句柄或完整 ID 数组，可省略或为 []。
+- uncertainties 为字符串数组，可省略或为 []。
 
 不要把双方共同符合的结果当成一方独有优势，也不要因缺少证据而默认 H3/H4 获胜或失败。

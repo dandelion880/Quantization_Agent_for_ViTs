@@ -6,15 +6,15 @@ from ..schemas import STR, arr, obj, require, validate, fingerprint
 from ..storage import atomic_json, read_json
 from ..profiling.evidence import seal
 from ..registry import ToolDefinition
-from .contracts import PLUGIN_PLAN_SCHEMA
+from .contracts import PLUGIN_PLAN_SCHEMA, PLUGIN_PLAN_INPUT_SCHEMA, normalize_plan
 from .plugin_contracts import KINDS
 from .sites import site_catalog
 
 
-FIELDS = deepcopy(PLUGIN_PLAN_SCHEMA)
+FIELDS = deepcopy(PLUGIN_PLAN_INPUT_SCHEMA)
 del FIELDS["properties"]["layers"]
 FIELDS["required"].remove("layers")
-SETTINGS = deepcopy(PLUGIN_PLAN_SCHEMA["properties"]["layers"]["items"])
+SETTINGS = deepcopy(PLUGIN_PLAN_INPUT_SCHEMA["properties"]["layers"]["items"])
 for key in ("module", "kind"):
     del SETTINGS["properties"][key]
     SETTINGS["required"].remove(key)
@@ -76,13 +76,19 @@ def apply_plan_patch(base, updates, plan_fields=None):
             touched.add(sid)
             for key in update.get("remove_fields", []):
                 layers[sid].pop(key, None)
+            for target in ("weight", "activation"):
+                if (target in update["changes"] and update["changes"][target] is None
+                        and target + "_method" not in update["changes"]):
+                    layers[sid].pop(target + "_method", None)
             layers[sid].update(deepcopy(update["changes"]))
+    plan = normalize_plan(plan)
     validate(plan, PLUGIN_PLAN_SCHEMA)
     return plan
 
 
 def expand_groups(plan_fields, groups, catalog, config, preprocess_groups=()):
     """选择器必须非空、互斥；逐字段深拷贝，不推测遗漏的 W/A 或校准策略。"""
+    plan_fields = normalize_plan(plan_fields)
     validate(plan_fields, FIELDS)
     validate(groups, GROUPS)
     layers, seen = [], set()
@@ -131,7 +137,7 @@ def expand_groups(plan_fields, groups, catalog, config, preprocess_groups=()):
         for group in preprocess_groups:
             placeholder = {"weight": None, "activation": None, "weight_method": None,
                            "activation_method": None, "reason": "selector only",
-                           "evidence": group["settings"]["evidence"]}
+                           "evidence": group["settings"].get("evidence", [])}
             selected = expand_groups(plan_fields, [{"selector": group["selector"], "settings": placeholder}],
                                      catalog, config)["layers"]
             for layer in selected:
@@ -146,6 +152,8 @@ def expand_groups(plan_fields, groups, catalog, config, preprocess_groups=()):
                         f"RepQ-LN预处理需要已验证的 LN→Linear 边：{layer['module']}")
                 plan["preprocess"].append({**deepcopy(group["settings"]), "module": layer["module"],
                                            "norm": info["edge"].removesuffix(":output") if norm_edge else None})
+    plan = normalize_plan(plan)
+    validate(plan, PLUGIN_PLAN_SCHEMA)
     return plan
 
 
@@ -197,7 +205,7 @@ def register_planning_tool(session):
         "selector.pool=required_sites 表示用户必选位点；kinds 过滤类型，可选 semantics/site_ids/module_prefixes/exclude_sites。"
         "preprocess_groups 按显式方法展开：SmoothQuant支持一般Linear输入边，非LN前驱填norm=null；"
         "RepQ-LN只接受已验证LN→Linear边，norm取真实前驱。不选择算法，特殊网格冲突仍拒绝。"
-        "settings 是去掉 module/kind 的完整 layer，不自动填写位宽/方法/粒度。per_tensor 的 axis/group_size 必须 null。"
+        "settings 是去掉 module/kind 的 layer；格式唯一确定的 bits、per_tensor 的空 axis/group_size、禁用目标的空 method 由程序补齐。方法与粒度仍须明确。"
         "也可用base_trial或base_draft及updates增量更新已有方案；changes逐字段替换，remove_fields只删除可选校准/options。"
         "返回校验过的 draft及差异，可用 analysis_from_draft 提交；不执行量化。",
         {"anyOf": [GROUPED_PLAN, DELTA_PLAN]}, {"type": "object", "additionalProperties": True},

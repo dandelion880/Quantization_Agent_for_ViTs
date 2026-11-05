@@ -10,9 +10,9 @@ from importlib.metadata import version
 
 from runtime.paths import ROOT
 from runtime.identity import measurement_implementation
-from core.cards import ContractError, check_constraints, fingerprint, make_card, validate_payload, validate_schema, TEXT, PAYLOAD_SCHEMAS
+from core.cards import ContractError, check_constraints, fingerprint, make_card, validate_payload, validate_schema, TEXT, OBJECT, PAYLOAD_SCHEMAS
 from core.journal import file_sha256, read_json
-from core.execution_contract import freeze_contract
+from core.execution_contract import freeze_contract, declared_contract, declared_rules, research_contracts, merge, uses_quantization_contract
 from tools.result_contract import check_results, result_requirements
 from core.evidence_scope import canonical_scope
 
@@ -21,18 +21,159 @@ SERVICE_VERSION = "qavit.experiments/2.1"
 SERVICES = {
     "profile": {"levels": ["L1"], "description": "已有15个真实 Profiling 接口；v2独立会话和全局预算，无measurement次数上限"},
     "tensor_probe": {"levels": ["L1", "L2"], "description": "真实ViT位点输入、局部输出及小样本整网回放；可挂载经批准的quantizer_v1实现"},
-    "evaluate_artifact": {"levels": ["L2", "L3"], "description": "加载明确给定的冻结模型包，使用显式数据视图进行分类/分割；不继承历史指标"},
+    "evaluate_artifact": {"levels": ["L2", "L3"], "description": "加载标准 plan v2/package v1 或 plan v3/package v2 冻结模型包，使用显式数据视图进行分类/分割；不继承历史指标。自定义包须由对应批准的 executor_v1 加载"},
     "quantize_evaluate": {"levels": ["L2", "L3"], "description": "已有数值算法直接提供 execution.plan；新增算法才经批准 executor_v1 生成计划/执行器。两路共用冻结合同、覆盖审计、导出重载及评测"},
-    "custom_experiment": {"levels": ["L1", "L2", "L3"], "description": "经批准experiment_v1实现新增算法/统计；数学与控制变量须由冻结卡片完整规定"},
+    "custom_experiment": {"levels": ["L1", "L2", "L3"], "description": "experiment_v1实现新增算法/统计；按原始需求审查源码及实际执行条件，宿主记录真实结果"},
 }
 
 # 同一 ExperimentCard 结构的提交视图：只省略宿主可确定的机械字段。
 # 冻结卡片仍使用原完整合同，不增加另一套服务/卡片接口。
 EXPERIMENT_DRAFT_SCHEMA = deepcopy(PAYLOAD_SCHEMAS['ExperimentCard'])
-EXPERIMENT_DRAFT_SCHEMA['required'] = [k for k in EXPERIMENT_DRAFT_SCHEMA['required']
-                                        if k not in ('replication', 'validation', 'scope')]
-EXPERIMENT_DRAFT_SCHEMA['properties']['resources']['required'] = ['estimated_seconds']
-EXPERIMENT_DRAFT_SCHEMA['properties']['execution']['required'] = ['service']
+EXPERIMENT_DRAFT_SCHEMA['required'] = ['question', 'measurements']
+EXPERIMENT_DRAFT_SCHEMA['properties']['resources']['required'] = []
+EXPERIMENT_DRAFT_SCHEMA['properties']['execution'] = deepcopy(EXPERIMENT_DRAFT_SCHEMA['properties']['execution'])
+EXPERIMENT_DRAFT_SCHEMA['properties']['execution']['required'] = []
+EXPERIMENT_DRAFT_SCHEMA['properties']['execution']['properties'] = {
+    **{key: deepcopy(OBJECT) for key in ('backend', 'resolved_choices', 'parameters',
+        'quantization_contract', 'method_options', 'arguments')},
+    'requires_code': {'type': 'boolean'}, 'training': {'type': 'boolean'},
+    'seed': {'type': 'integer', 'minimum': 0, 'maximum': 2 ** 63 - 1},
+    **{key: TEXT for key in ('service', 'interface', 'site', 'method', 'model_dir')},
+    'calibration': {'type': 'object', 'additionalProperties': True, 'properties': {
+        'split': TEXT, 'count': {'anyOf': [{'type': 'integer', 'minimum': 1}, {'type': 'null'}]},
+        'offset': {'type': 'integer', 'minimum': 0}}},
+    'evaluations': {'type': 'array', 'items': {'type': 'object', 'additionalProperties': False, 'properties': {
+        'kind': TEXT, 'split': TEXT, 'count': {'anyOf': [{'type': 'integer', 'minimum': 1}, {'type': 'null'}]},
+        'offset': {'type': 'integer', 'enum': [0]}, 'full_dataset': {'type': 'boolean'},
+        'metrics': {'type': 'array', 'items': TEXT}}}},
+}
+EXPERIMENT_DRAFT_SCHEMA['properties']['resources']['properties']['gpu'] = {
+    'anyOf': [{'type': 'integer', 'minimum': 0}, {'type': 'null'}]}
+
+
+def normalize_probe_choices(execution):
+    """Mirror supplied activation choices using the existing tensor-probe semantics."""
+    if execution['service'] != 'tensor_probe':
+        return
+    choices, parameters = execution.setdefault('resolved_choices', {}), execution.get('parameters', {})
+    if 'bits' in parameters:
+        choices.setdefault('activation_bits', parameters['bits'])
+        if parameters['bits'] != choices['activation_bits']:
+            raise ContractError('execution.parameters.bits 与 execution.resolved_choices.activation_bits 不一致')
+    granularity = choices.get('granularity', {})
+    wanted = granularity.get('activation') if isinstance(granularity, dict) else granularity
+    if wanted and 'granularity' in parameters and parameters['granularity'] != wanted:
+        raise ContractError('execution.parameters.granularity 与 execution.resolved_choices.granularity 不一致')
+    if isinstance(granularity, str):
+        choices['granularity'] = {'activation': granularity}
+
+
+def check_resources(resources, runtime):
+    if runtime is None:
+        return
+    limit = runtime.get('cpu_threads')
+    if limit is not None and resources.get('cpu_threads', limit) > limit:
+        raise ContractError('请求 CPU 线程超出本次资源上限')
+    if resources.get('gpu') is not None and resources['gpu'] not in runtime.get('allowed_gpus', []):
+        raise ContractError('请求 GPU 不在本次授权范围')
+
+
+def check_backend(adapter, brief):
+    if not isinstance(adapter, dict):
+        raise ContractError('execution.backend 必须是对象')
+    approved = [brief['model']['adapter']] if brief['model'].get('adapter') else []
+    approved += brief['model'].get('allowed_adapters', [])
+    if approved and adapter not in approved:
+        raise ContractError('execution.backend 与 ResearchBrief.model 的授权适配器冲突')
+
+
+def prepare_request(payload, brief, runtime=None):
+    """Preserve scientific intent while filling only host defaults; no execution freeze."""
+    validate_schema(payload, EXPERIMENT_DRAFT_SCHEMA, 'ExperimentCard draft')
+    value = deepcopy(payload)
+    value.setdefault('level', 'L1')
+    value.setdefault('controls', {})
+    value.setdefault('scope', {})
+    value.setdefault('validation', {})
+    value.setdefault('replication', {'requested': False, 'purpose': '', 'configuration_difference': {}})
+    resources = value.setdefault('resources', {})
+    resources.setdefault('estimated_seconds', (runtime or {}).get('task_timeout_seconds', 300))
+    resources.setdefault('cpu_threads', (runtime or {}).get('cpu_threads', 1))
+    check_resources(resources, runtime)
+    execution = value.setdefault('execution', {})
+    execution.setdefault('service', 'custom_experiment')
+    service = execution['service']
+    if service not in SERVICES:
+        raise ContractError('execution.service 未知: ' + str(service))
+    if value['level'] not in SERVICES[service]['levels']:
+        raise ContractError('level=' + value['level'] + ' 与 execution.service=' + service + ' 支持的实验层级不一致')
+    if 'backend' in execution:
+        check_backend(execution['backend'], brief)
+    if any(k.startswith('required_') for k in value):
+        raise ContractError('ExperimentCard 必需执行约束须放入 execution.quantization_contract')
+    execution.setdefault('requires_code', service == 'custom_experiment' or
+                         (service == 'quantize_evaluate' and 'plan' not in execution))
+    if service == 'quantize_evaluate' and 'plan' in execution and (execution['requires_code'] or 'interface' in execution):
+        raise ContractError('execution.plan 使用现有执行器，不能同时请求新增代码/interface；明确选择实现来源')
+    if execution['requires_code']:
+        interfaces = {'tensor_probe': 'quantizer_v1', 'quantize_evaluate': 'executor_v1',
+                      'custom_experiment': 'experiment_v1'}
+        if service not in interfaces:
+            raise ContractError('此已有服务不接收新增代码')
+        execution.setdefault('interface', interfaces[service])
+        if execution['interface'] != interfaces[service]:
+            raise ContractError('execution.interface 与 execution.service 不匹配')
+    execution.setdefault('resolved_choices', {})
+    choices = execution['resolved_choices']
+    normalize_probe_choices(execution)
+    own = declared_contract(execution, require_targets=False) if uses_quantization_contract(execution) else {}
+    if 'training' in choices and type(choices['training']) is not bool:
+        raise ContractError('execution.resolved_choices.training 必须为 boolean')
+    if 'training' in execution:
+        # Check the mirror without rewriting the original request.
+        merge(deepcopy(choices), {'training': execution['training']}, 'resolved_choices')
+    training = execution.get('training', choices.get('training'))
+    if training is True and (service in ('profile', 'tensor_probe', 'evaluate_artifact')
+                            or brief.get('hard_constraints', {}).get('training_allowed') is False
+                            or brief.get('hard_constraints', {}).get('training') is False):
+        raise ContractError('execution.training 与此次执行不训练的约束冲突')
+    if 'calibration_samples' in choices:
+        count = choices['calibration_samples']
+        if count is not None and (type(count) is not int or count <= 0):
+            raise ContractError('execution.resolved_choices.calibration_samples 必须是正整数或 null')
+    calibration = execution.get('calibration')
+    if 'calibration' in execution and not isinstance(calibration, dict):
+        raise ContractError('execution.calibration 必须是对象')
+    if calibration is not None and 'count' in calibration and 'calibration_samples' in choices:
+        if calibration['count'] != choices['calibration_samples']:
+            raise ContractError(f"execution.calibration.count={calibration['count']!r} 与 "
+                                f"execution.resolved_choices.calibration_samples={choices['calibration_samples']!r} "
+                                "显式冲突；请按原科学规格修复，尚未读取实际数据")
+    if service in ('tensor_probe', 'quantize_evaluate') and isinstance(calibration, dict):
+        if 'split' in calibration and calibration['split'] != 'calibration':
+            raise ContractError('execution.calibration.split=' + repr(calibration['split'])
+                                + ' 与 service=' + service + " 固定读取的 'calibration' split 冲突")
+    # Training permission applies throughout the run. Final quantization goals
+    # are enforced only for L3, not for local diagnostics or ablations.
+    applicable = {'training'}
+    if value['level'] == 'L3':
+        applicable.update(brief.get('hard_constraints', {}))
+    actual = deepcopy(choices)
+    if 'training' in execution:
+        actual['training'] = execution['training']
+    if isinstance(calibration, dict) and 'count' in calibration:
+        actual['calibration_samples'] = calibration['count']
+    fixed = {field: rule for field, rule in brief.get('hard_constraints', {}).items() if field in applicable}
+    check_constraints({'hard_constraints': declared_rules(fixed, actual)}, actual)
+    if value['level'] == 'L3':
+        hard, final = research_contracts(brief)
+        merge(final, own)
+        scalar_fields = ('specs', 'methods', 'execution', 'parameters')
+        rules = declared_rules({k: v for k, v in hard.items() if k in scalar_fields}, own)
+        check_constraints({'hard_constraints': rules}, own)
+        merge({k: v for k, v in hard.items() if k not in scalar_fields}, own)
+    value['stage'] = 'request'
+    return value
 
 
 def expand_plan(plan):
@@ -54,8 +195,7 @@ def expand_plan(plan):
         layers.extend({'module': name, **deepcopy(row)} for name in names)
     value['layers'] = layers
     from core.execution_contract import validate_plan_schema
-    validate_plan_schema(value)
-    return value
+    return validate_plan_schema(value)
 
 
 def asset(path):
@@ -72,11 +212,15 @@ def runtime_identity():
             "architecture": platform.machine(), "torch": version("torch"), "numpy": version("numpy")}
 
 
-def normalize_calibration(value):
+def normalize_calibration(value, brief=None):
     """execution.calibration 是执行视图；旧的样本数选择只作为一致性镜像。"""
     choices = value["resolved_choices"]
     fixed_split = value["service"] in ("tensor_probe", "quantize_evaluate")
-    if not fixed_split and "calibration" not in value and "calibration_samples" not in choices:
+    from ptq_agent.execution.pipeline import plan_uses_calibration
+    required = value["service"] == "tensor_probe" or (
+        value["service"] == "quantize_evaluate" and not value.get("requires_code")
+        and plan_uses_calibration(value.get("plan", {})))
+    if not required and "calibration" not in value and "calibration_samples" not in choices:
         return
     calibration = value.setdefault("calibration", {})
     if not isinstance(calibration, dict):
@@ -85,6 +229,12 @@ def normalize_calibration(value):
         count = choices["calibration_samples"]
         if count is not None and (type(count) is not int or count <= 0):
             raise ContractError("execution.resolved_choices.calibration_samples 必须是正整数或 null（完整视图）")
+    if "count" not in calibration and "calibration_samples" not in choices and brief:
+        # 已明确的协议是执行条件，不要求模型重复拷贝；数据池大小不是默认选择。
+        fixed = brief.get("hard_constraints", {}).get("calibration_samples",
+                    brief.get("evaluation_protocol", {}).get("calibration_samples"))
+        if type(fixed) is int:
+            calibration["count"] = fixed
     if "count" not in calibration:
         if choices.get("calibration_samples") is None:
             raise ContractError("execution.calibration.count 缺失，execution.resolved_choices.calibration_samples "
@@ -113,7 +263,7 @@ def normalize_calibration(value):
         raise ContractError("execution.calibration.offset 必须是非负整数")
 
 
-def normalize_execution(execution, brief):
+def normalize_execution(execution, brief, *, level=None):
     """纯参数检查和唯一值补全；不读取资产、不创建卡片、不执行实验。"""
     if not isinstance(execution, dict):
         raise ContractError("execution 必须是对象")
@@ -126,12 +276,7 @@ def normalize_execution(execution, brief):
         if not brief["model"].get("adapter"):
             raise ContractError("execution.backend 缺失且 ResearchBrief.model.adapter 未指定")
         value["backend"] = deepcopy(brief["model"]["adapter"])
-    approved_adapters = [brief["model"]["adapter"]] if brief["model"].get("adapter") else []
-    approved_adapters += brief["model"].get("allowed_adapters", [])
-    if approved_adapters and value["backend"] not in approved_adapters:
-        raise ContractError("execution.backend 与 ResearchBrief.model 的授权适配器冲突")
-    if not isinstance(value["backend"], dict):
-        raise ContractError("execution.backend 必须是对象")
+    check_backend(value['backend'], brief)
     choices = value.setdefault("resolved_choices", {})
     if not isinstance(choices, dict):
         raise ContractError("execution.resolved_choices 必须是对象；不能推断科学参数")
@@ -141,8 +286,11 @@ def normalize_execution(execution, brief):
     fixed_training = brief.get('hard_constraints', {}).get('training')
     if 'training' not in choices and type(fixed_training) is bool:
         choices['training'] = fixed_training
+    if service in ('profile', 'tensor_probe', 'evaluate_artifact'):
+        merge(choices, {'training': False}, 'resolved_choices')
     if type(choices.get("training")) is not bool:
         raise ContractError("execution.resolved_choices.training 必须明确此次执行是否训练；Agent依据用户输入与搜索空间选择")
+    value.setdefault("seed", brief.get("execution_guidance", {}).get("seed", 0))
     if type(value.get("seed")) is not int or not 0 <= value["seed"] < 2 ** 63:
         raise ContractError("execution.seed 必须是明确的非负64位整数")
     if "requires_code" in value and type(value["requires_code"]) is not bool:
@@ -176,11 +324,51 @@ def normalize_execution(execution, brief):
         from tools.profiling import PROFILE_NAMES
         if value.get('tool') not in PROFILE_NAMES or not isinstance(value.get('arguments'), dict):
             raise ContractError('profile 需要已注册 tool 及 arguments 对象；可用工具: ' + ', '.join(PROFILE_NAMES))
-    normalize_calibration(value)
+    from ptq_agent.execution.pipeline import plan_uses_calibration
+    consumes_calibration = (service == "tensor_probe" or "calibration" in value
+        or service == "quantize_evaluate" and not value['requires_code']
+        and plan_uses_calibration(value.get('plan', {})))
+    if service == 'profile':
+        from tools.profiling import uses_calibration
+        consumes_calibration = uses_calibration(value)
+        if consumes_calibration:
+            args = value['arguments']
+            fixed = brief.get('hard_constraints', {}).get('calibration_samples',
+                        brief.get('evaluation_protocol', {}).get('calibration_samples'))
+            if 'count' not in args and type(fixed) is int:
+                args['count'] = fixed
+            args.setdefault('seed', value['seed'])
+            args.setdefault('offset', 0)
+            if 'count' in args:
+                merge(value.setdefault('calibration', {}),
+                      {k: args[k] for k in ('count', 'offset')}, 'execution.calibration')
+                merge(value['calibration'], {'split': 'calibration'}, 'execution.calibration')
+        else:
+            # 已有草案可能携带全局参数镜像；不适用的字段不进入执行事实。
+            value.pop('calibration', None)
+            choices.pop('calibration_samples', None)
+            if value['tool'] == 'profile_distribution':
+                # 权重读取不消费图像；旧底层签名的无效采样参数由宿主提供。
+                for key, default in (('count', 1), ('seed', value['seed']), ('offset', 0)):
+                    value['arguments'].setdefault(key, default)
+    normalize_calibration(value, brief if consumes_calibration else None)
     if service == "tensor_probe":
         parameters = value.get("parameters")
         if not isinstance(parameters, dict):
             raise ContractError("execution.parameters 必须是对象")
+        fixed_activation = brief.get('quantization_contract', {}).get('specs', {}).get('activation', {})
+        for field, key in (('bits', 'activation_bits'), ('granularity', 'granularity')):
+            known = choices.get(key, brief.get('hard_constraints', {}).get(key, fixed_activation.get(field)))
+            if field == 'granularity' and isinstance(known, dict):
+                known = known.get('activation')
+            if known is not None and not isinstance(known, (dict, list)):
+                parameters.setdefault(field, known)
+        for target, source in (('signed', 'symmetric'), ('axis', 'axis'), ('group_size', 'group_size')):
+            if source in fixed_activation:
+                parameters.setdefault(target, deepcopy(fixed_activation[source]))
+        if parameters.get('granularity') == 'per_tensor':
+            parameters.setdefault('axis', None)
+            parameters.setdefault('group_size', None)
         for field in ("bits", "granularity"):
             if field not in parameters:
                 raise ContractError("execution.parameters." + field + " 缺失；不能猜测量化参数")
@@ -188,19 +376,10 @@ def normalize_execution(execution, brief):
             "properties": {"bits": {"type": "integer", "minimum": 1}, "signed": {"type": "boolean"},
                            "granularity": TEXT, "axis": {"type": ["integer", "null"]},
                            "group_size": {"type": ["integer", "null"], "minimum": 1}}}, "execution.parameters")
-        choices.setdefault('activation_bits', parameters['bits'])
-        if parameters["bits"] != choices.get("activation_bits"):
-            raise ContractError("execution.parameters.bits 与 execution.resolved_choices.activation_bits 不一致")
-        granularity = choices.get("granularity", {})
-        wanted = granularity.get("activation") if isinstance(granularity, dict) else granularity
-        if wanted and parameters["granularity"] != wanted:
-            raise ContractError("execution.parameters.granularity 与 execution.resolved_choices.granularity 不一致")
-        if isinstance(granularity, str):
-            # 此服务只量化激活；已明确且一致的粒度镜像无需再由 LLM 改写目标封套。
-            choices['granularity'] = {'activation': granularity}
+        normalize_probe_choices(value)
     # 量化字段通过唯一结构化合同核验，避免平铺/嵌套别名被当作不同选择。
     scalar_constraints = {k: v for k, v in brief.get("hard_constraints", {}).items()
-                          if k in ("training", "calibration_samples")}
+                          if k == "training" or (k == "calibration_samples" and consumes_calibration and level == "L3")}
     check_constraints({"hard_constraints": scalar_constraints}, choices)
     if brief.get("hard_constraints", {}).get("training_allowed") is False and choices["training"]:
         raise ContractError("execution.resolved_choices.training 与用户禁止训练的约束冲突")
@@ -212,7 +391,14 @@ def normalize_execution(execution, brief):
         value["model_scope"] = deepcopy(brief["model"].get("scope", {"model": brief["model"].get("name")}))
     else:
         value["model_scope"] = {"model": "adapter:" + fingerprint(value["backend"])}
-    return freeze_contract(value, brief)
+    value = freeze_contract(value, brief, level=level)
+    if builtin_plan:
+        bindings = {row['parameter'] for row in value['quantization_contract'].get('parameter_bindings', [])}
+        unconsumed = set(value.get('parameters', {})) - bindings
+        if unconsumed:
+            raise ContractError('内置 execution.plan 不消费 execution.parameters: ' + ', '.join(sorted(unconsumed))
+                + '；将选择写入实际 plan 字段，或用源码实现新增算法参数')
+    return value
 
 
 def check_l3_evaluations(payload, brief):
@@ -236,38 +422,29 @@ def check_l3_evaluations(payload, brief):
         remaining.pop(match)
 
 
-def preflight_experiment(payload, brief, runtime=None):
-    """草案提交和冻结共用的参数预检；返回副本，保留原始提交供修复。"""
-    validate_schema(payload, EXPERIMENT_DRAFT_SCHEMA, 'ExperimentCard draft')
-    if any(k.startswith("required_") for k in payload):
-        raise ContractError("ExperimentCard 必需执行约束须放入 execution.quantization_contract，不能留在未执行的顶层字段")
-    value = deepcopy(payload)
-    value["execution"] = normalize_execution(value["execution"], brief)
-    value.setdefault('scope', deepcopy(value['execution']['model_scope']))
+def preflight_experiment(payload, brief, runtime=None, *, executable=False):
+    """New implementations are finalized after Coding; built-ins retain direct execution."""
+    value = prepare_request(payload, brief, runtime)
+    if value['execution']['requires_code'] and not executable:
+        return value
+    value["execution"] = normalize_execution(value["execution"], brief, level=value["level"])
+    if not value['scope']:
+        value['scope'] = deepcopy(value['execution']['model_scope'])
     if 'plan' in value['execution']:
         from core.execution_contract import check_plan
         execution = value['execution']
         check_plan(execution['plan'], execution['resolved_choices'], contract=execution['quantization_contract'])
-    if runtime is not None:
-        value['resources'].setdefault('cpu_threads', runtime['cpu_threads'])
-    value.setdefault('replication', {'requested': False, 'purpose': '', 'configuration_difference': {}})
-    if not value['execution']['requires_code']:
-        value.setdefault('validation', {})
+    value['stage'] = 'execution'
     validate_payload('ExperimentCard', value)
-    if value["level"] not in SERVICES[value["execution"]["service"]]["levels"]:
-        raise ContractError("level=" + value["level"] + " 与 execution.service="
-                            + value["execution"]["service"] + " 支持的实验层级不一致")
     check_l3_evaluations(value, brief)
     result_requirements(value, brief)
-    from tools.runtime_interface import validate_interface_cases
-    validate_interface_cases(value)
     if value["level"] == "L3":
         value["execution"]["result_protocol"] = deepcopy(brief["evaluation_protocol"])
     return value
 
 
-def resolve_execution(execution, brief):
-    value = normalize_execution(execution, brief)
+def resolve_execution(execution, brief, *, level=None):
+    value = normalize_execution(execution, brief, level=level)
     adapter = value["backend"]
     if adapter.get("config_path"):
         path = Path(adapter["config_path"])
@@ -345,10 +522,40 @@ class ExperimentBroker:
     def preflight(self, payload):
         return preflight_experiment(payload, self.journal.card(self.brief_ref)["payload"], self.runtime)
 
+    def request(self, payload, *, requester, refs=(), original_request=None):
+        original = deepcopy(payload if original_request is None else original_request)
+        value = prepare_request(payload, self.journal.card(self.brief_ref)['payload'], self.runtime)
+        value['original_request'] = original
+        return make_card('ExperimentCard', self.journal.run_id, value, author=requester,
+                         refs=list(dict.fromkeys([self.brief_ref, *refs])))
+
+    def bind_execution(self, request, artifact):
+        from core.execution_contract import merge
+        from tools.safeguards import verify_artifact
+        verify_artifact(artifact, request)
+        payload = deepcopy(request['payload'])
+        choices = artifact.get('execution_choices', {})
+        if not isinstance(choices, dict):
+            raise ContractError('Coding.execution_choices 必须为对象')
+        def complete(left, right, path):
+            for key, value in right.items():
+                if key in left and isinstance(left[key], dict) and isinstance(value, dict):
+                    complete(left[key], value, path + '.' + key)
+                elif (key in left and isinstance(left[key], list) and isinstance(value, list)
+                      and len(left[key]) == len(value)
+                      and all(isinstance(a, dict) and isinstance(b, dict) for a, b in zip(left[key], value))):
+                    for index, (a, b) in enumerate(zip(left[key], value)):
+                        complete(a, b, path + '.' + key + '[' + str(index) + ']')
+                else:
+                    merge(left, {key: value}, path)
+        complete(payload['execution'], choices, 'execution')
+        payload.update(request_ref=request['id'], request_sha256=request['content_sha256'])
+        return self.freeze(payload, requester=request['author'], refs=[request['id']])
+
     def freeze(self, payload, *, requester, refs=()):
-        payload = self.preflight(payload)
+        payload = preflight_experiment(payload, self.journal.card(self.brief_ref)['payload'], self.runtime, executable=True)
         brief = self.journal.card(self.brief_ref)["payload"]
-        payload["execution"] = resolve_execution(payload["execution"], brief)
+        payload["execution"] = resolve_execution(payload["execution"], brief, level=payload["level"])
         execution = payload["execution"]
         # GPU 是宿主资源选择；CUDA 后端不能因草案省略编号而在隐藏全部 GPU 后启动。
         adapter = execution['backend']
@@ -397,12 +604,14 @@ class ExperimentBroker:
         return make_card("ExperimentCard", self.journal.run_id, payload, author=requester,
                          refs=list(dict.fromkeys([self.brief_ref, *refs, *trial_refs, *profile_refs])))
 
-    def cached(self, card, *, code_artifact=None):
+    def cached(self, card, *, code_artifact=None, visible=None):
         verify_assets(card["payload"]["execution"])
         if card["payload"]["replication"]["requested"]:
             return None
         key = execution_fingerprint(card, code_artifact=code_artifact)
         for value in self.journal.find_cards("EvidenceCard"):
+            if visible is not None and not visible(value):
+                continue  # Exact numerical reuse must not disclose a private debate branch.
             payload = value["payload"]
             previous = self.journal.card(payload["experiment_ref"])
             if payload["status"] == "completed" and payload["execution_fingerprint"] == key and execution_fingerprint(previous, code_artifact=code_artifact) == key:
@@ -468,6 +677,6 @@ class ExperimentBroker:
             "status": "completed", "observations": data["observations"], "provenance": provenance,
             "resources": receipt["resources"], "artifacts": artifacts,
             "measurement_source": data["measurement_source"], "execution_id": receipt["execution_id"],
-            "scope": canonical_scope(card, data),
+            "scope": canonical_scope(card, {**data, "provenance": provenance}),
         }, refs=[card["id"]], author="program")
 

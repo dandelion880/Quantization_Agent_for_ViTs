@@ -60,7 +60,8 @@ class DeliveryRegression(TempCase):
         chosen = cards[2]
         task = self.task(wf, refs=[wf.brief['id'], chosen['id']], round=1, hypothesis_ref=chosen['id'])
         task, context = self.begin(wf, task)
-        self.assertEqual([c['id'] for c in context['memory']['cards']], [chosen['id'], cards[3]['id']])
+        self.assertEqual([c['id'] for c in context['memory']['cards']],
+                         [chosen['id'], cards[3]['id'], cards[1]['id'], cards[0]['id']])
         self.assertEqual(context['research_brief'], wf.brief)
         task, context = self.tools(wf, task, [('read_card', {'ref': chosen['id']}),
             ('read_card', {'ref': wf.brief['id']})])
@@ -69,15 +70,13 @@ class DeliveryRegression(TempCase):
         self.assertEqual(text.count(wf.brief['payload']['scientific_question']), 1)
         wf.submit(task, self.screening(), 'SCRIPTED')
 
-    def test_required_long_body_batches_gate_submission_and_survive_restart(self):
+    def test_long_body_pages_remain_readable_across_restart(self):
         wf = self.workflow(1)
         payload = hypothesis(1, 'H1'); payload['mechanism'] = 'LONG_BOUND_MECHANISM_' + 'x' * 26000
         card = make_card('HypothesisCard', wf.journal.run_id, payload)
         wf.journal.commit('large', cards=[card])
         task, context = self.begin(wf, self.task(wf, refs=[card['id']], round=1, hypothesis_ref=card['id']))
         self.assertEqual(context['memory']['required_reads'][0]['next_offset'], 0)
-        with self.assertRaisesRegex(ContractError, '未读完'):
-            wf.submit(task, self.screening(), 'SCRIPTED')
         task, context = self.tools(wf, task, [('read_card', {'ref': card['id'], 'field': '/payload', 'offset': 0})])
         self.assertEqual(context['memory']['required_reads'][0]['next_offset'], 12000)
         self.assertEqual(context['tool_results'][0]['arguments']['field'], '/payload')
@@ -124,13 +123,6 @@ class DeliveryRegression(TempCase):
             with self.assertRaises(ContractError): self.read(wf, own, 'read_card', ref=ref)
         with self.assertRaises(ContractError): self.read(wf, own, 'read_asset', asset=str(secret_path))
         wf.queue.finish(own['task_id'])
-        reference, context = self.begin(wf, self.task(wf, 'reference', refs=[wf.brief['id'],cards[0]['id']], experiment_ref=cards[0]['id']))
-        self.assertNotIn('directory', context['memory'])
-        self.assertNotIn('PRIVATE', canonical(context))
-        for name, args in [('read_card', {'ref': cards[1]['id']}), ('retrieve_memory', {'query': {'browse': True}}),
-                           ('read_asset', {'asset': str(secret_path)})]:
-            with self.assertRaises(ContractError): self.read(wf, reference, name, **args)
-        self.assertEqual(self.read(wf, reference, 'read_card', ref=cards[0]['id']), cards[0])
 
     def test_generation_evolution_discover_experiments_statistics_and_interpretations(self):
         for purpose in ('generate', 'evolve'):
@@ -292,14 +284,12 @@ class DeliveryRegression(TempCase):
         wf.journal.commit('code/spec', cards=[spec])
         source = 'def fit(x, parameters):\n    return parameters\ndef apply(x, state, parameters):\n    return x\n' + '# CPU source fixture\n' * 3000
         candidate = write_artifact(wf.run_dir, spec, {'interface': 'quantizer_v1', 'source': source}, 'coding')
-        reference = write_artifact(wf.run_dir, spec, {'interface': 'quantizer_v1', 'source': source + '# independent reference fixture\n'}, 'safeguard')
         task = self.task(wf, 'safeguard', refs=[wf.brief['id'], spec['id']], experiment_ref=spec['id'],
-                         candidate=candidate, reference=reference, numerical={'status': 'passed', 'fixture_only': True})
+                         candidate=candidate)
         task, context = self.begin(wf, task)
-        self.assertEqual(len(context['memory']['required_assets']), 2)
+        self.assertEqual(len(context['memory']['required_assets']), 1)
         decision = review('safeguard', approved=False, fidelity='fixture', numerical_correctness='fixture', experimental_validity='fixture')
-        with self.assertRaisesRegex(ContractError, '未读完'): wf.submit(task, decision, 'SCRIPTED')
-        calls = [('read_asset', {'asset': a['path'], 'offset': offset}) for a in (candidate, reference)
+        calls = [('read_asset', {'asset': a['path'], 'offset': offset}) for a in (candidate,)
                  for offset in range(0, len(Path(a['path']).read_text()), 12000)]
         task, context = self.tools(wf, task, calls)
         self.assertTrue(all(r['next_offset'] is None for r in context['memory']['required_assets']))
@@ -315,17 +305,13 @@ class DeliveryRegression(TempCase):
         wf.journal.commit('bounded/spec', cards=[spec])
         source = 'def fit(x, parameters):\n    return parameters\ndef apply(x, state, parameters):\n    return x\n' + '# CPU bounded source\n' * 800
         candidate = write_artifact(wf.run_dir, spec, {'interface':'quantizer_v1','source':source}, 'coding')
-        reference_source = source + '# independent reference fixture\n'
-        reference = write_artifact(wf.run_dir, spec, {'interface':'quantizer_v1','source':reference_source}, 'safeguard')
         task,context = self.begin(wf, self.task(wf, 'safeguard', refs=[wf.brief['id'],spec['id']],
-            experiment_ref=spec['id'], candidate=candidate, reference=reference,
-            numerical={'status':'passed','fixture_only':True}))
-        self.assertEqual(context['frozen_experiment'],spec)
+            experiment_ref=spec['id'], candidate=candidate))
+        self.assertEqual(context['original_request'],spec)
         self.assertEqual(context['candidate_source'],source)
-        self.assertEqual(context['independent_reference_source'],reference_source)
         self.assertFalse(any(r['ref']==spec['id'] for r in context['memory']['required_reads']))
         self.assertFalse(context['memory'].get('required_assets'))
-        for artifact in (candidate,reference):
+        for artifact in (candidate,):
             location=context['memory']['asset_locations'][artifact['path']]
             self.assertEqual(location['sha256'],artifact['source_sha256'])
         wf.submit(task,review('safeguard',approved=False,fidelity='CPU fixture',
@@ -389,12 +375,12 @@ class DeliveryRegression(TempCase):
                       'evidence_refs': [evidence['id']], 'rationale': 'explicit synthetic fixture'}
             value['knowledge_updates'] = [update]
             if prior:
-                with self.assertRaisesRegex(ContractError, 'supersedes'): wf.submit(task, value, 'SCRIPTED')
                 self.assertIn(evidence['id'], wf.memory.recording_batch()['source_refs'])
-                update['supersedes'] = prior['id']
             wf.submit(task, value, 'SCRIPTED')
             current = wf.result_card(wf.queue.get(task['task_id']))
-            if prior: self.assertEqual(wf.journal.card(prior['id'])['payload']['knowledge_updates'][0]['status'], 'observed_once')
+            if prior:
+                self.assertEqual(current['payload']['knowledge_updates'][0]['supersedes'], prior['id'])
+                self.assertEqual(wf.journal.card(prior['id'])['payload']['knowledge_updates'][0]['status'], 'observed_once')
             prior = current
         claim = wf.memory.snapshot()['L2']['k']
         self.assertEqual((claim['status'], claim['version']), ('refuted', 2))
@@ -428,7 +414,7 @@ class DeliveryRegression(TempCase):
         value = meta(1); value['scientific_analysis'] = 'LONG_HISTORICAL_REVIEW_' + 'x' * 18000
         card = make_card('MetareviewCard', wf.journal.run_id, value, author='recorder')
         wf.journal.commit('old_feedback', cards=[card], events=[wf.memory.apply_metareview(card)])
-        for purpose in ('experiment_approval', 'interpret'):
+        for purpose in ('screen', 'interpret'):
             task = self.task(wf, purpose, refs=[wf.brief['id'], card['id']], experiment_draft=experiment_payload())
             context = wf.request_body(task)['spec']['context']
             self.assertNotIn(card['id'], {c['id'] for c in context['memory']['cards']})

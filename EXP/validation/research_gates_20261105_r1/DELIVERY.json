@@ -1,0 +1,119 @@
+{
+  "status": "completed",
+  "scope": "research gate cleanup; no long full research experiment",
+  "tests": {
+    "command": "python -B -m unittest discover -s QAViT/tests -p 'test_*.py' -v",
+    "count": 368,
+    "passed": 368,
+    "seconds": 286.266,
+    "log": "regression_clean.log",
+    "fixture_results_are_not_real_research": true
+  },
+  "real_validation": {
+    "actual_data": {},
+    "approval_binding_valid": true,
+    "core_sha256": "84d3e5f0018da0a99ee544d607a4cbdd98235db734b506c9e061e18d9ea5434b",
+    "evidence_ref": "EvidenceCard-48fc359594084e929b49e4bed02473b8@1",
+    "experiment_ref": "ExperimentCard-6266577df8044d60a9142184fcc231e8@1",
+    "forward_calls": 0,
+    "full_research_loop_started": false,
+    "gradient_audit": {
+      "autograd_grad_calls": 1,
+      "backward_calls": 0,
+      "optimizer_steps": 0
+    },
+    "measurement_source": "real",
+    "model_unchanged": true,
+    "observations": {
+      "N": 12288,
+      "absmax": 0.22630570828914642,
+      "alpha": 0.9,
+      "arithmetic": "FP32",
+      "bits": 3,
+      "columns": "all",
+      "fixed_target_gradient_l2": 0.000341186037985608,
+      "fixed_target_mse": 0.00035760513856075704,
+      "integer_range": [
+        -4,
+        3
+      ],
+      "nmse": 0.2623293995857239,
+      "reference_squared_sum": 16.750892639160156,
+      "rounding": "ties_to_even",
+      "row_start": 0,
+      "row_stop_exclusive": 16,
+      "scale": 0.06789171695709229,
+      "scale_scope": "one shared scale over selected submatrix",
+      "selected_shape": [
+        16,
+        768
+      ],
+      "site": "blocks.0.attn.proj.weight",
+      "source_weight_shape": [
+        768,
+        768
+      ],
+      "squared_error_sum": 4.394251823425293
+    },
+    "parameters": {
+      "alpha": 0.9,
+      "bits": 3,
+      "rows": 16
+    },
+    "quantization_contract": {
+      "calibrations": {
+        "weight": {
+          "strategy": "weight_absmax_clip_v1"
+        }
+      },
+      "methods": {
+        "weight": "clipped_maxabs_research_v1"
+      },
+      "parameters": {
+        "alpha": 0.9,
+        "bits": 3,
+        "rows": 16
+      },
+      "specs": {
+        "weight": {
+          "bits": 3
+        }
+      }
+    },
+    "request_ref": "ExperimentCard-b16b4f916302438c9eba59fdc730cf5c@1",
+    "researcher_cites_evidence": true,
+    "researcher_ref": "HypothesisCard-52dee9bcf7314363a38f0912f7effcc7@1",
+    "single_source_files": 1,
+    "source_sha256": "b30b749ff192e845a8922809f084c062df7d4013b67286bd71ffe36eb86d6af6",
+    "status": "passed"
+  },
+  "initial_attempt": {
+    "path": "real_chain",
+    "status": "stopped_before_execution",
+    "evidence_count": 0,
+    "reason": "late validation of malformed declared contract; fixed with same-task preflight repair"
+  },
+  "source_identity": "clean_source_identity.json",
+  "real_result": "real_chain_r2/service_validation.json",
+  "source_check": "real_validation_checks.json",
+  "report": "REPORT.md",
+  "pseudocode": "PSEUDOCODE.md",
+  "limitations": [
+    "No full L3 or long research cycle was run.",
+    "Independent evaluate_artifact supports native packages; a custom package uses its approved loader.",
+    "Unrecognized opaque plans do not acquire verified quantization coverage facts."
+  ],
+  "structure_audit": {
+    "status": "passed",
+    "syntax_files": 138,
+    "snapshot_file_count": 200,
+    "path": "structure_final.json"
+  },
+  "git_diff_check": "passed",
+  "verification_processes_stopped": true,
+  "gpu_memory_used_mib_after_validation": [
+    0,
+    0,
+    0
+  ]
+}

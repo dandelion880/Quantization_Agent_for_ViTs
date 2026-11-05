@@ -1,0 +1,60 @@
+{
+  "purposes_before": 14,
+  "purposes_after": 13,
+  "roles_before": 7,
+  "roles_after": 7,
+  "new_agents": 0,
+  "new_state_protocols": 0,
+  "deleted_prompt": "QAViT/agents/prompts/tasks/experiment_approval.md",
+  "core_files": [
+    {
+      "file": "QAViT/agents/interaction.py",
+      "before_lines": 1321,
+      "after_lines": 1345
+    },
+    {
+      "file": "QAViT/agents/tasks.py",
+      "before_lines": 123,
+      "after_lines": 113
+    },
+    {
+      "file": "QAViT/agents/roles.py",
+      "before_lines": 120,
+      "after_lines": 126
+    },
+    {
+      "file": "QAViT/core/experiment_requests.py",
+      "before_lines": 249,
+      "after_lines": 246
+    },
+    {
+      "file": "QAViT/core/journal.py",
+      "before_lines": 216,
+      "after_lines": 256
+    },
+    {
+      "file": "QAViT/core/memory.py",
+      "before_lines": 364,
+      "after_lines": 378
+    },
+    {
+      "file": "QAViT/core/evidence.py",
+      "before_lines": 0,
+      "after_lines": 112
+    },
+    {
+      "file": "QAViT/runtime/driver.py",
+      "before_lines": 373,
+      "after_lines": 374
+    },
+    {
+      "file": "QAViT/runtime/task_queue.py",
+      "before_lines": 171,
+      "after_lines": 175
+    }
+  ],
+  "core_lines_net": 188,
+  "unchanged_numerical_and_semantic_files": 66,
+  "changed_protected_core_files": [],
+  "note": "Net source size is not an objective; new evidence query/projection and integrity checks add code while removing two routine LLM stages."
+}

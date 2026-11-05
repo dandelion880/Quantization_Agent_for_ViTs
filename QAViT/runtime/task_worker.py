@@ -4,15 +4,13 @@ import sys
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from contextlib import ExitStack
-import math
 import os
 import resource
 import signal
-import subprocess
 import time
 import traceback
 
-from runtime.paths import ROOT, QAVIT
+from runtime.paths import ROOT
 from core.cards import ContractError, fingerprint
 from core.journal import atomic_json, file_sha256, file_lock, read_json
 from runtime.task_queue import process_identity
@@ -20,91 +18,25 @@ from runtime.identity import code_identity
 from runtime.subscription import StructuredOutputError
 
 
-def numeric_comparison(left, right, atol, rtol, path="$"):
-    maximum = 0.0
-    if isinstance(left, (int, float)) and not isinstance(left, bool) and isinstance(right, (int, float)) and not isinstance(right, bool):
-        if not math.isfinite(left) or not math.isfinite(right):
-            raise ContractError("独立对照出现非有限数: " + path)
-        error = abs(left - right)
-        if error > atol + rtol * abs(right):
-            raise ContractError(f"数值不符 {path}: candidate={left}, reference={right}, abs_error={error}")
-        return error
-    if isinstance(left, dict) and isinstance(right, dict) and set(left) == set(right):
-        for key in left:
-            maximum = max(maximum, numeric_comparison(left[key], right[key], atol, rtol, path + "." + key))
-        return maximum
-    if isinstance(left, list) and isinstance(right, list) and len(left) == len(right):
-        for index, (a, b) in enumerate(zip(left, right)):
-            maximum = max(maximum, numeric_comparison(a, b, atol, rtol, path + f"[{index}]"))
-        return maximum
-    if left != right or type(left) is not type(right):
-        raise ContractError("独立对照的结构/非数值结果不同: " + path)
-    return maximum
-
-
-def verification(request, directory):
-    from runtime.codex_cli import parent_guard, terminate
-    experiment = request["experiment"]
-    config = experiment["payload"]["validation"]
-    atol, rtol = config["atol"], config["rtol"]
-    if not 0 <= atol < 1 or not 0 <= rtol < 1:
-        raise ContractError("数值对照容差必须在冻结规格中合理规定")
-    results = {}
-    for name in ("candidate", "reference"):
-        child = directory / name
-        child.mkdir(exist_ok=True)
-        remaining = request["deadline_unix"] - time.time()
-        if remaining <= 0:
-            raise TimeoutError("数值验证预算耗尽")
-        atomic_json(child / "request.json", {"experiment": experiment, "artifact": request[name],
-                                             "timeout_seconds": remaining})
-        with (child / "worker.log").open("w") as log:
-            process = subprocess.Popen([sys.executable, "-B", "-u", str(QAVIT / "tools/verification_worker.py"), str(child / "request.json")],
-                                       cwd=child, stdout=log, stderr=subprocess.STDOUT,
-                                       start_new_session=True, preexec_fn=parent_guard(os.getpid()))
-            try:
-                process.wait(timeout=remaining)
-            finally:
-                terminate(process)
-        value = read_json(child / "result.json")
-        if value["status"] != "completed":
-            return {"status": "rejected", "experiment_sha256": experiment["content_sha256"],
-                    "candidate_sha256": request["candidate"]["source_sha256"],
-                    "reference_sha256": request["reference"]["source_sha256"],
-                    "cases": [], "failure": {"side": name, "error": value.get("error")},
-                    "receipts": {k: str(directory / k / "result.json") for k in results}}
-        results[name] = value["data"]
-    reports = []
-    try:
-        a, b = results["candidate"]["cases"], results["reference"]["cases"]
-        if len(a) != len(b) or len(a) != len(config["cases"]):
-            raise ContractError("对照测试案例数量不一致")
-        for index, (candidate, reference) in enumerate(zip(a, b)):
-            error = numeric_comparison(candidate["output"], reference["output"], atol, rtol)
-            reports.append({"index": index, "status": "passed", "max_abs_error": error,
-                            "atol": atol, "rtol": rtol, "finite": True,
-                            "state_unchanged": candidate["state_unchanged"],
-                            "input_unchanged": candidate["input_unchanged"]})
-        interfaces = []
-        a, b = results["candidate"].get("interface_cases", []), results["reference"].get("interface_cases", [])
-        if len(a) != len(b) or len(a) != len(config.get("interface_cases", [])):
-            raise ContractError("实际 Data/Backend 接口案例数量不一致")
-        for index, (candidate, reference) in enumerate(zip(a, b)):
-            error = numeric_comparison(candidate["output"], reference["output"], atol, rtol)
-            if candidate["execution_facts"] != reference["execution_facts"]:
-                raise ContractError("独立接口案例的实际数据/前向范围不一致")
-            interfaces.append({"index": index, "status": "passed", "max_abs_error": error})
-        status, failure = "passed", None
-    except ContractError as exc:
-        status, failure = "rejected", str(exc)
-    return {"status": status, "cases": reports, "interface_cases": locals().get("interfaces", []), "failure": failure,
-            "host_implementation_sha256": code_identity()["core_sha256"],
-            "experiment_sha256": experiment["content_sha256"],
-            "candidate_sha256": request["candidate"]["source_sha256"],
-            "reference_sha256": request["reference"]["source_sha256"],
-            "receipts": {k: str(directory / k / "result.json") for k in results},
-            "method": "separate clean Python processes; reference never imports candidate",
-            "scope": "finite numerical cases plus independent Safeguard semantic review; not a universal proof"}
+def failure_origin(exc, request):
+    """Use actual failing frames, not an exception's name, to route code repair."""
+    candidate = (request.get('approval') or {}).get('candidate') or {}
+    source = candidate.get('path')
+    if not source:
+        return 'host'
+    frames = traceback.extract_tb(exc.__traceback__)
+    if any(Path(frame.filename).resolve() == Path(source).resolve() for frame in frames):
+        return 'implementation'
+    # These contracts check returned values/state after the plugin frame has exited.
+    validators = {'tools/result_contract.py', 'core/execution_contract.py'}
+    if isinstance(exc, ContractError) and frames:
+        last = frames[-1]
+        if (any(last.filename.endswith('/' + name) for name in validators)
+                or last.name in ('execute_custom', 'tensor_probe', 'evaluate_services')
+                or (last.name == 'run_experiment' and any(term in str(exc) for term in
+                    ('缺少供宿主重载', '导出包必须位于', '改变了冻结基准模型')))):
+            return 'implementation'
+    return 'host'
 
 
 def work(request, directory):
@@ -115,8 +47,6 @@ def work(request, directory):
     if kind == "experiment":
         from tools.experiment_worker import run_experiment
         return run_experiment(request, directory)
-    if kind == "verification":
-        return verification(request, directory)
     if kind == "literature":
         from tools.literature import search, fetch
         remaining = min(30, request["deadline_unix"] - time.time())
@@ -141,7 +71,7 @@ def main():
     start = time.monotonic()
     before = code_identity()
     def interrupted(signum, frame):
-        if signum == signal.SIGALRM and request["kind"] in ("experiment", "verification"):
+        if signum == signal.SIGALRM and request["kind"] == "experiment":
             raise TimeoutError("numeric task deadline exceeded")
         raise InterruptedError("task stopped by signal " + str(signum))
     signal.signal(signal.SIGTERM, interrupted)
@@ -166,6 +96,8 @@ def main():
         if isinstance(exc, StructuredOutputError) and before != code_identity():
             exc = ContractError("任务执行期间核心或数值实现变化，格式错误不得进入修复流程")
         error = exc.to_dict() if hasattr(exc, "to_dict") else {"code": type(exc).__name__, "message": str(exc)}
+        if request['kind'] == 'experiment':
+            error['origin'] = failure_origin(exc, request)
         result = {"status": "interrupted" if isinstance(exc, (InterruptedError, KeyboardInterrupt)) else "failed", "error": error}
         if failed_usage is not None:
             # A failed decode is still a paid/accounted model attempt, not an empty action.

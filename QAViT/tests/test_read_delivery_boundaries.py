@@ -27,7 +27,7 @@ class ReadDeliveryBoundaries(TempCase):
         with patch.object(wf.queue,'snapshot',wraps=wf.queue.snapshot) as snapshots:
             actual=list(wf.result_values({'tool_results':rows}))
             self.assertEqual(actual,expected)
-            self.assertEqual(snapshots.call_count,1)
+            self.assertEqual(snapshots.call_count,0)
         actual[0][2]['nested'][1]['scientific_value']=999
         self.assertEqual(wf.queue.get(rows[0]['task'])['result']['nested'][1]['scientific_value'],0)
         with patch.object(wf.queue,'snapshot',side_effect=AssertionError('empty results need no queue read')):
@@ -70,24 +70,25 @@ class ReadDeliveryBoundaries(TempCase):
         task,c=self.begin(wf,self.task(wf,refs=[evidence['id']]))
         self.assertFalse(any(r['ref']==evidence['id'] for r in c['memory']['required_reads']))
         view=next(v for v in c['memory']['cards'] if v.get('id')==evidence['id'])
-        self.assertGreater(len(canonical(view['payload'])),wf.PAGE_CHARACTERS)
-        self.assertLessEqual(len(canonical(view['payload'])),4*wf.PAGE_CHARACTERS)
+        self.assertLess(len(canonical(view['payload'])),wf.PAGE_CHARACTERS)
         shown=view['payload']['observations']
         self.assertEqual(shown['summary'],payload['observations']['summary'])
-        for original,row in zip(payload['observations']['rows'],shown['rows']):
-            self.assertEqual({k:v for k,v in row.items() if k!='states'},
-                             {k:v for k,v in original.items() if k!='states'})
-            entry=row['states'];args=entry['read_card']
-            self.assertEqual(wf.card_field(evidence,args['field']),original['states'])
-            self.assertEqual(entry['sha256'],fingerprint(original['states']))
-        args=shown['rows'][0]['states']['read_card']
+        summary=shown['rows']['numeric_summary']
+        self.assertEqual(summary['/*/nmse']['count'],49)
+        self.assertEqual(summary['/*/nmse']['maximum']['value'],.48)
+        self.assertEqual(summary['/*/states/T/scale/*']['maximum']['value'],1999)
+        self.assertEqual(shown['rows']['sha256'],fingerprint(payload['observations']['rows']))
+        # Every site's exact values remain reachable, including the last row.
+        for i,original in enumerate(payload['observations']['rows']):
+            self.assertEqual(wf.card_field(evidence,'/payload/observations/rows/'+str(i)),original)
+        args={'ref':evidence['id'],'field':'/payload/observations/rows/0/states'}
         task,c=self.tools(wf,task,[('read_card',args)])
         self.assertEqual(wf.read_ranges(task,evidence['id'],args['field'],
             fingerprint(payload['observations']['rows'][0]['states'])),[(0,float('inf'))])
         self.assertEqual(wf.journal.card(evidence['id'])['payload'],payload)
         wf.submit(task,self.screening(),'CPU')
 
-    def test_bulk_projection_preserves_named_scalars_flags_and_escaped_paths(self):
+    def test_bulk_projection_preserves_scalars_and_select_does_not_claim_unread_prose(self):
         wf=self.workflow(1);cards=self.science(wf,'bulk_paths',commit=False)
         payload=deepcopy(cards[1]['payload'])
         payload['observations']={'named_statistics':{'metric_'+str(i):i/100 for i in range(1000)},
@@ -96,7 +97,12 @@ class ReadDeliveryBoundaries(TempCase):
         evidence=make_card('EvidenceCard',wf.journal.run_id,payload,refs=[cards[0]['id']])
         view=wf.present_card(evidence)['payload']['observations']
         for key in payload['observations']:
-            if key!='a/b~c':self.assertEqual(view[key],payload['observations'][key])
+            if key not in ('a/b~c','flags','labels','named_statistics'):self.assertEqual(view[key],payload['observations'][key])
+        bounded = view['named_statistics']
+        self.assertGreater(bounded['display_coverage']['omitted_metric_groups'], 0)
+        self.assertEqual(wf.card_field(evidence,bounded['read_card']['field']),payload['observations']['named_statistics'])
+        self.assertEqual(view['flags']['categorical_summary']['/*']['values'],{'true':2000})
+        self.assertEqual(view['labels']['categorical_summary']['/*']['values'],{'"scientific label"':1000})
         entry=view['a/b~c']
         self.assertEqual(entry['read_card']['field'],'/payload/observations/a~1b~0c')
         self.assertEqual(wf.card_field(evidence,entry['read_card']['field']),payload['observations']['a/b~c'])
@@ -105,10 +111,18 @@ class ReadDeliveryBoundaries(TempCase):
         large=make_card('EvidenceCard',wf.journal.run_id,payload,refs=[cards[0]['id']])
         wf.journal.commit('large_science_with_arrays',cards=[cards[0],large])
         task,c=self.begin(wf,self.task(wf,refs=[large['id']]))
-        self.assertTrue(any(r['ref']==large['id'] for r in c['memory']['required_reads']))
-        with self.assertRaises(ContractError):wf.submit(task,self.screening(),'CPU')
+        field='/payload/observations/meaning';digest=fingerprint(payload['observations']['meaning'])
+        self.assertTrue(any(r['ref']==large['id'] and r['field']==field and r['next_offset']==0
+                            for r in c['memory']['required_reads']))
+        task,c=self.tools(wf,task,[('read_card',{'ref':large['id'],'select':{'metric':'*'}})])
+        self.assertEqual(wf.read_ranges(task,large['id'],field,digest),[])
+        self.assertTrue(any(r['ref']==large['id'] and r['field']==field and r['next_offset']==0
+                            for r in c['memory']['required_reads']))
+        wf.submit(task,self.screening(),'CPU')
+        self.assertEqual(wf.queue.get(task['task_id'])['state'],'completed')
+        self.assertEqual(wf.read_ranges(task,large['id'],field,digest),[])
 
-    def test_repeated_counts_are_exact_references_and_unique_results_remain_complete(self):
+    def test_repeated_counts_summary_keeps_distinct_values_and_complete_source(self):
         wf=self.workflow(1);cards=self.science(wf,'repeated_counts',commit=False)
         counts={'block.'+str(i):32 for i in range(97)}
         changed={**counts,'block.96':31}
@@ -123,14 +137,16 @@ class ReadDeliveryBoundaries(TempCase):
         shown=next(v for v in c['memory']['cards'] if v.get('id')==evidence['id'])['payload']['observations']
         self.assertEqual(shown['a/b~c'],counts)
         self.assertEqual(shown['different'],changed)
-        self.assertEqual(shown['unique_statistics'],payload['observations']['unique_statistics'])
-        self.assertGreater(len(canonical(shown)),4*wf.PAGE_CHARACTERS)
-        for i,row in enumerate(shown['rows']):
+        self.assertGreater(shown['unique_statistics']['display_coverage']['omitted_metric_groups'],0)
+        self.assertEqual(wf.card_field(evidence,shown['unique_statistics']['read_card']['field']),
+                         payload['observations']['unique_statistics'])
+        self.assertLess(len(canonical(shown)),len(canonical(payload['observations'])))
+        self.assertEqual(shown['rows']['numeric_summary']['/*/nmse']['maximum']['value'],.96)
+        for i in range(97):
+            row=wf.card_field(evidence,'/payload/observations/rows/'+str(i))
             self.assertEqual(row['phase'],'replay:'+str(i))
             self.assertEqual(row['nmse'],i/100)
-            self.assertEqual(row['counts']['read_card'],{'ref':evidence['id'],'field':'/payload/observations/a~1b~0c'})
-            self.assertEqual(row['counts']['sha256'],fingerprint(counts))
-            self.assertEqual(wf.card_field(evidence,row['counts']['read_card']['field']),counts)
+            self.assertEqual(row['counts'],counts)
         self.assertEqual(wf.journal.card(evidence['id'])['payload'],payload)
         wf.submit(task,self.screening(),'CPU')
 
@@ -153,7 +169,7 @@ class ReadDeliveryBoundaries(TempCase):
         self.assertEqual(wf.present_card(different)['payload']['execution']['research_quantization_contract'],
                          payload['execution']['research_quantization_contract'])
 
-    def test_one_page_evidence_is_complete_and_larger_science_still_requires_reading(self):
+    def test_one_page_evidence_is_complete_and_unread_large_science_does_not_block_submission(self):
         wf=self.workflow(1);cards=self.science(wf,'bounded_evidence',commit=False)
         payload=deepcopy(cards[1]['payload']);payload['observations']['details']='EVIDENCE_FULL_SCIENCE_'+('x'*7400)
         evidence=make_card('EvidenceCard',wf.journal.run_id,payload,refs=[cards[0]['id']])
@@ -168,9 +184,13 @@ class ReadDeliveryBoundaries(TempCase):
         wf.journal.commit('large_evidence',cards=[large])
         task,c=self.begin(wf,self.task(wf,refs=[large['id']]))
         self.assertTrue(any(r['ref']==large['id'] and r['next_offset']==0 for r in c['memory']['required_reads']))
-        with self.assertRaises(ContractError):wf.submit(task,self.screening(),'CPU')
+        field='/payload/observations/details';digest=fingerprint(payload['observations']['details'])
+        self.assertEqual(wf.read_ranges(task,large['id'],field,digest),[])
+        wf.submit(task,self.screening(),'CPU')
+        self.assertEqual(wf.queue.get(task['task_id'])['state'],'completed')
+        self.assertEqual(wf.read_ranges(task,large['id'],field,digest),[])
 
-    def test_bounded_brief_is_whole_without_relaxing_scientific_body_gate(self):
+    def test_bounded_brief_is_whole_and_optional_body_read_records_exact_coverage(self):
         wf=self.workflow(1)
         p=deepcopy(wf.brief['payload']);p['scientific_question']='BOUNDED_BRIEF_'+('x'*9000)
         brief=make_card('ResearchBrief',wf.journal.run_id,p)
@@ -181,12 +201,17 @@ class ReadDeliveryBoundaries(TempCase):
         self.assertEqual(c['research_brief'],brief)
         self.assertIn(brief['id'],c['memory']['read_manifest']['refs'])
         self.assertEqual({r['ref'] for r in c['memory']['required_reads']},{card['id']})
-        with self.assertRaises(ContractError):wf.submit(task,self.screening(),'CPU')
+        self.assertEqual(wf.read_ranges(task,card['id'],'/payload',fingerprint(hp)),[])
+        wf.submit(task,self.screening(),'CPU')
+        self.assertEqual(wf.queue.get(task['task_id'])['state'],'completed')
+        self.assertEqual(wf.read_ranges(task,card['id'],'/payload',fingerprint(hp)),[])
+        task,c=self.begin(wf,self.task(wf,refs=[card['id']]))
         task,c=self.tools(wf,task,[('read_card',{'ref':card['id'],'field':'/payload'})])
+        self.assertEqual(wf.read_ranges(task,card['id'],'/payload',fingerprint(hp)),[(0,float('inf'))])
         self.assertEqual(canonical(c).count('BOUNDED_BRIEF_'),1)
         wf.submit(task,self.screening(),'CPU')
 
-    def test_large_brief_still_requires_every_page(self):
+    def test_large_brief_partial_read_allows_submission_and_full_read_records_coverage(self):
         wf=self.workflow(1)
         p=deepcopy(wf.brief['payload']);p['scientific_question']='LARGE_BRIEF_'+('x'*18000)
         brief=make_card('ResearchBrief',wf.journal.run_id,p)
@@ -194,9 +219,16 @@ class ReadDeliveryBoundaries(TempCase):
         task,c=self.begin(wf,self.task(wf,refs=[brief['id']]))
         self.assertEqual(c['memory']['required_reads'][0]['ref'],brief['id'])
         task,c=self.tools(wf,task,[('read_card',{'ref':brief['id'],'field':'/payload','offset':0})])
-        with self.assertRaises(ContractError):wf.submit(task,self.screening(),'CPU')
-        task,c=self.tools(wf,task,[('read_card',{'ref':brief['id'],'field':'/payload','offset':12000})])
+        self.assertEqual(c['memory']['required_reads'][0]['next_offset'],12000)
+        self.assertEqual(wf.read_ranges(task,brief['id'],'/payload',fingerprint(p)),[(0,12000)])
+        wf.submit(task,self.screening(),'CPU')
+        self.assertEqual(wf.queue.get(task['task_id'])['state'],'completed')
+        self.assertEqual(wf.read_ranges(task,brief['id'],'/payload',fingerprint(p)),[(0,12000)])
+        task,c=self.begin(wf,self.task(wf,refs=[brief['id']]))
+        task,c=self.tools(wf,task,[('read_card',{'ref':brief['id'],'field':'/payload','offset':offset})
+                                 for offset in (0,12000)])
         self.assertIsNone(c['memory']['required_reads'][0]['next_offset'])
+        self.assertEqual(wf.read_ranges(task,brief['id'],'/payload',fingerprint(p)),[(0,float('inf'))])
         self.assertEqual(canonical(c).count('LARGE_BRIEF_'),1)
         wf.submit(task,self.screening(),'CPU')
 
@@ -228,14 +260,20 @@ class ReadDeliveryBoundaries(TempCase):
         task,c=self.tools(wf,task,[('read_asset',{'asset':str(wf.journal.card_path(card['id']))})])
         self.assertEqual(canonical(c).count('HIDDEN_FULL_RESULT'),1)
 
-    def test_root_pages_cover_payload_but_missing_page_rejected(self):
+    def test_root_page_gap_does_not_cover_payload_or_block_submission(self):
         wf=self.workflow(1);p=hypothesis(1,'H1');p['mechanism']='ROOT_PAGES_'+('x'*26000)
         card=make_card('HypothesisCard',wf.journal.run_id,p);wf.journal.commit('long',cards=[card])
         task,c=self.begin(wf,self.task(wf,refs=[card['id']]))
         task,c=self.tools(wf,task,[('read_card',{'ref':card['id'],'offset':i}) for i in (0,24000)])
-        with self.assertRaises(ContractError):wf.submit(task,self.screening(),'CPU')
-        task,c=self.tools(wf,task,[('read_card',{'ref':card['id'],'offset':12000})])
+        self.assertIsNotNone(c['memory']['required_reads'][0]['next_offset'])
+        self.assertEqual(wf.read_ranges(task,card['id'],'/payload',fingerprint(p)),[])
+        wf.submit(task,self.screening(),'CPU')
+        self.assertEqual(wf.queue.get(task['task_id'])['state'],'completed')
+        self.assertEqual(wf.read_ranges(task,card['id'],'/payload',fingerprint(p)),[])
+        task,c=self.begin(wf,self.task(wf,refs=[card['id']]))
+        task,c=self.tools(wf,task,[('read_card',{'ref':card['id'],'offset':offset}) for offset in (0,12000,24000)])
         self.assertIsNone(c['memory']['required_reads'][0]['next_offset'])
+        self.assertEqual(wf.read_ranges(task,card['id'],'/payload',fingerprint(p)),[(0,float('inf'))])
         wf.submit(task,self.screening(),'CPU')
 
     def test_ancestor_field_covers_child_with_exact_identity(self):

@@ -1,0 +1,475 @@
+{
+  "method": "Same committed historical task and evidence sequence; repair_feedback omitted in both. Canonical JSON character counts, not tokens. Single wall-clock replay per version; final replay after CPU/model tests, not a controlled benchmark.",
+  "actual_new_llm_calls": 0,
+  "actual_new_tokens": null,
+  "journal_load_seconds": {
+    "before": 17.8690303908661,
+    "after": 18.42924270685762
+  },
+  "rows": [
+    {
+      "purpose": "generate",
+      "task_id": "task-a148766c361790035f446418",
+      "sequence": 145,
+      "before": {
+        "actual_new_llm_calls": 0,
+        "actual_new_tokens": null,
+        "context_characters": 40431,
+        "delivered_cards": 0,
+        "io_counts": {
+          "read_json": 348,
+          "validate_card": 348
+        },
+        "memory_characters": {
+          "bound_feedback": 2,
+          "cards": 2,
+          "directory": 3598,
+          "field_manifest": 2,
+          "memory_version": 1,
+          "read_manifest": 115,
+          "recording_status": 159,
+          "required_reads": 2,
+          "source_handles": 171
+        },
+        "purpose": "generate",
+        "repeated_long_string_characters": 476,
+        "request_characters": 50962,
+        "required_reads": 0,
+        "seconds": [
+          2.5666087390854955
+        ],
+        "section_characters": {
+          "available_seconds": 1,
+          "budget_receipt": 661,
+          "constraints_source": 61,
+          "data_receipt": 2622,
+          "experiment_interface": 2967,
+          "interface_reference": 76,
+          "literature_capabilities": 108,
+          "memory": 4202,
+          "method_catalog": 1537,
+          "payload_contract": 1681,
+          "prompt_source_sha256": 66,
+          "read_view": 35,
+          "reading_instructions": 253,
+          "repair_feedback": 4,
+          "research_brief": 13506,
+          "run_id": 5,
+          "services": 887,
+          "task": 59,
+          "task_id": 31,
+          "tool_results": 11272,
+          "user_answers": 2,
+          "validation_mode": 5
+        },
+        "sequence": 145,
+        "task_id": "task-a148766c361790035f446418",
+        "tool_results": 10
+      },
+      "after": {
+        "actual_new_llm_calls": 0,
+        "actual_new_tokens": null,
+        "context_characters": 40851,
+        "delivered_cards": 0,
+        "io_counts": {
+          "read_json": 65,
+          "validate_card": 65
+        },
+        "memory_characters": {
+          "bound_feedback": 2,
+          "cards": 2,
+          "directory": 3598,
+          "field_manifest": 2,
+          "memory_version": 1,
+          "read_manifest": 115,
+          "recording_status": 159,
+          "required_reads": 2,
+          "source_handles": 171
+        },
+        "purpose": "generate",
+        "repeated_long_string_characters": 476,
+        "request_characters": 52554,
+        "required_reads": 0,
+        "seconds": [
+          2.2455024486407638
+        ],
+        "section_characters": {
+          "available_seconds": 1,
+          "budget_receipt": 662,
+          "constraints_source": 61,
+          "data_receipt": 2622,
+          "experiment_interface": 3135,
+          "interface_reference": 76,
+          "literature_capabilities": 108,
+          "memory": 4202,
+          "method_catalog": 1537,
+          "payload_contract": 1770,
+          "prompt_source_sha256": 66,
+          "read_view": 35,
+          "reading_instructions": 415,
+          "repair_feedback": 4,
+          "research_brief": 13506,
+          "run_id": 5,
+          "services": 887,
+          "task": 59,
+          "task_id": 31,
+          "tool_results": 11272,
+          "user_answers": 2,
+          "validation_mode": 5
+        },
+        "sequence": 145,
+        "task_id": "task-a148766c361790035f446418",
+        "tool_results": 10
+      },
+      "character_reduction_percent": -3.1238962364114498,
+      "time_reduction_percent": 12.510917053884285
+    },
+    {
+      "purpose": "arbitrate",
+      "task_id": "task-7bcdfb7e19618281fe47d48f",
+      "sequence": 2555,
+      "before": {
+        "actual_new_llm_calls": 0,
+        "actual_new_tokens": null,
+        "context_characters": 440135,
+        "delivered_cards": 20,
+        "io_counts": {
+          "read_json": 6928,
+          "validate_card": 6928
+        },
+        "memory_characters": {
+          "bound_feedback": 2,
+          "cards": 230456,
+          "directory": 13480,
+          "feedback_bindings": 909,
+          "field_manifest": 2,
+          "memory_version": 2,
+          "read_manifest": 1216,
+          "required_reads": 2,
+          "source_handles": 1657
+        },
+        "purpose": "arbitrate",
+        "repeated_long_string_characters": 3009,
+        "request_characters": 452583,
+        "required_reads": 0,
+        "seconds": [
+          48.692037956789136
+        ],
+        "section_characters": {
+          "available_seconds": 1,
+          "budget_receipt": 663,
+          "constraints_source": 61,
+          "data_receipt": 2905,
+          "experiment_interface": 2967,
+          "interface_reference": 76,
+          "literature_capabilities": 108,
+          "memory": 247877,
+          "method_catalog": 1537,
+          "payload_contract": 466,
+          "prompt_source_sha256": 66,
+          "read_view": 37,
+          "reading_instructions": 253,
+          "repair_feedback": 4,
+          "research_brief": 13506,
+          "run_id": 5,
+          "services": 887,
+          "task": 110,
+          "task_id": 31,
+          "tool_results": 168178,
+          "user_answers": 2,
+          "validation_mode": 5
+        },
+        "sequence": 2555,
+        "task_id": "task-7bcdfb7e19618281fe47d48f",
+        "tool_results": 26
+      },
+      "after": {
+        "actual_new_llm_calls": 0,
+        "actual_new_tokens": null,
+        "context_characters": 328639,
+        "delivered_cards": 20,
+        "io_counts": {
+          "read_json": 290,
+          "validate_card": 290
+        },
+        "memory_characters": {
+          "bound_feedback": 2,
+          "cards": 118189,
+          "directory": 13480,
+          "feedback_bindings": 909,
+          "field_manifest": 2,
+          "memory_version": 2,
+          "read_manifest": 1216,
+          "required_reads": 2,
+          "source_handles": 1657
+        },
+        "purpose": "arbitrate",
+        "repeated_long_string_characters": 3339,
+        "request_characters": 341804,
+        "required_reads": 0,
+        "seconds": [
+          13.237616462633014
+        ],
+        "section_characters": {
+          "available_seconds": 1,
+          "budget_receipt": 664,
+          "constraints_source": 61,
+          "data_receipt": 2905,
+          "experiment_interface": 3135,
+          "interface_reference": 76,
+          "literature_capabilities": 108,
+          "memory": 135610,
+          "method_catalog": 1537,
+          "payload_contract": 466,
+          "prompt_source_sha256": 66,
+          "read_view": 37,
+          "reading_instructions": 415,
+          "repair_feedback": 4,
+          "research_brief": 13506,
+          "run_id": 5,
+          "services": 887,
+          "task": 110,
+          "task_id": 31,
+          "tool_results": 168618,
+          "user_answers": 2,
+          "validation_mode": 5
+        },
+        "sequence": 2555,
+        "task_id": "task-7bcdfb7e19618281fe47d48f",
+        "tool_results": 26
+      },
+      "character_reduction_percent": 24.47705724695801,
+      "time_reduction_percent": 72.81359126027853
+    },
+    {
+      "purpose": "evolve",
+      "task_id": "task-6111ec8005b3d7bb80cd9c39",
+      "sequence": 3876,
+      "before": {
+        "actual_new_llm_calls": 0,
+        "actual_new_tokens": null,
+        "context_characters": 370233,
+        "delivered_cards": 27,
+        "io_counts": {
+          "read_json": 10633,
+          "validate_card": 10633
+        },
+        "memory_characters": {
+          "bound_feedback": 2,
+          "cards": 315908,
+          "directory": 13612,
+          "feedback_bindings": 455,
+          "field_manifest": 2,
+          "memory_version": 2,
+          "read_manifest": 1628,
+          "recording_status": 161,
+          "required_reads": 2,
+          "source_handles": 2203
+        },
+        "purpose": "evolve",
+        "repeated_long_string_characters": 4727,
+        "request_characters": 379732,
+        "required_reads": 0,
+        "seconds": [
+          82.2243417231366
+        ],
+        "section_characters": {
+          "available_seconds": 1,
+          "budget_receipt": 666,
+          "constraints_source": 61,
+          "data_receipt": 2905,
+          "experiment_interface": 2967,
+          "interface_reference": 76,
+          "literature_capabilities": 108,
+          "memory": 334146,
+          "method_catalog": 1537,
+          "payload_contract": 1681,
+          "prompt_source_sha256": 66,
+          "read_view": 37,
+          "reading_instructions": 253,
+          "repair_feedback": 4,
+          "research_brief": 13506,
+          "run_id": 5,
+          "services": 887,
+          "task": 8238,
+          "task_id": 31,
+          "tool_results": 2661,
+          "user_answers": 2,
+          "validation_mode": 5
+        },
+        "sequence": 3876,
+        "task_id": "task-6111ec8005b3d7bb80cd9c39",
+        "tool_results": 1
+      },
+      "after": {
+        "actual_new_llm_calls": 0,
+        "actual_new_tokens": null,
+        "context_characters": 231741,
+        "delivered_cards": 27,
+        "io_counts": {
+          "read_json": 76,
+          "validate_card": 76
+        },
+        "memory_characters": {
+          "bound_feedback": 2,
+          "cards": 176997,
+          "directory": 13612,
+          "feedback_bindings": 455,
+          "field_manifest": 2,
+          "memory_version": 2,
+          "read_manifest": 1628,
+          "recording_status": 161,
+          "required_reads": 2,
+          "source_handles": 2203
+        },
+        "purpose": "evolve",
+        "repeated_long_string_characters": 4807,
+        "request_characters": 242246,
+        "required_reads": 0,
+        "seconds": [
+          20.417051250115037
+        ],
+        "section_characters": {
+          "available_seconds": 1,
+          "budget_receipt": 666,
+          "constraints_source": 61,
+          "data_receipt": 2905,
+          "experiment_interface": 3135,
+          "interface_reference": 76,
+          "literature_capabilities": 108,
+          "memory": 195235,
+          "method_catalog": 1537,
+          "payload_contract": 1770,
+          "prompt_source_sha256": 66,
+          "read_view": 37,
+          "reading_instructions": 415,
+          "repair_feedback": 4,
+          "research_brief": 13506,
+          "run_id": 5,
+          "services": 887,
+          "task": 8238,
+          "task_id": 31,
+          "tool_results": 2661,
+          "user_answers": 2,
+          "validation_mode": 5
+        },
+        "sequence": 3876,
+        "task_id": "task-6111ec8005b3d7bb80cd9c39",
+        "tool_results": 1
+      },
+      "character_reduction_percent": 36.20606111678762,
+      "time_reduction_percent": 75.16909126635184
+    },
+    {
+      "purpose": "record",
+      "task_id": "task-c895aa7b6fa9c7d0c0835c6a",
+      "sequence": 4430,
+      "before": {
+        "actual_new_llm_calls": 0,
+        "actual_new_tokens": null,
+        "context_characters": 389718,
+        "delivered_cards": 26,
+        "io_counts": {
+          "read_json": 11790,
+          "validate_card": 11790
+        },
+        "memory_characters": {
+          "bound_feedback": 2,
+          "cards": 331677,
+          "directory": 13832,
+          "engineering": 20491,
+          "field_manifest": 2,
+          "memory_version": 2,
+          "read_manifest": 1504,
+          "recording_status": 161,
+          "required_reads": 2,
+          "source_handles": 1948
+        },
+        "purpose": "record",
+        "repeated_long_string_characters": 4571,
+        "request_characters": 397129,
+        "required_reads": 0,
+        "seconds": [
+          63.88203218020499
+        ],
+        "section_characters": {
+          "available_seconds": 1,
+          "budget_receipt": 664,
+          "constraints_source": 61,
+          "interface_reference": 76,
+          "literature_capabilities": 108,
+          "memory": 369786,
+          "payload_contract": 1926,
+          "prompt_source_sha256": 66,
+          "read_view": 37,
+          "reading_instructions": 253,
+          "repair_feedback": 4,
+          "research_brief": 13506,
+          "run_id": 5,
+          "task": 1940,
+          "task_id": 31,
+          "tool_results": 927,
+          "user_answers": 2,
+          "validation_mode": 5
+        },
+        "sequence": 4430,
+        "task_id": "task-c895aa7b6fa9c7d0c0835c6a",
+        "tool_results": 2
+      },
+      "after": {
+        "actual_new_llm_calls": 0,
+        "actual_new_tokens": null,
+        "context_characters": 250971,
+        "delivered_cards": 26,
+        "io_counts": {
+          "read_json": 178,
+          "validate_card": 178
+        },
+        "memory_characters": {
+          "bound_feedback": 2,
+          "cards": 192766,
+          "directory": 13832,
+          "engineering": 20491,
+          "field_manifest": 2,
+          "memory_version": 2,
+          "read_manifest": 1504,
+          "recording_status": 161,
+          "required_reads": 2,
+          "source_handles": 1948
+        },
+        "purpose": "record",
+        "repeated_long_string_characters": 4651,
+        "request_characters": 258919,
+        "required_reads": 0,
+        "seconds": [
+          14.603658699430525
+        ],
+        "section_characters": {
+          "available_seconds": 1,
+          "budget_receipt": 666,
+          "constraints_source": 61,
+          "interface_reference": 76,
+          "literature_capabilities": 108,
+          "memory": 230875,
+          "payload_contract": 1926,
+          "prompt_source_sha256": 66,
+          "read_view": 37,
+          "reading_instructions": 415,
+          "repair_feedback": 4,
+          "research_brief": 13506,
+          "run_id": 5,
+          "task": 1940,
+          "task_id": 31,
+          "tool_results": 927,
+          "user_answers": 2,
+          "validation_mode": 5
+        },
+        "sequence": 4430,
+        "task_id": "task-c895aa7b6fa9c7d0c0835c6a",
+        "tool_results": 2
+      },
+      "character_reduction_percent": 34.80229346131861,
+      "time_reduction_percent": 77.13964599899542
+    }
+  ]
+}

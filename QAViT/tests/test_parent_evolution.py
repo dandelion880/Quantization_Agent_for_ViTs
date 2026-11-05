@@ -141,7 +141,7 @@ class ParentEvolutionRegression(TempCase):
         context = wf.context(final)["task"]
         self.assertEqual(set(context["matches"]), {"H4-H3"})
         self.assertEqual(set(context["candidate_refs"]), {"H4", "H3"})
-        for change in ({"selected_slot": "H1"}, {"provisional": False}, {"selection_basis": " "}, {"selection_stage": "parent"}):
+        for change in ({"selected_slot": "H1"}, {"provisional": False}, {"selection_stage": "parent"}):
             value = review("ranking", selected_slot="H3", provisional=True, selection_basis="retain parent pending evidence")
             value.update(change)
             with self.subTest(change=change), self.assertRaises(ContractError):

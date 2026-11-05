@@ -94,6 +94,13 @@ def test_child_interpret_inherits_parent_position(case):
     request = wf.queue.get(rid)
     with patch.object(wf.broker, 'freeze', return_value=public[0]), patch.object(wf.broker, 'cached', return_value=public[1]):
         wf.progress_request(request)
+    case.assertEqual(wf.queue.get(rid)['state'], 'completed')
+    case.assertNotIn('unrelated-request-key/interpret', wf.tasks())
+    # Historical interpreter tasks still inherit the scientific branch. Their
+    # ACL must survive migration without making interpretation a new dependency.
+    wf.enqueue_role('unrelated-request-key/interpret', 'interpret',
+        refs=[public[0]['id'], public[1]['id']], context={'request_experiment_ref': public[0]['id']},
+        parent_task=rid)
     child = wf.tasks()['unrelated-request-key/interpret']
     case.assertEqual(child['inputs'].get('parent_task'), rid)
     child, context = case.begin(wf, child)
@@ -132,7 +139,7 @@ BranchACLRegression.test_visible_path_mentions_do_not_grant_private_asset_or_car
 BranchACLRegression.test_unowned_asset_not_authorized_by_scientific_card = test_unowned_asset_not_authorized_by_scientific_card
 
 
-def test_production_code_child_and_independent_reference(case):
+def test_production_single_code_child_preserves_parent_position(case):
     wf = case.workflow(1)
     public = case.science(wf, 'public_code')
     payload = public[0]['payload'].copy()
@@ -146,14 +153,14 @@ def test_production_code_child_and_independent_reference(case):
     wf.queue.ready(); wf.queue.claim(rid)
     wf.queue.change(rid, 'running', patch={'experiment_ref': spec['id']})
     wf.progress_request(wf.queue.get(rid))
-    for purpose in ('code', 'reference'):
-        child = wf.tasks()['code-request/' + purpose]
-        case.assertEqual(child['inputs']['parent_task'], rid)
-        child, context = case.begin(wf, child)
-        with case.assertRaises(ContractError): case.read(wf, child, 'read_card', ref=secret[1]['id'])
-        with case.assertRaises(ContractError): case.read(wf, child, 'read_asset', asset=secret[1]['payload']['artifacts'][0]['path'])
-        case.assertEqual(case.full_card(wf, child, spec['id']), spec)
-        if purpose == 'reference': case.assertNotIn('directory', context['memory'])
-        wf.queue.finish(child['task_id'])
+    child = wf.tasks()['code-request/code']
+    case.assertEqual(child['inputs']['parent_task'], rid)
+    child, context = case.begin(wf, child)
+    with case.assertRaises(ContractError): case.read(wf, child, 'read_card', ref=secret[1]['id'])
+    with case.assertRaises(ContractError): case.read(wf, child, 'read_asset', asset=secret[1]['payload']['artifacts'][0]['path'])
+    case.assertEqual(case.full_card(wf, child, spec['id']), spec)
+    case.assertEqual(context['original_request']['id'], spec['id'])
+    case.assertFalse(any(t['inputs'].get('purpose') == 'reference' or t['kind'] == 'verification'
+                         for t in wf.queue.snapshot().values()))
 
-BranchACLRegression.test_production_code_child_and_independent_reference = test_production_code_child_and_independent_reference
+BranchACLRegression.test_production_single_code_child_preserves_parent_position = test_production_single_code_child_preserves_parent_position

@@ -1,0 +1,83 @@
+{
+  "limits": "read-only factual projection and exact pointer checks; no new measurements or automatic scientific interpretation",
+  "rows": [
+    {
+      "aggregate_metric_examples": [],
+      "extrema_verified": 58,
+      "metric_queries_found": 98,
+      "numeric_groups": 29,
+      "original_file_sha256": "6d9b00c40b8a97b9a44fc8d03cfae98730c3ee50fb35296e6bda73a14cdf03e4",
+      "original_unchanged": true,
+      "overview_characters": 9468,
+      "raw_observation_characters": 9433809,
+      "ref": "EvidenceCard-dc1ff55c63e740e69a3cbafc8b700389@1",
+      "summarized_collections": 1,
+      "prior_overview_characters": 36112,
+      "overview_reduction_percent": 73.7815684536996
+    },
+    {
+      "aggregate_metric_examples": [
+        {
+          "field": "/payload/observations/arms/H1_C/logit_nmse",
+          "labels": {},
+          "metric": "/arms/H1_C/logit_nmse",
+          "value": 1.4123930301823842
+        },
+        {
+          "field": "/payload/observations/arms/H1_T/logit_nmse",
+          "labels": {},
+          "metric": "/arms/H1_T/logit_nmse",
+          "value": 1.3542948892260527
+        },
+        {
+          "field": "/payload/observations/arms/H2_B/logit_nmse",
+          "labels": {},
+          "metric": "/arms/H2_B/logit_nmse",
+          "value": 2.471837789469683
+        },
+        {
+          "field": "/payload/observations/arms/H2_T/logit_nmse",
+          "labels": {},
+          "metric": "/arms/H2_T/logit_nmse",
+          "value": 2.2804434988436535
+        },
+        {
+          "field": "/payload/observations/arms/H1_C/mean_kl",
+          "labels": {},
+          "metric": "/arms/H1_C/mean_kl",
+          "value": 4.59527728355428
+        },
+        {
+          "field": "/payload/observations/arms/H1_T/mean_kl",
+          "labels": {},
+          "metric": "/arms/H1_T/mean_kl",
+          "value": 5.534790211707549
+        },
+        {
+          "field": "/payload/observations/arms/H2_B/mean_kl",
+          "labels": {},
+          "metric": "/arms/H2_B/mean_kl",
+          "value": 4.169301979967209
+        },
+        {
+          "field": "/payload/observations/arms/H2_T/mean_kl",
+          "labels": {},
+          "metric": "/arms/H2_T/mean_kl",
+          "value": 2.573536627145592
+        }
+      ],
+      "extrema_verified": 82,
+      "metric_queries_found": 136,
+      "numeric_groups": 41,
+      "original_file_sha256": "f475963101586207ad5bc70911670259421695921755e0e93bafc004460196b0",
+      "original_unchanged": true,
+      "overview_characters": 33723,
+      "raw_observation_characters": 509060,
+      "ref": "EvidenceCard-a9731ee1c85d47f9aab52c443ff50687@1",
+      "summarized_collections": 9,
+      "prior_overview_characters": 140882,
+      "overview_reduction_percent": 76.06294629548132
+    }
+  ],
+  "status": "passed"
+}

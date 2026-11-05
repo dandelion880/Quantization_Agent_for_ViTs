@@ -4,7 +4,7 @@
 
 Git 管理 QAViT 的稳定代码、Prompt、工具、轻量配置、文档和测试，包括 `tests/data/` 的小型夹具与模型构造源码的现有许可证。新增源码默认可跟踪，不对 QAViT 设置逐文件白名单。
 
-EXP 严格按 `.gitignore` 中的准确路径放行：`implementation/v2_structure_20261027/REPORT.md`，以及 `validation/research_refactor_20261103_r1/` 下的 `REPORT.md`、`PSEUDOCODE.md`、`DELIVERY.json`、`REPLAY_RESULT.json`、`complexity.json`。新增实验配置、指标或总结须先检查内容，再显式增加路径；原始日志、运行记录、快照和大型产物保留在本机。
+EXP 严格按 `.gitignore` 中的准确路径放行：`implementation/v2_structure_20261027/REPORT.md`，以及 `validation/research_refactor_20261103_r1/` 下的 `REPORT.md`、`PSEUDOCODE.md`、`DELIVERY.json`、`REPLAY_RESULT.json`、`complexity.json`。本轮另放行 `validation/generation_loop_20261104_r1/` 的 `REPORT.md`、`PSEUDOCODE.md`、`DELIVERY.json`、`REPLAY_RESULT.json`、`complexity.json`、`HISTORICAL_EVIDENCE.json`、`CALL_COMPARISON.json`。新增实验配置、指标或总结须先检查内容，再显式增加路径；原始日志、运行记录、快照和大型产物保留在本机。
 
 `QAViT/.runtime_pkgs/`、`QAViT/configs/assets/imagenet_manifest.json`、`reference/`、权重、数据集、缓存及凭据不入库；忽略不删除或移动任何本地资产。仓库克隆不包含完整运行环境，依赖及外部资产仍按 [环境说明](QAViT/docs/ENVIRONMENT.md) 准备。配置和来源记录中的本机路径保留原义，历史报告引用的原始证据也可能仅在本机可用。提交前检查暂存内容中的凭据与不适合公开的信息。
 
@@ -12,9 +12,10 @@ EXP 严格按 `.gitignore` 中的准确路径放行：`implementation/v2_structu
 |---|---|
 | `QAViT/run.py` | 唯一 V2 CLI：start/resume/status/report/answer/extend-budget |
 | `QAViT/core/workflow.py` | 科研阶段、初始三场依序结案→持久化 H*→唯一父子场的两阶段选择和轮次推进；结案不改判 |
-| `QAViT/core/experiment_requests.py` | 实验审批、Coding、独立参考、Safeguard、执行；提交判断卡的原 Judger 主动申请后直接接收结果，其余沿独立解释链 |
+| `QAViT/core/experiment_requests.py` | Generation/Evolution/Judger 自主实验→原任务续调；原始需求保存→Coding 单实现→程序绑定执行→Safeguard→真实执行；独立 L3 仍解释 |
 | `QAViT/core/cards.py`、`journal.py` | 卡片合同、不可变事实、原子提交与重建 |
 | `QAViT/core/execution_contract.py`、`evidence_scope.py` | 结构化必需执行约束归并/独立核对，Evidence 规范范围、知识边界及精确字段匹配 |
+| `QAViT/core/evidence.py` | 大型观测的全量客观统计、极值来源与按位点/token/指标检索；不代替科研解释 |
 | `QAViT/core/debate.py`、`memory.py` | 直接胜负表、L0–L3 Memory、程序来源归档/科学综合状态与检索 |
 | `QAViT/agents/tasks.py`、`roles.py`、`prompts/` | 任务映射、工具 Schema、公共/角色/任务 Prompt 组装 |
 | `QAViT/agents/interaction.py` | 按 purpose 交付必需对象、分页目录、统一提交可见性与读取权限、工具响应去重和科研提交校验 |
@@ -26,7 +27,7 @@ EXP 严格按 `.gitignore` 中的准确路径放行：`implementation/v2_structu
 | `QAViT/tools/model_sources/`、`.runtime_pkgs/` | 保留的模型构造源码、第三方依赖及许可证 |
 | `QAViT/configs/` | 通用研究模板、唯一角色模型默认值、数值后端和只读资产配置 |
 | `QAViT/tests/` | 可复用离线测试、小型固定夹具与显式组件验证器；`test_minimal_fixes.py` 覆盖选择、L3 复盘/状态和 Profiling 证据读取；`test_experiment_preflight.py` 覆盖草案预检及原任务有限修复；`test_parent_evolution.py` 覆盖 H* 绑定、父子选择、恢复及下游交接；`test_serial_debate_memory.py` 覆盖按场推进、科研正文/索引、隔离和结案固定；输出写 EXP |
-| `QAViT/docs/` | 当前执行协议；EXPERIMENT_INPUTS.md 为直接交付的科学调用速查；CODE_INTERFACES.md 为独立代码验证接口；环境依赖和方法说明 |
+| `QAViT/docs/` | 当前执行协议；EXPERIMENT_INPUTS.md 为直接交付的科学调用速查；CODE_INTERFACES.md 为单实现代码接口；环境依赖和方法说明 |
 | `EXP/runs/`、`EXP/validation/` | 历史/未来运行事实、测量、代码、日志和模型产物 |
 | `EXP/validation/serial_debate_memory_20261029_r1/` | 本批最小修改报告、独立提示词差异、当前流程伪代码与针对性 CPU 回归日志 |
 | `EXP/validation/experiment_inputs_20261029_r1/` | 输入整理报告、数据回执核对、提示词差异、伪代码及 CPU 回归日志 |
@@ -49,3 +50,11 @@ EXP 严格按 `.gitignore` 中的准确路径放行：`implementation/v2_structu
 `EXP/validation/real_research_tiny_20261031_r1/`：独立 CPU tiny ViT 真实 Judger 科研验证、两次实测 Evidence、Recorder/Generation 链路状态、完整原始轨迹、局部修复及回归。所有预算与源码干预只属于本次验证；失败材料保留。
 
 `EXP/validation/research_refactor_20261103_r1/`：当前科研简化报告、修改前快照、源码差异、当前伪代码、历史 Recorder 隔离回放、CPU 四服务集成与回归；所有角色脚本夹具和真实 LLM 调用明确区分。
+
+`EXP/validation/generation_loop_20261104_r1/`：本轮 Generation 自主循环、上下文/权限索引优化报告、当前伪代码、同历史快照前后回放、CPU 数值集成及回归；不启动长时间真实实验。
+
+`EXP/validation/single_implementation_20261105_r1/`：单实现实验链与确定性职责归位的回归、最短真实链验证、交付报告及当前伪代码。生产双实现 verification worker 与 Reference 提示词已移除；历史原件不改写。
+
+`EXP/validation/research_gates_20261105_r1/`：科研门禁集中清理、探索/最终条件区分、自定义执行器与只读梯度、可选提交项局部处理的回归及最短真实链。该目录仅精简 REPORT.md、PSEUDOCODE.md、DELIVERY.json 加入版本管理。
+
+`EXP/validation/memory_recorder_20261105_r1/`：记忆与 Recorder 精简、修改前源码、同轨迹离线开销比较、有界结果交付和跨轮回归、当前伪代码及报告；历史运行原件只读。

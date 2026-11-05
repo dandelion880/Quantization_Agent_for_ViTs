@@ -131,6 +131,35 @@ class StructuredOutputRepair(TempCase):
         self.assertEqual(wf.memory.recording_batch()['source_refs'], [])
         self.assertEqual(wf.poll(), 0)
 
+    def test_researcher_and_judger_repair_only_missing_field_after_format_failure(self):
+        base = self.root
+        for purpose in ('generate', 'screen'):
+            with self.subTest(purpose=purpose):
+                self.root = base / purpose
+                if purpose == 'generate':
+                    wf = self.workflow(1)
+                    tid = wf.enqueue_role('fixture/generate', 'generate', context={
+                        'round': 1, 'slot': 'H2', 'hypothesis_type': 'engineering'})
+                    content, field, kind = hypothesis(1, 'H2'), 'mechanism', 'HypothesisCard'
+                else:
+                    wf, tid = self.start()
+                    content, field, kind = self.valid_decision()['content'], 'rationale', 'ReviewDecisionCard'
+                original = content[field]
+                content[field] = ''
+                self.attempt(wf, tid, inner.envelope(json.dumps({'action': 'submit', 'content': content})))
+                wf.poll()
+                self.assertEqual(wf.rejected_draft(wf.queue.get(tid)), content)
+                self.attempt(wf, tid, BAD_FINALS[0][1]); wf.poll()
+                self.assertEqual(wf.rejected_draft(wf.queue.get(tid)), content)
+                self.attempt(wf, tid, inner.envelope(json.dumps({'action': 'submit',
+                    'content': {'repair_patch': {field: original}}})))
+                wf.poll()
+                self.assertEqual(wf.queue.get(tid)['state'], 'completed')
+                published = wf.result_card(wf.queue.get(tid))
+                self.assertEqual(published['kind'], kind)
+                for key, value in content.items():
+                    self.assertEqual(published['payload'][key], original if key == field else value)
+
     def test_recorder_cannot_use_another_tasks_rejected_draft(self):
         wf = self.workflow(1)
         card = make_card('HypothesisCard', wf.journal.run_id, hypothesis(1, 'H1'))

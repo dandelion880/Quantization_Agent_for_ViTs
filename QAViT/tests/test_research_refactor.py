@@ -44,7 +44,7 @@ class ResearchRefactor(TempCase):
         self.assertNotIn('source_refs', context['task']['recording_batch'])
         self.assertNotIn('required_judgment_refs', context['task'])
         schema = role_spec('recorder', 'record', {}, validation_config()['llm'])['context']['payload_contract']
-        self.assertEqual(set(schema['required']), set(self.synthesis()))
+        self.assertEqual(schema['required'], ['scientific_analysis'])
         wf.submit(task, self.synthesis(), 'test_double')
         card = wf.result_card(wf.queue.get(tid))
         self.assertEqual(card['payload']['source_refs'], batch['source_refs'])

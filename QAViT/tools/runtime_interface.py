@@ -9,6 +9,9 @@ class ObservedData:
         self.labels, self.identity = data.labels, deepcopy(data.identity)
         self.reads = {}
 
+    def __getattr__(self, name):
+        return getattr(self._data, name)
+
     def ids(self, split):
         if not isinstance(split, str) or not split.strip():
             raise ContractError("data.ids/batches(split) 要求非空字符串，不能传入选择字典")
@@ -100,7 +103,7 @@ def interface_fixture(execution, case):
     import torch
     from types import SimpleNamespace
     from ptq_agent.execution.evaluation import VerifiedManifestData
-    from ptq_agent.backends.server import ServerBackend
+    from ptq_agent.backends.server import ServerBackend, state_sha256
     shape, sites = case["shape"], case["sites"]
     torch.manual_seed(case["seed"])
 
@@ -125,6 +128,7 @@ def interface_fixture(execution, case):
         spec = {"family": "interface_fixture", "classification_head": None}
         task_head = None
         modules = ServerBackend.modules
+        reset = ServerBackend.reset
 
         def forward_model(self, model, inputs):
             with torch.inference_mode():
@@ -153,6 +157,9 @@ def interface_fixture(execution, case):
         backend.model = model.eval().requires_grad_(False)
     else:
         backend.model = Model().eval().requires_grad_(False)
+    # Native calibration checks the immutable FP source after each fitted target.
+    # Use the production guard, including weights, buffers and frozen state.
+    backend.original_state = state_sha256(backend.model)
     # Native site_catalog consumes the same readonly module inventory as the real backend.
     # Derive it from the constructed fixture, never invent unconstructed scientific targets.
     backend._modules = []
@@ -173,37 +180,15 @@ def interface_fixture(execution, case):
     backend.rows = [row for rows in splits.values() for row in rows]
     backend.data_adapter = SimpleNamespace(splits=splits, PREPROCESS="CPU interface fixture only", full_validation=False,
                                            load_image=lambda row: images[row["sample_id"]].clone())
-    cfg = {"backend": {**{s + "_samples": n for s, n in counts.items()},
-                        "data_seeds": {s: case["seed"] for s in counts}}, "loop": {"evaluation": "feature_fidelity"}}
+    # Use the same frozen adapter and existing normalization as real execution.
+    # Only the declared synthetic CPU/data view differs in this interface test.
+    if execution.get("backend"):
+        from tools.experiment_worker import backend_configuration
+        cfg = backend_configuration(execution)
+    else:
+        # Preserve standalone fixtures that exercise only Data/Backend interfaces.
+        cfg = {"backend": {}, "loop": {}}
+    cfg["backend"].update({**{s + "_samples": n for s, n in counts.items()},
+                           "data_seeds": {s: case["seed"] for s in counts}, "device": "cpu"})
+    cfg["loop"]["evaluation"] = "feature_fidelity"
     return backend, cfg, VerifiedManifestData(backend, cfg)
-
-
-def validate_interface_cases(payload):
-    if payload["execution"].get("interface") != "experiment_v1":
-        return
-    cases = payload["validation"].get("interface_cases")
-    if not isinstance(cases, list) or not cases:
-        raise ContractError("experiment_v1 需要 validation.interface_cases；数学 context 不能替代真实 Data/Backend 接口案例")
-    for index, case in enumerate(cases):
-        if (not isinstance(case, dict) or set(case) != {"seed", "shape", "sites", "counts"}
-                or type(case["seed"]) is not int or not isinstance(case["shape"], list) or len(case["shape"]) < 2
-                or any(type(n) is not int or n <= 0 for n in case["shape"]) or case["shape"][0] != 1
-                or not isinstance(case["sites"], list) or not case["sites"]
-                or any(not isinstance(s, str) or not s.strip() for s in case["sites"])
-                or not isinstance(case["counts"], dict) or set(case["counts"]) != {"calibration", "search", "final"}
-                or any(type(n) is not int or n <= 0 for n in case["counts"].values())):
-            raise ContractError("interface_cases 需要 seed、batch=1 的正整数 shape、sites 和三个 split 的正整数 counts")
-        for key in ('calibration', 'evaluation'):
-            selection = payload['execution'].get(key)
-            if selection is None:
-                continue
-            if (not isinstance(selection, dict) or selection.get('split') not in case['counts']
-                    or 'count' not in selection or (selection['count'] is not None
-                        and (type(selection['count']) is not int or selection['count'] <= 0))
-                    or type(selection.get('offset', 0)) is not int or selection.get('offset', 0) < 0):
-                raise ContractError(f'validation.interface_cases[{index}] 无法提供冻结 {key} 数据视图 {selection!r}')
-            capacity = case['counts'][selection['split']]
-            count, offset = selection['count'], selection.get('offset', 0)
-            if offset >= capacity or (count is not None and count + offset > capacity):
-                raise ContractError(f'validation.interface_cases[{index}] {key} 冻结 count={count}, offset={offset} '
-                                    f'超过 {selection["split"]} 夹具容量 {capacity}；须由草案作者明确修订，不能缩小科学样本数')

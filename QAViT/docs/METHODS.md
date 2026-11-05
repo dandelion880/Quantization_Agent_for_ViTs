@@ -8,7 +8,7 @@
 | A | rtn、uniform_full、uniform_affine、uniform_minmax、twin_softmax、log2、log_sqrt2、twin_gelu、asymmetric_gelu、ptf、adalog | 旧真实语义位点与reference实现。AdaLog是独立base×scale适配，不是全套FPCS；log2/log_sqrt2/AdaLog的旧参考编码有额外下溢零（最多17值），必须按冻结实验检查实际码本，不能仅凭位宽标签判断；原profiling数值能力保留。 |
 | 前处理 | smoothquant、repq_ln、adalog_bias | 明确边仿射与等价性gate；不能把别的实验的整网精度迁移到当前覆盖。 |
 | 算子 | integer_layernorm、integer_softmax | 浮点模拟整数参考，不是真实部署kernel。 |
-| 校准 | minmax/search/manual/percentile/coordinate；mse/cosine/hessian；并行或顺序 | 保留完整原参数。Hessian测量梯度而不更新参数可属于training-free；必须保留真实非零梯度证据。 |
+| 校准 | minmax/search/manual/percentile/coordinate；mse/cosine/hessian；并行或顺序 | 保留完整原参数。只读梯度诊断可属于 training-free，真实零梯度也应如实记录；内置 Hessian 加权搜索需要非零信号，信号全零时报告该算法不适用，不暗换搜索目标。 |
 | 仅资料或未接入本版 | 旋转、ERQ、全参数QAT、QPEFT及其它库外想法 | 名称并不等于本版有实现或实测；按研究需要提案并标未知，不自动扩展范围。 |
 
 方法卡：rtn、uniform_full、uniform_affine、uniform_minmax、gptq、gptaq、adaround、smoothquant、repq_ln、adalog_bias、twin_softmax、log2、log_sqrt2、twin_gelu、asymmetric_gelu、ptf、adalog、integer_layernorm、integer_softmax、scale_selection、calibration_order。

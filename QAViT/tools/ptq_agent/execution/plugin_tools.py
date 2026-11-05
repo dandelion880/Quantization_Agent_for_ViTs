@@ -6,9 +6,9 @@ import gc
 import numpy as np
 import torch
 
-from ..schemas import STR, arr, obj, require
+from ..schemas import STR, arr, obj, require, validate
 from ..registry import ToolDefinition
-from .contracts import PLUGIN_PLAN_SCHEMA
+from .contracts import PLUGIN_PLAN_SCHEMA, PLUGIN_PLAN_INPUT_SCHEMA, normalize_plan
 from .plugin_contracts import KINDS, ATTENTION_KINDS, site_id
 from .sites import site_catalog, install_attention
 from .pipeline import QuantizationExecutor
@@ -228,6 +228,9 @@ def register_plugin_tools(session):
             catalog = site_catalog(backend, session.config)
             plans = [expand_groups(p["plan_fields"], p["groups"], catalog, session.config,
                                    p.get("preprocess_groups", [])) for p in grouped_plans]
+        plans = [normalize_plan(plan) for plan in plans]
+        for plan in plans:
+            validate(plan, PLUGIN_PLAN_SCHEMA)
         args = {"plans": plans, "count": count, "seed": seed, "offset": offset}
         if trial is not None:
             args.update(trial_id=trial_id, variants=variants, mutable_targets=mutable_targets, mode=mode,
@@ -309,7 +312,7 @@ def register_plugin_tools(session):
         return {"summary": detail["result"], "shapes": detail["result"]["shapes"], "evidence": ref, "cached": cached, "source": detail["source"]}
 
     registry.register(ToolDefinition("profile_ptq_candidates", "比较calibration子集上1至4个独立方案。旧plans/grouped_plans从FP局部方案出发；或trial_id+mode=refit_targets+mutable_targets+variants从已完成search模型独立出发，只重拟合明确W/A范围，非目标保持冻结。variants使用增量updates，plan_fields仅允许显式预处理联动；超界拒绝，无隐式全模型重校准。返回同样本基准、配置差异、带fact_id的指标/差值。只读旁路用profile_trial_ablation。局部排名不能替代完整候选独立search评价",
-        {"anyOf": [obj({**request, "plans": arr(PLUGIN_PLAN_SCHEMA, minItems=1, maxItems=4)}),
+        {"anyOf": [obj({**request, "plans": arr(PLUGIN_PLAN_INPUT_SCHEMA, minItems=1, maxItems=4)}),
                    obj({**request, "grouped_plans": arr(GROUPED_PLAN, minItems=1, maxItems=4)}),
                    obj({**request, "trial_id": STR, "mode": {"enum": ["refit_targets"]},
                         "mutable_targets": MUTABLE_TARGETS, "variants": TRIAL_VARIANTS})]},

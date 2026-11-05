@@ -49,7 +49,7 @@ def main():
                 atomic_json(workflow.run_dir / "summary.json", result)
                 print(str(workflow.run_dir / "summary.json"))
             else:
-                print(json.dumps({k: result[k] for k in ("status", "tasks", "clarifications", "failures")}, ensure_ascii=False, indent=2))
+                print(json.dumps({k: result[k] for k in ("status", "workflow_completed", "formal_validation_success", "numerical_validation_status", "scientific_review_complete", "tasks", "clarifications", "failures")}, ensure_ascii=False, indent=2))
             return
         if args.command in ("extend-budget", "answer"):
             with file_lock(workflow.run_dir / "supervisor.lock"):
@@ -64,7 +64,7 @@ def main():
                 workflow.retry_failed(args.retry_failed)
     print("run_directory=" + str(workflow.run_dir), flush=True)
     result = workflow.run()
-    print(json.dumps({k: result.get(k) for k in ("status", "error", "state_saved", "finalization_errors")}, ensure_ascii=False))
+    print(json.dumps({k: result.get(k) for k in ("status", "workflow_completed", "formal_validation_success", "numerical_validation_status", "scientific_review_complete", "error", "state_saved", "finalization_errors")}, ensure_ascii=False))
 
 
 if __name__ == "__main__":

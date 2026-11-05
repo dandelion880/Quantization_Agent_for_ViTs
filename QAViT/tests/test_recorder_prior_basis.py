@@ -71,7 +71,7 @@ class RecorderPriorBasis(TempCase):
         self.assertEqual(published['source_refs'], [source['id']])
         self.assertEqual(wf.memory.snapshot()['L2']['fixture-conditional-prior']['revision_ref'], prior['id'])
 
-    def test_long_exact_item_requires_all_pages_and_survives_restart(self):
+    def test_long_exact_item_pages_survive_restart(self):
         wf = self.workflow(1)
         prior = self.prior(wf, text='LONG_PRIOR_BASIS_' + 'x' * 25000, other=True)
         self.new_review(wf, prior)
@@ -79,11 +79,7 @@ class RecorderPriorBasis(TempCase):
         expected = {'ref': prior['id'], 'field': '/payload/knowledge_updates/0'}
         self.assertEqual([(r['ref'], r['field']) for r in context['memory']['required_reads']],
                          [(expected['ref'], expected['field'])])
-        with self.assertRaisesRegex(ContractError, '未读完'):
-            wf.submit(task, self.record_payload(task), 'SCRIPTED')
         task, _ = self.tools(wf, task, [('read_card', {**expected, 'offset': 0})])
-        with self.assertRaisesRegex(ContractError, '未读完'):
-            wf.submit(task, self.record_payload(task), 'SCRIPTED')
         wf = Workflow(wf.run_dir)
         task = wf.queue.get(task['task_id'])
         task, context = self.tools(wf, task, [('read_card', {**expected, 'offset': offset}) for offset in (12000, 24000)])

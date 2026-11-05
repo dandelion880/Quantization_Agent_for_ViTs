@@ -93,7 +93,7 @@ class ResearchSimplification(TempCase):
         wf.submit(recording, meta(1, batch['judgment_refs']), 'SCRIPTED')
         self.assertEqual(wf.memory.recording_batch()['source_refs'], [])
 
-    def test_generation_and_evolution_keep_scientific_approval_and_interpretation(self):
+    def test_generation_and_evolution_receive_results_without_extra_judger(self):
         for purpose in ('generate', 'evolve'):
             with self.subTest(purpose=purpose):
                 wf = Workflow(self.root / purpose, validation_config())
@@ -101,18 +101,15 @@ class ResearchSimplification(TempCase):
                 context = {} if purpose == 'generate' else {'parent_ref': cards[2]['id']}
                 task, _ = self.begin(wf, self.task(wf, purpose, refs=[wf.brief['id']], **context))
                 request = self.request(wf, task)
-                wf.progress_request(request)
-                approval = wf.tasks()[request['key'] + '/scientific_approval']
-                approval, _ = self.begin(wf, approval)
-                wf.submit(approval, review('experiment_approval', approved=True), 'SCRIPTED')
-                wf.queue.ready()
-                request = wf.queue.claim(request['task_id'])
                 result = self.cached_result(wf, request, cards[1])
-                self.assertEqual(result['state'], 'waiting')
-                self.assertIn(request['key'] + '/interpret', wf.tasks())
-                self.assertEqual(wf.queue.get(task['task_id'])['state'], 'waiting')
+                self.assertEqual(result['state'], 'completed')
+                self.assertEqual(result['outputs'], [cards[1]['id']])
+                self.assertNotIn(request['key'] + '/interpret', wf.tasks())
+                self.assertNotIn(request['key'] + '/scientific_approval', wf.tasks())
+                task, context = self.begin(wf, wf.queue.get(task['task_id']))
+                self.assertIn(cards[1]['id'], canonical(context))
 
-    def test_unbound_request_keeps_interpretation(self):
+    def test_unbound_request_returns_evidence_without_extra_interpretation(self):
         wf = self.workflow(1)
         evidence = self.science(wf, 'no_parent')[1]
         tid = wf.queue.enqueue('fixture/unbound', 'experiment_request', inputs={
@@ -120,17 +117,23 @@ class ResearchSimplification(TempCase):
         wf.queue.ready()
         request = wf.queue.claim(tid)
         result = self.cached_result(wf, request, evidence)
-        self.assertEqual(result['state'], 'waiting')
-        self.assertIn(request['key'] + '/interpret', wf.tasks())
+        self.assertEqual(result['state'], 'completed')
+        self.assertEqual(result['outputs'], [evidence['id']])
+        self.assertTrue(result['result']['cache_reused'])
+        self.assertNotIn(request['key'] + '/interpret', wf.tasks())
 
-    def test_plan_l3_supporting_request_keeps_judgment_card(self):
+    def test_plan_l3_supporting_request_returns_evidence_to_planner(self):
         wf = self.workflow(1)
         evidence = self.science(wf, 'planning')[1]
         task, _ = self.begin(wf, self.task(wf, 'plan_l3', refs=[wf.brief['id']]))
         request = self.request(wf, task)
         result = self.cached_result(wf, request, evidence)
-        self.assertEqual(result['state'], 'waiting')
-        self.assertIn(request['key'] + '/interpret', wf.tasks())
+        self.assertEqual(result['state'], 'completed')
+        self.assertEqual(result['outputs'], [evidence['id']])
+        self.assertNotIn(request['key'] + '/interpret', wf.tasks())
+        task, context = self.begin(wf, wf.queue.get(task['task_id']))
+        self.assertEqual(task['inputs']['purpose'], 'plan_l3')
+        self.assertIn(evidence['id'], canonical(context))
 
     def test_published_interpretation_survives_recovery_without_duplicate(self):
         wf = self.workflow(1)
@@ -139,13 +142,16 @@ class ResearchSimplification(TempCase):
         request = self.request(wf, task)
         iid = wf.enqueue_role(request['key'] + '/interpret', 'interpret', refs=[evidence['id']],
                               parent_task=request['task_id'])
-        wf = Workflow(wf.run_dir)
-        result = self.cached_result(wf, wf.queue.get(request['task_id']), evidence)
-        self.assertEqual(result['waiting_for'], [iid])
+        # Restore an already published historical interpretation. Current
+        # requests do not wait for or create one merely to return Evidence.
         interpretation, _ = self.begin(wf, wf.queue.get(iid))
         wf.submit(interpretation, review('interpretation', evidence_refs=[evidence['id']]), 'SCRIPTED')
-        wf.queue.ready()
-        result = self.cached_result(wf, wf.queue.claim(request['task_id']), evidence)
+        published = deepcopy(wf.queue.get(iid))
+        wf = Workflow(wf.run_dir)
+        result = self.cached_result(wf, wf.queue.get(request['task_id']), evidence)
+        self.assertEqual(result['state'], 'completed')
+        self.assertEqual(result['outputs'], [evidence['id']])
+        self.assertEqual(wf.queue.get(iid), published)
         self.assertEqual(result['result']['interpretation_ref'], wf.queue.get(iid)['outputs'][0])
         self.assertEqual(len([t for t in wf.tasks().values() if t['inputs'].get('purpose') == 'interpret']), 1)
 
@@ -165,7 +171,7 @@ class ResearchSimplification(TempCase):
         self.assertEqual(wf.journal.find_cards('EvidenceCard'), [])
         self.assertNotIn(request['key'] + '/interpret', wf.tasks())
 
-    def test_direct_return_preserves_opponent_and_reference_isolation(self):
+    def test_direct_return_preserves_opponent_isolation(self):
         wf = self.workflow(1)
         own = self.debate_task(wf)
         other, _ = self.begin(wf, self.debate_task(wf, side='B'))
@@ -182,9 +188,6 @@ class ResearchSimplification(TempCase):
             self.read(wf, own, 'read_card', ref=evidence['id'])
         self.assertNotIn(str(wf.journal.card_path(evidence['id'])), wf.authorized_assets(own))
         wf.queue.finish(own['task_id'])
-        ref, _ = self.begin(wf, self.task(wf, 'reference', refs=[wf.brief['id'], spec['id']], experiment_ref=spec['id']))
-        with self.assertRaises(ContractError):
-            self.read(wf, ref, 'read_card', ref=evidence['id'])
 
     def evidence_fixture(self, wf, *, large=False):
         payload = experiment_payload()
@@ -219,14 +222,13 @@ class ResearchSimplification(TempCase):
         self.assertIn('CPU_SOURCE_HASH_LIST', canonical(context['tool_results']))
         self.assertEqual(wf.journal.card(evidence['id']), original)
 
-    def test_scientific_long_results_still_require_complete_reads(self):
+    def test_scientific_long_results_do_not_gate_valid_submission(self):
         wf = self.workflow(1)
         _, evidence = self.evidence_fixture(wf, large=True)
         task, context = self.begin(wf, self.task(wf, refs=[evidence['id']]))
         self.assertTrue(any(r['ref'] == evidence['id'] and r['next_offset'] == 0 for r in context['memory']['required_reads']))
-        with self.assertRaisesRegex(ContractError, '未读完'):
-            wf.submit(task, review('screening', eligible=True, hard_rejection_reasons=[],
-                similarity_analysis='fixture', evidence_gaps=[]), 'SCRIPTED')
+        wf.submit(task, {'eligible': True, 'rationale': '当前提交不依赖尚未读取的大数组。'}, 'SCRIPTED')
+        self.assertEqual(wf.queue.get(task['task_id'])['state'], 'completed')
 
     def test_nonidentical_execution_is_not_folded(self):
         wf = self.workflow(1)

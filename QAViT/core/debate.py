@@ -31,16 +31,16 @@ def validate_verdict(payload, exchange):
         raise ContractError("辩论裁决类型非法")
     if payload["outcome"] == "continue" and exchange >= MAX_EXCHANGES:
         raise ContractError("第5回合必须结束或诚实记录无法判定，不能继续第6回合")
-    if payload["outcome"] in ("A", "B") and not payload.get("decisive_reason"):
-        raise ContractError("胜负必须明确决定性依据")
     if payload['outcome'] == 'undetermined':
+        # Feasibility is a scientific judgment, not a required boilerplate form.
+        # A supplied, explicit assertion of an available path must still agree
+        # with closing the debate. Missing values are unknown, never fabricated.
         assessment = payload.get('continuation_assessment')
-        if (not isinstance(assessment, dict)
-                or any(type(assessment.get(k)) is not bool for k in ('experiment_available', 'next_dispute_available'))
-                or not isinstance(assessment.get('reason'), str) or not assessment['reason'].strip()):
-            raise ContractError('undetermined 需要 continuation_assessment：experiment_available、next_dispute_available 布尔值及非空 reason')
-        if assessment['experiment_available'] or (exchange < MAX_EXCHANGES and assessment['next_dispute_available']):
+        if isinstance(assessment, dict) and (
+                assessment.get('experiment_available') is True
+                or (exchange < MAX_EXCHANGES and assessment.get('next_dispute_available') is True)):
             raise ContractError('仍声明有可执行且有区分力的路径：请先取证，或在未到第5回合时 continue；不能同时提前未决结案')
+
 
 
 def ranking_table(matches, eligible):

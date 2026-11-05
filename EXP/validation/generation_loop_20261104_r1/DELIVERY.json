@@ -1,0 +1,124 @@
+{
+  "status": "passed",
+  "baseline_revision": "567f04dc2404bfa64c709cd71717a0a40df9dc92",
+  "core_sha256": "7b2e494c60809a276ec78ecea7227c1f12e1a61287ed6257c6bf1b83245cef46",
+  "full_regression": {
+    "before_passed": 297,
+    "after_passed": 308,
+    "log": "full_final.log",
+    "seconds": 292.283
+  },
+  "targeted_regression": {
+    "passed": 53,
+    "log": "targeted_final.log"
+  },
+  "real_llm_calls": 0,
+  "real_token_measurement": null,
+  "gpu_experiments": 0,
+  "final_cpu_integration": {
+    "status": "passed",
+    "experiment_requests": 6,
+    "evidence_count": 5,
+    "independent_numeric_cases": 3,
+    "seconds": 34.72757876571268
+  },
+  "historical_protection": {
+    "status": "passed",
+    "historical_files_checked": 50883,
+    "method": "size + mtime_ns compared with before snapshot; raw Evidence hashes separately verified in HISTORICAL_EVIDENCE.json",
+    "changes": [],
+    "numerical_and_semantic_core_sha256_unchanged": 66
+  },
+  "next_real_two_round_run_started": false,
+  "artifacts": {
+    "REPORT.md": {
+      "bytes": 11242,
+      "sha256": "2c327b59599e68b09135c7cb24bb7ef80b93b851e496f1b1a0627dbb12689e79"
+    },
+    "PSEUDOCODE.md": {
+      "bytes": 5094,
+      "sha256": "5b5efec2a51f7a1c77930deb4b8f0a5800f519fc40a1eb181e994383f168032e"
+    },
+    "REPLAY_RESULT.json": {
+      "bytes": 14360,
+      "sha256": "fe861678a2b82f495a1f7892a717419dfdf1126b0ab240256168b82c70e2edc0"
+    },
+    "HISTORICAL_EVIDENCE.json": {
+      "bytes": 2793,
+      "sha256": "41779fef0f88256bb32344f66c952a4c11a7536653bc3b3ef7df9dd65f28200e"
+    },
+    "CALL_COMPARISON.json": {
+      "bytes": 606,
+      "sha256": "8a0ba07affdc68f8bc1a63a8f3d9057e591beb24cb5dc63c423070b1316458b4"
+    },
+    "complexity.json": {
+      "bytes": 1457,
+      "sha256": "a61df123b5985253ff7db2f7ecf762d3572d2da1ffaa93a40d4997cfb9be0e02"
+    },
+    "changes.patch": {
+      "bytes": 125921,
+      "sha256": "bb3e477175afa48c3239ff49526770a015164e25d2721a0945740371df7b9358"
+    },
+    "prompts.diff": {
+      "bytes": 11391,
+      "sha256": "bcb3dd5f8feedfaabcd5fab5cc836b4cd8fdb9bfe940bb6488a0b490d2872d8c"
+    },
+    "full_final.log": {
+      "bytes": 36761,
+      "sha256": "fb1ec23f07587437fc2d1da2443299a1527f43ce48e1148bfd1afbf89344aa17"
+    },
+    "targeted_final.log": {
+      "bytes": 6985,
+      "sha256": "833051c6347311c80591163171f85c84db13045cb82b1f9bafd8313508f06b9e"
+    },
+    "baseline_tests.log": {
+      "bytes": 35531,
+      "sha256": "f7e780128ffbaf7a655bd396b75404b050497c3faba85cc89e3740ef4bf2f91d"
+    },
+    "cpu_final/INTEGRATION_RESULT.json": {
+      "bytes": 58783,
+      "sha256": "03fd158da8cdc52c51203d74cf93b70e219a46f3ce4dbedc8c440d6747eaa8e2"
+    },
+    "structure_final.json": {
+      "bytes": 107255,
+      "sha256": "48430e1e9ce3a0840e2181a2973754883e96ff8c3822320964ebc98abea28012"
+    },
+    "protection.json": {
+      "bytes": 263,
+      "sha256": "a83aa8afcdb7479007678c5ff8bf38884cd790a2a713b1b18b6143dafb6a8e68"
+    },
+    "NEXT_RUN_INPUT.json": {
+      "bytes": 15023,
+      "sha256": "24e87160bec5e60228328ad5e55641aa31a85b386647db64a5f06d5ac990d8d7"
+    },
+    "READINESS.json": {
+      "bytes": 5280,
+      "sha256": "0fd5eddbf842dbe9d9484eda5a7a06214912cc7d9cb78fb27ebb9dd42bf65b48"
+    },
+    "resources_snapshot.json": {
+      "bytes": 1079,
+      "sha256": "28203fb24fe5f3d70a5f0e3e1847a4aa260aab6433f2e4d19c7e0ee06fe82ddf"
+    },
+    "replay_context.py": {
+      "bytes": 5361,
+      "sha256": "604ea5336c27c28c24966dd73fa522d2dacc178c3ffcde3ae30ca3fc59a6d83f"
+    },
+    "cpu_integration.py": {
+      "bytes": 19400,
+      "sha256": "b9def82ee5ee2e84bff0200aa7fa3c7ed134f407291edd75dbc04e183ac46319"
+    },
+    "before_replay/RESULT.json": {
+      "bytes": 4336,
+      "sha256": "a47963c20a12e37e467aecb786f4f1c04c410a41c293b34876b0ae9d542c0794"
+    },
+    "delivery_replay/RESULT.json": {
+      "bytes": 4326,
+      "sha256": "553bc493e5632ffde9167a6a3a23976de6e804c367cab6875a0ad64e019d8c61"
+    }
+  },
+  "limits": [
+    "Role decisions are scripted; no claim of real LLM scientific quality or measured token savings.",
+    "Replay is same historical task/sequence, not new scientific execution. Single wall-clock measurement is not a controlled benchmark.",
+    "Next DeiT-B config and asset readiness only; no new DeiT forward, full image decode or service login check."
+  ]
+}

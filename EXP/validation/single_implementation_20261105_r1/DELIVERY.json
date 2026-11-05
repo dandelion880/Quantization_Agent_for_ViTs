@@ -1,0 +1,124 @@
+{
+  "status": "completed",
+  "real_chain": "passed",
+  "real_chain_directory": "EXP/validation/single_implementation_20261105_r1/real_chain_final",
+  "evidence_ref": "EvidenceCard-4ffe25f198c04d3eb3567d89cc0e3ff8@1",
+  "researcher_ref": "HypothesisCard-9b52bd09470a4dd7a9a0c42b24bb2fc6@1",
+  "safeguard_refs": [
+    "ReviewDecisionCard-1afe211151f04bd0a52227d320b78868@1"
+  ],
+  "measurement_source": "real",
+  "scope": {
+    "activation_bits": [
+      4
+    ],
+    "data": {
+      "calibration": {
+        "full_dataset": false,
+        "sample_count": 32,
+        "sample_ids": [
+          "train/n01751748/n01751748_5926.JPEG",
+          "train/n02442845/n02442845_19600.JPEG",
+          "train/n04131690/n04131690_11080.JPEG",
+          "train/n03065424/n03065424_37483.JPEG",
+          "train/n07754684/n07754684_28118.JPEG",
+          "train/n04356056/n04356056_1814.JPEG",
+          "train/n03908714/n03908714_12667.JPEG",
+          "train/n02085936/n02085936_9694.JPEG",
+          "train/n01978455/n01978455_3255.JPEG",
+          "train/n03777568/n03777568_6449.JPEG",
+          "train/n04485082/n04485082_19000.JPEG",
+          "train/n06596364/n06596364_10245.JPEG",
+          "train/n02791124/n02791124_1088.JPEG",
+          "train/n03125729/n03125729_15999.JPEG",
+          "train/n04147183/n04147183_17806.JPEG",
+          "train/n03676483/n03676483_37960.JPEG",
+          "train/n11939491/n11939491_3079.JPEG",
+          "train/n04328186/n04328186_2076.JPEG",
+          "train/n02108000/n02108000_1443.JPEG",
+          "train/n02105505/n02105505_5421.JPEG",
+          "train/n03018349/n03018349_10666.JPEG",
+          "train/n04228054/n04228054_19685.JPEG",
+          "train/n02708093/n02708093_3057.JPEG",
+          "train/n02894605/n02894605_18232.JPEG",
+          "train/n02088466/n02088466_7609.JPEG",
+          "train/n02088094/n02088094_5099.JPEG",
+          "train/n03476684/n03476684_442.JPEG",
+          "train/n03447721/n03447721_5653.JPEG",
+          "train/n03223299/n03223299_3439.JPEG",
+          "train/n03854065/n03854065_54988.JPEG",
+          "train/n02105641/n02105641_3318.JPEG",
+          "train/n15075141/n15075141_8773.JPEG"
+        ],
+        "split": "calibration"
+      }
+    },
+    "implementation": {
+      "code": {
+        "interface": "quantizer_v1",
+        "source_sha256": "a2f0ffa534784605fbbed46e72074aceec9e99a9ed8f327451de3fa1796851e8"
+      },
+      "measurement_sha256": "8afe57be68bbbb3752381743b2ecb73f774fc5137580e173403898fd107af4dd"
+    },
+    "measurement_kind": "local_activation_probe",
+    "measurement_source": "real",
+    "model": "deit_base_patch16_224",
+    "model_identity_sha256": "2f0402f3721d7943e81e2991eed7aec0012cf99c2e537d9fc1e198f8d9b4ea5e",
+    "parameters": {
+      "axis": null,
+      "bits": 4,
+      "granularity": "per_tensor",
+      "group_size": null,
+      "signed": true
+    },
+    "quantization": {
+      "blocks.0.attn.proj": {
+        "activation": {
+          "axis": null,
+          "bits": 4,
+          "format": "INT4",
+          "granularity": "per_tensor",
+          "group_size": null,
+          "scale": "minmax",
+          "symmetric": true
+        },
+        "activation_method": "approved_plugin",
+        "weight": null
+      }
+    },
+    "schema_version": "qavit.evidence_scope/1",
+    "service": "tensor_probe",
+    "site": [
+      "blocks.0.attn.proj"
+    ]
+  },
+  "input_relative_mse": 0.10455330269849535,
+  "operator_relative_mse": 0.03763044878483915,
+  "real_chain_source_sha256": "b7587c1cbf30c4fa20a070a5b8eda77a9664363bb8643487d93e3121d638f0f0",
+  "delivery_source_sha256": "2e7f39860e31fae0151e0bf0ba040c0a207ebffaa32e8d5ac7da9cc38eb410e3",
+  "files_changed_after_real_validation": [
+    "README.md",
+    "tests/test_execution_contracts.py"
+  ],
+  "full_research_loop_started": false,
+  "formal_full_dataset_or_l3_claim": false,
+  "regression": {
+    "passed": 336,
+    "failed": 0,
+    "seconds": 272.55,
+    "log": "regression_clean.log"
+  },
+  "structure_audit": {
+    "status": "passed",
+    "syntax_files": 134,
+    "snapshot_files": 196,
+    "report": "structure_delivery.json"
+  },
+  "cli_help": "passed",
+  "diff_check": "passed",
+  "known_validation_limits": [
+    "未启动新的长时间完整科研贯通",
+    "真实L3全量精度未执行；CPU小模型导出重载和L3结果协议已回归",
+    "异常归属依赖实际调用栈，复杂宿主根因仍可能需工程诊断"
+  ]
+}

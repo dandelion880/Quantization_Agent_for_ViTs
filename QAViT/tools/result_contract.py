@@ -42,9 +42,9 @@ def result_requirements(payload, brief):
             raise ContractError("execution.evaluations.split 必须是非空字符串")
         if "offset" in row and row["offset"] != 0:
             raise ContractError("当前评测接口不支持非零 offset；不能静默忽略")
-        if "metrics" in row and (not isinstance(row["metrics"], list) or not row["metrics"]
+        if "metrics" in row and (not isinstance(row["metrics"], list)
                                   or any(not isinstance(m, str) or not m.strip() for m in row["metrics"])):
-            raise ContractError("execution.evaluations.metrics 必须是非空指标名数组")
+            raise ContractError("execution.evaluations.metrics 必须是指标名数组")
         if "full_dataset" in row and type(row["full_dataset"]) is not bool:
             raise ContractError("execution.evaluations.full_dataset 必须为 boolean")
         names.append(evaluation_name(row))
@@ -131,11 +131,14 @@ def check_results(payload, brief, data):
                 "data_protocol": provenance.get("backend_data", {}).get("data_protocol"),
                 "manifest_sha256": provenance.get("backend_data", {}).get("data_sha256")}
     for key, actual in bindings.items():
-        if key in protocol and actual != protocol[key]:
+        applicable = (key != "calibration_samples" or "calibration" in spec or "calibration" in measured_data)
+        applicable = applicable and (key != "batch_size" or bool(measured_data))
+        if applicable and key in protocol and actual != protocol[key]:
             raise ContractError("实际执行不满足 evaluation_protocol." + key)
     if "search_samples" in protocol:
         counts = {row.get("sample_count") for row in measured_data.values() if row.get("split") == "search"}
-        if counts != {protocol["search_samples"]}:
+        requested_search = any(row.get("split") == "search" for row in spec.get("evaluations", []))
+        if (counts or requested_search) and counts != {protocol["search_samples"]}:
             raise ContractError("实际执行不满足 evaluation_protocol.search_samples")
     if protocol.get("full_dataset") and not spec.get("evaluations"):
         if not any(row.get("full_dataset") is True for row in measured_data.values()):

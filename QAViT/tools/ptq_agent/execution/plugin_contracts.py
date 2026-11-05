@@ -47,8 +47,8 @@ OBJECTIVE_METRICS = ("relative_mse", "mse", "cosine_error", "top1_drop_pp", "wei
 OBJECTIVE = obj({
     "weights": obj({k: {"type": "number", "minimum": 0} for k in OBJECTIVE_METRICS}, []),
     "normalizers": obj({k: {"type": "number", "minimum": 0} for k in OBJECTIVE_METRICS}, []),
-    "reason": STR,
-})
+    "reason": {"type": "string"},
+}, ["weights", "normalizers"])
 
 
 def plan_schema(spec):
@@ -74,8 +74,8 @@ def plan_schema(spec):
             "alpha": {"type": "number", "minimum": 0, "maximum": 1},
             "calibration": CALIBRATION,
             "observation": {"enum": ["float", "quantized_prefix"]},
-            "evidence": arr(STR, minItems=1),
-        }, ["method", "module", "norm", "evidence"]), maxItems=512),
+            "evidence": arr(STR),
+        }, ["method", "module", "norm"]), maxItems=512),
         "layers": arr(obj({
             "module": STR, "kind": {"enum": list(KINDS)},
             "weight": optional, "activation": optional,
@@ -83,8 +83,8 @@ def plan_schema(spec):
             "activation_method": {"anyOf": [{"enum": list(ACTIVATION_METHODS)}, NULL]},
             "weight_calibration": CALIBRATION, "activation_calibration": CALIBRATION,
             "options": OPTIONS,
-            "reason": STR, "evidence": arr(STR, minItems=1),
-        }, ["module", "kind", "weight", "activation", "weight_method", "activation_method", "reason", "evidence"]), minItems=1, maxItems=512),
+            "reason": {"type": "string"}, "evidence": arr(STR),
+        }, ["module", "kind", "weight", "activation", "weight_method", "activation_method"]), minItems=0, maxItems=512),
         "evaluation": OBJECTIVE,
         "operators": arr(obj({"method": {"enum": ["integer_layernorm", "integer_softmax"]}, "module": STR,
                               "input_site": STR, "output_site": STR}), maxItems=128),
@@ -126,7 +126,8 @@ def _validate_site_spec(validator, spec, target, shape, sid, path, *args, **kwar
                        status=exc.status, retryable=exc.retryable) from exc
 
 
-def validate_composition(plan, known, config, *, classification_available=False, diagnostic=False):
+def validate_composition(plan, known, config, *, classification_available=False, diagnostic=False,
+                         allow_unknown_shapes=False):
     """先做无模型执行的组合检查，拒绝重叠位点、非法阶段和未实现的数学组合。"""
     from .contracts import SPEC, RAW_FLOATS, validate_spec
     require(plan["execution"]["mode"] in config["loop"]["execution_modes"], "执行方式不在用户允许范围")
@@ -175,6 +176,9 @@ def validate_composition(plan, known, config, *, classification_available=False,
             if spec is None:
                 require(target + "_calibration" not in layer, "空目标不能含 scale 策略")
                 continue
+            if target == "activation" and spec["granularity"] != "per_tensor":
+                require(allow_unknown_shapes or info.get("activation_shape") is not None,
+                        f"{sid}: 准备后仍缺少真实激活形状", path=path + ".activation")
             allowed = config["loop"].get("allowed_" + target + "_methods", WEIGHT_METHODS if target == "weight" else ACTIVATION_METHODS)
             require(method in allowed, f"{target} 方法不在用户允许范围")
             require(target in config["loop"]["quantize_targets"], "目标违反用户 W/A 范围")
@@ -192,13 +196,10 @@ def validate_composition(plan, known, config, *, classification_available=False,
                 require(plan["execution"]["activation_calibration"] == "static", "论文参考 uniform 网格必须冻结尺度")
             elif method == "rtn":
                 shape = info.get("weight_shape") if target == "weight" else info.get("activation_shape")
-                # 尚未测量激活形状时只检查形状无关规则；执行前必须用真实形状复核。
-                if shape:
-                    _validate_site_spec(validate_spec, spec, target, shape, sid, path,
-                                        plan["execution"]["activation_calibration"],
-                                        activation_axis=info.get("activation_channel_axis"))
-                else:
-                    validate(spec, SPEC)
+                _validate_site_spec(validate_spec, spec, target, shape, sid, path,
+                                    plan["execution"]["activation_calibration"],
+                                    activation_axis=info.get("activation_channel_axis"),
+                                    allow_unknown_shape=allow_unknown_shapes)
             elif method in ("gptq", "gptaq"):
                 require(layer["kind"] == "linear",
                         f"{sid}: GPTQ 当前只实现 Linear 权重，实际 kind={layer['kind']}、"
@@ -345,7 +346,6 @@ def validate_composition(plan, known, config, *, classification_available=False,
         eligible = {n for n, info in catalog.items() if info["kind"] in WEIGHT_KINDS and not info["protected"]
                     and not is_protected(n, n) and (not scope or n in scope)}
         require(set(linear) == eligible, "固定模式必须覆盖全部允许 Linear")
-    require(any(l[t] and l[t]["bits"] < 32 for l in plan["layers"] for t in ("weight", "activation")), "方案至少包含一个低于 FP32 的目标")
     from .coordinate import operator_id, validate_group
     groups = {}
     for layer in plan["layers"]:

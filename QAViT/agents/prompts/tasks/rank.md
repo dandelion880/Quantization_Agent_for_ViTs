@@ -9,12 +9,12 @@
 每场最终裁决一经结案即固定，包括 tie/undetermined，不提交改判请求或重开比赛。后到证据可用于解释科学局限、未决组内的暂定选择和 Recorder 知识更新，不能修改 matches 或据此更换已持久化的 H*。
 
 提交 ReviewDecisionCard payload：
-- selection_stage：与 context.task 一致，为 parent 或 final；宿主绑定 selected_hypothesis_ref 的完整 ID，不能覆盖候选或父选择身份。
+- selection_stage、selected_hypothesis_ref 和父选择身份由宿主绑定，无须复制；显式提交时不得与当前任务冲突。
 - selected_slot：从 eligible 中选一个；只有 eligible 为空时才为 null。
-- provisional：boolean。只要结果存在循环、并列或未决，必须为 true；暂定性不等于可以忽略确定胜负。
-- selection_basis：非空字符串，说明直接结果、必要的局部比较及选择依据。
-- rationale：非空字符串，说明结果能支持的结论范围。
-- evidence_refs：EvidenceCard 短句柄或完整 ID 数组，可为 []。
-- uncertainties：字符串数组，说明排名仍受哪些问题影响。
+- provisional：可选 boolean。省略时程序依据直接结果中的循环、并列或未决补齐；这些条件存在时不能明确写 false。暂定性不等于可以忽略确定胜负。
+- selection_basis：可选字符串，需要单独说明选择依据时填写；省略时程序原样采用 rationale 交给 Evolution，不要求重复同一论证。
+- rationale：非空字符串，说明直接结果、必要的局部比较、选择依据及结论范围。
+- evidence_refs：EvidenceCard 短句柄或完整 ID 数组，可省略或为 []。
+- uncertainties：可选字符串数组，说明排名仍受哪些问题影响。
 
 当不存在循环、并列或未决时，必须选直接结果第一组中的候选。不得把本轮选择直接宣布为通过完整 L3 评测的 incumbent。

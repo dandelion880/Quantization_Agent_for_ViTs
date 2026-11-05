@@ -120,12 +120,32 @@ class Evaluator:
     def __init__(self, backend, config, data):
         self.backend, self.options, self.data = backend, config["loop"], data
 
-    def evaluate(self, model, plan, split):
+    def evaluate(self, model, plan, split, *, native=True, sites=()):
+        if native:
+            return self._evaluate(model, plan, split, native=True)
+        # A custom implementation need not install our quantizer wrapper classes.
+        # Record observable module visits without claiming they prove its math.
+        observed, handles = {}, []
+        modules = dict(model.named_modules())
+        try:
+            for row in sites:
+                sid = row["site_id"]
+                if row["module"] in modules:
+                    observed[sid] = 0
+                    def visit(_module, _inputs, sid=sid):
+                        observed[sid] += 1
+                    handles.append(modules[row["module"]].register_forward_pre_hook(visit))
+            return self._evaluate(model, plan, split, native=False, observed=observed)
+        finally:
+            for handle in handles:
+                handle.remove()
+
+    def _evaluate(self, model, plan, split, *, native, observed=None):
         require(split in ("search", "final"), "评价分区无效")
         before = model_digest(model)
         baseline_before = model_digest(self.backend.model)
         for m in model.modules():
-            if isinstance(m, QuantizedLinear) or hasattr(m, "ptq_site_id"):
+            if native and (isinstance(m, QuantizedLinear) or hasattr(m, "ptq_site_id")):
                 m.calls = 0
         errors = OutputErrors()
         top = {"baseline_top1": 0, "baseline_top5": 0, "top1": 0, "top5": 0}
@@ -155,12 +175,13 @@ class Evaluator:
                 print(f"evaluation {split}: {len(ids)}/{len(self.data.ids(split))}; "
                       f"FP correct1={top['baseline_top1']}, Q correct1={top['top1']}", flush=True)
         require(ids == self.data.ids(split), "评价样本未完整结束", code="evaluation_incomplete")
-        observed_coverage = coverage(model)
-        require(
-            set(observed_coverage) == {site_id(l) for l in plan["layers"]} and all(n > 0 for n in observed_coverage.values()),
-            "候选实际 forward 未覆盖量化位点",
-            code="coverage_mismatch",
-        )
+        observed_coverage = coverage(model) if native else dict(observed)
+        if native:
+            require(
+                set(observed_coverage) == {site_id(l) for l in plan["layers"]} and all(n > 0 for n in observed_coverage.values()),
+                "候选实际 forward 未覆盖量化位点",
+                code="coverage_mismatch",
+            )
         candidate_timing = latency(
             self.backend, model, first, self.options["warmup"], self.options["repeats"]
         )
@@ -202,6 +223,7 @@ class Evaluator:
             "sample_ids": ids,
             "metrics": metrics,
             "coverage": observed_coverage,
+            "coverage_scope": "native_quantizer_calls" if native else "observable_module_calls; custom algorithm reviewed in source",
             "health": {
                 "finite_outputs": True,
                 "matching_output_shapes": True,
@@ -210,10 +232,10 @@ class Evaluator:
             },
             "timing": {"candidate": candidate_timing, "baseline": baseline_timing},
             "memory_scope": "whole worker including immutable FP baseline and candidate; not isolated deployment memory",
-            "execution_mode": plan["execution"]["mode"],
+            "execution_mode": plan.get("execution", {}).get("mode") if native else "approved_custom_executor",
             "native_low_precision_kernel": False,
-            "latency_interpretation": "reference overhead diagnostic; not a native low-bit acceleration result" if plan["execution"]["mode"] == "reference_qdq" else "floating-point kernel timing",
-            "native_float_matmul": plan["execution"]["mode"] == "native",
+            "latency_interpretation": "reference overhead diagnostic; not a native low-bit acceleration result" if not native or plan["execution"]["mode"] == "reference_qdq" else "floating-point kernel timing",
+            "native_float_matmul": native and plan["execution"]["mode"] == "native",
             "protocol": self.data.identity,
             "task_accuracy_measured": bool(self.data.labels),
             "used_for_search": split == "search",
@@ -278,7 +300,7 @@ class Evaluator:
         }
 
     def reload_check(self, first, second, split="search"):
-        x, _ = next(self.data.batches(split))
+        x, sample_id = next(self.data.batches(split))
         a, b = tensors(forward(self.backend, first, x)), tensors(forward(self.backend, second, x))
         require(
             set(a) == set(b) and all(torch.equal(a[k], b[k]) for k in a),
@@ -290,4 +312,5 @@ class Evaluator:
             "comparison": "torch.equal for all floating outputs",
             "samples": 1,
             "split": split,
+            "sample_ids": [sample_id],
         }
