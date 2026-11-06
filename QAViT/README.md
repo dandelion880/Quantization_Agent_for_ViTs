@@ -84,3 +84,13 @@ python -B QAViT/run.py report EXP/runs/<新运行名>
 记忆交付默认提供可用短正文与精确展开入口，大型统计也控制展示量。L1 事实来自 Journal，未决问题按变化维护；比较知识逐份保留条件，pending 通过现有身份修订或明确放弃。Recorder 保持轮次同步与失败延期，仅工程补记不额外调用模型。验证与开销对比见 `../EXP/validation/memory_recorder_20261105_r1/REPORT.md`。
 
 科研请求统一回传测量与失败；最终 L3 通过新的同角色计划版本继续处理澄清或修订，不改写已提交需求。数值验证不依赖额外 interpret，缓存复用与独立重复区分。内置计划统一补齐确定表示，v2/v3 执行及标准包重载使用同一版本适配入口；明确支持证据在各科研和实现交接中有界直供。最新[修订报告](../EXP/validation/end_to_end_repair_20261105_r1/REPORT.md)和[伪代码](../EXP/validation/end_to_end_repair_20261105_r1/PSEUDOCODE.md)区分脚本验证、真实 CPU 执行和未完成的真实两轮研究。
+
+受控短任务可显式设置 `scope_target={"round":2,"stage":"generation"}`：第一轮照常运行，第二轮三份 Generation 正式提交且相关子请求结算后写入 `scope_target_reached`，不发布第二轮 screen 或 Recorder，不写第二轮完成事件。恢复同一终点不会继续调度。
+
+新输入可选择 `budget.clock_mode="active_segments"`。`run.py` 外层监控固定每段截止，并在 Supervisor、LLM CLI 和实验 worker 全部退出后结算；暂停修复不消耗余额，未知崩溃间隔保守计入，恢复不续借额度。旧输入默认连续墙钟语义保持不变。独立范围状态、已完成轮次和数值/Recorder 状态分别报告。
+
+该累计计时短任务在第一轮普通 Recorder 完成、或第一轮已正式结束并保存延期状态后，持久化释放无第二轮 Recorder 可消费的收尾预留。原配置数值及对应 Recorder 状态仍保留，预算回执分别展示原配置与有效预留；总额、段截止及停机预留不变。旧连续计时运行不采用此规则。
+
+用户后续明确增加累计总时长时，操作方可在确认完全停机后，以独立用户授权文件调用 `authorize_total_wall_seconds`，追加授权事件；该入口不向科研智能体开放。原输入、已消费时长及运行段不改写，下一段从新总额减去原累计消耗固定截止。通用 `extend-budget` 仍不用于此累计模式；无新授权不得增加额度。
+
+非 per_tensor 合法计划可在 prepare 使用宿主声明的 shape 观察视图取得真实输入后验证；局部诊断仅 calibration，不能读取 search/final。shape 观察记录 split、样本和用途，不冒充 calibration 拟合。预检连接/服务故障及超时走既有有限重试，每次重新真实预检；认证、额度、计费边界和隔离错误仍停止。

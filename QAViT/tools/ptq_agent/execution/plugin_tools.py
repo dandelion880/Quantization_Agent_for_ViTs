@@ -66,7 +66,7 @@ def plugin_capabilities(backend):
             "rtn": "per_channel uses the catalog activation_channel_axis resolved against the measured rank: "
                    "last feature axis for Linear/Q/V/LN, second-last for transposed K, axis1 for NCHW",
             "uniform_full/affine/minmax": "per_channel may use an observed non-batch axis, including an attention head axis",
-            "preflight": "non-per_tensor activation plans require measured shapes before submission; never guess an axis",
+            "preflight": "legal plans may defer unknown shapes to prepare, which observes real inputs from host-permitted views and strictly validates before use; axis and other scientific choices must be explicit, never guessed",
         },
         "feature_error_reduction": ERROR_REDUCTION,
         "method_documents": "query_method_library / read_method_document: independent components, no whole-model recipe",
@@ -77,6 +77,8 @@ def plugin_capabilities(backend):
 
 
 class CalibrationSubset:
+    shape_observation_splits = ("calibration",)
+
     def __init__(self, backend, config, count, seed, offset):
         self.full = VerifiedManifestData(backend, config)
         rows = self.full.rows["calibration"]

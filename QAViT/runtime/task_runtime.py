@@ -20,8 +20,12 @@ class TaskRuntime:
 
     def launch(self, task, body, *, input_versions):
         from runtime.codex_cli import parent_guard
+        budget = self.budget.check()
         attempt = task["attempt"] + 1
         execution = f"{task['task_id']}-a{attempt:04d}"
+        while execution in budget["settlements"]:
+            attempt += 1
+            execution = f"{task['task_id']}-a{attempt:04d}"
         directory = self.root / "jobs" / execution
         directory.mkdir(parents=True, exist_ok=True)
         estimated = body.pop("estimated_seconds", self.settings.get("task_timeout_seconds", 600))
@@ -30,6 +34,7 @@ class TaskRuntime:
         deadline = min(self.budget.snapshot()["worker_deadline_unix"], time.time() + estimated)
         request = {**body, "task_id": task["task_id"], "execution_id": execution,
                    "deadline_unix": deadline, "resource_keys": task["resource_keys"],
+                   "budget_segment_id": (budget.get("active_segment") or {}).get("segment_id"),
                    "input_versions": input_versions, "memory_version": self.queue.journal.memory_version,
                    "core_sha256": code_identity()["core_sha256"]}
         path = directory / "request.json"
@@ -39,7 +44,9 @@ class TaskRuntime:
             for key in ("task_id", "execution_id", "input_versions"):
                 if saved.get(key) != request[key]:
                     raise ContractError("未完成启动意图已过期，需显式恢复而非覆盖请求")
-            if saved["deadline_unix"] <= time.time() or saved["memory_version"] != request["memory_version"] or saved["core_sha256"] != request["core_sha256"]:
+            if (saved["deadline_unix"] <= time.time() or saved["deadline_unix"] > deadline
+                    or saved.get("budget_segment_id") != request["budget_segment_id"]
+                    or saved["memory_version"] != request["memory_version"] or saved["core_sha256"] != request["core_sha256"]):
                 path = directory / ("request-" + fingerprint(request)[:20] + ".json")
                 atomic_json(path, request)
             else:
@@ -47,7 +54,7 @@ class TaskRuntime:
         else:
             atomic_json(path, request)
         self.queue.claim(task["task_id"], input_versions=input_versions,
-                         memory_version=request["memory_version"], request_path=str(path))
+                         memory_version=request["memory_version"], request_path=str(path), execution_attempt=attempt)
         env = {k: v for k, v in os.environ.items() if not any(x in k.upper() for x in ("API_KEY", "TOKEN", "SECRET"))}
         threads = str(body.get("cpu_threads", self.settings.get("cpu_threads", 4)))
         env.update(PYTHONDONTWRITEBYTECODE="1", OMP_NUM_THREADS=threads, MKL_NUM_THREADS=threads)
@@ -58,6 +65,7 @@ class TaskRuntime:
                                            cwd=directory, env=env, stdout=log, stderr=subprocess.STDOUT,
                                            start_new_session=True, preexec_fn=parent_guard(os.getpid()))
             self.children[execution] = process
+            atomic_json(directory / "processes/worker.json", process_identity(process.pid))
             self.queue.change(task["task_id"], "running", patch={"process": process_identity(process.pid)})
         except BaseException as exc:
             self.queue.fail(task["task_id"], {"code": "launch_failed", "message": str(exc)}, retryable=True)
@@ -147,4 +155,33 @@ class TaskRuntime:
                     child.wait(timeout=3)
                 except subprocess.TimeoutExpired:
                     pass
+            # CLI/account preflights use separate sessions. Their identities remain
+            # available even after a worker dies or a receipt clears task.process.
+            for identity in self.live_processes():
+                self.stop_identity(identity)
+            deadline = time.monotonic() + 3
+            while self.live_processes() and time.monotonic() < deadline:
+                time.sleep(.05)
+            if self.live_processes():
+                raise ContractError("工作进程尚未完全退出，不能结算暂停")
+
+    def live_processes(self):
+        identities = [read_json(path) for path in (self.root / "jobs").glob("*/processes/*.json")]
+        for task in self.queue.snapshot().values():
+            if task.get("process"):
+                identities.append(task["process"])
+            if task.get("request_path"):
+                marker = Path(task["request_path"]).parent / "started.json"
+                if marker.exists():
+                    identities.append(read_json(marker)["process"])
+        return [identity for identity in identities if process_alive(identity)]
+
+    def settle_abandoned_intents(self):
+        """Only after all processes stopped and durable receipts were accepted."""
+        if self.live_processes():
+            raise ContractError("存在在途进程，不能结算旧启动意图")
+        state = self.budget.snapshot()
+        for key in state["reservations"].keys() - state["settlements"].keys():
+            self.budget.settle(key, status="interrupted_unsettled_attempt",
+                               resources={"wall_seconds": None}, usage=None)
 

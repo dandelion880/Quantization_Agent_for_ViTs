@@ -19,8 +19,17 @@ NUMERIC_IMPORTS = {"torch", "numpy", "math", "statistics", "itertools", "functoo
 # Importing their implementation dependencies does not grant those capabilities.
 CAPABILITY_MODULES = {"os", "sys", "subprocess", "socket", "ctypes", "importlib", "pathlib",
                       "shutil", "tempfile", "builtins", "multiprocessing", "urllib", "http"}
-# 共享的只读数值接口；不包含本次实现或运行资产。
-PUBLIC_INTERFACE_FILES = ('model.py', 'pipeline.py', 'contracts.py', 'plugin_contracts.py', 'calibration.py', 'plugin_math.py')
+# Published numerical implementations and their shared math contracts. Reading
+# these sources grants no execution capability or access to private run assets.
+# One list drives both the model-visible index and snapshot-bound host grants.
+PUBLIC_INTERFACE_FILES = (
+    'model.py', 'pipeline.py', 'contracts.py', 'plugin_contracts.py', 'calibration.py', 'plugin_math.py',
+    'adalog.py', 'adaround.py', 'capabilities.py', 'codecs.py', 'comparison.py', 'coordinate.py',
+    'diagnostics.py', 'evaluation.py', 'gptaq.py', 'grids.py', 'local_comparison.py', 'method_library.py',
+    'methods.py', 'metrics.py', 'objectives.py', 'operators.py', 'planning.py', 'plugin_tools.py',
+    'profile_tools.py', 'recipes.py', 'runtime_state.py', 'search_context.py', 'sites.py',
+    '../quantization/config.py', '../quantization/integer.py', '../schemas.py',
+)
 FORBIDDEN_CALLS = {"open", "eval", "exec", "compile", "__import__", "input", "breakpoint"}
 SAFE_IMPORTED_CALLS = {"re.compile"}  # Regex construction is not Python code compilation.
 

@@ -35,3 +35,8 @@ evaluations 支持 `{"kind":"classification","split":"search","count":16}`；该
 正常准备阶段可获取的真实 activation shape 在该阶段捕获；预检只延后尚无 shape 的维度核验，不填虚构 shape。捕获后、prepare 和模型重载仍执行完整数值与能力检查。显式 bits/format、轴/粒度等冲突仍报告具体字段，多个科学选择不由程序猜测；自定义 make_executor 不套内置计划格式。
 
 数值代码允许 contextlib、operator、bisect、heapq、decimal、fractions 等明确登记的标准库。结构检查分别报告未支持模块、被限制的文件/进程/网络模块和具体禁用调用；不无条件开放所有标准库。宿主仍绑定源码审批、执行身份、写入范围及数据来源，结构检查不等同于对任意 Python 代码的完整安全证明。
+# 公开数值源码
+
+Coding 与 Safeguard 的 `public_interface_assets` 索引包含已发布的数值执行组件及共享量化数学依赖（包括 grids、codecs、sites、operators、metrics 等）。按需 `read_asset` 时仍核对本次调用冻结的路径与哈希；该入口不授权其他分支的实现/资产，也不赋予文件、进程或网络执行能力。
+
+实验草案可保留研究者明确采用的 `evidence_refs`。角色提交时先按调用快照核对可见性与引用类型；程序创建请求、绑定代码及冻结执行卡时，将这些证据同时放入封套 `refs`。该传播不改变科研内容，不放宽 Journal 的类型、封套或角色隔离检查。

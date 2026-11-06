@@ -522,12 +522,26 @@ class ExperimentBroker:
     def preflight(self, payload):
         return preflight_experiment(payload, self.journal.card(self.brief_ref)["payload"], self.runtime)
 
+    def card_references(self, payload, refs=()):
+        """Preserve explicitly cited evidence in every host-created envelope.
+
+        Role visibility and alias resolution remain at the authored handoff;
+        this broker validates kind/identity and never grants visibility itself.
+        """
+        cited = payload.get('evidence_refs', [])
+        if not isinstance(cited, list) or any(not isinstance(ref, str) for ref in cited):
+            raise ContractError('ExperimentCard.evidence_refs 必须为 EvidenceCard 引用列表')
+        for ref in cited:
+            if self.journal.card(ref)['kind'] != 'EvidenceCard':
+                raise ContractError('ExperimentCard.evidence_refs 只能引用 EvidenceCard')
+        return list(dict.fromkeys([self.brief_ref, *refs, *cited]))
+
     def request(self, payload, *, requester, refs=(), original_request=None):
         original = deepcopy(payload if original_request is None else original_request)
         value = prepare_request(payload, self.journal.card(self.brief_ref)['payload'], self.runtime)
         value['original_request'] = original
         return make_card('ExperimentCard', self.journal.run_id, value, author=requester,
-                         refs=list(dict.fromkeys([self.brief_ref, *refs])))
+                         refs=self.card_references(value, refs))
 
     def bind_execution(self, request, artifact):
         from core.execution_contract import merge
@@ -602,7 +616,7 @@ class ExperimentBroker:
         # L3只有预算门禁；不在此引入L2性能阈值。
         self.ledger.check(estimated_seconds=payload["resources"]["estimated_seconds"])
         return make_card("ExperimentCard", self.journal.run_id, payload, author=requester,
-                         refs=list(dict.fromkeys([self.brief_ref, *refs, *trial_refs, *profile_refs])))
+                         refs=self.card_references(payload, [*refs, *trial_refs, *profile_refs]))
 
     def cached(self, card, *, code_artifact=None, visible=None):
         verify_assets(card["payload"]["execution"])

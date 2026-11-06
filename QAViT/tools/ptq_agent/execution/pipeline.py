@@ -533,12 +533,20 @@ class QuantizationExecutor:
         else:
             fidelity = {"performed": False, "reason": "No image-dependent fitting; state audit and evaluation remain applicable."}
             if any(l["activation"] and l["activation"]["granularity"] != "per_tensor" for l in plan["layers"]):
-                # Observe a real search input without fitting a calibration grid.
-                sample = next(iter(self.data.batches("search")), None)
-                require(sample is not None, "形状准备需要已有 search 数据样本", code="invalid_data")
+                allowed = getattr(self.data, "shape_observation_splits", ())
+                require(allowed and all(s in ("calibration", "search") for s in allowed),
+                        "宿主未声明合法 shape 观察数据视图；不能猜 shape 或读取 final", code="invalid_data")
+                if self.diagnostic:
+                    require(all(s == "calibration" for s in allowed),
+                            "插件诊断 shape 观察不得读取 search/final", code="invalid_data")
+                split = next((s for s in allowed if self.data.ids(s)), None)
+                require(split is not None, "shape 观察的宿主允许数据视图为空", code="invalid_data")
+                sample = next(iter(self.data.batches(split)), None)
+                require(sample is not None, "形状准备需要真实输入样本", code="invalid_data")
                 forward(self.backend, model, sample[0])
-                fidelity["shape_observation"] = {"split": "search", "sample_ids": [sample[1]],
-                                                 "purpose": "shape_validation_only"}
+                fidelity["shape_observation"] = {"split": split, "sample_ids": [sample[1]],
+                                                 "sample_count": 1, "purpose": "shape_validation_only",
+                                                 "calibration_fitting": False}
         self.input_shapes = {sid: q.last_input_shape for sid, q in quantizers(model).items() if hasattr(q, "last_input_shape")}
         for q in quantizers(model).values():
             q.execution = deepcopy(plan["execution"])

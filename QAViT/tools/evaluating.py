@@ -8,6 +8,7 @@ from runtime.files import read, file_hash
 class DataView:
     def __init__(self, data, split, count=None, shard=None):
         self.data, self.split, self.labels = data, split, data.labels
+        self.shape_observation_splits = getattr(data, "shape_observation_splits", ())
         ids = data.ids(split)
         if count is not None:
             if not 0 < count <= len(ids):

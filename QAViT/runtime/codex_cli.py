@@ -113,6 +113,14 @@ def parent_guard(parent):
     return guard
 
 
+def register_process(process):
+    directory = os.environ.get("QAVIT_PROCESS_REGISTRY")
+    if directory:
+        from core.journal import atomic_json
+        from runtime.task_queue import process_identity
+        atomic_json(Path(directory) / ("cli-" + str(process.pid) + ".json"), process_identity(process.pid))
+
+
 def run(command, directory, timeout, prompt=None):
     """stdout/stderr 落临时文件，不把 CLI 日志或潜在凭据直接输出到用户终端。"""
     if timeout <= 0:
@@ -122,6 +130,7 @@ def run(command, directory, timeout, prompt=None):
                                    stdin=subprocess.PIPE, stdout=out, stderr=err,
                                    start_new_session=True, preexec_fn=parent_guard(os.getpid()))
         try:
+            register_process(process)
             process.communicate(input=prompt.encode("utf-8") if prompt is not None else None,
                                 timeout=timeout)
         except subprocess.TimeoutExpired:
@@ -140,7 +149,7 @@ def failure_category(text):
     text = text.lower()
     # 不能在时间戳、UUID 或字节数中搜裸数字：例如 .614038Z 并非 HTTP 403。
     status = re.search(r'\b(?:http(?:/\d+(?:\.\d+)?)?(?: error)?\s+|'
-                       r'(?:status(?:\s+code)?|status_code|http_status)["\s:=]+)(401|403|429|502|503)\b', text)
+                       r'(?:status(?:\s+code)?|status_code|http_status)["\s:=]+)(401|403|408|429|500|502|503|504)\b', text)
     code = status.group(1) if status else None
     if code == "429" or any(s in text for s in ("usage limit", "quota", "insufficient", "rate limit", "too many requests", "credits")):
         return "quota_exhausted"
@@ -152,7 +161,9 @@ def failure_category(text):
         return "context_limit"
     if any(s in text for s in ("not supported", "unsupported", "model_not_found", "does not exist")):
         return "unsupported_model"
-    if code in ("502", "503") or any(s in text for s in ("timed out", "timeout", "connection", "stream disconnect", "temporarily unavailable")):
+    if code in ("408", "500", "502", "503", "504") or any(s in text for s in (
+            "timed out", "timeout", "connection", "stream disconnect", "temporarily unavailable",
+            "service unavailable", "internal server error", "bad gateway")):
         return "transport_error"
     return "cli_failed"
 
@@ -218,9 +229,13 @@ def account_status(cli, directory, timeout):
                     if "error" in response:
                         raise account_rpc_error(method, response["error"])
                     return response["result"]
-            raise fail("preflight_failed", "账户只读检查超时或异常退出；未开始模型调用")
+            if time.monotonic() >= deadline:
+                raise fail("timeout", "账户只读检查超时；未开始模型调用")
+            err.seek(0)
+            raise account_rpc_error(method, {"message": err.read(65536).decode("utf-8", errors="replace")})
 
         try:
+            register_process(process)
             rpc(1, "initialize", {"clientInfo": {"name": "ptq_subscription", "version": "1.0"},
                                   "capabilities": {"experimentalApi": True}})
             process.stdin.write(b'{"method":"initialized"}\n')
@@ -228,6 +243,8 @@ def account_status(cli, directory, timeout):
             account = rpc(2, "account/read", {"refreshToken": False}).get("account") or {}
             limits = rpc(3, "account/rateLimits/read", {}).get("rateLimits") or {}
             return check_account(account, limits)
+        except (BrokenPipeError, ConnectionError) as exc:
+            raise fail("transport_error", "账户只读检查连接中断；未开始模型调用（" + type(exc).__name__ + "）") from None
         finally:
             selector.close()
             terminate(process)

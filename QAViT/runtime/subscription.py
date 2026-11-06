@@ -164,9 +164,12 @@ class SubscriptionTransport:
             code, version, _ = cli.run([self.cli, "--version"], directory, min(10, timeout_seconds))
             require(code == 0 and version.strip() in REVIEWED_CLI,
                     "CLI 版本变化，需重新核验参数与隔离", code="llm_cli_version")
-            code, output, _ = cli.run([self.cli, "debug", "models", *cli.policy(directory)],
+            code, output, error = cli.run([self.cli, "debug", "models", *cli.policy(directory)],
                                       directory, deadline - time.monotonic())
-            require(code == 0, "不能核实模型目录", code="llm_model_catalog")
+            if code:
+                category = cli.failure_category(error)
+                raise cli.fail("model_catalog" if category == "cli_failed" else category,
+                               "不能核实模型目录；未开始模型调用（" + category + "）")
             model = next((m for m in json.loads(output)["models"] if m.get("slug") == self.model), None)
             require(model is not None, "模型目录没有指定模型，不回退", code="llm_unsupported_model")
             levels = [x["effort"] for x in model["supported_reasoning_levels"]]

@@ -6,7 +6,7 @@
 
 用于 signed 整数，不等于 RTN：Q=2^(b-1)，s=absmax(x)/(Q-0.5)，y=clip(round(x/s),-Q,Q-1)*s。低于32位，支持当前契约内位宽。
 
-W 可 per_tensor/per_channel(axis=0)/per_block(axis=0,group_size=连续输出行数)；A 可 per_tensor 或有实测形状的非batch通道轴，包括 attention head 轴1。不是任意分块 reshape。
+W 可 per_tensor/per_channel(axis=0)/per_block(axis=0,group_size=连续输出行数)；A 可 per_tensor 或经真实形状验证的非batch通道轴，包括 attention head 轴1。合法计划可在 prepare 从宿主允许的数据视图观察 shape 后严格验证，不要求提交前额外测量；轴必须由研究者明确选择。不是任意分块 reshape。
 
 可单用 minmax 或独立 search；coordinate 要求 joint/static，且同算子全部目标使用兼容的 uniform_full/twin 网格。per-channel W 搜索和 per-tensor W 是不同粒度。
 

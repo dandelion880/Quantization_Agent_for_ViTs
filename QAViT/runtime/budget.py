@@ -4,6 +4,7 @@ import shutil
 import time
 
 from core.cards import ContractError
+from core.journal import read_json, file_sha256
 
 
 class BudgetExhausted(ContractError):
@@ -23,6 +24,8 @@ class BudgetLedger:
             cfg = dict(config)
             cfg.setdefault("max_rounds", 10)
             cfg.setdefault("wall_seconds", 6 * 3600)
+            if cfg.get("clock_mode", "continuous") not in ("continuous", "active_segments"):
+                raise ContractError("未知预算计时协议")
             if type(cfg["max_rounds"]) is not int or cfg["max_rounds"] < 1 or cfg["wall_seconds"] <= 0:
                 raise ContractError("预算轮次/时间非法")
             reserves = [cfg.get(k, 0) for k in ("closeout_reserve_seconds", "shutdown_reserve_seconds")]
@@ -36,7 +39,9 @@ class BudgetLedger:
     def snapshot(self):
         self.journal.refresh()
         value = None
-        reservations, settlements, rounds, extensions = {}, {}, set(), []
+        reservations, settlements, rounds, extensions, segments = {}, {}, set(), [], {}
+        closeout_releases = []
+        wall_authorizations = []
         for event in self.journal.events:
             kind = event["type"]
             if kind == "budget_started":
@@ -50,16 +55,81 @@ class BudgetLedger:
                 settlements[event["reservation_id"]] = event
             elif kind == "round_started":
                 rounds.add(event["round"])
+            elif kind == "budget_segment_started":
+                segments[event["segment_id"]] = dict(event)
+            elif kind == "budget_segment_stopped":
+                segments[event["segment_id"]].update(event)
+            elif kind == "budget_closeout_reserve_released":
+                closeout_releases.append(event)
+            elif kind == "budget_total_wall_authorized":
+                wall_authorizations.append(event)
         now = self.clock()
+        elapsed = max(0, now - value["started_unix"])
+        active = None
+        configured_total = value["config"]["wall_seconds"]
+        total = configured_total + sum(e['seconds'] for e in extensions)
+        if value["config"].get("clock_mode") == "active_segments":
+            if wall_authorizations:
+                total = wall_authorizations[-1]["total_wall_seconds"]
+            elapsed = sum(max(0, s.get("stopped_unix", now) - s["started_unix"]) for s in segments.values())
+            active = next((s for s in segments.values() if "stopped_unix" not in s), None)
+            # A paused ledger has no usable deadline. Never compute now+remaining
+            # in snapshot: only begin_segment may fix a new segment's deadline.
+            value["deadline_unix"] = active["deadline_unix"] if active else None
+            remaining = max(0, total - elapsed)
+            if active:
+                remaining = min(remaining, max(0, active["deadline_unix"] - now))
+        else:
+            remaining = max(0, value["deadline_unix"] - now)
         shutdown = value["config"].get("shutdown_reserve_seconds", 0)
-        closeout = value["config"].get("closeout_reserve_seconds", 0)
-        return {**value, "as_of_unix": now, "elapsed_seconds": max(0, now - value["started_unix"]),
-                "remaining_seconds": max(0, value["deadline_unix"] - now),
-                "worker_deadline_unix": value["deadline_unix"] - shutdown,
-                "research_remaining_seconds": max(0, value["deadline_unix"] - now - shutdown - closeout),
+        configured_closeout = value["config"].get("closeout_reserve_seconds", 0)
+        closeout = (0 if value["config"].get("clock_mode") == "active_segments" and closeout_releases
+                    else configured_closeout)
+        return {**value, "as_of_unix": now, "elapsed_seconds": elapsed,
+                "configured_total_wall_seconds": configured_total, "total_wall_seconds": total,
+                "wall_budget_authorizations": wall_authorizations,
+                "remaining_seconds": remaining,
+                "worker_deadline_unix": value["deadline_unix"] - shutdown if value["deadline_unix"] is not None else None,
+                "research_remaining_seconds": max(0, remaining - shutdown - closeout),
+                "configured_closeout_reserve_seconds": configured_closeout,
+                "effective_closeout_reserve_seconds": closeout,
+                "closeout_reserve_releases": closeout_releases,
+                "segments": list(segments.values()), "active_segment": active,
                 "rounds_started": sorted(rounds), "reservations": reservations,
                 "settlements": settlements, "extensions": extensions,
                 "l1_l2_call_limit": None, "llm_call_limit": value["config"].get("llm_call_limit")}
+
+    def begin_segment(self, *, started_unix=None, owner=None):
+        state = self.snapshot()
+        if state["config"].get("clock_mode") != "active_segments":
+            return None
+        if state["active_segment"]:
+            raise ContractError("上段未确认完全停机；须保守结算后才能恢复")
+        now = self.clock()
+        previous_end = max((s["stopped_unix"] for s in state["segments"]), default=0)
+        started = max(previous_end, min(now, now if started_unix is None else started_unix))
+        deadline = min(started + state["remaining_seconds"],
+                       state["config"].get("parent_deadline_unix", float("inf")))
+        identifier = "segment-" + str(len(state["segments"]) + 1)
+        self.journal.commit("budget/segment/start/" + identifier, events=[{
+            "type": "budget_segment_started", "segment_id": identifier, "started_unix": started,
+            "deadline_unix": deadline, "remaining_at_start": state["remaining_seconds"], "owner": owner}])
+        return identifier
+
+    def end_segment(self, *, processes_stopped, reason, recovered=False):
+        state = self.snapshot()
+        segment = state["active_segment"]
+        if segment is None:
+            return
+        if not processes_stopped:
+            raise ContractError("Supervisor/LLM/实验进程未确认停止，不能暂停计时")
+        now = self.clock()
+        # A missing stop receipt is charged through recovery confirmation, including
+        # unknown downtime. Never cap this unknown cost at zero or the deadline.
+        self.journal.commit("budget/segment/stop/" + segment["segment_id"], events=[{
+            "type": "budget_segment_stopped", "segment_id": segment["segment_id"],
+            "stopped_unix": now, "elapsed_seconds": max(0, now - segment["started_unix"]),
+            "reason": reason, "recovered_without_stop": recovered, "processes_stopped": True}])
 
     def input_receipt(self):
         """同一账本快照的可读输入；不另设额度，不改变 check/reserve 的计算。"""
@@ -72,8 +142,11 @@ class BudgetLedger:
         cap = state["llm_call_limit"]
         return {"source": "BudgetLedger.snapshot/check/reserve", **{k: state[k] for k in (
                     "as_of_unix", "deadline_unix", "worker_deadline_unix", "elapsed_seconds",
-                    "remaining_seconds", "research_remaining_seconds")},
-                "closeout_reserve_seconds": state["config"].get("closeout_reserve_seconds", 0),
+                    "remaining_seconds", "research_remaining_seconds", "configured_total_wall_seconds",
+                    "total_wall_seconds", "wall_budget_authorizations")},
+                "closeout_reserve_seconds": state["effective_closeout_reserve_seconds"],
+                "configured_closeout_reserve_seconds": state["configured_closeout_reserve_seconds"],
+                "closeout_reserve_releases": state["closeout_reserve_releases"],
                 "shutdown_reserve_seconds": state["config"].get("shutdown_reserve_seconds", 0),
                 "unsettled_reservations": len(active), "unsettled_estimated_seconds_by_kind": estimates,
                 "settled_reservations": len(state["settlements"]),
@@ -85,6 +158,8 @@ class BudgetLedger:
 
     def check(self, *, estimated_seconds=0, check_disk=True):
         state = self.snapshot()
+        if state["config"].get("clock_mode") == "active_segments" and not state["active_segment"]:
+            raise BudgetExhausted("累计运行预算已暂停；必须通过受监控的启动入口创建运行段")
         if state["remaining_seconds"] <= 0:
             raise BudgetExhausted("墙钟硬预算耗尽；恢复不重置计时")
         if estimated_seconds > state["research_remaining_seconds"]:
@@ -146,8 +221,43 @@ class BudgetLedger:
         if seconds <= 0 or not reason.strip():
             raise ContractError("显式预算扩展需要正数秒数和原因")
         state = self.snapshot()
+        if state["config"].get("clock_mode") == "active_segments":
+            raise ContractError("本次累计运行段协议不允许 extend-budget；总授权不因恢复而增加")
         if state["deadline_unix"] + seconds > state["config"].get("parent_deadline_unix", float("inf")):
             raise ContractError("子运行不能延长到父验证预算以外；须先明确解决父预算授权")
         self.journal.commit(f"budget/extension/{self.journal.sequence}", events=[{
             "type": "budget_extended", "seconds": seconds, "reason": reason,
             "authorized_action": "explicit CLI budget extension", "when": self.clock()}])
+
+    def authorize_total_wall_seconds(self, total, *, reason, authorization_path):
+        """Apply a new explicit user ceiling while stopped; never reset spending.
+
+        This operator-only entry is not exposed as a research-agent tool. The old
+        configuration, all segments and the original no-extend policy stay saved.
+        A subsequent begin_segment fixes its deadline from the amended balance.
+        """
+        state = self.snapshot()
+        if state['config'].get('clock_mode') != 'active_segments' or state['active_segment']:
+            raise ContractError('累计总额新授权必须在已确认完全停机的 active_segments 账本上应用')
+        path = Path(authorization_path).resolve()
+        authorization = read_json(path)
+        if (type(total) is not int or total <= 0 or not reason.strip()
+                or authorization.get('author') != 'user'
+                or authorization.get('total_wall_seconds') != total
+                or authorization.get('all_other_budgets_unchanged') is not True):
+            raise ContractError('新的累计总额须有明确用户授权记录，且不得变更其他预算')
+        digest = file_sha256(path)
+        previous = next((e for e in state['wall_budget_authorizations']
+                         if e['authorization_sha256'] == digest), None)
+        if previous:
+            return previous
+        if total <= state['total_wall_seconds']:
+            raise ContractError('本入口只接受新的较大总额；不得重置或重复增加余额')
+        event = {'type': 'budget_total_wall_authorized', 'total_wall_seconds': total,
+                 'previous_total_wall_seconds': state['total_wall_seconds'],
+                 'additional_seconds': total - state['total_wall_seconds'],
+                 'elapsed_seconds_at_authorization': state['elapsed_seconds'],
+                 'authorization_path': str(path), 'authorization_sha256': digest,
+                 'reason': reason, 'authorized_by': 'user', 'when': self.clock()}
+        self.journal.commit('budget/total_authorization/' + digest, events=[event])
+        return event

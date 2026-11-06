@@ -143,14 +143,17 @@ class GlobalTaskQueue:
         held = {r for t in tasks.values() if t["state"] == "running" for r in t["resource_keys"]}
         return [t for t in tasks.values() if t["state"] == "ready" and not held.intersection(t["resource_keys"])]
 
-    def claim(self, task_id, *, input_versions=None, memory_version=None, request_path=None):
+    def claim(self, task_id, *, input_versions=None, memory_version=None, request_path=None, execution_attempt=None):
         task = self.get(task_id)
         if task["state"] != "ready":
             raise ContractError("只能领取 ready 任务")
         held = {r for t in self.snapshot().values() if t["state"] == "running" for r in t["resource_keys"]}
         if held.intersection(task["resource_keys"]):
             raise ContractError("相同资源已有运行任务")
-        patch = {"attempt": task["attempt"] + 1, "started_unix": time.time(),
+        attempt = task["attempt"] + 1 if execution_attempt is None else execution_attempt
+        if attempt <= task["attempt"]:
+            raise ContractError("尝试编号不能复用已领取历史")
+        patch = {"attempt": attempt, "started_unix": time.time(),
                  "input_versions": input_versions or {},
                  "memory_version": self.journal.memory_version if memory_version is None else memory_version,
                  "request_path": request_path, "process": None}

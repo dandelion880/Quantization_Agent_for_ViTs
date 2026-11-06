@@ -16,6 +16,10 @@ from .metrics import ERROR_REDUCTION, OutputErrors, tensors
 class VerifiedManifestData:
     """复用已验证图像和预处理，三个分区按样本身份互斥；不改写数据集。"""
 
+    # Shape observation never consumes final data. Restricted host views override
+    # this explicit capability instead of relying on failed reads as permission.
+    shape_observation_splits = ("search", "calibration")
+
     def __init__(self, backend, config):
         self.backend = backend
         counts = {s: config["backend"][s + "_samples"] for s in ("calibration", "search", "final")}

@@ -42,5 +42,11 @@ def config_check(config):
         raise ContractError("请明确本次运行是否启用 L3；验证配置必须关闭")
     if config["purpose"] == "validation" and config["enable_l3"]:
         raise ContractError("本版小规模验证禁止启动完整 L3")
+    target = config.get("scope_target")
+    if target is not None:
+        if (set(target) != {"round", "stage"} or target["stage"] != "generation"
+                or type(target["round"]) is not int or target["round"] < 1
+                or target["round"] > config.get("budget", {}).get("max_rounds", 10)):
+            raise ContractError("scope_target 须明确指定预算轮次内的 generation 终点")
     return config
 

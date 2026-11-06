@@ -280,6 +280,9 @@ class Workflow(RoleInteraction, ExperimentRequests, WorkflowDriver):
 
     def advance(self):
         """依已提交状态推进两阶段选择；恢复不重选父卡片或重复创建比赛。"""
+        if self.scope_target_reached():
+            return True
+        self.release_scope_closeout_reserve()
         self.return_code_clarifications()
         self.release_measured_requests()
         finished = {e["round"] for e in self.journal.events if e["type"] == "round_finished"}
@@ -310,6 +313,11 @@ class Workflow(RoleInteraction, ExperimentRequests, WorkflowDriver):
                               context={"round": number, "slot": slot, "hypothesis_type": kind,
                                        "previous_review_pending": review_pending})
         hypotheses = self.round_hypotheses(number)
+        target = self.config.get("scope_target")
+        if target and number == target["round"]:
+            # This boundary precedes *every* screen publication, including partial
+            # generation, the final receipt, recovery and repeated advance/resume.
+            return self.mark_scope_target_if_ready()
         screens = {}
         for slot, card in hypotheses.items():
             screening = prefix + "/screen/" + slot
@@ -379,3 +387,63 @@ class Workflow(RoleInteraction, ExperimentRequests, WorkflowDriver):
             return self.advance()
         return False
 
+    def scope_target_reached(self):
+        self.journal.refresh()
+        return any(e["type"] == "scope_target_reached" for e in self.journal.events)
+
+
+    def mark_scope_target_if_ready(self):
+        """Accept a last durable receipt during shutdown without scheduling work."""
+        if self.scope_target_reached():
+            return True
+        target = self.config.get("scope_target")
+        if not target:
+            return False
+        finished = {e["round"] for e in self.journal.events if e["type"] == "round_finished"}
+        if not set(range(1, target["round"])) <= finished:
+            return False
+        tasks = self.tasks()
+        prefix = f"r{target['round']:03d}"
+        generators = [tasks.get(prefix + "/generate/" + slot) for slot in ("H1", "H2", "H3")]
+        if not all(self.result_card(task) is not None for task in generators):
+            return False
+        related = {task["task_id"] for task in generators}
+        while True:
+            children = related | {task["task_id"] for task in tasks.values()
+                                  if task["inputs"].get("parent_task") in related}
+            if children == related:
+                break
+            related = children
+        if any(task["state"] not in TERMINAL for task in tasks.values() if task["task_id"] in related):
+            return False
+        self.event("scope_target_reached", "scope/target_reached", target=target,
+                   hypothesis_refs=[self.result_card(task)["id"] for task in generators],
+                   task_ids=sorted(related), completed_rounds=sorted(finished))
+        return True
+
+
+    def release_scope_closeout_reserve(self):
+        """Round-two Generation has no permitted Recorder to consume this reserve."""
+        target = self.config.get("scope_target")
+        state = self.budget.snapshot()
+        if (target != {"round": 2, "stage": "generation"}
+                or state["config"].get("clock_mode") != "active_segments"
+                or not state["effective_closeout_reserve_seconds"]):
+            return False
+        recorder = self.tasks().get("r001/record")
+        first_finished = next((e for e in self.journal.events
+                               if e["type"] == "round_finished" and e["round"] == 1), None)
+        # Success is known as soon as poll accepts the ordinary Recorder receipt.
+        # A formally deferred first-round review also leaves no allowed round-two
+        # Recorder; its unfinished scientific status must remain unchanged.
+        if not (recorder and recorder["state"] == "completed") and first_finished is None:
+            return False
+        self.event("budget_closeout_reserve_released", "budget/scope_closeout_release", target=target,
+                   configured_seconds=state["configured_closeout_reserve_seconds"], effective_seconds=0,
+                   recorder_task_ref=recorder["task_card"] if recorder else None,
+                   recorder_state=recorder["state"] if recorder else None,
+                   recorder_outputs=recorder["outputs"] if recorder else [],
+                   first_round_finished=first_finished is not None,
+                   reason="Only second-round Generation remains; no second-round Recorder is authorized. "
+                          "Total budget, fixed segment deadline and shutdown reserve are unchanged.")
+        return True

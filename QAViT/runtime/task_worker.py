@@ -66,6 +66,7 @@ def work(request, directory):
 def main():
     path = Path(sys.argv[1]).resolve()
     request, directory = read_json(path), path.parent
+    os.environ["QAVIT_PROCESS_REGISTRY"] = str(directory / "processes")
     atomic_json(directory / "started.json", {"process": process_identity(os.getpid()),
                                              "request_sha256": file_sha256(path), "started_unix": time.time()})
     start = time.monotonic()
@@ -93,6 +94,8 @@ def main():
     except BaseException as exc:
         traceback.print_exc()
         failed_usage = exc.usage if isinstance(exc, StructuredOutputError) else None
+        if failed_usage is None and request["kind"] == "llm" and (directory / "llm_audit.json").exists():
+            failed_usage = read_json(directory / "llm_audit.json").get("usage")
         if isinstance(exc, StructuredOutputError) and before != code_identity():
             exc = ContractError("任务执行期间核心或数值实现变化，格式错误不得进入修复流程")
         error = exc.to_dict() if hasattr(exc, "to_dict") else {"code": type(exc).__name__, "message": str(exc)}

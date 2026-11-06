@@ -3,6 +3,8 @@
 这是 Workflow 的职责分区，不独立实例化；状态和生命周期统一由 Workflow 拥有。
 """
 from pathlib import Path
+import re
+from core.journal import read_json
 from core.cards import ContractError, fingerprint
 from runtime.identity import code_identity
 from runtime.task_queue import TERMINAL
@@ -11,6 +13,86 @@ from tools.safeguards import approval_receipt, validate_approval
 
 
 class ExperimentRequests:
+    @staticmethod
+    def safeguard_core_binding(task):
+        """Identity fixed at review publication, never the latest retry's core.
+
+        Old persisted program keys already encode that identity. Noncanonical
+        legacy handoffs may use their last request if no publication binding exists.
+        """
+        if task['inputs'].get('purpose') != 'safeguard':
+            return None
+        context = task['inputs'].get('context', {})
+        explicit = context.get('host_implementation_sha256')
+        key = re.search(r'/safeguard/([0-9a-f]{16})(?:/revision[0-9]+)?$', task['key'])
+        if explicit:
+            if not isinstance(explicit, str) or not re.fullmatch(r'[0-9a-f]{64}', explicit):
+                raise ContractError('Safeguard 的宿主身份绑定损坏')
+            if key and not explicit.startswith(key.group(1)):
+                raise ContractError('Safeguard 的发布身份与任务键冲突')
+            return explicit
+        if key:
+            return key.group(1)
+        path = task.get('request_path')
+        return read_json(path).get('core_sha256') if path else None
+
+    def stale_safeguard_owner(self, task, tasks=None, *, current_core=None):
+        """Use only host parent links; scientific prose cannot create ownership."""
+        tasks = self.queue.snapshot() if tasks is None else tasks
+        current_core = current_core or code_identity()['core_sha256']
+        current, seen = task, set()
+        while current and current['task_id'] not in seen:
+            seen.add(current['task_id'])
+            bound = self.safeguard_core_binding(current)
+            if bound and not current_core.startswith(bound):
+                return current
+            current = tasks.get(current['inputs'].get('parent_task'))
+        return None
+
+    def cancel_stale_review_task(self, task, owner, *, receipt=None, current_core=None):
+        # Terminal facts (including old rejection cards) remain immutable.
+        current = self.queue.get(task['task_id'])
+        if current['state'] in TERMINAL:
+            return
+        error = {'code': 'stale_safeguard_identity',
+                 'message': '宿主实现已变化；旧身份审查不再执行或用于批准，由原请求发布当前身份审查',
+                 'review_task_id': owner['task_id'],
+                 'bound_core': self.safeguard_core_binding(owner),
+                 'current_core': current_core or code_identity()['core_sha256']}
+        patch = {'error': error}
+        if receipt is not None:
+            patch['superseded_receipt'] = str(receipt)
+        self.queue.change(current['task_id'], 'cancelled', patch=patch)
+
+    def retire_stale_safeguards(self):
+        """Stop scheduling obsolete reviews and their read-only children.
+
+        A running worker must first reach poll/accept so its durable receipt and
+        usage settle. Recovery/stop already confirms its process exit. No failed
+        or completed task is reopened, no original request is rewritten.
+        """
+        tasks, core = self.queue.snapshot(), code_identity()['core_sha256']
+        for task in tasks.values():
+            if task['state'] in TERMINAL or task['state'] == 'running':
+                continue
+            owner = self.stale_safeguard_owner(task, tasks, current_core=core)
+            if owner:
+                self.cancel_stale_review_task(task, owner, current_core=core)
+
+    def retire_stale_clarification_return(self, task):
+        """Keep a pending old-host handoff as history, not a new science task."""
+        returned = task.get('clarification_return')
+        if not returned or task['state'] in TERMINAL:
+            return False
+        child = self.queue.get(returned['child'])
+        if not self.stale_safeguard_owner(child):
+            return False
+        self.queue.change(task['task_id'], task['state'], patch={
+            'clarification_return': None,
+            'superseded_clarification_returns': [
+                *task.get('superseded_clarification_returns', []), returned]})
+        return True
+
     def request_author(self, task, tasks=None):
         """Scientific ownership is distinct from a live queue dependency."""
         tasks = tasks if tasks is not None else self.queue.snapshot()
@@ -41,9 +123,12 @@ class ExperimentRequests:
 
     def return_code_clarifications(self):
         """冻结规格的问题返回原作者；已提交计划由新任务承接，绝不改写旧计划。"""
+        self.retire_stale_safeguards()
         tasks = self.queue.snapshot()
         for task in tasks.values():
             if task.get("clarification_return") and task["state"] in ("waiting", "ready", "retry"):
+                if self.retire_stale_clarification_return(task):
+                    continue
                 self.finish_clarified_request(task)
                 continue
             if task["kind"] != "experiment_request" or task["state"] != "waiting":
@@ -54,6 +139,8 @@ class ExperimentRequests:
                 continue
             for identifier in task.get("waiting_for", []):
                 child = tasks[identifier]
+                if self.stale_safeguard_owner(child, tasks):
+                    continue
                 if (child["inputs"].get("purpose") not in ("code", "safeguard")
                         or not (child["state"] == "needs_clarification"
                                 or (child["state"] == "cancelled" and
@@ -86,6 +173,10 @@ class ExperimentRequests:
                 break
 
     def finish_clarified_request(self, task):
+        self.retire_stale_safeguards()
+        task = self.queue.get(task['task_id'])
+        if self.retire_stale_clarification_return(task):
+            return
         returned = task["clarification_return"]
         for identifier in returned["descendants"]:
             child = self.queue.get(identifier)
@@ -239,6 +330,10 @@ class ExperimentRequests:
                 'formal_validation_success': bool(valid)}
 
     def progress_request(self, task):
+        self.retire_stale_safeguards()
+        task = self.queue.get(task['task_id'])
+        if self.retire_stale_clarification_return(task):
+            task = self.queue.get(task['task_id'])
         if task.get("clarification_return"):
             self.finish_clarified_request(task)
             return
@@ -300,12 +395,17 @@ class ExperimentRequests:
                                   "bound_code_id": candidate["id"]}, cards=[experiment])
             execution = experiment["payload"]["execution"]
             self.check_experiment_resources(experiment)
-            implementation = code_identity()["core_sha256"][:16]
+            review_core = code_identity()["core_sha256"]
+            implementation = review_core[:16]
             safeguard_key = key + "/safeguard/" + implementation + suffix
             identifier = self.enqueue_role(safeguard_key, "safeguard", refs=[self.brief["id"], request["id"], experiment["id"]],
-                context={"request_ref": request["id"], "experiment_ref": experiment["id"], "candidate": candidate},
+                context={"request_ref": request["id"], "experiment_ref": experiment["id"], "candidate": candidate,
+                         "host_implementation_sha256": review_core},
                 depends=[code_task["task_id"]], parent_task=task["task_id"])
-            review = self.result_card(self.tasks().get(safeguard_key))
+            review_task = self.tasks().get(safeguard_key)
+            if self.stale_safeguard_owner(review_task):
+                raise ContractError("当前 Safeguard key 仍绑定过期宿主身份，拒绝消费其审批")
+            review = self.result_card(review_task)
             if not review:
                 self.wait_children_or_fail(task, [identifier])
                 return

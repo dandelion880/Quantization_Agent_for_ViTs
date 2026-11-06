@@ -236,6 +236,41 @@ class PlanExecutionConsistency(TempCase):
             with self.assertRaises(PTQError):
                 RTNExecutor(backend, cfg, data).prepare(bad, {})
 
+    def test_restricted_dynamic_diagnostic_observes_only_calibration_shapes(self):
+        from ptq_agent.execution.plugin_tools import CalibrationSubset, plugin_capabilities
+        from ptq_agent.execution.pipeline import QuantizationExecutor
+        from tools.profiling import profile_host
+        from ptq_agent.schemas import ToolCall
+        plan = numeric_plan(granularity="per_group", dynamic=True)
+        _, backend, cfg, data = self.prepare(plan)
+        standard = QuantizationExecutor(backend, cfg, data)
+        standard.prepare(plan, {})
+        self.assertEqual(standard.report["fidelity"]["shape_observation"]["split"], "search")
+        restricted = CalibrationSubset(backend, cfg, 1, 42, 0)
+        executor = QuantizationExecutor(backend, cfg, restricted, diagnostic=True)
+        reads = []
+        batches = restricted.batches
+        def observing(split):
+            reads.append(split)
+            yield from batches(split)
+        with patch.object(restricted, "batches", side_effect=observing):
+            _, _, fitted, _ = executor.prepare(plan, {})
+        self.assertEqual(fitted, {})
+        self.assertEqual(reads, ["calibration"])
+        observation = executor.report["fidelity"]["shape_observation"]
+        self.assertEqual(observation["sample_ids"], restricted.ids("calibration"))
+        self.assertFalse(observation["calibration_fitting"])
+        for split in ("search", "final"):
+            with self.assertRaises(PTQError):
+                next(restricted.batches(split))
+        with self.assertRaises(PTQError):
+            QuantizationExecutor(backend, cfg, data, diagnostic=True).prepare(plan, {})
+        host = profile_host(backend, cfg, self.root / "restricted_profile")
+        response = host.registry.invoke("profiling", ToolCall("dynamic-diagnostic", "profile_ptq_candidates",
+            {"plans": [plan], "count": 1, "seed": 42, "offset": 0}))
+        self.assertEqual(response.status, "success", response.error)
+        self.assertNotIn("before submission", plugin_capabilities(backend)["activation_axis_rules"]["preflight"])
+
     def test_v2_native_float_mode_keeps_actual_representation_and_zero_calibration(self):
         plan = numeric_plan(2)
         plan["execution"]["mode"] = "native"

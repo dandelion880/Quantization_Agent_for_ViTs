@@ -5,6 +5,8 @@ from datetime import datetime, timezone
 import json
 from pathlib import Path
 import sys
+import time
+CLI_STARTED_UNIX = time.time()
 sys.dont_write_bytecode = True
 
 from runtime.paths import ROOT
@@ -22,6 +24,7 @@ def main():
     resume.add_argument("run")
     resume.add_argument("--intervention")
     resume.add_argument("--retry-failed", help="显式重新领取失败任务的原因")
+    resume.add_argument("--managed-segment", help=argparse.SUPPRESS)
     for name in ("status", "report"):
         sub.add_parser(name).add_argument("run")
     extend = sub.add_parser("extend-budget", help="显式记录用户批准的墙钟预算延长")
@@ -63,8 +66,18 @@ def main():
             with file_lock(workflow.run_dir / "supervisor.lock"):
                 workflow.retry_failed(args.retry_failed)
     print("run_directory=" + str(workflow.run_dir), flush=True)
-    result = workflow.run()
-    print(json.dumps({k: result.get(k) for k in ("status", "workflow_completed", "formal_validation_success", "numerical_validation_status", "scientific_review_complete", "error", "state_saved", "finalization_errors")}, ensure_ascii=False))
+    active_clock = workflow.config.get("budget", {}).get("clock_mode") == "active_segments"
+    segment = getattr(args, "managed_segment", None)
+    if active_clock and not segment:
+        from runtime.run_segments import run_managed
+        result = run_managed(workflow, started_unix=CLI_STARTED_UNIX)
+    else:
+        if segment:
+            current = workflow.budget.snapshot()["active_segment"]
+            if not current or current["segment_id"] != segment:
+                raise ValueError("受监控运行段不匹配，拒绝启动")
+        result = workflow.run()
+    print(json.dumps({k: result.get(k) for k in ("status", "workflow_completed", "scope_target_reached", "completed_rounds", "formal_validation_success", "numerical_validation_status", "scientific_review_complete", "error", "state_saved", "finalization_errors")}, ensure_ascii=False))
 
 
 if __name__ == "__main__":

@@ -1455,6 +1455,8 @@ class RoleInteraction:
         if purpose == "safeguard" and type(payload.get("approved")) is not bool:
             raise ContractError("批准结果必须为 boolean")
         if purpose == "safeguard":
+            if self.stale_safeguard_owner(task):
+                raise ContractError("过期宿主身份的 Safeguard 不能提交审查决定")
             experiment = self.journal.card(task['inputs']['context']['experiment_ref'])
             candidate = task['inputs']['context']['candidate']
             from tools.safeguards import verify_artifact
@@ -1563,6 +1565,7 @@ class RoleInteraction:
                 return
             original_request = deepcopy(content)
             content = self.broker.preflight(self.resolve_card_refs(task, content))
+            self.broker.card_references(content)
             if content["level"] != "L3":
                 raise ContractError("正式计划必须明确 L3")
             self.queue.finish(task["task_id"], result={"draft": content, "original_request": original_request})

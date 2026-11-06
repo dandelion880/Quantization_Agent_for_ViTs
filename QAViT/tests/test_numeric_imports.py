@@ -32,6 +32,44 @@ class NumericImports(TempCase):
     coding = single.SingleImplementation.coding
     approve = single.SingleImplementation.approve
 
+    def test_public_numeric_source_dependencies_use_role_and_snapshot_grants(self):
+        from copy import deepcopy
+        from core.journal import file_sha256
+        from runtime.paths import QAVIT
+        from tools.safeguards import PUBLIC_INTERFACE_FILES
+        wf, _, request = self.start()
+        files = [QAVIT / 'tools/ptq_agent/execution' / name for name in PUBLIC_INTERFACE_FILES]
+        for purpose in ('code', 'safeguard'):
+            if purpose == 'safeguard':
+                request = self.coding(wf, request)
+            parent = next(t for t in wf.tasks().values() if t['inputs'].get('purpose') == purpose)
+            tid = parent['task_id']
+            context = wf.context(parent)
+            self.assertEqual(set(context['public_interface_assets']), {str(p) for p in files})
+            for path in files:
+                result = wf.host_tool({'inputs': {'parent_task': tid, 'name': 'read_asset',
+                    'arguments': {'asset': str(path), 'limit': 100}}})
+                self.assertEqual(result['sha256'], file_sha256(path))
+            grids = str((QAVIT / 'tools/ptq_agent/execution/grids.py').resolve())
+            frozen = deepcopy(context['read_view'])
+            frozen['assets'] = wf.authorized_assets(parent)
+            frozen['assets'].pop(grids)
+            with self.assertRaisesRegex(ContractError, '授权来源'):
+                wf.host_tool({'inputs': {'parent_task': tid, 'name': 'read_asset', 'read_view': frozen,
+                    'arguments': {'asset': grids}}})
+            frozen['assets'][grids] = 'wrong-snapshot-hash'
+            with self.assertRaisesRegex(ContractError, '冻结可见版本'):
+                wf.host_tool({'inputs': {'parent_task': tid, 'name': 'read_asset', 'read_view': frozen,
+                    'arguments': {'asset': grids}}})
+            for path in (QAVIT / 'runtime/subscription.py', QAVIT / 'configs/assets/imagenet_manifest.json'):
+                with self.assertRaisesRegex(ContractError, '授权来源'):
+                    wf.host_tool({'inputs': {'parent_task': tid, 'name': 'read_asset',
+                        'arguments': {'asset': str(path)}}})
+        tid = wf.enqueue_role('source/generate', 'generate', refs=[wf.brief['id']],
+                              context={'round': 1, 'slot': 'H1', 'hypothesis_type': 'existing_method'})
+        with self.assertRaisesRegex(ContractError, '授权来源'):
+            wf.host_tool({'inputs': {'parent_task': tid, 'name': 'read_asset', 'arguments': {'asset': grids}}})
+
     def test_public_numeric_helpers_across_all_generated_interfaces(self):
         for interface, suffix in [('quantizer_v1', ''), ('executor_v1', '\ndef build_plan(b,c,p): return {}\n'),
                                   ('experiment_v1', '\ndef execute(p,c): return {}\n')]:

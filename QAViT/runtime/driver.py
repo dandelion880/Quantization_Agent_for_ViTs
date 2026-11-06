@@ -19,6 +19,8 @@ from tools.experiments import verify_assets
 class WorkflowDriver:
     @journal_read
     def request_body(self, task):
+        if self.stale_safeguard_owner(task):
+            raise ContractError("过期 Safeguard 及其子请求不能构造新的执行请求")
         inputs = task["inputs"]
         if task["kind"] == "llm":
             context = self.context(task)
@@ -45,6 +47,7 @@ class WorkflowDriver:
 
 
     def dispatch(self):
+        self.retire_stale_safeguards()
         count = 0
         for candidate in self.queue.ready():
             task = self.queue.get(candidate["task_id"])
@@ -125,6 +128,12 @@ class WorkflowDriver:
 
     def accept(self, task, receipt, path):
         self.runtime.settle(receipt)
+        owner = self.stale_safeguard_owner(task)
+        if owner:
+            # Preserve the complete original receipt and usage, but never turn
+            # an obsolete review into a decision, tools, or another retry.
+            self.cancel_stale_review_task(task, owner, receipt=path)
+            return
         if receipt["status"] != "completed":
             error = receipt.get("error", {"code": "unknown_worker_error"})
             code = error.get("code", "")
@@ -133,11 +142,17 @@ class WorkflowDriver:
                 raise ContractError(error["message"])
             retry = code in ("worker_lost", "InterruptedError", "llm_timeout", "llm_transport_error", "llm_format_error")
             audit = Path(path).parent / "llm_audit.json"
-            if task["kind"] == "llm" and audit.exists() and read_json(audit).get("model_call_started") is False:
+            before_call = task["kind"] == "llm" and audit.exists() and read_json(audit).get("model_call_started") is False
+            # A transport/timeout failure is recoverable on either side of the
+            # preflight boundary. Every retry launches a fresh, genuine preflight.
+            if before_call and not retry:
                 self.transport_blocked, retry = error, False
+            if retry and self.budget.snapshot()["worker_deadline_unix"] <= time.time():
+                retry = False
             self.queue.fail(task["task_id"], error, retryable=retry)
             if code in ("llm_preflight_failed", "llm_authentication", "llm_quota_unknown", "llm_quota_exhausted", "llm_credit_policy",
-                        "llm_model_mismatch", "llm_unsupported_model", "llm_unsupported_effort", "llm_cli_version", "llm_tool_isolation"):
+                        "llm_model_mismatch", "llm_unsupported_model", "llm_unsupported_effort", "llm_cli_version", "llm_tool_isolation",
+                        "llm_model_catalog", "llm_not_configured"):
                 self.transport_blocked = error
             return
         data = receipt["data"]
@@ -243,6 +258,7 @@ class WorkflowDriver:
                 else:
                     raise
             count += 1
+        self.retire_stale_safeguards()
         return count
 
 
@@ -285,20 +301,26 @@ class WorkflowDriver:
                 break
             settled = expanded
         for task in tasks.values():
-            if task["state"] == "failed" and task['task_id'] not in settled:
+            if (task["state"] == "failed" and task['task_id'] not in settled
+                    and not self.stale_safeguard_owner(task, tasks)):
                 self.queue.change(task["task_id"], "ready", patch={"explicit_retry_reason": reason})
 
 
     def summary(self, status=None, error=None):
+        self.journal.refresh()
         events = [e for e in self.journal.events if e["type"] == "run_status"]
         tasks = self.queue.snapshot()
         counts = {state: sum(t["state"] == state for t in tasks.values()) for state in sorted({t["state"] for t in tasks.values()})}
         status = status or (events[-1]["status"] if events else "created")
+        if error is None and events and status == events[-1]["status"]:
+            error = events[-1].get("error")
         rounds = [{"round": n, "matches": self.matches(n), "l3_outcome": self.l3_outcome(n)}
                   for n in self.budget.snapshot()["rounds_started"]]
         attempts = [r["l3_outcome"] for r in rounds if r["l3_outcome"]["task_refs"]]
         value = {"schema_version": "qavit.report/2", "run_id": self.journal.run_id,
                  "status": status, "error": error, "workflow_completed": status == "completed",
+                 "scope_target": self.config.get("scope_target"), "scope_target_reached": self.scope_target_reached(),
+                 "completed_rounds": sorted({e["round"] for e in self.journal.events if e["type"] == "round_finished"}),
                  "formal_validation_success": bool(attempts) and all(r["formal_validation_success"] for r in attempts),
                  "numerical_validation_status": "validated" if attempts and all(r["formal_validation_success"] for r in attempts) else "not_validated",
                  "tasks": counts, "budget": self.budget.snapshot(), "memory": self.memory.snapshot(),
@@ -329,6 +351,8 @@ class WorkflowDriver:
                 while True:
                     budget = self.budget.check()
                     self.poll()
+                    self.release_scope_closeout_reserve()
+                    budget = self.budget.snapshot()
                     if self.transport_blocked:
                         status, error = "blocked", self.transport_blocked
                         break
@@ -336,7 +360,7 @@ class WorkflowDriver:
                         status, error = "budget_exhausted", "到达停机预留边界；保存现场，未完成阶段保持未完成"
                         break
                     closing = any(e["type"] == "budget_closeout_started" for e in self.journal.events)
-                    if not closing and budget["config"].get("closeout_reserve_seconds", 0) and budget["research_remaining_seconds"] <= 0:
+                    if not closing and budget["effective_closeout_reserve_seconds"] and budget["research_remaining_seconds"] <= 0:
                         self.runtime.stop()
                         self.poll()
                         for task in self.queue.snapshot().values():
@@ -346,6 +370,10 @@ class WorkflowDriver:
                         closing = True
                     if closing:
                         number = next(e["round"] for e in self.journal.events if e["type"] == "budget_closeout_started")
+                        target = self.config.get("scope_target")
+                        if target and number >= target["round"]:
+                            status, error = "budget_stopped", "本次范围禁止第二轮 Recorder；保存未完成 Generation 事实"
+                            break
                         batch = self.memory.recording_batch()
                         if not batch['review_required']:
                             status, error = 'budget_stopped', '事实已归档；没有新增待综合科研材料'
@@ -364,7 +392,7 @@ class WorkflowDriver:
                             status, error = "budget_stopped", "科研预算结束；收尾 Recorder 状态: " + recorded["state"]
                             break
                     elif self.advance():
-                        status = "completed"
+                        status = "scope_target_reached" if self.scope_target_reached() else "completed"
                         break
                     dispatched = self.dispatch()
                     tasks = self.queue.snapshot().values()
@@ -389,10 +417,12 @@ class WorkflowDriver:
                         action()
                     except Exception as exc:
                         failures.append({"step": step, "code": type(exc).__name__, "message": str(exc)})
-                if failures and status == "completed":
+                if failures and status in ("completed", "scope_target_reached"):
                     status = "recovery_required"
                 committed = False
                 try:
+                    if not failures and self.mark_scope_target_if_ready():
+                        status = "scope_target_reached"
                     pending = self.memory.recording_batch()
                     if pending['review_required']:
                         self.event('recorder_pending', f'recorder/pending/{self.journal.sequence}', batch=pending, reason=status)

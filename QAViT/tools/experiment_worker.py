@@ -103,6 +103,7 @@ def data_view(data, selection, split=None):
         class Selection:
             def __init__(self):
                 self.labels, self.identity = data.labels, data.identity
+                self.shape_observation_splits = getattr(data, "shape_observation_splits", ())
                 self.selected = ids[offset:offset + count]
             def ids(self, split):
                 return self.selected if split == name else data.ids(split)
