@@ -11,7 +11,7 @@ EXP 严格按 `.gitignore` 中的准确路径放行：`implementation/v2_structu
 | 位置 | 当前职责 |
 |---|---|
 | `QAViT/run.py` | 唯一 V2 CLI：start/resume/status/report/answer/extend-budget |
-| `QAViT/core/workflow.py` | 科研阶段、初始三场依序结案→持久化 H*→唯一父子场的两阶段选择和轮次推进；结案不改判 |
+| `QAViT/core/workflow.py` | 科研阶段、初始三场独立推进并全部结案→持久化 H*→唯一父子场的两阶段选择和轮次推进；结案不改判 |
 | `QAViT/core/experiment_requests.py` | Generation/Evolution/Judger 自主实验→原任务续调；原始需求保存→Coding 单实现→程序绑定执行→Safeguard→真实执行；有效 L3 Evidence 与可选解释解耦 |
 | `QAViT/core/cards.py`、`journal.py` | 卡片合同、不可变事实、原子提交与重建 |
 | `QAViT/core/execution_contract.py`、`evidence_scope.py` | 结构化必需执行约束归并/独立核对，Evidence 规范范围、知识边界及精确字段匹配 |
@@ -60,3 +60,5 @@ EXP 严格按 `.gitignore` 中的准确路径放行：`implementation/v2_structu
 `EXP/validation/memory_recorder_20261105_r1/`：记忆与 Recorder 精简、修改前源码、同轨迹离线开销比较、有界结果交付和跨轮回归、当前伪代码及报告；历史运行原件只读。
 
 `QAViT/runtime/run_segments.py`：仅用于新输入明确选择的累计运行段监控；固定截止、确认全部进程停止后结算，旧运行不迁移。`EXP/validation/controlled_run_20261105_r1/` 保存本次终点/计时/预检/shape 修订、定向验证、新输入及真实运行交付。
+
+`QAViT/tests/test_parallel_runtime.py`、`test_parallel_requests.py`：有界工作进程时间重叠、订阅槽、数值单槽、请求排队/流水及原任务回执回归。`EXP/validation/parallel_debate_20261106_r1/` 保存本轮并行化验证、最小真实CLI调用与当前伪代码；历史科研运行不覆盖。

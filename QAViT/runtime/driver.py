@@ -17,6 +17,31 @@ from tools.experiments import verify_assets
 
 
 class WorkflowDriver:
+    def dispatch_candidates(self):
+        # 旧快照可保持任务身份/尝试和读取视图，只恢复其每场互斥资源。
+        tasks = self.queue.snapshot()
+        for task in tasks.values():
+            pair = task['inputs'].get('context', {}).get('pair')
+            if (task['kind'] == 'llm' and task['role'] == 'judger' and pair
+                    and task['state'] not in ('running', 'completed', 'failed', 'cancelled', 'ineligible')
+                    and task['resource_keys'] == ['llm:subscription']):
+                context = task['inputs']['context']
+                resource = 'llm:judger:' + str(context['round']) + ':' + '-'.join(pair)
+                self.queue.change(task['task_id'], task['state'], patch={'resource_keys': [resource]})
+        # 最近获得服务的配对后置；低并发配置和频繁续调时也不饿死其它场次。
+        last_started = {}
+        for task in self.queue.snapshot().values():
+            context = task['inputs'].get('context', {})
+            if task['kind'] == 'llm' and task['role'] == 'judger' and context.get('pair'):
+                group = (context['round'], tuple(context['pair']))
+                last_started[group] = max(last_started.get(group, 0), task.get('started_unix', 0))
+        def priority(task):
+            context = task['inputs'].get('context', {})
+            group = (context.get('round'), tuple(context.get('pair', [])))
+            return (last_started.get(group, task['created_unix']), task['created_unix'])
+        return sorted(self.queue.ready(), key=priority)
+
+
     @journal_read
     def request_body(self, task):
         if self.stale_safeguard_owner(task):
@@ -49,7 +74,7 @@ class WorkflowDriver:
     def dispatch(self):
         self.retire_stale_safeguards()
         count = 0
-        for candidate in self.queue.ready():
+        for candidate in self.dispatch_candidates():
             task = self.queue.get(candidate["task_id"])
             held = {key for t in self.queue.snapshot().values() if t["state"] == "running" for key in t["resource_keys"]}
             if held.intersection(task["resource_keys"]):
@@ -69,9 +94,19 @@ class WorkflowDriver:
                 count += 1
                 continue
             active = [t for t in self.queue.snapshot().values() if t["state"] == "running"]
-            if task["kind"] == "llm" and any(t["kind"] == "llm" for t in active):
-                continue
+            if task["kind"] == "llm":
+                llms = [t for t in active if t['kind'] == 'llm']
+                if len(llms) >= self.config['runtime']['llm_concurrency']:
+                    continue
+                if task['role'] == 'judger':
+                    if sum(t['role'] == 'judger' for t in llms) >= 3:
+                        continue
+                elif any(t['role'] != 'judger' for t in llms):
+                    continue
             if task["kind"] == "experiment" and sum(t["kind"] == "experiment" for t in active) >= self.config["runtime"]["experiment_concurrency"]:
+                continue
+            # 除宿主同步动作外，LLM、实验及文献worker合计也有固定上限。
+            if sum(t['kind'] not in ('host_tool', 'experiment_request') for t in active) >= self.config['runtime']['llm_concurrency'] + 1:
                 continue
             refs = task["inputs"].get("refs", []) + ([task["inputs"]["experiment_ref"]] if task["inputs"].get("experiment_ref") else [])
             versions = {ref: self.journal.card(ref)["content_sha256"] for ref in refs}

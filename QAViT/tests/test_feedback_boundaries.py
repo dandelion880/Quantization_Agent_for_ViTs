@@ -61,6 +61,36 @@ class FeedbackBoundariesRegression(TempCase):
         self.assertIn(wrong['id'], self.index(wf, task))
         self.assertIn('OTHER_HYPOTHESIS_REVIEW_', canonical(self.read(wf, task, 'read_card', ref=wrong['id'])))
 
+    def test_concurrent_match_verdicts_are_optional_memory_not_bound_feedback(self):
+        wf = self.workflow(1)
+        chosen = self.publish(wf, 'HypothesisCard', hypothesis(1, 'H1'))
+        own = self.publish(wf, 'ReviewDecisionCard', review('verdict', round=1,
+            pair=['H1', 'H2'], exchange=1, outcome='continue',
+            rationale='OWN_MATCH_UNRESOLVED'), [chosen['id']])
+        others = [self.publish(wf, 'ReviewDecisionCard', review(phase, round=1,
+            pair=['H1', 'H3'], exchange=1, outcome='B', side='A',
+            rationale='OTHER_MATCH_' + phase, next_questions=['OTHER_MATCH_QUESTION']),
+            [chosen['id']]) for phase in ('position', 'verdict')]
+        for purpose in ('position', 'arbitrate'):
+            with self.subTest(purpose=purpose):
+                task = self.task(wf, purpose, refs=[chosen['id'], own['id']],
+                    round=1, pair=['H1', 'H2'], exchange=2, side='A', position_for='H1')
+                context = wf.request_body(task)['spec']['context']
+                self.assertIn('OWN_MATCH_UNRESOLVED', canonical(context))
+                self.assertNotIn('OTHER_MATCH_', canonical(context))
+                self.assertFalse({c['id'] for c in others}.intersection(
+                    b['ref'] for b in context['memory'].get('feedback_bindings', [])))
+                # Reading remains autonomous; this changes delivery, not ACLs.
+                for card in others:
+                    self.assertIn(card['id'], self.index(wf, task))
+                    self.assertEqual(self.read(wf, task, 'read_card', ref=card['id']), card)
+        # The later H4-parent challenge keeps its original inherited parent feedback.
+        challenge = self.task(wf, 'arbitrate', refs=[chosen['id']],
+            round=1, pair=['H4', 'H1'], exchange=1)
+        challenge_context = wf.request_body(challenge)['spec']['context']
+        self.assertIn('OWN_MATCH_UNRESOLVED', canonical(challenge_context))
+        self.assertIn('OTHER_MATCH_verdict', canonical(challenge_context))
+
     def test_referenced_other_hypothesis_is_provenance_not_current_subject(self):
         wf = self.workflow(1)
         old = self.publish(wf, 'HypothesisCard', hypothesis(1, 'H2'))

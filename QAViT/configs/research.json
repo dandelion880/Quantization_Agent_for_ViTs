@@ -30,7 +30,7 @@
     "allowed_gpus": [
       0
     ],
-    "llm_concurrency": 1,
+    "llm_concurrency": 4,
     "experiment_concurrency": 1,
     "task_timeout_seconds": 600
   },

@@ -6,7 +6,7 @@
 
 找出真正决定两者比较的问题：机制前提、任务相关收益、可行性或解释区分力。需要取证时说明不同结果如何改变本方立场。不得读取对方尚未汇合的本 exchange 立场，也不得通过日志或资产路径绕过隔离。
 
-memory.cards 只交付当前绑定对象和本场新结果的正文或按需深读入口；前序已公开的实验、统计、理论论证和解释通过 memory.directory/retrieve_memory 分页发现，用 read_card/read_asset 精确读取。按需深读 required_reads，遵守提交快照和本回合立场隔离，不能把目录当成已读正文。初始三场按 H1–H2 → H1–H3 → H2–H3 结案后逐场推进；前场裁决包括 tie/undetermined 均已固定，新证据可改变科研主张，不能改写前场结果。
+memory.cards 只交付当前绑定对象和本场新结果的正文或按需深读入口；已公开的实验、统计、理论论证和解释通过 memory.directory/retrieve_memory 分页发现，用 read_card/read_asset 精确读取。按需深读 required_reads，遵守提交快照和本回合立场隔离，不能把目录当成已读正文。初始三场独立推进，无须等待或读取其它场裁决；三场全部结案后统一选择 H*。已结案裁决包括 tie/undetermined 均固定，新证据可改变科研主张，不能改写已结案结果。
 
 提交 ReviewDecisionCard payload；rationale 是必要科学说明，其他分析数组按需提供，可省略或为空：
 - arguments 为字符串数组：本方关键论点及依据。

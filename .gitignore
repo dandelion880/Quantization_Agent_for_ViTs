@@ -174,3 +174,9 @@ coverage.xml
 !/EXP/validation/end_to_end_repair_20261105_r1/ROOT_CAUSES.md
 !/EXP/validation/end_to_end_repair_20261105_r1/PSEUDOCODE.md
 !/EXP/validation/end_to_end_repair_20261105_r1/DELIVERY.json
+
+# Concise initial-debate concurrency delivery; raw CLI/worker evidence stays local.
+!/EXP/validation/parallel_debate_20261106_r1/
+!/EXP/validation/parallel_debate_20261106_r1/REPORT.md
+!/EXP/validation/parallel_debate_20261106_r1/PSEUDOCODE.md
+!/EXP/validation/parallel_debate_20261106_r1/DELIVERY.json

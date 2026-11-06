@@ -11,7 +11,7 @@ from runtime.paths import ROOT
 from core.cards import ContractError, canonical, fingerprint, make_card, validate_payload, validate_schema, TEXT, PAYLOAD_SCHEMAS
 from core.journal import file_sha256, read_json, atomic_json, journal_read
 from core.evidence import project_observations, selected_leaves, pointer
-from core.debate import ranking_table, validate_verdict
+from core.debate import INITIAL_PAIRS, ranking_table, validate_verdict
 from agents.roles import tools_for, submission_schema
 from tools.experiments import SERVICES
 from tools.data_receipt import data_receipt
@@ -703,6 +703,15 @@ class RoleInteraction:
             if not self.can_read_card(task, card):
                 continue
             ref, payload = card['id'], card['payload']
+            # Shared candidates do not bind another concurrent match's arguments
+            # or verdict. Explicit Memory reads retain the existing permissions.
+            debate = task['inputs']['context']
+            if (purpose in ('position', 'arbitrate')
+                    and tuple(debate.get('pair', ())) in INITIAL_PAIRS
+                    and payload.get('phase') in ('position', 'verdict')
+                    and payload.get('round') == debate.get('round')
+                    and payload.get('pair') and payload['pair'] != debate.get('pair')):
+                continue
             subjects = {r for r in card['refs'] if self.journal.card(r)['kind'] == 'HypothesisCard'}
             spec_refs = {r for r in card['refs'] if self.journal.card(r)['kind'] == 'ExperimentCard'}
             if subjects:

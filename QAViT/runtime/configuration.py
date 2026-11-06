@@ -26,7 +26,7 @@ def config_check(config):
             raise ContractError("模型路由须为 [model, effort]")
     runtime = config.setdefault("runtime", {})
     runtime.setdefault("cpu_threads", 4)
-    runtime.setdefault("llm_concurrency", 1)
+    runtime.setdefault("llm_concurrency", 4)
     runtime.setdefault("experiment_concurrency", 1)
     runtime.setdefault("task_timeout_seconds", 600)
     for key in ("cpu_threads", "experiment_concurrency"):
@@ -36,8 +36,10 @@ def config_check(config):
         raise ContractError("任务超时必须为正数")
     if any(type(gpu) is not int or gpu < 0 for gpu in runtime.get("allowed_gpus", [])):
         raise ContractError("GPU编号必须为非负整数")
-    if runtime["llm_concurrency"] != 1:
-        raise ContractError("首版订阅传输使用串行锁；尚未验证并行模型调用")
+    if type(runtime["llm_concurrency"]) is not int or not 1 <= runtime["llm_concurrency"] <= 4:
+        raise ContractError("LLM 总并发须为1到4：最多3个Judger及1个其它角色")
+    if runtime["experiment_concurrency"] != 1:
+        raise ContractError("真实数值实验全局并发必须为1")
     if config.get("enable_l3") is not True and config.get("enable_l3") is not False:
         raise ContractError("请明确本次运行是否启用 L3；验证配置必须关闭")
     if config["purpose"] == "validation" and config["enable_l3"]:

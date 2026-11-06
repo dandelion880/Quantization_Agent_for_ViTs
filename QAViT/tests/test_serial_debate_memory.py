@@ -60,43 +60,89 @@ class SerialDebateMemoryRegression(infrastructure.TempCase):
     def read(self, wf, task, name, **arguments):
         return wf.host_tool({"inputs": {"name": name, "arguments": arguments, "parent_task": task["task_id"]}})
 
-    def test_next_match_is_not_published_until_close_even_after_continue_and_restore(self):
+    def test_matches_advance_independently_and_join_only_after_last_close_and_restore(self):
         wf, arb = self.drive(self.workflow_case(l3=False), stop=lambda t: t["inputs"]["purpose"] == "arbitrate")
-        self.assertFalse(any("/match/H1-H3/" in key or "/match/H2-H3/" in key for key in wf.tasks()))
-        wf.submit(arb, review("verdict", outcome="continue", decisive_reason="fixture: one unresolved question"), "fixture")
+        for pair in INITIAL_PAIRS:
+            for side in ("A", "B"):
+                self.assertIn("r001/match/" + "-".join(pair) + "/e1/" + side, wf.tasks())
+        self.assertFalse(wf.matches(1))
+        spec, evidence = self.science(wf, "own_match", commit=False)[:2]
+        wf.journal.commit("fixture/own_match_evidence", cards=[spec, evidence])
+        wf.submit(arb, review("verdict", outcome="continue", decisive_reason="fixture: one unresolved question",
+                              evidence_refs=[evidence["id"]]), "fixture")
         wf = Workflow(wf.run_dir)
         wf.advance()
-        self.assertFalse(wf.matches(1))
-        self.assertFalse(any("/match/H1-H3/" in key or "/match/H2-H3/" in key for key in wf.tasks()))
-        wf, arb = self.drive(wf, stop=lambda t: t["inputs"]["purpose"] == "arbitrate")
+        self.assertIn("r001/match/H1-H2/e2/A", wf.tasks())
+        self.assertNotIn("r001/select_parent", wf.tasks())
+        # 其它两场可以先结案；即使已知 H3 两胜，也必须等待第三场正式结案。
+        for pair in ("H2-H3", "H1-H3"):
+            task = wf.tasks()["r001/match/" + pair + "/e1/arbitrate"]
+            wf.queue.ready()
+            task = wf.queue.claim(task["task_id"])
+            wf.submit(task, review("verdict", outcome="B", decisive_reason="fixture: H3 wins"), "fixture")
+            wf = Workflow(wf.run_dir)
+            wf.advance()
+            self.assertNotIn("r001/select_parent", wf.tasks())
+            self.assertNotIn("r001/evolve/H4", wf.tasks())
+        wf, arb = self.drive(wf, parent="H3", stop=lambda t: t["inputs"]["purpose"] == "arbitrate")
+        self.assertEqual(arb["inputs"]["context"]["pair"], ["H1", "H2"])
         self.assertEqual(arb["inputs"]["context"]["exchange"], 2)
+        own_prior = wf.result_card(wf.tasks()["r001/match/H1-H2/e1/arbitrate"])
+        self.assertIn(own_prior["id"], arb["inputs"]["refs"])
+        inherited = {card["id"] for card in wf.context(arb)["memory"]["cards"]}
+        self.assertTrue({own_prior["id"], spec["id"], evidence["id"]} <= inherited)
+        foreign = {row["verdict_ref"] for row in wf.matches(1).values()}
+        self.assertFalse(foreign.intersection(arb["inputs"]["refs"]))
         wf.submit(arb, review("verdict", outcome="tie", decisive_reason="fixture: no decisive advantage"), "fixture")
-        # 最终卡片已提交、结案事件尚未发布时也不能提前创建后场。
-        self.assertFalse(wf.matches(1))
-        self.assertFalse(any("/match/H1-H3/" in key for key in wf.tasks()))
+        # 裁决卡已提交但结案事件尚未发布时，不提前汇合。
+        self.assertNotIn("r001/select_parent", wf.tasks())
         wf = Workflow(wf.run_dir)
         wf.advance()
         self.assertEqual(wf.matches(1)["H1-H2"]["outcome"], "tie")
-        self.assertTrue(any("/match/H1-H3/" in key for key in wf.tasks()))
-        self.assertFalse(any("/match/H2-H3/" in key for key in wf.tasks()))
+        parent = wf.result_card(wf.tasks()["r001/select_parent"])
+        self.assertEqual(parent["payload"]["selected_slot"], "H3")
+        self.assertEqual(parent["author"], "program")
         sequence, keys = wf.journal.sequence, set(wf.tasks())
         for _ in range(3):
             wf = Workflow(wf.run_dir)
             wf.advance()
         self.assertEqual((wf.journal.sequence, set(wf.tasks())), (sequence, keys))
-        wf, _ = self.drive(wf, reload=True)
+        wf, _ = self.drive(wf, parent="H3", reload=True)
         closures = [e for e in wf.journal.events if e["type"] == "match_closed"]
-        self.assertEqual([e["pair"] for e in closures], ["-".join(p) for p in INITIAL_PAIRS] + ["H4-H1"])
-        for previous, pair in zip(closures, ["H1-H3", "H2-H3", "H4-H1"]):
-            publications = [e["commit_sequence"] for e in wf.journal.events if e["type"] == "task_snapshot"
-                            and e["task"]["state"] == "pending" and "/match/" + pair + "/" in e["task"]["key"]]
-            self.assertTrue(publications)
-            self.assertGreater(min(publications), previous["commit_sequence"])
+        self.assertEqual([e["pair"] for e in closures], ["H2-H3", "H1-H3", "H1-H2", "H4-H3"])
+        publications = [e["commit_sequence"] for e in wf.journal.events if e["type"] == "task_snapshot"
+                        and e["task"]["state"] == "pending" and "/match/H4-H3/" in e["task"]["key"]]
+        self.assertGreater(min(publications), max(e["commit_sequence"] for e in closures[:3]))
         sequence = wf.journal.sequence
         for _ in range(3):
             wf = Workflow(wf.run_dir)
             self.assertTrue(wf.advance())
         self.assertEqual(wf.journal.sequence, sequence)
+
+    def test_initial_closure_permutations_preserve_selection_and_no_early_join(self):
+        from itertools import permutations
+        for order in permutations(("H1-H2", "H1-H3", "H2-H3")):
+            with self.subTest(order=order):
+                wf, first = self.drive(self.workflow_case("order_" + "_".join(order), l3=False),
+                                       stop=lambda t: t["inputs"]["purpose"] == "arbitrate")
+                arbs = {pair: wf.tasks()["r001/match/" + pair + "/e1/arbitrate"] for pair in order}
+                for index, pair in enumerate(order):
+                    task = arbs[pair]
+                    if task["task_id"] != first["task_id"]:
+                        wf.queue.ready()
+                        task = wf.queue.claim(task["task_id"])
+                    wf.submit(task, review("verdict", outcome="B", decisive_reason="fixture: right candidate wins"), "fixture")
+                    wf = Workflow(wf.run_dir)
+                    wf.advance()
+                    self.assertEqual(len(wf.matches(1)), index + 1)
+                    if index < 2:
+                        self.assertNotIn("r001/select_parent", wf.tasks())
+                        self.assertNotIn("r001/evolve/H4", wf.tasks())
+                    else:
+                        selected = wf.result_card(wf.tasks()["r001/select_parent"])
+                        self.assertEqual(selected["payload"]["selected_slot"], "H3")
+                        self.assertEqual(set(selected["payload"]["reused_verdict_refs"]),
+                                         {v["verdict_ref"] for v in wf.matches(1).values()})
 
     def index(self, wf, task):
         offset, rows = 0, []

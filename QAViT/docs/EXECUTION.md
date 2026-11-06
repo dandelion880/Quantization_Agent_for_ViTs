@@ -31,7 +31,9 @@ ReviewDecisionCard 保留 rationale 及本任务的实质决定。screening 的 
 
 已有全胜者、仅余一个合格方案或没有合格方案时，程序直接引用已提交裁决/筛查完成现有 rank 任务，选择卡 author=program、selection_source=existing_verdicts_and_screening，不产生新的 LLM 判断或伪造测量。未决时仍由 Judger 给出 selected_slot 和选择理由，在当前阶段的直接结果第一组中选择，不能忽略明确胜负。provisional 缺省时从已有直接结果确定，显式冲突仍拒绝；selection_basis 可省略，程序原样使用 rationale 交接选择依据。H4 不合格保留合格父方案；初始全部不合格则两个选择均为空，跳过 Evolution 和 L3，正常 Recorder 与轮次收尾。
 
-初始三场严格按 H1–H2 → H1–H3 → H2–H3 串行，前一场提交 match_closed 后才发布下一场任务；恢复时沿已有结案事件继续，不重复结案。之后仍只比较 H4–H*。每场最终裁决包括 tie/undetermined 一经结案即固定，拒绝非空改判请求，不再生成改判字段或修订卡片。旧记录保持可读，不改写历史。每对最多五次交锋；本场取证、真实结果核验及 Recorder 科研知识更新保留，后到证据不能改写已结案结果。
+初始 H1–H2、H1–H3、H2–H3 三场独立推进，各自按需取证、讨论和结案；全部提交 match_closed 后才统一选择 H*。恢复时沿各场已有任务和结案事件继续，不重复结案。之后仍只比较 H4–H*。每场最终裁决包括 tie/undetermined 一经结案即固定，拒绝非空改判请求，不再生成改判字段或修订卡片。旧记录保持可读，不改写历史。每对最多五次交锋；本场取证、真实结果核验及 Recorder 科研知识更新保留，后到证据不能改写已结案结果。
+
+默认 runtime.llm_concurrency=4（可设1–4保留较低上限）；Judger最多3个调用，每场同时1个，调度优先服务较久未获调用的配对。其余角色共享原串行资源，Coding、Safeguard、Generation、Evolution、Recorder各自最多1个且彼此合计最多1个；可与其它场Judger重叠。项目订阅锁相应为Judger三个槽与其余角色单槽，仍逐调用核验原账户、模型、额度和工具隔离。异步工作进程总数最多llm_concurrency+1（默认5，含文献worker）。真实数值执行固定最多1个，并保留项目级CPU/GPU共用数值锁。实验请求在Coding忙时正常入队，沿原单份Coding→Safeguard→数值执行流程返回原申请任务，不添加审批。每次模型调用保留独立提交快照；同回合A/B隔离不变，当前场不自动接收其它场的立场或裁决正文，相关历史及Memory仍可按需读取。并发耗时分别审计，全局预算沿原墙钟/运行段计算，不叠加worker耗时。旧运行显式保存的llm_concurrency=1继续遵守该上限，历史结果不迁移或重写。
 
 ### 任务输入来源
 

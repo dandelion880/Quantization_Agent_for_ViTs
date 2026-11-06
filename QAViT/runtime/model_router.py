@@ -4,6 +4,7 @@
 实际 model/effort 未回显时保持未知，不用请求配置冒充服务端回显。
 """
 from dataclasses import asdict
+from contextlib import contextmanager
 import hashlib
 from pathlib import Path
 import time
@@ -30,6 +31,29 @@ def preflight(role, settings, *, timeout=60):
     return client_for(role, settings).preflight(timeout)
 
 
+@contextmanager
+def subscription_slot(role, deadline):
+    """项目范围的有界订阅槽；Judger 三槽，其它角色共用原串行锁。"""
+    root = ROOT / "EXP/cache/codex_lock"
+    paths = ([root / ("judger-" + str(i) + ".lock") for i in range(3)]
+             if role == "judger" else [root / ".lock"])
+    while True:
+        if time.time() >= deadline:
+            raise cli.fail("timeout", "等待订阅并发槽时到达硬截止")
+        for path in paths:
+            lock = file_lock(path)
+            try:
+                lock.__enter__()
+            except ContractError:
+                continue
+            try:
+                yield str(path.name)
+            finally:
+                lock.__exit__(None, None, None)
+            return
+        time.sleep(min(.05, max(0, deadline - time.time())))
+
+
 def call_once(spec, directory, deadline):
     directory = Path(directory)
     directory.mkdir(parents=True, exist_ok=True)
@@ -53,8 +77,9 @@ def call_once(spec, directory, deadline):
             raise cli.fail("timeout", "已到运行/任务硬截止时间")
         return seconds
     try:
-        # 项目级订阅锁，锁等待计入预算；避免并发调用同一订阅。
-        with file_lock(ROOT / "EXP/cache/codex_lock/.lock", timeout=remaining()):
+        # 每次调用仍独立预检、账户校验和CLI隔离，等待并发槽计入硬预算。
+        with subscription_slot(spec["role"], deadline) as slot:
+            audit["subscription_slot"] = slot
             audit["preflight"] = client.preflight(min(60, remaining()))
             atomic_json(working / "schema.json", output_schema(request))
             (working / "instructions.txt").write_text(request.system_prompt + "\n\n" + TRANSPORT, encoding="utf-8")
@@ -95,4 +120,5 @@ def call_once(spec, directory, deadline):
         raise
     finally:
         audit["elapsed_seconds"] = time.monotonic() - started
+        audit["finished_unix"] = time.time()
         atomic_json(directory / "llm_audit.json", audit)

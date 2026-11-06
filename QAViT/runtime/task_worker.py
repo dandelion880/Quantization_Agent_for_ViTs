@@ -82,6 +82,10 @@ def main():
         if before["core_sha256"] != request["core_sha256"]:
             raise ContractError("工作进程启动时实现版本已过期")
         with ExitStack() as stack:
+            if request["kind"] == "experiment":
+                # CPU/GPU数值任务均共用单槽；Coding及Safeguard可在其它请求阶段推进。
+                stack.enter_context(file_lock(ROOT / "EXP/cache/v2_resources/numeric.lock",
+                    timeout=max(0, request["deadline_unix"] - time.time())))
             for key in sorted(request.get("resource_keys", [])):
                 if key.startswith("gpu:"):
                     lock = ROOT / "EXP/cache/v2_resources" / (fingerprint(key) + ".lock")

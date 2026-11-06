@@ -1,0 +1,67 @@
+{
+  "task": "initial_debate_parallelization",
+  "baseline_git": "bd9ddab021582a405fcd3cd0b1f87a00bacfc1ca",
+  "final_core_sha256": "4f9417e059fbcde06e9a5fcf0fc3e73fad3de4069db2537c46b30bd4ab474303",
+  "source_unchanged_during_final_regression": true,
+  "full_regression": {
+    "passed": true,
+    "count": 477,
+    "seconds": 622.53,
+    "log": "EXP/validation/parallel_debate_20261106_r1/regression.log"
+  },
+  "structure_audit": {
+    "passed": true,
+    "syntax_files": 152,
+    "source_files": 214
+  },
+  "default_limits": {
+    "judger_llm": 3,
+    "llm_per_pair": 1,
+    "other_roles_llm_combined": 1,
+    "total_llm": 4,
+    "numeric": 1,
+    "async_workers": 5
+  },
+  "controlled_process_tests": {
+    "suite": "QAViT/tests/test_parallel_runtime.py",
+    "passed": true,
+    "cases": 6,
+    "three_worker_intersection_seconds_assertion": "> 0.4",
+    "numeric_work_intervals_across_two_runs": "nonoverlapping"
+  },
+  "request_pipeline_test": {
+    "suite": "QAViT/tests/test_parallel_requests.py",
+    "passed": true,
+    "scientific_outputs": "scripted fixtures, not scientific measurements"
+  },
+  "real_cli": {
+    "successful_calls": 3,
+    "all_three_overlap_seconds": 5.546507835388184,
+    "wall_seconds": 10.848062515258789,
+    "backend": "original codex_subscription",
+    "requested_model": "gpt-6.1-sol",
+    "requested_effort": "medium",
+    "cli_version": "0.166.0",
+    "runtime_files_identical_to_final": true,
+    "all_processes_stopped": true,
+    "server_internal_inference_schedule": "not_reported"
+  },
+  "preserved": [
+    "scientific_decisions",
+    "Memory_on_demand",
+    "submission_snapshots",
+    "same_exchange_branch_ACL",
+    "single_Coding_Safeguard_execution_Evidence_chain",
+    "ranking_logic",
+    "Evolution_H4_L3_Recorder_cross_round",
+    "budget_wall_clock",
+    "source_provenance",
+    "historical_runs"
+  ],
+  "limits": [
+    "No expensive end-to-end scientific experiment rerun.",
+    "Default current CLI 0.167.0 remains unreviewed; use an explicitly configured reviewed CLI.",
+    "Historical explicit llm_concurrency=1 stays serial.",
+    "CLI smoke is not scientific Evidence."
+  ]
+}

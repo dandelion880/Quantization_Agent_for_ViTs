@@ -101,8 +101,11 @@ class Workflow(RoleInteraction, ExperimentRequests, WorkflowDriver):
             refs = batch['source_refs']
         producers = [t["task_id"] for t in self.queue.snapshot().values()
                      if t["state"] == "completed" and set(t["outputs"]).intersection(refs)]
+        # 同场 A/B、仲裁仍各自调用并串行领取；独立配对不共享订阅互斥锁。
+        resources = ([f"llm:judger:{context['round']}:" + "-".join(context['pair'])]
+                     if role == "judger" and context.get("pair") else ["llm:subscription"])
         return self.queue.enqueue(key, "llm", role=role, inputs={"purpose": purpose, "refs": list(dict.fromkeys(refs)),
-                                  "context": context, **({"parent_task": parent_task} if parent_task else {})}, depends_on=list(dict.fromkeys([*depends, *producers])), resource_keys=["llm:subscription"],
+                                  "context": context, **({"parent_task": parent_task} if parent_task else {})}, depends_on=list(dict.fromkeys([*depends, *producers])), resource_keys=resources,
                                   max_retries=self.config["llm"].get("max_transport_retries", 2))
 
 
@@ -331,10 +334,10 @@ class Workflow(RoleInteraction, ExperimentRequests, WorkflowDriver):
             return False
         for pair in INITIAL_PAIRS:
             self.progress_match(number, pair, hypotheses, screens)
-            # 结案提交是下一场的发布门槛；恢复时从首个未结案配对继续。
-            if "-".join(pair) not in self.matches(number):
-                return False
         matches = self.matches(number)
+        # 各场依自己的已提交状态推进；全部正式结案后才统一选择 H*。
+        if not {"-".join(pair) for pair in INITIAL_PAIRS} <= matches.keys():
+            return False
         parent = self.progress_selection(number, "parent", hypotheses, screens)
         if not parent:
             return False

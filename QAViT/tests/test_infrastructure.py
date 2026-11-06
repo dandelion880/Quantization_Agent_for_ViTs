@@ -367,7 +367,7 @@ class WorkflowSimulation(TempCase):
                 break
             ready = wf.queue.ready()
             self.assertTrue(ready, "scripted workflow stalled")
-            # 真实调用是串行的；模拟也逐条领取，防止绕过资源锁。
+            # 控制流夹具逐条领取；实际进程重叠由独立并发回归验证。
             for candidate in ready:
                 task = wf.queue.claim(candidate["task_id"])
                 self.assertEqual(task["kind"], "llm")
