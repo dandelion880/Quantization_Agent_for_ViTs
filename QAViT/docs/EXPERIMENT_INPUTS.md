@@ -35,3 +35,5 @@ Generation/Evolution 可在 H 正式提交前直接 request_experiment，多次�
 内置服务无需包装代码。新量化器选择 tensor_probe.requires_code=true；不再要求 validation、数学案例、interface_cases 或双实现比较容差。能力查询和位点目录不消耗校准样本，不受无关校准数量约束；实际校准和测量必须绑定并核验规定条件。代码接口见 CODE_INTERFACES.md，位点计划及方法语义见 EXECUTION.md、methods/。
 
 内置计划先规范化唯一确定的表示，再校验完整数值合同：格式对应 bits，per_tensor 的空 axis/group_size，禁用目标的空 method，以及格式自身唯一规定的 scale 等可省略；冲突仍报具体字段。方法、非唯一量化选择和未知轴由科研角色决定；需要真实 shape 的检查在正常准备捕获后完成，不要求额外发起实验。自定义 make_executor 使用自己的表示，不能据内置枚举拒绝新算法。
+
+资源由宿主按本运行允许池分配；新输入 allowed_gpus=auto 使用实际可见与获分配设备的交集，也可集中显式指定编号/UUID。无需猜选固定卡，默认一实验一卡。resources.gpu 可固定主卡；gpu_count 可选并按能力/空闲卡尽力启用，目前仅 server 原生非训练冻结包的纯分类评测分片，其余沿单卡。必需时延、显存指标或不兼容结果协议保留原单卡测量，不能删指标、减样本或降低量化覆盖来启用多卡。卡忙正常排队，不消耗尝试。启用 exclude_numeric_wait 的运行中，estimated_seconds 仍是单任务超时，不因超过智能体余额拒绝实验；重叠的推理/Coding/审核正常计时。实际范围和回退原因由回执记录。

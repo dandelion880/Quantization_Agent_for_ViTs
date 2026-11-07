@@ -257,6 +257,7 @@ class QueueAndBudget(TempCase):
                     time.sleep(1)  # The real worker timer must stop numerical work.
                 try:
                     with patch.object(sys, 'argv', ['task_worker.py', str(path)]), \
+                         patch('runtime.task_worker.process_identity', return_value=None), \
                          patch('runtime.task_worker.work', side_effect=wait_or_interrupt), \
                          redirect_stderr(StringIO()):
                         task_worker.main()

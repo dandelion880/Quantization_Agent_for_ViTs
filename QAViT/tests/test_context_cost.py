@@ -53,6 +53,56 @@ class ContextCostRegression(TempCase):
         task, context = self.tools(wf, task, [('retrieve_memory', {})])
         self.assertTrue(any(row.get('body') for row in context['tool_results'][-1]['result']['entries']))
 
+    def test_large_condition_sample_lists_keep_metadata_hashes_and_original_pages(self):
+        wf = self.workflow(1)
+        cards = self.science(wf, 'condition_samples', commit=False)
+        payload = deepcopy(cards[1]['payload'])
+        ids = ['validation/sample-' + str(i).zfill(6) for i in range(2000)]
+        name = 'final/a~b'
+        scope = {'model': 'fixture-official', 'weight_bits': [4], 'activation_bits': [4],
+                 'model_identity_sha256': 'model-hash', 'implementation': {'code': 'frozen'},
+                 'quantization': {'head': {'weight': {'bits': 4}, 'activation': {'bits': 4}}},
+                 'data': {name: {'split': 'final', 'sample_count': 2000, 'full_dataset': True,
+                                 'sample_ids': ids}}}
+        payload['scope'] = deepcopy(scope)
+        payload['provenance'] = {'seed': 42, 'rng_seeds': {'python': 42, 'torch': 42, 'numpy': 42},
+            'protocol_hash': 'protocol-hash', 'model_unchanged': True,
+            'execution_facts': {'data': deepcopy(scope['data']), 'quantization': deepcopy(scope['quantization'])},
+            'sample_selection': {name: list(ids), 'small': ['a', 'b']}}
+        evidence = make_card('EvidenceCard', wf.journal.run_id, payload, refs=[cards[0]['id']])
+        wf.journal.commit('large_condition_lists', cards=[cards[0], evidence])
+        task, context = self.begin(wf, self.task(wf, 'code', refs=[evidence['id']],
+            experiment_ref=cards[0]['id'], request_ref=cards[0]['id']))
+        shown = next(v for v in context['memory']['cards'] if v['id'] == evidence['id'])['payload']
+        self.assertLess(len(canonical(shown)), 16000)
+        self.assertFalse(any(r['ref'] == evidence['id'] for r in context['memory']['required_reads']))
+        self.assertIn(evidence['id'], context['memory']['read_manifest']['projected_refs'])
+        self.assertNotIn(evidence['id'], context['memory']['read_manifest']['refs'])
+        for key in scope.keys() - {'data'}:
+            self.assertEqual(shown['scope'][key], scope[key])
+        for key in ('seed', 'rng_seeds', 'protocol_hash', 'model_unchanged'):
+            self.assertEqual(shown['provenance'][key], payload['provenance'][key])
+        self.assertEqual(shown['provenance']['execution_facts']['quantization'], scope['quantization'])
+        self.assertEqual(shown['provenance']['sample_selection']['small'], ['a', 'b'])
+        views = [shown['scope']['data'][name]['sample_ids'],
+                 shown['provenance']['execution_facts']['data'][name]['sample_ids'],
+                 shown['provenance']['sample_selection'][name]]
+        for view in views:
+            self.assertEqual(view['items'], 2000)
+            self.assertEqual(view['sha256'], fingerprint(ids))
+            self.assertNotEqual(view['sha256'], fingerprint(list(reversed(ids))))
+            self.assertEqual(wf.card_field(evidence, view['read_card']['field']), ids)
+            self.assertIn('final~1a~0b', view['read_card']['field'])
+            result = wf.host_tool({'inputs': {'name': 'read_card', 'parent_task': task['task_id'],
+                'arguments': {**view['read_card'], 'offset': len(canonical(ids)) - 200, 'limit': 200}}})
+            self.assertEqual(result['text'], canonical(ids)[-200:])
+            self.assertEqual(result['sha256'], fingerprint(ids))
+            self.assertIsNone(result['next_offset'])
+        for row in (shown['scope']['data'][name], shown['provenance']['execution_facts']['data'][name]):
+            self.assertEqual({k: v for k, v in row.items() if k != 'sample_ids'},
+                             {k: v for k, v in scope['data'][name].items() if k != 'sample_ids'})
+        self.assertEqual(wf.journal.card(evidence['id'])['payload'], payload)
+
     def test_recorder_gets_purpose_result_conditions_and_source_without_large_engineering(self):
         wf = self.workflow(1)
         cards = self.science(wf, 'recording', commit=False)

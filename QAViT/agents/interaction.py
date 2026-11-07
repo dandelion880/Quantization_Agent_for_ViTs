@@ -405,6 +405,27 @@ class RoleInteraction:
                 if key in provenance:
                     provenance[key] = {'read_card': {'ref': card['id'], 'field': '/payload/provenance/' + key},
                                        'sha256': fingerprint(provenance[key])}
+            # Condition metadata stays explicit; only large sample lists use the
+            # same bounded view and exact immutable source as observation arrays.
+            def sample_lists(data, field):
+                if not isinstance(data, dict):
+                    return
+                for name, row in data.items():
+                    if isinstance(row, dict) and isinstance(row.get('sample_ids'), list):
+                        row['sample_ids'] = project_observations(row['sample_ids'], card['id'],
+                            pointer(pointer(field, name), 'sample_ids'))
+            scope = value['payload'].get('scope', {})
+            if isinstance(scope, dict):
+                sample_lists(scope.get('data'), '/payload/scope/data')
+            facts = provenance.get('execution_facts', {})
+            if isinstance(facts, dict):
+                sample_lists(facts.get('data'), '/payload/provenance/execution_facts/data')
+            selection = provenance.get('sample_selection', {})
+            if isinstance(selection, dict):
+                for name, ids in selection.items():
+                    if isinstance(ids, list):
+                        selection[name] = project_observations(ids, card['id'],
+                            pointer('/payload/provenance/sample_selection', name))
             # 冻结实验是必需交付对象；仅折叠已核对相同的执行正文，保留异常/旧记录原文。
             if 'resolved_execution' in provenance:
                 experiment = self.journal.card(card['payload']['experiment_ref'])
@@ -937,7 +958,8 @@ class RoleInteraction:
         self.deliver_bound_feedback(task, memory, state, latest, deliver)
         if purpose in ('generate', 'evolve', 'screen', 'position', 'arbitrate', 'rank', 'record', 'supervise'):
             memory['current_research_state'] = self.memory.current_research_state(
-                sequence, visible=lambda c: self.can_read_card(task, c), excluded_refs=delivered, compact=True)
+                sequence, visible=lambda c: self.can_read_card(task, c), excluded_refs=delivered, compact=True,
+                finding_refs=delivered)
             review = memory['current_research_state'].get('latest_review', {})
             for key in ('scientific_analysis', 'generation_guidance', 'blind_spots'):
                 source = {'ref': review.get('ref'), 'field': '/payload/' + key}
@@ -973,7 +995,8 @@ class RoleInteraction:
             draft = inputs['context'].get('experiment_draft')
             if inputs['context'].get('experiment_ref'):
                 draft = self.require_visible(task, inputs['context']['experiment_ref'])['payload']
-            evidence = [c for c in self.journal.find_cards('EvidenceCard') if self.can_read_card(task, c)]
+            evidence = [self.journal.card(ref) for ref in delivered
+                        if self.journal.cards[ref]['kind'] == 'EvidenceCard']
             context['data_receipt'] = data_receipt(self.brief['payload'], (draft or {}).get('execution'), evidence=evidence)
             context['data_receipt']['selection_source'] = (inputs['context'].get('experiment_ref') or 'context.task.experiment_draft.execution') if draft else '尚未提交本实验数据选择'
         if purpose == 'safeguard':

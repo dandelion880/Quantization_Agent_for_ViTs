@@ -122,7 +122,7 @@ class InterfaceSimplification(TempCase):
         with self.assertRaisesRegex(ContractError, 'training'):
             preflight_experiment(bad, validation_config()['research_brief'])
 
-    def test_cuda_resource_uses_only_the_unique_authorized_device(self):
+    def test_cuda_resource_auto_places_within_authorized_pool(self):
         wf = self.workflow(1)
         draft = experiment_payload()
         draft['resources'].pop('gpu', None)
@@ -131,18 +131,19 @@ class InterfaceSimplification(TempCase):
         with patch('tools.experiments.resolve_execution', return_value=resolved):
             wf.broker.runtime = {**wf.config['runtime'], 'allowed_gpus': [3]}
             card = wf.broker.freeze(draft, requester='judger')
-            self.assertEqual(card['payload']['resources']['gpu'], 3)
-            self.assertIn('gpu:3', wf.experiment_resources(card))
+            self.assertNotIn('gpu', card['payload']['resources'])
+            self.assertEqual(wf.experiment_resources(card), [])
             self.assertNotIn('gpu', draft['resources'])
             config_path = self.root / 'backend.json'
             atomic_json(config_path, json.loads((QAVIT / 'configs/deitb_backend.json').read_text()))
             resolved['backend']['config_asset'] = {'path': str(config_path)}
-            self.assertEqual(wf.broker.freeze(draft, requester='judger')['payload']['resources']['gpu'], 3)
+            self.assertNotIn('gpu', wf.broker.freeze(draft, requester='judger')['payload']['resources'])
             resolved['backend'].pop('config_asset')
-            for allowed in ([], [0, 3]):
-                wf.broker.runtime['allowed_gpus'] = allowed
-                with self.assertRaisesRegex(ContractError, 'resources.gpu'):
-                    wf.broker.freeze(draft, requester='judger')
+            wf.broker.runtime['allowed_gpus'] = []
+            with self.assertRaisesRegex(ContractError, '授权 GPU'):
+                wf.broker.freeze(draft, requester='judger')
+            wf.broker.runtime['allowed_gpus'] = [0, 3]
+            self.assertNotIn('gpu', wf.broker.freeze(draft, requester='judger')['payload']['resources'])
             explicit = deepcopy(draft); explicit['resources']['gpu'] = 0
             self.assertEqual(wf.broker.freeze(explicit, requester='judger')['payload']['resources']['gpu'], 0)
             resolved['backend']['config']['backend']['device'] = 'cpu'

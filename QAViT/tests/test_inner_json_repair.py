@@ -139,7 +139,9 @@ class InnerJSONRepairChain(TempCase):
         identities = [identity, {**identity, 'core_sha256': 'changed'}] if identity_change else [identity, identity]
         with patch('runtime.model_router.client_for', return_value=client), patch('runtime.model_router.cli.run', side_effect=run), \
              patch.object(sys, 'argv', ['task_worker.py', str(path)]), \
+             patch('runtime.task_worker.process_identity', return_value=None), \
              patch('runtime.task_worker.code_identity', side_effect=identities), redirect_stderr(StringIO()):
+            # This worker runs inline, so it has no live child after main returns.
             task_worker.main()
         receipt = read_json(directory / 'result.json')
         self.assertEqual(receipt['task_id'], tid)

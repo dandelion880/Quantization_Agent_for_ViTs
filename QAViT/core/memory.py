@@ -406,7 +406,7 @@ class ResearchMemory:
         return {"type": "memory_projection", "value": state}
 
     def current_research_state(self, sequence=None, visible=None, *, question_offset=0, question_limit=8,
-                               excluded_refs=(), compact=False):
+                               excluded_refs=(), compact=False, finding_refs=None):
         """Small role-visible L1 view; source facts and researcher judgments stay distinct."""
         visible = visible or (lambda card: True)
         state = self.snapshot(sequence)
@@ -458,7 +458,8 @@ class ResearchMemory:
                   'more_questions': {'query': {'layer': 'L1'}, 'offset': question_offset + question_limit,
                                      'limit': question_limit} if question_offset + question_limit < len(questions) else None,
                   'incumbent': incumbent, 'progress': {key: len(refs) for key, refs in groups.items()},
-                  'latest_findings': [finding(ref) for ref in groups['recent_evidence'][-2:]],
+                  'latest_findings': [finding(ref) for ref in groups['recent_evidence']
+                                      if finding_refs is None or ref in finding_refs][-2:],
                   'history': {'retrieve_memory': {'query': {}, 'limit': 8}},
                   'fact_basis': 'Journal commits; review citations do not replace executed experiments'}
         if latest:

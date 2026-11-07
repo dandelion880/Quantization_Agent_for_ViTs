@@ -69,7 +69,10 @@ def run_managed(workflow, *, started_unix, readiness=None):
                 # receipts if the Supervisor fails to honor the worker boundary.
                 stop_at = state["deadline_unix"] - state["config"].get("shutdown_reserve_seconds", 0) / 2
                 while child.poll() is None:
-                    if time.time() >= stop_at:
+                    current = workflow.budget.snapshot()
+                    if workflow.budget.excludes_numeric:
+                        stop_at = current['deadline_unix'] - current['config'].get('shutdown_reserve_seconds', 0) / 2
+                    if time.time() >= stop_at and not workflow.numeric_running():
                         workflow.runtime.stop_identity(identity)
                         break
                     try:
@@ -100,7 +103,7 @@ def run_managed(workflow, *, started_unix, readiness=None):
                                    status="scope_target_reached")
                 report = workflow.summary()
                 if report["status"] == "running":
-                    status = ("budget_exhausted" if time.time() >= state["worker_deadline_unix"]
+                    status = ("budget_exhausted" if workflow.budget.snapshot()['remaining_seconds'] <= state['config'].get('shutdown_reserve_seconds', 0)
                               else "interrupted" if interrupted else "recovery_required")
                     workflow.event("run_status", "status/monitor_stop/" + segment,
                                    status=status, error="Supervisor 已停止；原始回执保留")

@@ -91,6 +91,23 @@ class FeedbackBoundariesRegression(TempCase):
         self.assertIn('OWN_MATCH_UNRESOLVED', canonical(challenge_context))
         self.assertIn('OTHER_MATCH_verdict', canonical(challenge_context))
 
+    def test_unrelated_public_measurements_are_not_automatically_delivered(self):
+        wf = self.workflow(1)
+        _, evidence, chosen, _ = self.science(wf, 'UNRELATED_MEASUREMENT')
+        wf.journal.commit('latest', events=[wf.memory.live_update(evidence_ref=evidence['id'])])
+        current = self.publish(wf, 'HypothesisCard', hypothesis(1, 'H2'))
+        for purpose in ('position', 'arbitrate', 'generate', 'screen'):
+            task = self.task(wf, purpose, refs=[current['id']], round=1,
+                             pair=['H2', 'H3'], exchange=1, side='A', position_for='H2', slot='H2')
+            context = wf.context(task)
+            self.assertEqual(context['memory']['current_research_state']['latest_findings'], [])
+            self.assertNotIn('UNRELATED_MEASUREMENT', canonical(context))
+            self.assertEqual(self.read(wf, task, 'read_card', ref=evidence['id']), evidence)
+        current['payload']['evidence_refs'] = [evidence['id']]
+        cited = self.publish(wf, 'HypothesisCard', current['payload'], [evidence['id']])
+        task = self.task(wf, 'position', refs=[cited['id']], round=1, pair=['H2','H3'], exchange=1, side='A')
+        self.assertIn('UNRELATED_MEASUREMENT', canonical(wf.context(task)))
+
     def test_referenced_other_hypothesis_is_provenance_not_current_subject(self):
         wf = self.workflow(1)
         old = self.publish(wf, 'HypothesisCard', hypothesis(1, 'H2'))

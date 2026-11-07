@@ -208,6 +208,102 @@ class ReloadAndInterfaceTests(TempCase):
         self.assertEqual(result["execution_facts"]["sites"], ["blocks.0.mlp.fc2"])
         self.assertEqual(result["execution_facts"]["data"]["calibration"]["sample_ids"], data.ids("calibration"))
 
+    def test_custom_empty_artifact_mapping_survives_worker_closeout(self):
+        from tools.experiment_worker import run_experiment
+        payload, (backend, cfg, data) = self.interface()
+        payload["execution"]["backend"] = {"kind": "fixture"}
+        backend.identity = lambda: {"source": "CPU interface fixture"}
+        def execute(payload, context):
+            for x, sid in context["data"].batches("calibration"):
+                context["backend"].forward_model(context["reference_model"], x)
+            return {"observations": {"sum": 1}, "artifacts": {}}
+        with patch("tools.experiment_worker.module_from_approval", return_value=SimpleNamespace(execute=execute)), \
+                patch("tools.experiment_worker.validate_approval"), \
+                patch("tools.experiment_worker.backend_and_data", return_value=(backend, cfg, data)), \
+                patch("runtime.guards.protect_files", return_value={"source": "test_double"}), \
+                patch("runtime.guards.install_gradient_guard"):
+            result = run_experiment({"experiment": {"payload": payload}, "approval": {}}, self.root)
+        self.assertEqual(len(result["artifacts"]), 1)
+        self.assertTrue(result["artifacts"][0]["path"].endswith("gradient_audit.json"))
+
+    def test_custom_artifact_list_is_preserved_and_invalid_outputs_route_to_coding(self):
+        from runtime.task_worker import failure_origin
+        from tools.experiments import asset
+        payload, (backend, cfg, data) = self.interface()
+        payload["execution"].pop("calibration")
+        output = self.root / "measurement.json"
+        atomic_json(output, {"value": 1})
+        artifacts = [dict(asset(output), description="raw measurement")]
+        plugin = SimpleNamespace(execute=lambda *args: {"observations": {"sum": 1}, "artifacts": artifacts})
+        result = execute_custom(plugin, payload, backend, cfg, data, self.root)
+        self.assertIs(result["artifacts"], artifacts)
+        self.assertEqual(result["artifacts"][0]["description"], "raw measurement")
+        request = {"approval": {"candidate": {"path": str(self.root / "approved_source.py")}}}
+        invalid = ({"file": str(output)}, None, "path", (), [str(output)], [{}],
+                   [{"path": str(output), "sha256": "bad", "bytes": 1}],
+                   [dict(asset(output), path="")], [dict(asset(output), bytes=True)],
+                   [dict(asset(output), bytes=-1)])
+        for artifacts in invalid:
+            with self.subTest(artifacts=artifacts):
+                try:
+                    execute_custom(plugin, payload, backend, cfg, data, self.root)
+                    self.fail("Invalid artifacts must fail at the custom return boundary")
+                except ContractError as exc:
+                    self.assertIn("artifacts", str(exc))
+                    self.assertEqual(failure_origin(exc, request), "implementation")
+
+    def test_custom_evaluation_container_and_rows_fail_as_implementation_contracts(self):
+        from runtime.task_worker import failure_origin
+        payload, (backend, cfg, data) = self.interface()
+        payload["execution"].pop("calibration")
+        request = {"approval": {"candidate": {"path": str(self.root / "approved_source.py")}}}
+        invalid = ([], [{"split": "search"}], None, "evaluations", {"classification": []},
+                   {"classification": None}, {"classification": 1})
+        for evaluations in invalid:
+            with self.subTest(evaluations=evaluations):
+                plugin = SimpleNamespace(execute=lambda *args: {"observations": {"evaluations": evaluations}})
+                try:
+                    execute_custom(plugin, payload, backend, cfg, data, self.root)
+                    self.fail("Invalid evaluation return values must fail at the custom boundary")
+                except ContractError as exc:
+                    self.assertIn("observations.evaluations", str(exc))
+                    self.assertEqual(failure_origin(exc, request), "implementation")
+
+    def test_custom_evaluation_split_and_sample_ids_require_actual_reads(self):
+        from runtime.task_worker import failure_origin
+        payload, (backend, cfg, data) = self.interface()
+        payload["execution"].pop("calibration")
+        request = {"approval": {"candidate": {"path": str(self.root / "approved_source.py")}}}
+        invalid = ({}, {"split": []}, {"split": {}}, {"split": "unread"},
+                   {"split": "search", "sample_ids": ["invented"]},
+                   {"split": "search", "sample_ids": data.ids("search"), "full_dataset": True})
+        for row in invalid:
+            with self.subTest(row=row):
+                def execute(payload, context):
+                    list(context["data"].batches("search"))
+                    return {"observations": {"evaluations": {"classification": row}}}
+                try:
+                    execute_custom(SimpleNamespace(execute=execute), payload, backend, cfg, data, self.root)
+                    self.fail("Unverified evaluation ranges must fail at the custom boundary")
+                except ContractError as exc:
+                    self.assertIn("自定义评测", str(exc))
+                    self.assertEqual(failure_origin(exc, request), "implementation")
+
+    def test_custom_evaluation_object_preserves_valid_result_and_optional_absence(self):
+        payload, (backend, cfg, data) = self.interface()
+        payload["execution"].pop("calibration")
+        evaluations = {"classification": {"split": "search", "sample_ids": data.ids("search"),
+                                         "sample_count": 4, "metrics": {"top1": 25.0}, "full_dataset": False}}
+        def execute(payload, context):
+            list(context["data"].batches("search"))
+            return {"observations": {"evaluations": evaluations}}
+        result = execute_custom(SimpleNamespace(execute=execute), payload, backend, cfg, data, self.root)
+        self.assertIs(result["observations"]["evaluations"], evaluations)
+        for observations in ({"statistic": 1}, {"statistic": 1, "evaluations": {}}):
+            plugin = SimpleNamespace(execute=lambda *args: {"observations": observations})
+            result = execute_custom(plugin, payload, backend, cfg, data, self.root)
+            self.assertEqual(result["observations"], observations)
+
     def test_math_branch_cannot_hide_bad_split_batch_or_forward_signature(self):
         for bug in ("split", "batch", "forward"):
             payload, (backend, cfg, data) = self.interface()

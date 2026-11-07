@@ -33,7 +33,7 @@ def install_gradient_guard(training_free):
     return Guard()
 
 
-def protect_files(directory):
+def protect_files(directory, *, cuda_device_nodes=()):
     """Landlock内核写隔离；只允许当前job与EXP临时目录写入。"""
     import ctypes
     libc = ctypes.CDLL(None, use_errno=True)
@@ -55,10 +55,15 @@ def protect_files(directory):
     if fd < 0:
         raise OSError(ctypes.get_errno(), "landlock_create_ruleset")
     try:
-        for path in (Path(directory), ROOT / "EXP/cache/tmp"):
+        roots = [Path(directory), ROOT / 'EXP/cache/tmp']
+        devices = ([Path('/dev/nvidiactl'), Path('/dev/nvidia-uvm'), Path('/dev/nvidia-uvm-tools'),
+                    *[Path(node) for node in cuda_device_nodes]] if cuda_device_nodes else [])
+        for path in roots + [p for p in devices if p.exists()]:
             pfd = os.open(path, os.O_PATH | os.O_CLOEXEC)
             try:
-                rule = Rule(write_access, pfd)
+                # CUDA initialization opens character devices for writing. Permit
+                # only the leased devices and control nodes, not arbitrary files.
+                rule = Rule(write_access if path.is_dir() else 1 << 1, pfd)
                 if libc.syscall(445, fd, 1, ctypes.byref(rule), 0) != 0:
                     raise OSError(ctypes.get_errno(), "landlock_add_rule")
             finally:
@@ -67,5 +72,6 @@ def protect_files(directory):
             raise OSError(ctypes.get_errno(), "landlock_restrict_self")
     finally:
         os.close(fd)
-    return {"mechanism": "Linux Landlock", "abi": abi, "write_roots": [str(directory), str(ROOT / "EXP/cache/tmp")]}
+    return {"mechanism": "Linux Landlock", "abi": abi, "write_roots": [str(p) for p in roots],
+            'cuda_device_nodes': [str(p) for p in devices if p.exists()]}
 

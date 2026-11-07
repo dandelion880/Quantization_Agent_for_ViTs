@@ -28,7 +28,7 @@ def segmentation_dependencies():
         sys.path = [str(QAVIT / '.runtime_pkgs/segmentation')] + [
             p for p in sys.path if p != str(QAVIT / '.runtime_pkgs/classification')]
         from tools.vision_models import setup_segmentation
-        setup_segmentation(seed=42, threads=4)
+        setup_segmentation(seed=42)
         yield
     finally:
         for k in list(sys.modules):
@@ -146,5 +146,5 @@ def evaluate(backbone, reference, directory, count=None):
             'fp_adapter_parity':errors, 'sample_ids':[str(p) for p in files],
             'protocol':{'mode':'slide','crop':[512,512],'stride':[341,341], 'resize':[2048,512],
                         'config':str(SETTINGS), 'preprocessing':settings['pipeline']},
-            'scope':'ImageNet-calibrated static W4A4 backbone transfer; original classification head unused; frozen FP32 Neck/Head',
+            'scope':'frozen quantized backbone transfer (quantization scope in experiment plan); original classification head unused; frozen FP32 Neck/Head',
             'recalibrated':False, 'trained':False, 'native_low_precision_kernel':False}

@@ -156,7 +156,7 @@ class GlobalTaskQueue:
         patch = {"attempt": attempt, "started_unix": time.time(),
                  "input_versions": input_versions or {},
                  "memory_version": self.journal.memory_version if memory_version is None else memory_version,
-                 "request_path": request_path, "process": None}
+                 "request_path": request_path, "process": None, "receipt_seen_unix": None}
         self.change(task_id, "running", patch=patch)
         return self.get(task_id)
 

@@ -18,6 +18,24 @@ from tests.test_infrastructure import TempCase
 
 
 class ParallelRuntime(TempCase):
+    def test_non_numeric_capacity_is_preserved_with_independent_experiment_pool(self):
+        from tests.support import experiment_payload
+        wf = self.workflow(1)
+        wf.config['runtime']['experiment_concurrency'] = 2
+        card = wf.broker.freeze(experiment_payload(), requester='user')
+        wf.journal.commit('spec', cards=[card])
+        for i in range(2):
+            wf.queue.enqueue('numeric/' + str(i), 'experiment', inputs={'experiment_ref':card['id']})
+        for i in range(6):
+            wf.queue.enqueue('literature/' + str(i), 'literature')
+        def launch(task, body, *, input_versions):
+            wf.queue.claim(task['task_id'], input_versions=input_versions)
+        with patch.object(wf, 'request_body', return_value={}), patch.object(wf.runtime, 'launch', side_effect=launch):
+            self.assertEqual(wf.dispatch(), 7)
+        active = [t for t in wf.tasks().values() if t['state']=='running']
+        self.assertEqual(sum(t['kind']=='experiment' for t in active), 2)
+        self.assertEqual(sum(t['kind']=='literature' for t in active), 5)
+
     def enqueue(self, wf, pair, side='A'):
         return wf.enqueue_role('fixture/' + '-'.join(pair) + '/' + side, 'position',
             refs=[wf.brief['id']], context={'round': 1, 'pair': pair, 'exchange': 1, 'side': side})
@@ -35,7 +53,7 @@ class ParallelRuntime(TempCase):
             with self.assertRaises(ContractError): config_check(config)
         config['runtime']['llm_concurrency'] = 4
         config['runtime']['experiment_concurrency'] = 2
-        with self.assertRaises(ContractError): config_check(config)
+        config_check(config)
 
     def test_dispatch_starts_three_overlapping_workers_and_recovery_accepts_once(self):
         wf = self.workflow(1)
@@ -150,7 +168,7 @@ with subscription_slot(sys.argv[2], time.time() + 15) as slot:
             maximum['total'] = max(maximum['total'], len(active))
         self.assertEqual(maximum, {'judger': 3, 'other': 1, 'total': 4})
 
-    def test_numeric_workers_from_two_runs_share_one_global_slot(self):
+    def test_numeric_workers_from_two_runs_no_longer_share_global_slot(self):
         script = '''
 import sys, time
 from pathlib import Path
@@ -182,8 +200,8 @@ task_worker.main()
         self.assertEqual([r['status'] for r in receipts], ['completed', 'completed'])
         intervals = sorted((read_json(path.parent / 'controlled_interval.json') for path in paths),
                            key=lambda row: row['start'])
-        self.assertLessEqual(intervals[0]['end'], intervals[1]['start'])
-        # Both workers exist concurrently; only entry to numerical work is serialized.
+        self.assertGreater(min(r['end'] for r in intervals) - max(r['start'] for r in intervals), .2)
+        # CPU numerical work is independent across runs as well as within a run.
         starts = [read_json(path.parent / 'started.json')['started_unix'] for path in paths]
         self.assertLess(max(starts), min(r['finished_unix'] for r in receipts))
 

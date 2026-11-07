@@ -49,6 +49,8 @@ EXPERIMENT_DRAFT_SCHEMA['properties']['execution']['properties'] = {
 }
 EXPERIMENT_DRAFT_SCHEMA['properties']['resources']['properties']['gpu'] = {
     'anyOf': [{'type': 'integer', 'minimum': 0}, {'type': 'null'}]}
+EXPERIMENT_DRAFT_SCHEMA['properties']['resources']['properties']['gpu_count'] = {
+    'type': 'integer', 'minimum': 1}
 
 
 def normalize_probe_choices(execution):
@@ -76,6 +78,8 @@ def check_resources(resources, runtime):
         raise ContractError('请求 CPU 线程超出本次资源上限')
     if resources.get('gpu') is not None and resources['gpu'] not in runtime.get('allowed_gpus', []):
         raise ContractError('请求 GPU 不在本次授权范围')
+    if type(resources.get('gpu_count', 1)) is not int or resources.get('gpu_count', 1) < 1:
+        raise ContractError('gpu_count 必须为正整数；实际按能力与空闲授权卡分配')
 
 
 def check_backend(adapter, brief):
@@ -353,7 +357,7 @@ def normalize_execution(execution, brief, *, level=None):
                     value['arguments'].setdefault(key, default)
     normalize_calibration(value, brief if consumes_calibration else None)
     if service == "tensor_probe":
-        parameters = value.get("parameters")
+        parameters = value.setdefault("parameters", {})
         if not isinstance(parameters, dict):
             raise ContractError("execution.parameters 必须是对象")
         fixed_activation = brief.get('quantization_contract', {}).get('specs', {}).get('activation', {})
@@ -369,9 +373,11 @@ def normalize_execution(execution, brief, *, level=None):
         if parameters.get('granularity') == 'per_tensor':
             parameters.setdefault('axis', None)
             parameters.setdefault('group_size', None)
-        for field in ("bits", "granularity"):
-            if field not in parameters:
-                raise ContractError("execution.parameters." + field + " 缺失；不能猜测量化参数")
+        missing = [field for field in ('bits', 'signed', 'granularity', 'axis', 'group_size') if field not in parameters]
+        if missing:
+            raise ContractError('缺失字段: ' + ', '.join('execution.parameters.' + field for field in missing)
+                                + '；在 execution_choices.parameters 一次补全原研究所需选择，不猜测科学参数。'
+                                  ' per_tensor 的 axis/group_size 可省略，由程序补 null。')
         validate_schema(parameters, {"type": "object", "required": ["bits", "signed", "granularity", "axis", "group_size"],
             "properties": {"bits": {"type": "integer", "minimum": 1}, "signed": {"type": "boolean"},
                            "granularity": TEXT, "axis": {"type": ["integer", "null"]},
@@ -572,17 +578,13 @@ class ExperimentBroker:
         payload["execution"] = resolve_execution(payload["execution"], brief, level=payload["level"])
         execution = payload["execution"]
         # GPU 是宿主资源选择；CUDA 后端不能因草案省略编号而在隐藏全部 GPU 后启动。
-        adapter = execution['backend']
-        if self.runtime is not None and 'gpu' not in payload['resources'] and adapter.get('kind') not in ('fixture', 'factory'):
-            from ptq_agent.configuration import load_config
-            cfg = load_config(Path(adapter['config_asset']['path'])) if adapter.get('config_asset') else adapter.get('config', {})
-            backend = {**cfg.get('backend', cfg), **adapter.get('backend_overrides', {})}
-            device = backend.get('device', 'cpu')
-            if device in ('cuda', 'cuda:0'):
-                allowed = self.runtime.get('allowed_gpus', [])
-                if len(allowed) != 1:
-                    raise ContractError('CUDA 后端需 resources.gpu；本次授权 GPU 不唯一或为空，不能唯一补全')
-                payload['resources']['gpu'] = allowed[0]
+        if self.runtime is not None:
+            from tools.experiment_worker import backend_device
+            device = backend_device(execution)
+            if str(device).startswith('cuda') and not self.runtime.get('allowed_gpus', []):
+                raise ContractError('CUDA 后端没有已授权 GPU；在研究输入 runtime.allowed_gpus 集中配置')
+            # All adapters (including factories) use the same host placement.
+            # Physical ordinals never select a worker-local CUDA device.
         # 跨作业读取权限只由本次 Journal 派生，不能接受 Agent 自填的文件绑定。
         execution.pop("profile_evidence_bindings", None)
         profile_refs = []
@@ -614,7 +616,7 @@ class ExperimentBroker:
         if bindings:
             execution["trial_bindings"] = bindings
         # L3只有预算门禁；不在此引入L2性能阈值。
-        self.ledger.check(estimated_seconds=payload["resources"]["estimated_seconds"])
+        self.ledger.check(estimated_seconds=payload["resources"]["estimated_seconds"], kind='experiment')
         return make_card("ExperimentCard", self.journal.run_id, payload, author=requester,
                          refs=self.card_references(payload, [*refs, *trial_refs, *profile_refs]))
 

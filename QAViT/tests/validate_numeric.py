@@ -25,12 +25,10 @@ def measure(workflow, key, payload):
         return card, cached, True
     identifier = workflow.queue.enqueue(key, "experiment", inputs={"experiment_ref": card["id"], "approval": None},
                                        resource_keys=workflow.experiment_resources(card))
-    workflow.queue.promote()
-    task = workflow.queue.get(identifier)
-    workflow.runtime.launch(task, workflow.request_body(task), input_versions={card["id"]: card["content_sha256"]})
     while True:
-        workflow.budget.check()
+        workflow.budget.check(allow_numeric_drain=workflow.numeric_running())
         workflow.poll()
+        workflow.update_numeric_wait()
         task = workflow.queue.get(identifier)
         if task["state"] == "completed":
             return card, workflow.journal.card(task["outputs"][0]), False
@@ -38,6 +36,8 @@ def measure(workflow, key, payload):
             raise RuntimeError(str(task["error"]))
         if task["state"] == "retry":
             raise RuntimeError("组件验证不隐藏重试，保留原回执: " + str(task.get("error")))
+        workflow.dispatch()
+        workflow.update_numeric_wait()
         time.sleep(.1)
 
 
@@ -46,6 +46,7 @@ def main():
     parser.add_argument("--output", required=True)
     parser.add_argument("--parent-budget", required=True)
     parser.add_argument("--model", choices=["tiny", "deit"], default="tiny")
+    parser.add_argument("--gpus", help="可选授权 NVML 编号或 GPU UUID，逗号分隔；默认使用实际可见设备")
     args = parser.parse_args()
     parent = read_json(args.parent_budget)
     if parent["deadline_unix"] <= time.time():
@@ -54,7 +55,8 @@ def main():
     config["budget"]["parent_deadline_unix"] = parent["deadline_unix"]
     payload = experiment_payload("L2")
     if args.model == "deit":
-        config["runtime"]["allowed_gpus"] = [0]
+        config["runtime"]["allowed_gpus"] = ('auto' if args.gpus is None else
+            [int(v) if v.strip().isdigit() else v.strip() for v in args.gpus.split(',')])
         config["research_brief"]["model"] = {"name": "DeiT-B comparison input only", "scope": {"model": "deit_base_patch16_224"},
             "adapter": {"kind": "server", "config_path": "QAViT/configs/deitb_backend.json",
                         "backend_overrides": {"device": "cuda:0"}}}
@@ -64,7 +66,7 @@ def main():
         payload["execution"]["evaluation"]["count"] = 16
         payload["execution"]["resolved_choices"]["calibration_samples"] = 16
         payload["scope"]["model"] = "deit_base_patch16_224"
-        payload["resources"].update(gpu=0, estimated_seconds=240)
+        payload["resources"].update(estimated_seconds=240)
     workflow = Workflow(Path(args.output), config)
     results = {"source": "real_numeric_component_validation", "real_llm_used": False,
                "purpose": "真实L1/L2组件、Evidence缓存和配置隔离；非Agent判断验证", "model": args.model}

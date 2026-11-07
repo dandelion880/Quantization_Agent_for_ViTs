@@ -82,12 +82,8 @@ def main():
         if before["core_sha256"] != request["core_sha256"]:
             raise ContractError("工作进程启动时实现版本已过期")
         with ExitStack() as stack:
-            if request["kind"] == "experiment":
-                # CPU/GPU数值任务均共用单槽；Coding及Safeguard可在其它请求阶段推进。
-                stack.enter_context(file_lock(ROOT / "EXP/cache/v2_resources/numeric.lock",
-                    timeout=max(0, request["deadline_unix"] - time.time())))
             for key in sorted(request.get("resource_keys", [])):
-                if key.startswith("gpu:"):
+                if key.startswith("gpu:") and not os.environ.get('QAVIT_GPU_LEASE_FDS'):
                     lock = ROOT / "EXP/cache/v2_resources" / (fingerprint(key) + ".lock")
                     stack.enter_context(file_lock(lock, timeout=max(0, request["deadline_unix"] - time.time())))
             data = work(request, directory)
@@ -114,7 +110,10 @@ def main():
     result.update(task_id=request["task_id"], execution_id=request["execution_id"],
                   request_sha256=file_sha256(path), core_sha256=before["core_sha256"],
                   resources={"wall_seconds": time.monotonic() - start, "cpu_seconds": usage.ru_utime + usage.ru_stime,
-                             "peak_rss_kib": usage.ru_maxrss, "physical_gpu": request.get("gpu"), "energy_joules": None},
+                             "peak_rss_kib": usage.ru_maxrss, "physical_gpu": request.get("gpu"),
+                             "physical_gpus": request.get('gpus', []), 'parallelism': request.get('parallelism'),
+                             'gpu_bindings': request.get('gpu_bindings', []),
+                             "energy_joules": None},
                   finished_unix=time.time())
     if "experiment" in request:
         result.update(experiment_ref=request["experiment"]["id"], experiment_sha256=request["experiment"]["content_sha256"])

@@ -10,6 +10,38 @@ def evaluation_name(row):
     return "segmentation" if row["kind"] == "ade_frozen" else row["kind"]
 
 
+def classification_shard_fallback(payload, brief):
+    """Placement capability, never an admission check or a weaker result contract.
+
+    Composite required_results schemas are intentionally handled by the existing
+    serial evaluator: guessing their metric requirements would change semantics.
+    """
+    spec = payload['execution']
+    if (spec['service'] not in ('quantize_evaluate', 'evaluate_artifact')
+            or spec.get('requires_code') or spec.get('resolved_choices', {}).get('training')
+            or spec.get('backend', {}).get('kind', 'server') != 'server'):
+        return 'existing single-device backend/executor'
+    rows = spec.get('evaluations', [])
+    if not rows or any(row['kind'] != 'classification' for row in rows):
+        return 'existing single-device evaluation (non-classification or mixed)'
+    # These are exactly the scalar measures produced by evaluating.aggregate.
+    metrics = {'top1', 'top5', 'baseline_top1', 'baseline_top5', 'delta_top1_pp',
+               'top1_drop_pp', 'relative_mse', 'aggregate_relative_mse', 'mse', 'cosine_error'}
+    unsupported = {m for row in rows for m in row.get('metrics', [])} - metrics
+    if payload.get('level') == 'L3':
+        for row in spec.get('result_protocol', brief.get('evaluation_protocol', {})).get('required_results', []):
+            parts = row['path'].split('.')
+            if parts[:3] == ['evaluations', 'classification', 'metrics'] and len(parts) == 4:
+                if parts[3] not in metrics:
+                    unsupported.add(parts[3])
+            elif (parts in (['evaluations'], ['evaluations', 'classification'])
+                  or parts[:3] == ['evaluations', 'classification', 'metrics']):
+                return 'existing single-device evaluation for composite required_results schema'
+    if unsupported:
+        return 'existing single-device evaluation for required metrics: ' + ', '.join(sorted(unsupported))
+    return None
+
+
 def result_requirements(payload, brief):
     spec = payload["execution"]
     protocol = brief["evaluation_protocol"] if payload["level"] == "L3" else {}

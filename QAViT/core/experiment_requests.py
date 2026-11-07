@@ -6,13 +6,79 @@ from pathlib import Path
 import re
 from core.journal import read_json
 from core.cards import ContractError, fingerprint
-from runtime.identity import code_identity
+from runtime.identity import code_identity, measurement_implementation
 from runtime.task_queue import TERMINAL
 from tools.safeguards import approval_receipt, validate_approval
 
 
 
 class ExperimentRequests:
+    def pending_execution_rebind(self, task, *, current_core=None, measurement=None):
+        """Only explicit host recovery may refresh work without a settled result."""
+        if (task['kind'] != 'experiment_request' or task['state'] in TERMINAL
+                or not task.get('request_ref') or not task.get('experiment_ref') or not task.get('bound_code_id')):
+            return False
+        core = current_core or code_identity()['core_sha256']
+        if not any(e['type'] == 'implementation_intervention' and e['current_core_sha256'] == core
+                   for e in self.journal.events):
+            return False
+        execution = self.journal.card(task['experiment_ref'])['payload']['execution']
+        previous = execution.get('measurement_implementation')
+        if previous is None or previous == (measurement if measurement is not None else measurement_implementation()):
+            return False
+        suffix = '/revision' + str(task['code_revision']) if task.get('code_revision') else ''
+        tasks = self.tasks()
+        code = tasks.get(task['key'] + '/code' + suffix)
+        candidate = (code.get('result') or {}).get('artifact') if code and code['state'] == 'completed' else None
+        if not candidate or candidate.get('id') != task['bound_code_id']:
+            return False  # A newer Coding revision must complete through its normal path.
+        trial = tasks.get(task['key'] + '/execute' + suffix)
+        return not trial or (trial['state'] in ('pending', 'ready', 'retry') and not trial['outputs'] and (
+            trial['attempt'] == 0 or (trial['state'] in ('ready', 'retry')
+                                      and (trial.get('error') or {}).get('code') == 'InterruptedError')))
+
+    def refresh_pending_execution(self, task):
+        if not self.pending_execution_rebind(task):
+            return task
+        from tools.experiments import verify_assets
+        old = self.journal.card(task['experiment_ref'])
+        # A host repair changes measurement identity, never the frozen data/model assets.
+        verify_assets({k: v for k, v in old['payload']['execution'].items() if k != 'measurement_implementation'})
+        suffix = '/revision' + str(task['code_revision']) if task.get('code_revision') else ''
+        code = self.tasks().get(task['key'] + '/code' + suffix)
+        candidate = (code.get('result') or {}).get('artifact') if code and code['state'] == 'completed' else None
+        if not candidate or candidate['id'] != task['bound_code_id']:
+            raise ContractError('恢复执行绑定缺少同一原请求的已完成代码')
+        request = self.journal.card(task['request_ref'])
+        experiment = self.broker.bind_execution(request, candidate)
+        core = code_identity()['core_sha256']
+        previous = {'experiment_ref': old['id'], 'bound_code_id': candidate['id'], 'current_core_sha256': core}
+        self.queue.change(task['task_id'], task['state'], patch={
+            'experiment_ref': experiment['id'], 'rebound_execution_core': core,
+            'execution_binding_history': [*task.get('execution_binding_history', []), previous]},
+            cards=[experiment], events=[{'type': 'pending_execution_rebound', 'task_id': task['task_id'],
+                                        **previous, 'new_experiment_ref': experiment['id']}])
+        return self.queue.get(task['task_id'])
+
+    def wake_pending_execution_rebinds(self):
+        core, measurement = code_identity()['core_sha256'], measurement_implementation()
+        held = set()
+        for task in self.queue.snapshot().values():
+            if task['kind'] != 'experiment_request' or task['state'] in TERMINAL:
+                continue
+            suffix = '/revision' + str(task['code_revision']) if task.get('code_revision') else ''
+            trial = self.tasks().get(task['key'] + '/execute' + suffix)
+            handoff_pending = (task.get('rebound_execution_core') == core and trial
+                and trial['state'] in ('pending', 'ready', 'retry')
+                and trial['inputs']['experiment_ref'] != task.get('experiment_ref'))
+            if not handoff_pending and not self.pending_execution_rebind(task, current_core=core, measurement=measurement):
+                continue
+            if trial:
+                held.add(trial['task_id'])
+                if task['state'] == 'waiting' and trial['task_id'] in task.get('waiting_for', []):
+                    self.queue.change(task['task_id'], 'ready', patch={'waiting_for': []})
+        return held
+
     @staticmethod
     def safeguard_core_binding(task):
         """Identity fixed at review publication, never the latest retry's core.
@@ -332,6 +398,9 @@ class ExperimentRequests:
     def progress_request(self, task):
         self.retire_stale_safeguards()
         task = self.queue.get(task['task_id'])
+        if task['state'] in TERMINAL:
+            return
+        task = self.refresh_pending_execution(task)
         if self.retire_stale_clarification_return(task):
             task = self.queue.get(task['task_id'])
         if task.get("clarification_return"):
@@ -397,7 +466,9 @@ class ExperimentRequests:
             self.check_experiment_resources(experiment)
             review_core = code_identity()["core_sha256"]
             implementation = review_core[:16]
-            safeguard_key = key + "/safeguard/" + implementation + suffix
+            review_key = (key + '/binding/' + fingerprint(experiment['id'])[:16]
+                          if task.get('rebound_execution_core') else key)
+            safeguard_key = review_key + "/safeguard/" + implementation + suffix
             identifier = self.enqueue_role(safeguard_key, "safeguard", refs=[self.brief["id"], request["id"], experiment["id"]],
                 context={"request_ref": request["id"], "experiment_ref": experiment["id"], "candidate": candidate,
                          "host_implementation_sha256": review_core},
@@ -419,6 +490,19 @@ class ExperimentRequests:
         self.check_experiment_resources(experiment)
         trial_key = key + "/execute" + suffix
         prior_trial = self.tasks().get(trial_key)
+        if prior_trial and prior_trial['inputs']['experiment_ref'] != experiment['id']:
+            if (not task.get('rebound_execution_core') or prior_trial['state'] not in ('pending', 'ready', 'retry')
+                    or prior_trial['outputs'] or (prior_trial['attempt'] and
+                       (prior_trial.get('error') or {}).get('code') != 'InterruptedError')):
+                raise ContractError('已有执行任务不能静默更换冻结输入')
+            self.queue.change(prior_trial['task_id'], prior_trial['state'], patch={
+                'inputs': {'experiment_ref': experiment['id'], 'approval': approval, 'parent_task': task['task_id']},
+                'input_versions': {},
+                'superseded_execution_inputs': [*prior_trial.get('superseded_execution_inputs', []), {
+                    'inputs': prior_trial['inputs'], 'input_versions': prior_trial['input_versions'],
+                    'request_path': prior_trial.get('request_path'), 'attempt': prior_trial['attempt'],
+                    'error': prior_trial.get('error')}]})
+            prior_trial = self.queue.get(prior_trial['task_id'])
         own_result = prior_trial and prior_trial["state"] == "completed"
         cache = self.journal.card(prior_trial["outputs"][0]) if own_result else self.cached_experiment(experiment, task, approval)
         cache_reused = bool(cache and not own_result) or bool(own_result and (prior_trial.get("result") or {}).get("cache_reused"))
@@ -490,7 +574,8 @@ class ExperimentRequests:
 
     def experiment_resources(self, experiment):
         resources = experiment["payload"]["resources"]
-        keys = ["model:" + fingerprint(experiment["payload"]["execution"]["backend"])]
+        # 每个 worker 加载独立模型；只读同一 checkpoint 不构成互斥资源。
+        keys = []
         if resources.get("gpu") is not None:
             keys.append("gpu:" + str(resources["gpu"]))
         return keys

@@ -13,6 +13,7 @@ from runtime.budget import BudgetExhausted, RequestBudgetInsufficient
 from runtime.subscription import structured_output_error
 from agents.roles import role_spec
 from tools.experiments import verify_assets
+from runtime.gpu_resources import ResourceBusy, placement
 
 
 
@@ -21,6 +22,10 @@ class WorkflowDriver:
         # 旧快照可保持任务身份/尝试和读取视图，只恢复其每场互斥资源。
         tasks = self.queue.snapshot()
         for task in tasks.values():
+            if task['kind'] == 'experiment' and task['state'] in ('pending', 'ready', 'retry', 'waiting'):
+                keys = [k for k in task['resource_keys'] if not k.startswith(('model:', 'gpu:'))]
+                if keys != task['resource_keys']:
+                    self.queue.change(task['task_id'], task['state'], patch={'resource_keys': keys})
             pair = task['inputs'].get('context', {}).get('pair')
             if (task['kind'] == 'llm' and task['role'] == 'judger' and pair
                     and task['state'] not in ('running', 'completed', 'failed', 'cancelled', 'ineligible')
@@ -65,6 +70,7 @@ class WorkflowDriver:
             return {"kind": task["kind"], "experiment": experiment, "approval": inputs.get("approval"),
                     "candidate": inputs.get("candidate"),
                     "gpu": resources.get("gpu"), "cpu_threads": resources["cpu_threads"],
+                    **placement(experiment, self.config['runtime'], self.brief['payload']),
                     "estimated_seconds": resources["estimated_seconds"]}
         if task["kind"] == "literature":
             return {"kind": "literature", **inputs, "estimated_seconds": 45}
@@ -73,13 +79,20 @@ class WorkflowDriver:
 
     def dispatch(self):
         self.retire_stale_safeguards()
+        held_bindings = self.wake_pending_execution_rebinds()
         count = 0
         for candidate in self.dispatch_candidates():
             task = self.queue.get(candidate["task_id"])
+            if task['kind'] == 'experiment':
+                parent = self.queue.snapshot().get(task['inputs'].get('parent_task'))
+                if (task['task_id'] in held_bindings or (parent and parent.get('experiment_ref')
+                        and parent['experiment_ref'] != task['inputs'].get('experiment_ref'))):
+                    continue  # Same pending request must finish its current binding/Safeguard first.
             held = {key for t in self.queue.snapshot().values() if t["state"] == "running" for key in t["resource_keys"]}
             if held.intersection(task["resource_keys"]):
                 continue
             if task["kind"] in ("host_tool", "experiment_request"):
+                self.budget.numeric_wait(False)
                 self.queue.claim(task["task_id"])
                 try:
                     if task["kind"] == "host_tool":
@@ -105,10 +118,13 @@ class WorkflowDriver:
                     continue
             if task["kind"] == "experiment" and sum(t["kind"] == "experiment" for t in active) >= self.config["runtime"]["experiment_concurrency"]:
                 continue
-            # 除宿主同步动作外，LLM、实验及文献worker合计也有固定上限。
-            if sum(t['kind'] not in ('host_tool', 'experiment_request') for t in active) >= self.config['runtime']['llm_concurrency'] + 1:
+            # 保留原非数值 worker 上限；只移除数值执行对这些槽的占用。
+            if task['kind'] != 'experiment' and sum(t['kind'] not in ('host_tool', 'experiment_request', 'experiment')
+                                                   for t in active) >= self.config['runtime']['llm_concurrency'] + 1:
                 continue
             refs = task["inputs"].get("refs", []) + ([task["inputs"]["experiment_ref"]] if task["inputs"].get("experiment_ref") else [])
+            if task['kind'] != 'experiment':
+                self.budget.numeric_wait(False)
             versions = {ref: self.journal.card(ref)["content_sha256"] for ref in refs}
             if task["kind"] == "experiment":
                 experiment = self.journal.card(task["inputs"]["experiment_ref"])
@@ -140,11 +156,23 @@ class WorkflowDriver:
                                task_id=task["task_id"], added_refs=stale, memory_version=self.journal.memory_version)
             try:
                 self.runtime.launch(task, self.request_body(task), input_versions=versions)
+            except ResourceBusy:
+                continue
             except RequestBudgetInsufficient as exc:
                 self.queue.claim(task["task_id"], input_versions=versions)
                 self.queue.fail(task["task_id"], {"code": type(exc).__name__, "message": str(exc)})
             count += 1
         return count
+
+    def update_numeric_wait(self):
+        tasks = list(self.queue.snapshot().values())
+        numeric = any(t['kind'] == 'experiment' and t['state'] in ('pending', 'ready', 'running', 'retry') for t in tasks)
+        agent = any(t['kind'] != 'experiment' and t['state'] in ('ready', 'running', 'retry') for t in tasks)
+        self.budget.numeric_wait(numeric and not agent)
+
+    def numeric_running(self):
+        return self.budget.excludes_numeric and any(t['kind'] == 'experiment' and t['state'] == 'running'
+                                                   for t in self.queue.snapshot().values())
 
 
     def wait_for(self, task, ids, **patch):
@@ -384,13 +412,18 @@ class WorkflowDriver:
                 # 崩溃前已提交的工作结果优先接收；不消耗新的实验或模型调用。
                 self.poll()
                 while True:
-                    budget = self.budget.check()
+                    budget = self.budget.check(allow_numeric_drain=self.numeric_running())
                     self.poll()
+                    self.update_numeric_wait()
                     self.release_scope_closeout_reserve()
                     budget = self.budget.snapshot()
                     if self.transport_blocked:
                         status, error = "blocked", self.transport_blocked
                         break
+                    if self.numeric_running() and budget['research_remaining_seconds'] <= 0:
+                        # 收尾/总智能体时间不足时先接收已启动实验；不再启动新科学工作。
+                        time.sleep(.1)
+                        continue
                     if time.time() >= budget["worker_deadline_unix"]:
                         status, error = "budget_exhausted", "到达停机预留边界；保存现场，未完成阶段保持未完成"
                         break
@@ -430,6 +463,7 @@ class WorkflowDriver:
                         status = "scope_target_reached" if self.scope_target_reached() else "completed"
                         break
                     dispatched = self.dispatch()
+                    self.update_numeric_wait()
                     tasks = self.queue.snapshot().values()
                     if not dispatched and not any(t["state"] in ("running", "ready", "retry") for t in tasks):
                         status = "needs_clarification" if any(t["state"] == "needs_clarification" for t in tasks) else "blocked"
@@ -447,7 +481,8 @@ class WorkflowDriver:
                 status, error = "failed", {"code": type(exc).__name__, "message": str(exc)}
             finally:
                 failures = []
-                for step, action in (("release_workers", self.runtime.stop), ("accept_durable_receipts", self.poll)):
+                for step, action in (("close_numeric_wait", lambda: self.budget.numeric_wait(False)),
+                                     ("release_workers", self.runtime.stop), ("accept_durable_receipts", self.poll)):
                     try:
                         action()
                     except Exception as exc:

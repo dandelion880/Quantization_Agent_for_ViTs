@@ -3,6 +3,7 @@ from copy import deepcopy
 import gc
 import importlib.util
 from pathlib import Path
+import os
 
 from runtime.paths import ROOT, QAVIT
 from core.cards import ContractError, fingerprint
@@ -23,8 +24,8 @@ def tensor_state(value):
     return value
 
 
-def backend_configuration(execution):
-    """Resolve the existing effective numerical configuration without loading assets."""
+def source_configuration(execution):
+    """Read the adapter configuration without numerical initialization."""
     from ptq_agent.configuration import load_config
     adapter = execution["backend"]
     path = adapter.get("config_asset", {}).get("path") or adapter.get("config_path")
@@ -33,6 +34,18 @@ def backend_configuration(execution):
         cfg = load_config(path)
     else:
         cfg = deepcopy(adapter["config"])
+    return cfg
+
+
+def backend_device(execution):
+    cfg = source_configuration(execution)
+    return execution['backend'].get('backend_overrides', {}).get('device', cfg.get('backend', cfg).get('device', 'cpu'))
+
+
+def backend_configuration(execution):
+    """Resolve the existing effective numerical configuration without loading assets."""
+    adapter = execution['backend']
+    cfg = source_configuration(execution)
     # 后端原有 search/selection 是MVP政策，不是v2科研约束。
     # 保留其数值配置，移除另一个工作流的固定选择门禁。
     loop = cfg.setdefault("loop", {})
@@ -46,6 +59,8 @@ def backend_configuration(execution):
     cfg["constraints"].update(precision_mode="mixed", allowed_formats=list(FORMATS),
                               fixed_weight_format=None, fixed_activation_format=None, fixed_layers={})
     cfg["backend"].update(deepcopy(adapter.get("backend_overrides", {})))
+    if os.environ.get('QAVIT_RESOURCE_ASSIGNED') == '1' and str(cfg['backend'].get('device')).startswith('cuda'):
+        cfg['backend']['device'] = 'cuda:0'  # physical placement is in the task receipt
     return cfg
 
 
@@ -301,7 +316,7 @@ def tensor_probe(experiment, backend, cfg, data, directory, approval):
                             if experiment["payload"]["level"] == "L2" else {})}}}
 
 
-def evaluate_services(experiment, backend, cfg, data, directory, approval):
+def evaluate_services(experiment, backend, cfg, data, directory, approval, gpus=()):
     from ptq_agent.execution.pipeline import QuantizationExecutor, plan_uses_calibration
     from ptq_agent.execution.model import RTNExecutor
     from core.execution_contract import validate_plan_schema
@@ -392,10 +407,18 @@ def evaluate_services(experiment, backend, cfg, data, directory, approval):
             raise ContractError("导出包实际校准样本与冻结 calibration 视图不一致")
     before = model_digest(model)
     evaluations = {}
+    from tools.result_contract import classification_shard_fallback
+    fallback = classification_shard_fallback(experiment['payload'], {})
     for requested in spec["evaluations"]:
         if requested["kind"] == "classification":
-            value = evaluate(backend, cfg, data, model, plan, requested["split"], requested.get("count"), None,
+            if native and len(gpus) > 1 and fallback is None:
+                from tools.classification_shards import evaluate_parallel
+                value = evaluate_parallel(experiment, backend, cfg, data, model, plan, requested, model_dir, directory, gpus)
+            else:
+                value = evaluate(backend, cfg, data, model, plan, requested["split"], requested.get("count"), None,
                              **({"native": False, "sites": coverage["declared_sites"]} if not native else {}))
+                value['parallelism'] = {'shards': 1, 'fallback': fallback,
+                                        'physical_gpus': list(gpus[:1])}
             atomic_json(directory / "classification.json", value)
             evaluations["classification"] = {"metrics": {k: v for k, v in value["metrics"].items()
                                                            if isinstance(v, (int, float, bool)) or v is None},
@@ -418,6 +441,7 @@ def evaluate_services(experiment, backend, cfg, data, directory, approval):
     if model_digest(model) != before:
         raise ContractError("评测改变了候选模型状态")
     files = [asset(p) for p in sorted(directory.glob("*.json")) if p.name not in ("request.json", "started.json", "result.json")]
+    files.extend(asset(p) for p in sorted((directory / 'shards').glob('*/result.json')))
     if model_dir.parent == directory:
         files.extend(asset(p) for p in model_files or sorted(p for p in model_dir.rglob('*') if p.is_file()))
     return {"observations": {"evaluations": evaluations, "coverage": coverage, "reload": reload_check,
@@ -462,14 +486,14 @@ def run_experiment(request, directory):
     if torch.cuda.is_available():
         torch.cuda.manual_seed_all(seed)
     original = model_digest(backend.model)
-    isolation = protect_files(directory)
+    isolation = protect_files(directory, cuda_device_nodes=[g['device_node'] for g in request.get('gpu_bindings', [])])
     try:
         if spec["service"] == "profile":
             result = profile_service(experiment, backend, cfg, data, directory)
         elif spec["service"] == "tensor_probe":
             result = tensor_probe(experiment, backend, cfg, data, directory, approval)
         elif spec["service"] in ("evaluate_artifact", "quantize_evaluate"):
-            result = evaluate_services(experiment, backend, cfg, data, directory, approval)
+            result = evaluate_services(experiment, backend, cfg, data, directory, approval, request.get('gpus', []))
         else:
             plugin = module_from_approval(approval, experiment)
             from tools.runtime_interface import execute_custom

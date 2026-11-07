@@ -180,3 +180,23 @@ coverage.xml
 !/EXP/validation/parallel_debate_20261106_r1/REPORT.md
 !/EXP/validation/parallel_debate_20261106_r1/PSEUDOCODE.md
 !/EXP/validation/parallel_debate_20261106_r1/DELIVERY.json
+
+# Concise parallel/budget preparation delivery; raw workers and model packages stay local.
+!/EXP/validation/parallel_finish_20261106_r1/
+!/EXP/validation/parallel_finish_20261106_r1/REPORT.md
+!/EXP/validation/parallel_finish_20261106_r1/PSEUDOCODE.md
+!/EXP/validation/parallel_finish_20261106_r1/DELIVERY.json
+!/EXP/validation/parallel_finish_20261106_r1/NEXT_RUN_RUNTIME.json
+!/EXP/validation/parallel_finish_20261106_r1/smoke.py
+!/EXP/validation/parallel_finish_20261106_r1/frozen_compare.py
+!/EXP/validation/parallel_finish_20261106_r1/gpu_resume.py
+!/EXP/validation/parallel_finish_20261106_r1/gpu_resume_continue.py
+!/EXP/validation/parallel_finish_20261106_r1/FINAL_SOURCE_IDENTITY.json
+
+# Concise adaptive-resource repair delivery; raw runs and fallback archive stay local.
+!/EXP/validation/adaptive_finish_20261106_r1/
+!/EXP/validation/adaptive_finish_20261106_r1/REPORT.md
+!/EXP/validation/adaptive_finish_20261106_r1/PSEUDOCODE.md
+!/EXP/validation/adaptive_finish_20261106_r1/DELIVERY.json
+!/EXP/validation/adaptive_finish_20261106_r1/gpu_smoke.py
+!/EXP/validation/adaptive_finish_20261106_r1/ROLLBACK.md

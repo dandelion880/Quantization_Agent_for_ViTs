@@ -18,7 +18,14 @@ class ParallelRequests(TempCase):
     begin = delivery.DeliveryRegression.begin
 
     def test_busy_coding_queues_all_matches_and_returns_only_own_evidence_after_restore(self):
+        self.exercise_pipeline(1, 3)
+
+    def test_independent_experiments_overlap_coding_and_keep_ownership(self):
+        self.exercise_pipeline(3, 12)
+
+    def exercise_pipeline(self, concurrency, hold):
         wf = self.workflow(1)
+        wf.config['runtime']['experiment_concurrency'] = concurrency
         owners, requests, starts, returned = [], [], [], {}
         choices = {'site': 'blocks.0.mlp.fc2',
                    'parameters': {'bits': 4, 'signed': True, 'granularity': 'per_tensor'},
@@ -62,12 +69,15 @@ class ParallelRequests(TempCase):
                              for t in wf.queue.snapshot().values()), 1)
 
         pipeline, restored, evidence_refs = False, False, []
+        maximum_numeric = 0
         for tick in range(1, 50):
             with patch.object(wf.runtime, 'launch', side_effect=launch):
                 wf.dispatch()
             active = [t for t in wf.queue.snapshot().values() if t['state'] == 'running']
             self.assertLessEqual(sum(t['role'] == 'coding' for t in active), 1)
-            self.assertLessEqual(sum(t['kind'] == 'experiment' for t in active), 1)
+            numeric = sum(t['kind'] == 'experiment' for t in active)
+            maximum_numeric = max(maximum_numeric, numeric)
+            self.assertLessEqual(numeric, concurrency)
             pipeline |= (any(t['kind'] == 'experiment' for t in active)
                          and any(t['role'] in ('coding', 'safeguard') for t in active))
             for task in active:
@@ -77,7 +87,7 @@ class ParallelRequests(TempCase):
                     wf.submit(task, {'approved': True, 'rationale': 'fixture approval'}, 'SCRIPTED')
                 elif task['kind'] == 'experiment':
                     started = next(at for tid, at in starts if tid == task['task_id'])
-                    if tick - started < 3:
+                    if tick - started < hold:
                         continue  # Leave numerical work active while other stages progress.
                     ref = task['inputs']['experiment_ref']
                     ev = make_card('EvidenceCard', wf.journal.run_id, {
@@ -89,11 +99,13 @@ class ParallelRequests(TempCase):
                     evidence_refs.append(ev['id'])
             if not restored and any(t['kind'] == 'experiment' for t in active):
                 wf = Workflow(wf.run_dir)
+                wf.config['runtime']['experiment_concurrency'] = concurrency
                 restored = True
             if len(returned) == 3:
                 break
         self.assertTrue(restored)
         self.assertTrue(pipeline)
+        self.assertGreaterEqual(maximum_numeric, min(concurrency, 2))
         self.assertEqual(len(returned), 3)
         self.assertEqual(len(evidence_refs), 3)
         self.assertEqual({refs[0] for refs in returned.values()}, set(evidence_refs))

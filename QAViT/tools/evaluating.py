@@ -63,6 +63,9 @@ def aggregate(results):
             raise ValueError("分片代码/方案/模型身份不一致")
     evaluations = [row["evaluation"] for row in rows]
     split = evaluations[0]["split"]
+    if any(e['split'] != split or e['protocol'].get('requested_count') != evaluations[0]['protocol'].get('requested_count')
+           for e in evaluations):
+        raise ValueError('分片评测视图不一致')
     ids = [sid for evaluation in evaluations for sid in evaluation["sample_ids"]]
     expected = first["data_protocol"]["split_ids"][split]
     if len(ids) != len(set(ids)):
@@ -78,6 +81,7 @@ def aggregate(results):
             for field, value in sums.items():
                 dest[field] = max(dest[field], value) if field == "max_abs_error" else dest[field] + value
     metrics = errors.result()
+    metrics['raw_error_sums'] = deepcopy(errors.sums)
     counts = None
     if evaluations[0]["classification_counts"] is not None:
         counts = {k: sum(e["classification_counts"][k] for e in evaluations)
@@ -85,7 +89,7 @@ def aggregate(results):
         metrics.update({k: 100 * v / len(ids) for k, v in counts.items()})
         metrics["delta_top1_pp"] = metrics["top1"] - metrics["baseline_top1"]
         metrics["top1_drop_pp"] = -metrics["delta_top1_pp"]
-    full = split == "final" and first["data_protocol"].get("full_validation", False) and selection is None
+    full = split == "final" and first["data_protocol"].get("full_validation", False) and expected == first['data_protocol']['split_ids'][split]
     return {"status": "completed", "data": {k: v for k, v in first.items() if k != "evaluation"} | {
         "evaluation": {"status": "completed", "split": split, "sample_count": len(ids), "sample_ids": expected,
                        "classification_counts": counts, "metrics": metrics,
@@ -95,8 +99,10 @@ def aggregate(results):
                        "protocol": first["data_protocol"], "scope": "complete ImageNet validation 50000" if full else "subset",
                        "shard_timings": [e["timing"] for e in evaluations], "native_low_precision_kernel": False,
                        "latency_interpretation": "per-worker reference QDQ overhead, no native speedup claim"}},
-        "cpu_seconds": sum(r["cpu_seconds"] for r in results),
-        "worker_wall_seconds_sum": sum(r["elapsed_seconds"] for r in results),
+        "cpu_seconds": (sum(r["cpu_seconds"] for r in results)
+                        if all(r["cpu_seconds"] is not None for r in results) else None),
+        "worker_wall_seconds_sum": (sum(r["elapsed_seconds"] for r in results)
+                                    if all(r["elapsed_seconds"] is not None for r in results) else None),
         "peak_rss_kib_by_worker": [r["peak_rss_kib"] for r in results],
         "aggregation": "sum integer correct counts and FP64 error accumulators; same single-image forwards"}
 

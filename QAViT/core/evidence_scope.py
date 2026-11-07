@@ -60,8 +60,11 @@ def contains(measured, stated):
     if isinstance(measured, dict):
         return isinstance(stated, dict) and all(k in measured and contains(measured[k], v) for k, v in stated.items())
     if isinstance(stated, list):
+        if not stated:
+            return False
         available = measured if isinstance(measured, list) else [measured]
-        return bool(stated) and all(any(canonical(v) == canonical(a) for a in available) for v in stated)
+        available_keys = {canonical(value) for value in available}
+        return all(canonical(value) in available_keys for value in stated)
     if isinstance(measured, list):
         return any(canonical(stated) == canonical(a) for a in measured)
     return canonical(measured) == canonical(stated)

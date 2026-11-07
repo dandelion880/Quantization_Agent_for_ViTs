@@ -52,17 +52,17 @@ def state_sha(model):
     return h.hexdigest()
 
 
-def setup_segmentation(seed=42, threads=4):
+def setup_segmentation(seed=42, threads=None):
     import random
     import numpy as np
     import torch
-    visible = os.environ.get('CUDA_VISIBLE_DEVICES', '').split(',')
-    if not visible or len(set(visible)) != len(visible) or any(g not in ('1', '2', '3') for g in visible):
-        raise ValueError('既有ADE入口只允许显式物理GPU 1/2/3')
+    # Placement/authorization belongs to the host UUID lease. Here the supplied
+    # model device is worker-local (normally cuda:0); CPU remains a valid path.
     random.seed(seed)
     np.random.seed(seed)
     torch.manual_seed(seed)
-    torch.set_num_threads(threads)
+    if threads is not None:
+        torch.set_num_threads(threads)
     torch.backends.cudnn.benchmark = False
     torch.backends.cudnn.deterministic = True
     torch.backends.cuda.matmul.allow_tf32 = False

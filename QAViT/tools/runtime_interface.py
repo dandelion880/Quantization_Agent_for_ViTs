@@ -67,6 +67,27 @@ def execute_custom(plugin, payload, backend, cfg, data, directory):
         raise ContractError("自定义执行改写了冻结基准或参数")
     if not isinstance(value, dict) or not isinstance(value.get("observations"), dict):
         raise ContractError("自定义实验缺少规范 observations")
+    evaluations = value["observations"].get("evaluations", {})
+    if not isinstance(evaluations, dict):
+        raise ContractError("observations.evaluations 必须是对象")
+    for name, row in evaluations.items():
+        if not isinstance(row, dict):
+            raise ContractError("observations.evaluations." + str(name) + " 必须是对象")
+    # Optional artifact output is a list of the existing path/hash/size receipts.
+    # An empty mapping conveys no assets; normalize it before host append/merge.
+    artifacts = value.get("artifacts", [])
+    if isinstance(artifacts, dict) and not artifacts:
+        artifacts = []
+    if not isinstance(artifacts, list):
+        raise ContractError("自定义实验 artifacts 必须为资产列表；无资产时省略或使用 []/{}")
+    for index, row in enumerate(artifacts):
+        if (not isinstance(row, dict)
+                or not isinstance(row.get("path"), str) or not row["path"].strip()
+                or not isinstance(row.get("sha256"), str) or len(row["sha256"]) != 64
+                or any(c not in "0123456789abcdef" for c in row["sha256"])
+                or type(row.get("bytes")) is not int or row["bytes"] < 0):
+            raise ContractError("自定义实验 artifacts[" + str(index) + "] 须包含非空 path、SHA256 和非负整数 bytes")
+    value["artifacts"] = artifacts
     value.pop("execution_facts", None)
     if isinstance(value.get("observations", {}).get("reload"), dict):
         value["observations"]["reload"].pop("host_verified", None)
@@ -87,10 +108,14 @@ def execute_custom(plugin, payload, backend, cfg, data, directory):
             # 超额读取也是真实范围，不能以插件自报 sample_selection 隐藏它。
             if measured.get(split, {}).get("sample_ids") != expected:
                 raise ContractError("自定义执行实际读取范围与冻结 " + key + " 不一致")
-    for row in value["observations"].get("evaluations", {}).values():
-        if row.get("sample_ids") != measured.get(row.get("split"), {}).get("sample_ids"):
+    for row in evaluations.values():
+        split = row.get("split")
+        if not isinstance(split, str) or split not in measured:
+            raise ContractError("自定义评测 split 必须是具有实际数据读取支持的字符串")
+        actual = measured[split]
+        if row.get("sample_ids") != actual["sample_ids"]:
             raise ContractError("自定义评测 sample_ids 没有实际数据读取支持")
-        if row.get("full_dataset") is True and measured[row["split"]]["full_dataset"] is not True:
+        if row.get("full_dataset") is True and actual["full_dataset"] is not True:
             raise ContractError("自定义评测 full_dataset 没有实际完整数据范围支持")
     value["execution_facts"] = {"measurement_kind": "custom_local_statistic" if sites else "custom_computation",
         "sites": sorted(sites), "data": measured, "parameters": deepcopy(parameters), "forward_calls": len(calls)}

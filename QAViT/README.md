@@ -87,10 +87,12 @@ python -B QAViT/run.py report EXP/runs/<新运行名>
 
 受控短任务可显式设置 `scope_target={"round":2,"stage":"generation"}`：第一轮照常运行，第二轮三份 Generation 正式提交且相关子请求结算后写入 `scope_target_reached`，不发布第二轮 screen 或 Recorder，不写第二轮完成事件。恢复同一终点不会继续调度。
 
-新输入可选择 `budget.clock_mode="active_segments"`。`run.py` 外层监控固定每段截止，并在 Supervisor、LLM CLI 和实验 worker 全部退出后结算；暂停修复不消耗余额，未知崩溃间隔保守计入，恢复不续借额度。旧输入默认连续墙钟语义保持不变。独立范围状态、已完成轮次和数值/Recorder 状态分别报告。
+新输入可选择 `budget.clock_mode="active_segments"`。未启用数值等待排除时，`run.py` 外层监控固定每段截止；新模板同时启用 `exclude_numeric_wait`，监控按智能体余额动态跟随，数值任务保留自身超时。Supervisor、LLM CLI 和实验 worker 全部退出后结算；暂停修复不消耗余额，未知崩溃间隔保守计入，恢复不续借额度。旧输入默认连续墙钟语义保持不变。
 
 该累计计时短任务在第一轮普通 Recorder 完成、或第一轮已正式结束并保存延期状态后，持久化释放无第二轮 Recorder 可消费的收尾预留。原配置数值及对应 Recorder 状态仍保留，预算回执分别展示原配置与有效预留；总额、段截止及停机预留不变。旧连续计时运行不采用此规则。
 
-用户后续明确增加累计总时长时，操作方可在确认完全停机后，以独立用户授权文件调用 `authorize_total_wall_seconds`，追加授权事件；该入口不向科研智能体开放。原输入、已消费时长及运行段不改写，下一段从新总额减去原累计消耗固定截止。通用 `extend-budget` 仍不用于此累计模式；无新授权不得增加额度。
+用户后续明确增加累计总时长时，操作方可在确认完全停机后，以独立用户授权文件调用 `authorize_total_wall_seconds`，追加授权事件；该入口不向科研智能体开放。原输入、已消费时长及运行段不改写，下一段从新总额减去原累计消耗计算余额，截止仍遵循所选计时模式。通用 `extend-budget` 仍不用于此累计模式；无新授权不得增加额度。
 
 非 per_tensor 合法计划可在 prepare 使用宿主声明的 shape 观察视图取得真实输入后验证；局部诊断仅 calibration，不能读取 search/final。shape 观察记录 split、样本和用途，不冒充 calibration 拟合。预检连接/服务故障及超时走既有有限重试，每次重新真实预检；认证、额度、计费边界和隔离错误仍停止。
+
+新运行采用自适应允许 GPU 池，默认独立实验各用一卡并发；LLM 保持非 Judger 单通道和 Judger 最多三并发。实验内部多卡仅用于指标兼容的 server 原生非训练纯分类评测，其它情况自动沿单卡。研究输入集中设置 `runtime.allowed_gpus`（auto、编号/UUID数组或[]）及 `experiment_concurrency`（auto或整数）；发现规则与硬件对照配置见 [执行说明](docs/EXECUTION.md)。新模板启用 active_segments + exclude_numeric_wait；历史运行不静默改配置。最新 [修复报告](../EXP/validation/adaptive_finish_20261106_r1/REPORT.md) 与 [当前伪代码](../EXP/validation/adaptive_finish_20261106_r1/PSEUDOCODE.md) 记录本轮验证、回退快照和限制；此前 [有界五卡验证](../EXP/validation/parallel_finish_20261106_r1/REPORT.md) 仅表示当时环境实测。

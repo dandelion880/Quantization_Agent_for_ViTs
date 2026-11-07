@@ -23,15 +23,15 @@
   },
   "budget": {
     "max_rounds": 10,
-    "wall_seconds": 21600
+    "wall_seconds": 21600,
+    "clock_mode": "active_segments",
+    "exclude_numeric_wait": true
   },
   "runtime": {
     "cpu_threads": 4,
-    "allowed_gpus": [
-      0
-    ],
+    "allowed_gpus": "auto",
     "llm_concurrency": 4,
-    "experiment_concurrency": 1,
+    "experiment_concurrency": "auto",
     "task_timeout_seconds": 600
   },
   "llm": {

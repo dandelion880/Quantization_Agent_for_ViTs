@@ -86,7 +86,10 @@ def call_once(spec, directory, deadline):
             audit["model_call_started"] = True
             audit["started_unix"] = time.time()
             atomic_json(directory / "llm_audit.json", audit)
-            code, stdout, stderr = cli.run(client.command(working), working, remaining(), canonical(asdict(request)))
+            transport = asdict(request)
+            # system_prompt 已作为 CLI instructions 完整传输，stdin 不再重复。
+            transport.pop('system_prompt')
+            code, stdout, stderr = cli.run(client.command(working), working, remaining(), canonical(transport))
             audit["exit_code"] = code
             audit["stderr"] = {"bytes": len(stderr.encode()), "sha256": hashlib.sha256(stderr.encode()).hexdigest(),
                                "category": cli.failure_category(stderr)}

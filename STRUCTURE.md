@@ -62,3 +62,7 @@ EXP 严格按 `.gitignore` 中的准确路径放行：`implementation/v2_structu
 `QAViT/runtime/run_segments.py`：仅用于新输入明确选择的累计运行段监控；固定截止、确认全部进程停止后结算，旧运行不迁移。`EXP/validation/controlled_run_20261105_r1/` 保存本次终点/计时/预检/shape 修订、定向验证、新输入及真实运行交付。
 
 `QAViT/tests/test_parallel_runtime.py`、`test_parallel_requests.py`：有界工作进程时间重叠、订阅槽、数值单槽、请求排队/流水及原任务回执回归。`EXP/validation/parallel_debate_20261106_r1/` 保存本轮并行化验证、最小真实CLI调用与当前伪代码；历史科研运行不覆盖。
+
+2026-11-06 并行与预算收尾：`runtime/gpu_resources.py` 管理项目共享GPU租约及按需分配；`tools/classification_shards.py` 复用冻结包逐图分类与汇总。`runtime/budget.py`/`run_segments.py` 在新运行显式启用纯数值等待排除及持续余额监控。测试 `test_numeric_parallel_budget.py` 和 `test_parallel_requests.py` 覆盖等待、重叠、恢复与归属；本次报告、伪代码及有界验证在 `EXP/validation/parallel_finish_20261106_r1/`。
+
+2026-11-06 自适应资源修复：`runtime/gpu_resources.py` 冻结可见性/分配/显式授权交集和 UUID 身份；`tools/result_contract.py` 复用冻结必需结果判断分类分片能力；`runtime/task_runtime.py` 在有效回执与进程完全退出之间保留资源归属。`tests/test_adaptive_resources.py` 覆盖不同资源池、协议回退与慢收尾/恢复。`EXP/validation/adaptive_finish_20261106_r1/` 保存本轮修复前源码快照、伪代码、验证与报告；不覆盖历史实验。

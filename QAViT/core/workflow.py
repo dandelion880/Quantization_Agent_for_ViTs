@@ -34,7 +34,7 @@ class Workflow(RoleInteraction, ExperimentRequests, WorkflowDriver):
         if config is not None:
             if self.run_dir.exists():
                 raise ContractError("新运行目录已存在，不覆盖历史")
-            config = config_check(deepcopy(config))
+            config = config_check(deepcopy(config), resolve_resources=True)
             self.run_dir.mkdir(parents=True)
             identity = code_identity()
             atomic_json(manifest, {"schema_version": "qavit.run/2", "run_id": self.run_dir.name,

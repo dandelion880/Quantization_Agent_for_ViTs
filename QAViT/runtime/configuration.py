@@ -8,7 +8,7 @@ def model_defaults():
     return read_json(QAVIT / "configs/models.json")
 
 
-def config_check(config):
+def config_check(config, *, resolve_resources=False):
     if config.get("schema_version") != "qavit.research/2":
         raise ContractError("不是 v2 研究配置")
     validate_payload("ResearchBrief", config["research_brief"])
@@ -25,6 +25,9 @@ def config_check(config):
         if not isinstance(value, (list, tuple)) or len(value) != 2 or not all(isinstance(v, str) and v for v in value):
             raise ContractError("模型路由须为 [model, effort]")
     runtime = config.setdefault("runtime", {})
+    if resolve_resources:
+        from runtime.gpu_resources import resolve_runtime_resources
+        resolve_runtime_resources(runtime)
     runtime.setdefault("cpu_threads", 4)
     runtime.setdefault("llm_concurrency", 4)
     runtime.setdefault("experiment_concurrency", 1)
@@ -38,8 +41,6 @@ def config_check(config):
         raise ContractError("GPU编号必须为非负整数")
     if type(runtime["llm_concurrency"]) is not int or not 1 <= runtime["llm_concurrency"] <= 4:
         raise ContractError("LLM 总并发须为1到4：最多3个Judger及1个其它角色")
-    if runtime["experiment_concurrency"] != 1:
-        raise ContractError("真实数值实验全局并发必须为1")
     if config.get("enable_l3") is not True and config.get("enable_l3") is not False:
         raise ContractError("请明确本次运行是否启用 L3；验证配置必须关闭")
     if config["purpose"] == "validation" and config["enable_l3"]:

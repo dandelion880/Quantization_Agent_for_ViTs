@@ -33,7 +33,17 @@ ReviewDecisionCard 保留 rationale 及本任务的实质决定。screening 的 
 
 初始 H1–H2、H1–H3、H2–H3 三场独立推进，各自按需取证、讨论和结案；全部提交 match_closed 后才统一选择 H*。恢复时沿各场已有任务和结案事件继续，不重复结案。之后仍只比较 H4–H*。每场最终裁决包括 tie/undetermined 一经结案即固定，拒绝非空改判请求，不再生成改判字段或修订卡片。旧记录保持可读，不改写历史。每对最多五次交锋；本场取证、真实结果核验及 Recorder 科研知识更新保留，后到证据不能改写已结案结果。
 
-默认 runtime.llm_concurrency=4（可设1–4保留较低上限）；Judger最多3个调用，每场同时1个，调度优先服务较久未获调用的配对。其余角色共享原串行资源，Coding、Safeguard、Generation、Evolution、Recorder各自最多1个且彼此合计最多1个；可与其它场Judger重叠。项目订阅锁相应为Judger三个槽与其余角色单槽，仍逐调用核验原账户、模型、额度和工具隔离。异步工作进程总数最多llm_concurrency+1（默认5，含文献worker）。真实数值执行固定最多1个，并保留项目级CPU/GPU共用数值锁。实验请求在Coding忙时正常入队，沿原单份Coding→Safeguard→数值执行流程返回原申请任务，不添加审批。每次模型调用保留独立提交快照；同回合A/B隔离不变，当前场不自动接收其它场的立场或裁决正文，相关历史及Memory仍可按需读取。并发耗时分别审计，全局预算沿原墙钟/运行段计算，不叠加worker耗时。旧运行显式保存的llm_concurrency=1继续遵守该上限，历史结果不迁移或重写。
+默认 runtime.llm_concurrency=4（可设1–4）；Judger最多3个，每场同时1个；其它角色合计单通道。项目订阅锁保持3+1。数值实验使用独立 experiment_concurrency 上限，新模板为 auto，解析后等于允许 GPU 池大小（CPU 路径为1）；显式整数上限保持有效。原非数值worker合计上限llm_concurrency+1保留，数值不占这些槽。不以相同模型checkpoint或全局numeric锁串行化独立实验。GPU按空闲情况分配，以 UUID 文件租约跨进程互斥；worker及分片继承租约，忙卡留在ready队列，不占尝试/重试次数。Coding→Safeguard→执行→原请求Evidence链不变。旧运行显式并发1仍遵守原配置。
+
+新运行 runtime.allowed_gpus="auto"（省略时同义）从 CUDA 实际可见 UUID、容器设备访问和分配环境取交集，不直接使用主机全部 NVML 设备。支持 CUDA_VISIBLE_DEVICES 的实际逻辑映射及 SLURM_JOB_GPUS/SLURM_STEP_GPUS 分配范围；NVIDIA_VISIBLE_DEVICES 的 UUID 范围也会收窄。允许设备可在同一研究 JSON 中显式设为 NVML 编号或完整 GPU UUID 数组，[] 禁用 GPU；显式范围仍与实际可见性取交集。自动探测不可靠时可集中提供 runtime.gpu_inventory=[{"index":编号,"uuid":"完整GPU-UUID","device_node":"/dev/nvidia设备minor"}]，以 CUDA_VISIBLE_DEVICES=GPU-UUID,... 明确可见性；不会猜测不可靠的编号对应关系。新运行冻结解析后的 allowed_gpus、gpu_bindings 和 gpu_selection；恢复不扩大冻结池、不改配置身份，当前设备仅按冻结 UUID 匹配，即使 NVML 编号或设备 minor 改变也不换卡。暂时不可见的冻结设备保留排队；资源范围确需改变时使用新的研究输入。
+
+resources.gpu 的数字是本运行冻结的 NVML 编号标签；CUDA worker 通过 UUID 只暴露所租主卡，其模型设备统一为逻辑 cuda:0。容器 /dev/nvidia minor 另行按 UUID 对应，不能由编号拼猜。每个运行进程仅解析一次设备身份（恢复进程重新解析），避免反复 CUDA 初始化造成瞬时占用；排队只刷新占用和租约，不支持运行中热插拔扩池。ADE 与其它后端共用此路径，不再对旧物理编号另设限制。完整 result.json 写出后继续保留任务和资源占用，等待登记的 worker/子进程退出；默认30秒退出宽限后仅清理这些已完成进程，再接收原回执，恢复也沿用此状态。科学结果不因正常退出收尾变成失败，设备不会在进程仍存活时释放。
+
+resources.gpu 可选，指定时固定主卡；不指定时从 allowed_gpus 自动选择。默认每实验一卡；可选 gpu_count 是尽力使用的卡数，不能突破授权集合。当前仅 server 后端、原生非训练 quantize_evaluate/evaluate_artifact 的纯 classification 评测支持实验内多卡：单卡prepare/校准/导出一次，分片重载同一冻结包，复用逐图evaluate和aggregate，按整数correct counts与FP64误差累加器汇总，核对模型、请求身份及完整不重复样本。仅在必需指标可汇总时启用；latency_ms、measured_speedup、CUDA显存等必需指标及无法解释的组合 required_results schema 自动选择原单卡评测，保留全部要求。局部探针、profiling、factory/fixture、自定义executor、ADE或混合评测仍沿单卡；少卡时减卡或单卡，忙卡等待。配置 experiment_concurrency=1 可限制跨实验数值并发，gpu_count=1 可限制实验内部多卡，均不改变 LLM 并发。实际卡和回退原因写入回执；分片原始结果归档，不填造未采集的性能统计，不从QDQ耗时声称部署加速。
+
+新模板明确启用 budget.clock_mode="active_segments"、budget.exclude_numeric_wait=true。累计智能体预算扣除纯数值执行/资源排队/结果等待的区间，并行推理、Coding、审核等期间仍扣时，重叠只计一次。数值 estimated_seconds 沿用单任务超时，不再与智能体剩余时长比较；已启动实验不会被总时长或收尾预留截断，余额不足时先接收它们，不再启动新工作。外层监控跟随同一余额，暂停只在所有自有进程退出后结算，恢复不重置消费；等待检查点之后的未知崩溃间隔保守计时。人工停止、磁盘限制及单任务超时保留。旧未启用的连续/活动段预算保持原语义。
+
+每次调用保留独立提交快照及同回合A/B隔离。自动最新发现与数据校验引用仅来自当前任务已关联的证据，自身结果及明确引用支持仍交付；公开Memory按需读取权限不变，不自动灌入无关外场测量。
 
 ### 任务输入来源
 
@@ -47,7 +57,7 @@ ReviewDecisionCard 保留 rationale 及本任务的实质决定。screening 的 
 
 具备 request_experiment 权限的任务均获得 data_receipt（包括生成/演化/规划），其它任务按 purpose 交付绑定材料。回执派生自有效后端配置、明确 overrides、数据清单及本次运行匹配的 Evidence 数据身份，无独立可编辑配置。available_data 标示池容量与半开区间 `[0,N)`，selected_data 仅转述草案/冻结执行视图；整个视图为 null 表示未声明，可用容量为 null 表示未知，并列 unknowns。视图内显式 count=null 保留原接口的完整/剩余范围语义。清单 SHA、配置数量、已有校验的范围分别说明；不加载模型、不重读全部图像，也不把目录/清单检查当作运行时验证。配置/清单路径用于溯源，不因此扩大 read_asset 的读取权限。
 
-budget_receipt 来自一次 BudgetLedger 快照：remaining_seconds 为硬截止余额，research_remaining_seconds 已扣 closeout_reserve_seconds 与 shutdown_reserve_seconds；available_seconds 保留为前者的兼容字段。未结算 estimated_seconds 按类型汇总，已占用调用额度及已结算数量可见。现有 check 不再次扣未结算估计，LLM 的估计为超时上限；输入展示不新建额度或预留规则。实际启动仍执行原预算、磁盘与资源检查。read_asset 限本次授权来源、reference、QAViT/docs，以及 code/safeguard 的明确公共数值接口白名单；不自动开放其它 EXP、配置或源码目录。
+budget_receipt 来自一次 BudgetLedger 快照：remaining_seconds 为当前计时模式的余额，research_remaining_seconds 已扣 closeout_reserve_seconds 与 shutdown_reserve_seconds；available_seconds 保留为前者的兼容字段。启用 exclude_numeric_wait 时，数值耗时无需小于该余额，deadline_unix 随纯数值等待后移；历史显式预算模式按原口径执行。未结算 estimated_seconds 按类型汇总，现有 check 不再次扣未结算估计，LLM 的估计为超时上限；输入展示不新建额度或预留规则。实际启动仍执行原预算、磁盘与资源检查。read_asset 限本次授权来源、reference、QAViT/docs，以及 code/safeguard 的明确公共数值接口白名单；不自动开放其它 EXP、配置或源码目录。
 
 ### ExperimentCard 与真实服务
 
@@ -164,7 +174,7 @@ Recorder 复用轮末及预算收尾的轻量同步任务。批次输入集中�
 其内部注册还保留计划展开、任务程序和证据索引等支持能力。V2 调用白名单没有扩大；旧 read_memory/compare_trials 等 MVP 工具已移除。
 
 `tools/evaluating.py` 使用逐图 batch=1 的实际数据视图；subset 与完整数据评测明确分开。QDQ 延迟是参考实现开销，不等于低比特硬件加速。
-`tools/segmentation.py` 保留既有 DeiT 冻结 Neck/UPerHead、150 类和 ADE 预处理/滑窗协议；现有物理 GPU 1/2/3 限制未更改。
+`tools/segmentation.py` 保留既有 DeiT 冻结 Neck/UPerHead、150 类和 ADE 预处理/滑窗协议；设备沿用当前运行冻结的授权 GPU 池与 UUID 映射，不再固定物理 GPU 1/2/3。ADE 及混合评测继续按上述兼容路径使用单卡。
 原 log2/log_sqrt2/AdaLog 参考网格可能包含额外下溢零；本次未改公式，不能仅凭方法名声称满足特定码本约束。
 
 worker 从 `runtime/guards.py` 安装 Landlock 和梯度审计，只向当前 job 与 EXP 临时目录写入。training-free 允许正常只读 autograd.grad/backward 诊断，调用如实记录，不按调用文件放行；optimizer.step 仍禁止，浮点基准的权重、buffer、模式和梯度状态仍受保护。

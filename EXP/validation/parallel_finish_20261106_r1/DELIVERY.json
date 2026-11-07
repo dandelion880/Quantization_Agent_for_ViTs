@@ -1,0 +1,144 @@
+{
+  "schema_version": "qavit.parallel_preparation/1",
+  "status": "completed_with_scoped_validation",
+  "base_commit": "320f16e",
+  "final_core_sha256": "16a91db97f9ff6456510becae97892dfd48aee6a5b07932c43d7a533bd1c00a1",
+  "formal_research_started": false,
+  "full_real_L3_validated": false,
+  "regression": {
+    "full_run": {
+      "tests": 490,
+      "passed": 489,
+      "failed": 1,
+      "seconds": 549.393,
+      "log": "regression_final_r2.log"
+    },
+    "failure": "test_experiment_preflight.CalibrationPreflight.test_missing_scientific_choices_require_repair: precise parameter path in error",
+    "resolution": "Preserved full execution.parameters.<field> paths while listing all missing fields in one repair.",
+    "post_fix_targeted": {
+      "tests": 44,
+      "passed": 44,
+      "seconds": 39.293,
+      "log": "compatibility_final.log"
+    },
+    "full_run_repeated_after_message_only_fix": false,
+    "other_passed_groups": [
+      {
+        "tests": 34,
+        "log": "../parallel_finish_targeted_20261106.log"
+      },
+      {
+        "tests": 38,
+        "log": "targeted_r2.log"
+      },
+      {
+        "tests": 56,
+        "log": "runtime_final.log"
+      }
+    ],
+    "current_test_count": 492,
+    "last_resource_boundary_checks": [
+      {
+        "tests": 37,
+        "passed": 37,
+        "seconds": 35.382,
+        "log": "queue_race_final.log"
+      },
+      {
+        "tests": 21,
+        "passed": 21,
+        "seconds": 29.074,
+        "log": "final_dispatch.log"
+      }
+    ]
+  },
+  "real_code_chain": {
+    "status": "completed",
+    "report": "gpu_smoke_r3_RESULT.json",
+    "overall_probe_status": "failed_at_later_multi_gpu_phase",
+    "request_result": {
+      "cache_reused": false,
+      "evidence_ref": "EvidenceCard-174d512082bf4c93b299386ac52cc162@1",
+      "experiment_ref": "ExperimentCard-86a51fd22cdf43bba871fe5b141d7ce6@1",
+      "interpretation_state": "not_separately_requested",
+      "raw_fact_and_interpretation_separated": true,
+      "status": "completed"
+    },
+    "independent_experiments_overlap_seconds": 21.04247522354126,
+    "coding_numeric_overlap_seconds": 14.964366436004639
+  },
+  "real_five_gpu": {
+    "status": "passed",
+    "report": "frozen_compare_r2_RESULT.json",
+    "samples": 17,
+    "shard_sizes": [
+      4,
+      4,
+      3,
+      3,
+      3
+    ],
+    "scope": "pretrained DeiT-B, static W8A8 on blocks.0.mlp.fc1/fc2 only, ImageNet search subset",
+    "classification_counts": {
+      "baseline_top1": 16,
+      "baseline_top5": 17,
+      "top1": 16,
+      "top5": 17
+    },
+    "max_relative_accumulator_difference": 2.2075612834637007e-16,
+    "wall_seconds": 142.75027561187744,
+    "agent_seconds": 6.417714834213257,
+    "excluded_numeric_wait_seconds": 135.631450176239,
+    "no_owned_processes": true,
+    "changed_files_since_measurement": [
+      "docs/EXECUTION.md",
+      "runtime/driver.py",
+      "runtime/task_runtime.py",
+      "tests/test_numeric_parallel_budget.py",
+      "tests/test_parallel_runtime.py",
+      "tools/experiments.py"
+    ]
+  },
+  "real_pause_resume": {
+    "status": "passed",
+    "report": "GPU_RESUME_COMPLETED.json",
+    "task_id": "task-d786491ab42d794c21c5ccfe",
+    "attempts": 2,
+    "retry_count": 1,
+    "paused_consumption": 10.344161748886108,
+    "no_owned_processes": true,
+    "changed_files_since_measurement": [
+      "docs/EXECUTION.md",
+      "runtime/driver.py",
+      "runtime/task_runtime.py",
+      "tests/test_numeric_parallel_budget.py",
+      "tests/test_parallel_runtime.py",
+      "tools/experiments.py"
+    ]
+  },
+  "scope": {
+    "llm": "Judger <=3; all non-Judger share one channel",
+    "gpus": [
+      0,
+      1,
+      2,
+      3,
+      4
+    ],
+    "multi_gpu": "native non-training pure classification of one frozen package; single-device fallback for others",
+    "not_validated": [
+      "full ImageNet/ADE L3",
+      "multi-GPU training/calibration/segmentation",
+      "all algorithms/models",
+      "complete new autonomous research run"
+    ],
+    "next_run_fragment": "NEXT_RUN_RUNTIME.json"
+  },
+  "structure": {
+    "status": "passed",
+    "syntax_files": 155,
+    "snapshot_files": 217,
+    "report": "structure_audit_delivery.json"
+  },
+  "remaining_blockers": []
+}
