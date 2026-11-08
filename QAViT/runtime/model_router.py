@@ -93,6 +93,17 @@ def call_once(spec, directory, deadline):
             audit["exit_code"] = code
             audit["stderr"] = {"bytes": len(stderr.encode()), "sha256": hashlib.sha256(stderr.encode()).hexdigest(),
                                "category": cli.failure_category(stderr)}
+            if code:
+                # Keep a bounded redacted diagnostic, never account RPC bodies or credentials.
+                import re
+                diagnostic = re.sub(r'''(?i)(bearer\s+|(?:api[_-]?key|access_token|refresh_token|authorization)["']?\s*[:=]\s*["']?)[^"'\s,;}]+''', r'\1[REDACTED]', stderr)
+                diagnostic = re.sub(r'[\w.+-]+@[\w.-]+\.[A-Za-z]{2,}', '[EMAIL]', diagnostic)
+                diagnostic = re.sub(r'\bsk-[A-Za-z0-9_-]+', '[KEY]', diagnostic)
+                diagnostic = re.sub(r'\beyJ[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\b', '[TOKEN]', diagnostic)
+                path = directory / 'cli_failure.txt'
+                path.write_text(diagnostic[:16000], encoding='utf-8')
+                path.chmod(0o600)
+                audit['stderr']['diagnostic_path'] = str(path)
             reports = []
             for line in stdout.splitlines():
                 try:

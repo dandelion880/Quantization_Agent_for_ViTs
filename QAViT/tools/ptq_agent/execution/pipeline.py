@@ -366,7 +366,8 @@ class QuantizationExecutor:
         trials = []
         if c["strategy"] == "percentile":
             params = (grids.fit(x, spec, method, percentiles=c["percentiles"]) if method == "uniform_affine" else
-                      grids.percentile_log(x, spec, get_target_method("activation", method).apply, c["percentiles"]))
+                      grids.percentile_log(x, spec, lambda value, shape, params: get_target_method("activation", method).apply(
+                          value, shape, params=params, options=options), c["percentiles"]))
         elif c["strategy"] == "manual":
             params = math_plugin.adjusted_params(params, 1.0, method, manual=c["scale_values"], zero=c.get("zero_values"))
         elif c["strategy"] == "search":

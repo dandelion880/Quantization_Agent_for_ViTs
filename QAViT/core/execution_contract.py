@@ -12,7 +12,7 @@ EXECUTION_FIELDS = {"mode", "compute_dtype", "activation_calibration", "order", 
 SPEC_FIELDS = {"bits", "format", "granularity", "axis", "group_size", "symmetric", "scale"}
 CONTRACT_FIELDS = {"required_sites", "required_site_targets", "required_kinds", "specs", "methods",
                    "calibrations", "site_overrides", "execution", "preprocess", "operators",
-                   "unlisted_modules", "parameters", "parameter_bindings", "fp_exceptions"}
+                   "unlisted_modules", "parameters", "parameter_bindings", "fp_exceptions", "protocol"}
 
 
 def equal(left, right):
@@ -41,6 +41,10 @@ def strings(value, path, *, empty=True):
 def validate_contract(value):
     if not isinstance(value, dict):
         raise ContractError("quantization_contract 必须是对象")
+    if "protocol" in value:
+        from core.static_w4a4 import PROTOCOL
+        if value["protocol"] != PROTOCOL:
+            raise ContractError("unknown quantization protocol")
     unknown = set(value) - CONTRACT_FIELDS
     if unknown:
         raise ContractError("未识别的必需执行约束: " + str(sorted(unknown)))
@@ -329,7 +333,7 @@ def check_plan(plan, choices, backend=None, cfg=None, contract=None, *, native=T
                     and type(row[t].get("bits")) is int and row[t]["bits"] > 0 for t in TARGETS)
                 for row in rows))
         structural = (any(contract.get(k) for k in ("specs", "methods", "calibrations", "required_sites",
-            "required_site_targets", "required_kinds", "site_overrides", "parameter_bindings", "execution"))
+            "required_site_targets", "required_kinds", "site_overrides", "parameter_bindings", "execution", "protocol"))
             or any(k in contract for k in ("preprocess", "operators", "unlisted_modules"))
             or bool(contract.get("fp_exceptions", {}).get("sites")))
         if not structural and (not described or not rows):
@@ -375,6 +379,10 @@ def check_plan(plan, choices, backend=None, cfg=None, contract=None, *, native=T
             modules = dict(backend.model.named_modules())
             if any(row["module"] not in modules for row in actual.values()):
                 raise ContractError("自定义计划包含模型中不存在的模块")
+    protocol_receipt = {}
+    if contract.get("protocol") and catalog is not None:
+        from core.static_w4a4 import check_plan as check_static
+        protocol_receipt = check_static(plan, catalog, native=native)
     required = set(contract.get("required_sites", [])) | set(contract.get("required_site_targets", {}))
     kinds = contract.get("required_kinds", [])
     if native and set(kinds) - set(KINDS):
@@ -442,7 +450,7 @@ def check_plan(plan, choices, backend=None, cfg=None, contract=None, *, native=T
             raise ContractError("FP 例外引用未知模块: " + module)
         if any(r["module"] == module or r["module"].startswith(module + ".") for r in rows + plan.get("operators", []) + plan.get("preprocess", [])):
             raise ContractError("FP 例外模块被干预: " + module)
-    return {"required_sites": sorted(required), "covered_sites": sorted(actual),
+    return {"static_w4a4": protocol_receipt, "required_sites": sorted(required), "covered_sites": sorted(actual),
             "weight_sites": sum(r.get("weight") is not None for r in rows),
             "activation_sites": sum(r.get("activation") is not None for r in rows),
             "quantization": {sid: {k: deepcopy(row[k]) for k in ("weight", "activation", "method", "weight_method",

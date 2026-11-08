@@ -26,3 +26,5 @@
 - scope：可选对象，记录选择的研究范围、条件和外推边界，区分计划研究范围与已经验证的范围。
 
 不要创建卡片封套，也不要把待执行实验写成 EvidenceCard。
+
+H1/H2 使用 context.complete_solutions，按需 read_asset 读取 configuration_asset 和方法卡，自然说明选择的完整基础方案及保留/修改内容。三者共享 Brief 与按需 Memory，H3 仍独立探索新机制。

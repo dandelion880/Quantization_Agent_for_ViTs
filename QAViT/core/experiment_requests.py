@@ -395,6 +395,41 @@ class ExperimentRequests:
                 'numerical_validation_status': 'validated' if valid else 'not_validated',
                 'formal_validation_success': bool(valid)}
 
+    def implementation_handoff(self, task):
+        """Bind only same-researcher history or explicitly cited public Evidence producers."""
+        tasks = self.queue.snapshot()
+        author = self.request_author(task, tasks)
+        if not author:
+            return []
+        def actor(t):
+            c = t['inputs'].get('context', {})
+            return (t['inputs'].get('purpose'), c.get('round'), c.get('slot'), tuple(c.get('pair', [])), c.get('side'))
+        cited = set(task['inputs'].get('refs', [])) | set(task['inputs'].get('draft', {}).get('evidence_refs', []))
+        history = []
+        for previous in tasks.values():
+            if previous['kind'] != 'experiment_request' or previous['task_id'] == task['task_id']:
+                continue
+            owner = self.request_author(previous, tasks)
+            shared = bool(cited.intersection(previous.get('outputs', [])))
+            if not shared and (not owner or actor(owner) != actor(author)):
+                continue
+            ref = previous.get('experiment_ref') or previous.get('request_ref')
+            if not ref or not self.can_read_card(author, self.journal.card(ref)):
+                continue
+            children = [t for t in tasks.values() if t['inputs'].get('parent_task') == previous['task_id']]
+            codes = [t for t in children if t['inputs'].get('purpose') == 'code' and (t.get('result') or {}).get('artifact')]
+            if not codes:
+                continue
+            candidate = codes[-1]['result']['artifact']
+            trials = [t for t in children if t['kind'] == 'experiment']
+            history.append({'candidate': candidate, 'request_ref': previous.get('request_ref', ref),
+                'experiment_ref': ref, 'source_task_ref': codes[-1]['task_card'],
+                'execution_task_refs': [t['task_card'] for t in trials],
+                'failures': [{'error': t.get('error'), 'worker_log': str(Path(t['request_path']).with_name('worker.log')) if t.get('request_path') else None}
+                             for t in trials if t.get('error')],
+                'meaning': 'Prior implementation context, not a requirement to preserve its bug or algorithm choices.'})
+        return history[-3:]
+
     def progress_request(self, task):
         self.retire_stale_safeguards()
         task = self.queue.get(task['task_id'])
@@ -434,6 +469,7 @@ class ExperimentRequests:
                 if self.revise_implementation(task, revision, previous, execution_error=failed_execution):
                     return
             code_context = {"experiment_ref": request["id"], "request_ref": request["id"]}
+            code_context["implementation_history"] = self.implementation_handoff(task)
             if revision:
                 code_context["revision_feedback"] = task["code_revision_feedback"]
             identifier = self.enqueue_role(code_key, "code", refs=[self.brief["id"], request["id"]],
@@ -471,7 +507,8 @@ class ExperimentRequests:
             safeguard_key = review_key + "/safeguard/" + implementation + suffix
             identifier = self.enqueue_role(safeguard_key, "safeguard", refs=[self.brief["id"], request["id"], experiment["id"]],
                 context={"request_ref": request["id"], "experiment_ref": experiment["id"], "candidate": candidate,
-                         "host_implementation_sha256": review_core},
+                         "host_implementation_sha256": review_core,
+                         "implementation_history": code_task["inputs"]["context"].get("implementation_history", [])},
                 depends=[code_task["task_id"]], parent_task=task["task_id"])
             review_task = self.tasks().get(safeguard_key)
             if self.stale_safeguard_owner(review_task):
@@ -539,6 +576,8 @@ class ExperimentRequests:
     @staticmethod
     def revisable_failure(task):
         error = task.get("error") or {}
+        if error.get("code") == "EngineeringBlocked":
+            return False
         if error.get("origin") == "host":
             return False
         # Resource, storage, process and host-version failures remain engineering

@@ -2,6 +2,8 @@
 
 QAViT 让 LLM 负责量化科研推理，程序负责实验执行、身份与来源、状态和归档。唯一入口是 `run.py`，配置协议为 `qavit.research/2`。保留七角色、H1/H2/H3 初始讨论、固定 H* 与 H4 的父子挑战、真实量化工具、单实现代码审查及 L0–L3 Memory。
 
+科研情境可按需参考 [四个科研 Skill](docs/skills/INDEX.md)：研究角色只自动接收短目录，自主读取正文和策略参考，也可零 Skill 继续研究。实际接口及维护方式见 [接入说明](docs/SCIENTIFIC_SKILLS.md)；完整结构与科研资源盘点见 [独立报告](../EXP/validation/scientific_skills_20261108_r1/PROJECT_RESOURCE_INVENTORY.md)。
+
 Recorder 只需提交科研分析，下一轮建议、未决问题和知识更新按需提供；事实完整归档与科研综合分别标记。逐条来源覆盖和强制审计已由程序归档取代。调用方用精简草案与短引用表达科学选择，程序生成执行镜像、固定任务身份和可追溯记录。关键数值、安全与来源检查继续执行。
 
 ## 阅读顺序与修改入口
@@ -96,3 +98,5 @@ python -B QAViT/run.py report EXP/runs/<新运行名>
 非 per_tensor 合法计划可在 prepare 使用宿主声明的 shape 观察视图取得真实输入后验证；局部诊断仅 calibration，不能读取 search/final。shape 观察记录 split、样本和用途，不冒充 calibration 拟合。预检连接/服务故障及超时走既有有限重试，每次重新真实预检；认证、额度、计费边界和隔离错误仍停止。
 
 新运行采用自适应允许 GPU 池，默认独立实验各用一卡并发；LLM 保持非 Judger 单通道和 Judger 最多三并发。实验内部多卡仅用于指标兼容的 server 原生非训练纯分类评测，其它情况自动沿单卡。研究输入集中设置 `runtime.allowed_gpus`（auto、编号/UUID数组或[]）及 `experiment_concurrency`（auto或整数）；发现规则与硬件对照配置见 [执行说明](docs/EXECUTION.md)。新模板启用 active_segments + exclude_numeric_wait；历史运行不静默改配置。最新 [修复报告](../EXP/validation/adaptive_finish_20261106_r1/REPORT.md) 与 [当前伪代码](../EXP/validation/adaptive_finish_20261106_r1/PSEUDOCODE.md) 记录本轮验证、回退快照和限制；此前 [有界五卡验证](../EXP/validation/parallel_finish_20261106_r1/REPORT.md) 仅表示当时环境实测。
+
+当前科研能力升级将完整方案Top-3（`core/solutions.py`、`docs/solutions/`）与方法组件手册、Recorder/Memory分开。H1从成熟方案保留或适配，H2依真实瓶颈改进，H3开放创新；只有同协议真实完整双任务评测可按(mIoU, Top-1)更新Top-3。统一边界见[static W4A4协议](docs/STATIC_W4A4.md)，已有预算、局部循环、并行辩论和GPU调度保持。新增回归在`tests/test_research_upgrade.py`，真实Generation与历史包复现、失败根因见[升级报告](../EXP/validation/research_upgrade_20261107_r1/REPORT.md)和[当前伪代码](../EXP/validation/research_upgrade_20261107_r1/PSEUDOCODE.md)。

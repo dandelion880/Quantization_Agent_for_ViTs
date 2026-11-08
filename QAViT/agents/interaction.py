@@ -6,6 +6,7 @@ from agents.tasks import TASKS
 from copy import deepcopy
 from pathlib import Path
 from importlib.util import find_spec
+from hashlib import sha256
 import re
 from runtime.paths import ROOT
 from core.cards import ContractError, canonical, fingerprint, make_card, validate_payload, validate_schema, TEXT, PAYLOAD_SCHEMAS
@@ -48,6 +49,8 @@ class RoleInteraction:
             values = [context.get('revision_feedback', {}).get('previous_candidate')]
         else:
             values = []
+        if purpose in ("code", "safeguard"):
+            values += [row["candidate"] for row in context.get("implementation_history", [])]
         return [v for v in values if isinstance(v, dict) and
                 {'id', 'path', 'source_sha256', 'experiment_ref', 'experiment_sha256'} <= v.keys()]
 
@@ -62,7 +65,9 @@ class RoleInteraction:
         return None
 
     def task_card_entitled(self, task, body, ref):
-        return (body['task_id'] == task['task_id'] or body['inputs'].get('parent_task') == task['task_id']
+        history = task['inputs']['context'].get('implementation_history', [])
+        handed_refs = {r for row in history for r in [row['source_task_ref'], *row['execution_task_refs']]}
+        return (ref in handed_refs or body['task_id'] == task['task_id'] or body['inputs'].get('parent_task') == task['task_id']
                 or ref in task['inputs']['refs']
                 or ref == task['inputs']['context'].get('revision_feedback', {}).get('execution_task_ref')
                 or (body['inputs'].get('purpose') in ('code',)
@@ -975,10 +980,27 @@ class RoleInteraction:
         if purpose in ('record', 'generate', 'evolve', 'supervise'):
             memory['recording_status'] = self.memory.recording_status(sequence, visible=lambda c: self.can_read_card(task, c))
         budget = self.budget.input_receipt()
+        if purpose in ("generate", "evolve", "code", "safeguard", "record", "plan_l3"):
+            context["complete_solutions"] = self.solutions.catalog(sequence)
+            context["solution_policy"] = "Top-3 complete reusable configurations, separate from Memory. Missing scores remain pending; no generation gate. H1/H2 explain their chosen base and changes naturally."
+        from core.static_w4a4 import DESCRIPTION
+        context["static_w4a4_protocol"] = DESCRIPTION
         context.update(available_seconds=budget['remaining_seconds'], budget_receipt=budget)
         if 'literature_fetch' in TASKS[purpose]['tools']:
             context['literature_capabilities'] = {'pdf_text_extraction': find_spec('pypdf') is not None,
                 'pdf_dependency': 'pypdf', 'note': 'PDF 解析依赖未安装时只能保留原件，不能声称读过正文；HTTP/解析失败保留为未核实。'}
+        if task['role'] in ('generation', 'evolution', 'judger', 'recorder'):
+            # Only the short discovery index is resident. Bodies/references use the
+            # existing read_asset snapshot, paging and result deduplication path.
+            catalog = ROOT / 'QAViT/docs/skills/INDEX.md'
+            try:
+                raw = catalog.read_bytes()
+                context['skill_catalog'] = raw.decode('utf-8')
+            except (OSError, UnicodeError):
+                pass  # Optional knowledge must not block the original research path.
+            else:
+                memory.setdefault('asset_locations', {})[str(catalog)] = {
+                    'sha256': sha256(raw).hexdigest(), 'location': 'context.skill_catalog'}
         if purpose in ('code', 'safeguard'):
             context['numeric_imports'] = sorted(NUMERIC_IMPORTS)
             context['code_interface'] = (ROOT / 'QAViT/docs/CODE_INTERFACES.md').read_text()
@@ -1003,6 +1025,9 @@ class RoleInteraction:
             self.deliver_asset(task, context, 'candidate_source', inputs['context']['candidate'])
         if purpose == 'code' and inputs['context'].get('revision_feedback', {}).get('previous_candidate'):
             self.deliver_asset(task, context, 'previous_candidate_source', inputs['context']['revision_feedback']['previous_candidate'])
+        if purpose in ('code', 'safeguard'):
+            for index, row in enumerate(inputs['context'].get('implementation_history', [])):
+                self.deliver_asset(task, context, 'prior_implementation_' + str(index), row['candidate'])
         if purpose == 'rank':
             context['task']['matches'] = self.selection_matches(inputs['context'])
             context['task']['direct_results'] = ranking_table(context['task']['matches'], inputs['context']['eligible'])
@@ -1283,6 +1308,8 @@ class RoleInteraction:
             paths += [Path(p) for p in self.brief['payload'].get('source_documents', []) if isinstance(p, str)]
             static = {str(p.resolve()): file_sha256(p) for p in paths if p.is_file() and
                       any(root in p.resolve().parents for root in (ROOT / 'reference', ROOT / 'QAViT/docs'))}
+        solution_assets = self.solutions.assets(sequence)
+        allowed.update(solution_assets)
         allowed.update(static)
         allowed.update({path: file_sha256(path) for path in public})
         refs = [ref for ref, entry in self.journal.cards.items() if entry['sequence'] <= sequence]
@@ -1371,7 +1398,7 @@ class RoleInteraction:
                     and manifest.get('source_sha256') == file_sha256(source)):
                 allowed[path] = manifest['source_sha256']
         return {path: digest or file_sha256(path) for path, digest in allowed.items() if Path(path).is_file()
-                and (path in public or any(root in Path(path).parents
+                and (path in public or path in solution_assets or any(root in Path(path).parents
                                            for root in (self.run_dir, ROOT / 'reference', ROOT / 'QAViT/docs')))}
 
     @journal_read

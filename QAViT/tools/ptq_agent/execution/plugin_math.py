@@ -129,7 +129,7 @@ def activation_qdq(x, spec, method, params=None, options=None):
         require(bool((x >= 0).all()), "log 量化遇到负数")
         multiplier = 1 if method == "log2" else 2
         exponent = torch.round(-torch.log2(x / p["scale"]) * multiplier)
-        underflow = exponent >= 2 ** bits  # x=0 的 +inf 也进入零掩码。
+        underflow = exponent >= 2 ** bits - int((options or {}).get("reserve_zero", False))  # x=0 的 +inf 也进入零掩码。
         exponent = exponent.clamp(0, 2 ** bits - 1)
         if method == "log2":
             y = 2.0 ** (-exponent) * p["scale"]

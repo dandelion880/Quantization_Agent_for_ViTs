@@ -26,6 +26,8 @@ CALIBRATION = obj({
     "peer_precision": {"enum": ["quantized", "float"]},
 }, ["strategy"])
 OPTIONS = obj({
+    "reserve_zero": {"type": "boolean"},
+    "gptaq_signed_min": {"enum": [-8, -7]},
     "blocksize": {"type": "integer", "minimum": 1, "maximum": 1024},
     "damping": {"type": "number", "minimum": 0, "maximum": 1},
     "actorder": {"type": "boolean"},
@@ -279,13 +281,17 @@ def validate_composition(plan, known, config, *, classification_available=False,
         if layer["weight_method"] in ("gptq", "gptaq"):
             legal_options.update(("blocksize", "damping", "actorder"))
         if layer["weight_method"] == "gptaq":
-            legal_options.add("gptaq_clip")
+            legal_options.update(("gptaq_clip", "gptaq_signed_min"))
         if layer["weight_method"] == "adaround":
             legal_options.update(k for k in OPTIONS["properties"] if k.startswith("rounding_"))
             require(options.get("rounding_lr", .001) > 0, "AdaRound 学习率必须为正")
         legal_options.update({"ptf": ("ptf_k",), "twin_softmax": ("split",),
                               "adalog": ("log_base_q", "log_base_candidates"),
                               "twin_gelu": ("negative_factor",), "asymmetric_gelu": ("negative_factor",)}.get(layer["activation_method"], ()))
+        if layer.get("activation_method") in ("log2", "log_sqrt2", "adalog"):
+            legal_options.add("reserve_zero")
+        if "gptaq_signed_min" in options:
+            require(layer["weight"]["bits"] == 4 and layer["weight"]["symmetric"], "gptaq_signed_min applies to signed W4")
         require(set(options) <= legal_options, "方法 options 包含当前组合不会执行的参数")
         require(options.get("damping", 0.01) > 0 and options.get("negative_factor", 1) > 0, "damping/negative_factor 须为正")
         require(0 < options.get("split", 0.01) <= 1, "twin softmax split 须在 (0,1]")
@@ -293,9 +299,6 @@ def validate_composition(plan, known, config, *, classification_available=False,
             require(calibration(layer, "activation")["strategy"] == "search", "AdaLog base_candidates 需要显式 search 评分")
             require("log_base_q" not in options, "固定 base_q 与 base_candidates 不能同时指定")
     transformed = set()
-    require(not (any(p["method"] == "repq_ln" for p in plan["preprocess"]) and
-                 any(l["activation_method"] == "ptf" for l in plan["layers"])),
-            "当前组合策略将 PTF 与 RepQ-LN 设为方案级互斥，不在同一方案叠加")
     for prep in plan["preprocess"]:
         require(prep["method"] in config["loop"].get("allowed_preprocess", PREPROCESS_METHODS), "预处理不在用户允许范围")
         name = prep["module"]

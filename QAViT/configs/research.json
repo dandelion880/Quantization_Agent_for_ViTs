@@ -19,7 +19,10 @@
       "model adapter",
       "evaluation protocol",
       "user goals and search space"
-    ]
+    ],
+    "quantization_contract": {
+      "protocol": "static_w4a4/1"
+    }
   },
   "budget": {
     "max_rounds": 10,

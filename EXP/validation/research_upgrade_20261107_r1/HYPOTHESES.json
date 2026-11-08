@@ -1,0 +1,322 @@
+{
+  "H1": {
+    "author": "generation",
+    "content_sha256": "d14c91ea2ab667edb7a710783fd8437df8e4e026ec686eb7906d2e9404f3dc98",
+    "created_at": "2026-11-07T07:54:37.607183+00:00",
+    "id": "HypothesisCard-d34ef89805b3460b876f2de703395049@1",
+    "kind": "HypothesisCard",
+    "logical_id": "HypothesisCard-d34ef89805b3460b876f2de703395049",
+    "parents": [],
+    "payload": {
+      "evidence_refs": [],
+      "feedback_used": [],
+      "hypothesis_type": "existing_method",
+      "implementation": {
+        "existing": "本地方法文档说明完整种子可生成普通v3计划，并支持标准准备、导出及重载；GPTAQ使用固定上游v1 commit d6bd2e41e9abc8f22a76d6ea789c450b6c143ced的适配。此为已读工程能力说明，不是本任务的执行成功记录。",
+        "planned": "最终候选直接复用完整种子。机制诊断需要暴露G_delta置零开关及局部码本复用；若现有接口未提供，则后续新增小范围诊断实现，不能静默换成网格不同的内置GPTQ。H、G_delta及相关矩阵使用FP32，关闭该统计计算的TF32；任何W/A、前缀或校准数据变化均重新统计。"
+      },
+      "intervention": {
+        "algorithm": "a_then_w/sequential：按真实计算顺序冻结激活量化，以实际量化前缀获取X_q，以原始只读FP模型获取X_fp，再执行GPTAQ v1 Linear权重重构。Linear为per-output-channel signed W4，Conv为种子的uniform_minmax W4；非概率A为per-channel affine percentile，概率A为预留零的log√2。保持v1合法signed W4默认[-8,7]，不采用事后夹取或[-7,7]适配。",
+        "base": "context.complete_solutions中的gptaq_w4a4；保持原方案，不叠加RepQ、AdaLog、GPTQ或AdaRound。",
+        "binding": "使用已读configuration_asset 29bcde579ddf720c898e32860da28904c0c04ace4ebd4f0afc128af6ed6e5d63.json及其source_version e8be585dc7f9e69e8be661901c3233a0fb698672ab1a5091fca38297b0d1408e；由ptq_agent.execution.baselines.build_baseline(backend, name=gptaq, quantize_head=False)生成完整计划。构造器参数、逐位点粒度和observer配置保持该种子定义，不根据本文自行替换。",
+        "invariants": "仅用规定32张ImageNet校准图拟合，batch_size=1；无优化器更新，保护原始FP模型。主体Linear/Conv权重及输入、Attention Q/K/V、PV使用的概率和FC2使用的post-GELU均按static_w4a4/1覆盖；每个固定组最多16码字且零计入。推理前冻结所有量化参数，不进行动态token尺度拟合。分类head、ADE既有neck/UPerHead保持FP；ADE直接复用分类校准状态，不重新校准或训练。"
+      },
+      "mechanism": "设某Linear原始权重为W_fp∈R^{o×d}，同图像、同token对齐的原始只读FP输入为X_fp∈R^{d×N}，实际量化前缀及已冻结A4产生的输入为X_q∈R^{d×N}。候选希望减小J=||W_q X_q−W_fp X_fp||_F²/N，而不只减小||W_q X_q−W_fp X_q||_F²/N。GPTAQ v1统计H=2X_qX_q^T/N及G_delta=2(X_fp−X_q)X_q^T/N，加入阻尼后沿用该版本的Cholesky逆与逐列误差补偿；若U为实现中的上三角Cholesky逆，则输入差异修正矩阵为C=(1/4)triu(G_delta U^T,1)U，并保留跨block修正。机制预期是：当激活量化和前缀误差具有可预测的输入相关成分、且32张校准图能代表该相关结构时，权重重构可以部分吸收这一系统偏差。非概率A采用种子的per-channel affine percentile，注意力概率采用预留零的log√2，分别控制通道范围不均与概率长尾；这些是完整基础方案的一部分，不将其收益归给GPTAQ差异项。重要替代解释包括：收益完全来自激活粒度和裁剪；输入差异项只拟合校准噪声；以及分类对齐改善但破坏ADE所需的patch表征。局部重构改善不保证整网KL或任务性能改善。",
+      "mechanism_relations": [
+        {
+          "explanation": "候选保留该完整方案；研究重点是检验其输入差异补偿在规定双任务条件下是否有效，不声称机制创新或复现论文成绩。",
+          "relation": "原样采用完整成熟方法种子",
+          "target": "gptaq_w4a4 / GPTAQ v1 static W4A4 adaptation"
+        },
+        {
+          "explanation": "关闭输入差异项以区分其贡献与激活粒度、裁剪及基础权重误差补偿的贡献；不将其直接称为未修改的官方GPTQ。",
+          "relation": "受控消融",
+          "target": "相同实际码本下的G_delta=0权重重构"
+        }
+      ],
+      "predictions": [
+        {
+          "falsification": "若两个预选位点在未参与拟合的图像上均无原始FP对齐误差改善，则不支持该机制在这些条件下有效；若仅校准误差改善，则优先考虑相关统计过拟合，而不是宣称泛化成功。",
+          "id": "p1",
+          "measurement": "预先选择blocks.0.mlp.fc2和blocks.11.mlp.fc2，分别计算||W_qX_q−W_fpX_fp||_F²/(||W_fpX_fp||_F²+ε)，并单独报告相对W_fpX_q的误差。32张用于拟合；后续用与校准图像身份不重叠的64张search图像评估，ε固定为10^-12。",
+          "statement": "在同一真实量化输入、相同实际解码码本和量化前缀下，启用输入差异修正应比将G_delta置零更能降低对原始FP算子输出的重构误差；该收益不要求对W_fp X_q的普通权重量化误差同时下降。"
+        },
+        {
+          "falsification": "若局部误差改善而单点回放KL或完整候选KL恶化，则局部到整网的传递预测不成立，应检查误差方向和层间累积，不能只报告局部胜出。",
+          "id": "p2",
+          "measurement": "在相同search图像上分别报告单点替换后的分类logit NMSE、KL(p_FP||p_quant)，以及完整候选与完整差异项关闭对照的KL和Top-1；这些指标不合并成单一分数。",
+          "statement": "局部对齐收益可能传递为较小的整网输出偏差，但不能据此推定任务收益。"
+        },
+        {
+          "falsification": "若ADE mIoU不优于对照，则不支持以迁移收益为核心的任务级预测；仅ImageNet提高不能替代该结论。未完成匹配对照的全量评测时，任务级因果比较保持未决。",
+          "id": "p3",
+          "measurement": "未来冻结方案后，导出并重载，按完整协议评测ImageNet validation 50000张与ADE20K validation 2000张，并保留同条件FP指标。",
+          "statement": "待检验的任务级预测是完整候选相对匹配的差异项关闭对照改善ADE mIoU，同时单独考察ImageNet Top-1是否改善；不预填绝对精度或保证双任务同向。"
+        }
+      ],
+      "research_question": "在官方非蒸馏DeiT-B的静态W4A4条件下，先冻结激活量化、再利用原始FP输入与真实量化输入的差异执行GPTAQ权重补偿，能否降低累计输出偏差，并改善优先关注的ADE20K冻结迁移性能？本H1直接保留完整gptaq_w4a4成熟方法种子，不提出新的量化算法；该种子的同协议双任务成绩仍待验证。",
+      "round": 1,
+      "scope": {
+        "limits": "不外推至其它模型、动态激活量化、训练后量化或实际低比特硬件加速；GPTAQ的校准相关结构能否迁移至ADE保持待验证。",
+        "planned": "官方非蒸馏DeiT-B，training-free static W4A4；ImageNet分类与无ADE重新校准的冻结分割迁移。",
+        "verified": "本次仅完成方案和来源阅读；没有本次测量、导出重载成功记录或同协议任务成绩。"
+      },
+      "slot": "H1",
+      "sources": [
+        {
+          "ref": "ResearchBrief-6e0b590b3c3846cf9ab71e81550a70f8@1",
+          "status": "已读ResearchBrief正文及其中历史事实摘要；未取得历史EvidenceCard原件。",
+          "supports": "任务范围、静态W4A4数值合同、32张校准与双任务完整评测协议。历史摘要仅提醒激活配方可能主导结果，不能提供本候选成绩或证明GPTAQ有效。"
+        },
+        {
+          "source": "solutions/gptaq.md及对应configuration_asset",
+          "status": "已完整读取本任务交付正文。",
+          "supports": "完整gptaq_w4a4种子的构造入口、组成、顺序、版本和成绩待测状态。"
+        },
+        {
+          "source": "methods/gptaq.md",
+          "status": "已完整读取项目方法文档；未在本任务独立读取论文全文或上游源码全文。",
+          "supports": "GPTAQ v1的原始FP对齐、H/G_delta统计、跨block补偿、版本与合法码字范围，以及统计缓存失效条件。"
+        },
+        {
+          "source": "methods/scale_selection.md",
+          "status": "已完整读取项目方法文档。",
+          "supports": "网格与尺度策略需要分开控制，percentile observer执行不能仅靠方法名称认定，局部误差不等于最终任务性能。"
+        }
+      ],
+      "title": "保留完整GPTAQ静态W4A4种子：原始FP输入对齐补偿",
+      "validation_design": {
+        "decisive_small_control": "先做两个预选FC2位点的配对局部对照。各位点从同一个种子前缀捕获同一X_q、X_fp，固定同一原始W、H、阻尼、列顺序、实际解码码本及A参数，仅比较真实G_delta与G_delta=0。局部码本从种子准备状态取得，两臂复用其完整解码值，而非仅使用相同倍率网格；关闭额外裁剪搜索。对照只替换当前位点，前缀及其他模块状态不变。记录G_delta范数、码本一致性及两种重构目标误差。",
+        "final_protocol": "未来最终冻结候选须实际导出并核验重载；ImageNet全量报告Top-1/Top-5及同条件FP，ADE全量报告mIoU/mAcc/aAcc及同条件FP。ADE使用既有冻结neck/UPerHead和规定预处理，不更新校准状态。若需要任务级机制归因，对照也须完成同等完整评测。局部NMSE、累计KL与最终任务指标分别判读。",
+        "interpretation": "真实差异项在未参与拟合图像上改善原始FP对齐、而普通量化误差未改善，尤其符合输入偏差补偿解释；两者均改善仍须由唯一变量对照归因，不能归给改变激活裁剪。仅校准改善提示过拟合；两臂相同且G_delta接近零说明该处缺少可补偿的相关偏差，不等于实现失败。执行失败或统计未真正进入更新仅属于工程未决。",
+        "next_stage": "只有局部对照值得继续时，才比较完整种子与完整G_delta关闭对照：两者保持相同W/A规则、校准数据和顺序，各自按真实前缀重新准备，不能复用失效统计。search最多使用规定1000张并明确校准重叠情况，不使用final进行筛选。",
+        "status": "本次仅提交Generation假设，不申请数值实验，不执行L3；以下均为未来验证设计。"
+      }
+    },
+    "refs": [
+      "ResearchBrief-6e0b590b3c3846cf9ab71e81550a70f8@1"
+    ],
+    "run_id": "generation_live",
+    "schema_version": "qavit.cards/2",
+    "version": 1
+  },
+  "H2": {
+    "author": "generation",
+    "content_sha256": "c5bcc39a9d6e29ed19d4a784f59cb28bdc3d9204531108289586f83a13c0e13f",
+    "created_at": "2026-11-07T07:56:24.526813+00:00",
+    "id": "HypothesisCard-db4e7dba503044628f6e9b62e0d5dd7b@1",
+    "kind": "HypothesisCard",
+    "logical_id": "HypothesisCard-db4e7dba503044628f6e9b62e0d5dd7b",
+    "parents": [],
+    "payload": {
+      "evidence_refs": [],
+      "feedback_used": [],
+      "hypothesis_type": "engineering",
+      "implementation": {
+        "available": "已读完整RepQ种子配置、方案说明及uniform_affine、repq_ln文档。种子支持标准导出重载；affine支持分通道表示，LN变换后的A要求共享尺度。",
+        "planned": "从真实位点与张量布局生成干预集合，保留LN边排除项；实现或适配逐通道候选范围选择与统计。若内置执行器不能表达Q/K/V逻辑轴或逐通道候选选择，交由Coding实现明确适配，不静默降为共享尺度。记录每组scale、整数zero-point、轴、裁剪候选、码字数及冻结状态。",
+        "status": "本次仅提出假设，未实现新增适配、未申请数值实验，也未验证导出重载或任务成绩。"
+      },
+      "intervention": {
+        "base": "保留原始repq_w4a4配置作为独立基线，不覆盖方案库资产。",
+        "calibration": "仅用规定的32张ImageNet校准图像，batch_size=1。各干预对照使用同一份经固定LN变换的浮点激活捕获；不使用search或ADE拟合参数。保护原浮点模型，不运行优化器。",
+        "changed": "只替换非概率、且不属于repq_ln变换后共享输入的A量化器：使用上述分通道静态affine MSE范围选择。Linear输入沿最后一个逻辑特征轴分组；Q/K/V沿各head内特征轴分组，参数可按head分别固定；K转置不改变逻辑分组；Conv输入沿输入通道分组。每组跨样本、token或空间位置共享参数，禁止动态逐token定标。",
+        "unchanged": "保留种子的全部W4参数、float观察的LN仿射变换、变换后整数零点共享A4、预留零的log√2概率P量化、完整量化覆盖及FP head/neck。所有对照固定同一W、LN变换和P参数，不重新优化权重。"
+      },
+      "mechanism": "起点为complete_solutions中的repq_w4a4，当前双任务成绩均待测。历史摘要中B-A显著优于B，仅支持优先研究非概率A，不能定位到当前种子的特定位点，也不能继承历史成绩。候选机制是：共享激活尺度被少数大幅度通道支配，使其它通道的有效分辨率不足；按通道分别选择静态范围，可在每组仍只有16码字时减少该损失。保留RepQ直接LN→Linear边的仿射重参数化及其共享A尺度，避免违反现有repq_ln接口前提；干预其余非概率A，包括实际存在的Q/K/V、post-GELU及其它非LN输入位点。对输入X的逻辑特征通道c，将校准样本和全部token/空间位置合并为集合D_c，不跨通道合并。对p∈{0.999,0.9999,0.99999,1}，取l_c(p)=Quantile(D_c,(1-p)/2)、u_c(p)=Quantile(D_c,1-(1-p)/2)，其中p=1为minmax。令s_c=(u_c-l_c)/15、z_c=round(-l_c/s_c)，Q_c(x)=s_c[clip(round(x/s_c)+z_c,0,15)-z_c]，选择使D_c上均方误差最小的p；并列时取较大p。z_c为整数，不使用非整数平均零点，每组解码码字至多16个。退化常量区间按已读affine实现扩展至零，全零使用epsilon尺度。所有参数推理前冻结。主要替代解释是：收益来自裁剪而非通道分辨率；或局部MSE下降但丢失任务重要尾部，不能改善整网，尤其不能迁移至ADE。",
+      "mechanism_relations": [
+        {
+          "explanation": "保留完整种子及其LN变换和概率量化，只修改非LN共享输入之外的非概率A；不是原论文完整复现，也不宣称新量化机制首创。",
+          "relation": "局部适配",
+          "target": "RepQ-ViT static W4A4 adaptation / repq_w4a4"
+        }
+      ],
+      "predictions": [
+        {
+          "falsification": "若分通道minmax没有改善，而分张量裁剪已解释全部收益，则不支持通道分辨率是主要机制；若仅校准误差改善，则不支持泛化判断。",
+          "id": "p1",
+          "measurement": "同一校准捕获及独立search输入上，比较分张量/分通道×minmax/MSE裁剪四组；记录各位点激活NMSE、裁剪比例和固定下游算子输出NMSE，不将不同张量的NMSE直接混为单一指标。",
+          "statement": "在被干预位点，分通道范围选择相比分张量范围选择会减少激活误差；若误差主要来自共享尺度，分通道minmax也应出现收益，而非只有裁剪版本受益。"
+        },
+        {
+          "falsification": "若局部NMSE下降但KL不降或Top-1下降，则否定从局部代理直接推断分类收益，并检查尾部信息损失或累计分布偏移。",
+          "id": "p2",
+          "measurement": "冻结各对照，在相同1000张ImageNet search图像上报告KL(FP||quantized)、Top-1及与FP预测一致率。",
+          "statement": "若局部改善具有功能意义，候选在整网量化前向中应降低相对相同FP模型的分类logit KL，而非仅降低输入张量NMSE。"
+        },
+        {
+          "falsification": "若ADE mIoU不优于原RepQ，则不支持双任务改善；即使ImageNet提高，也只能保留分类范围的结论。",
+          "id": "p3",
+          "measurement": "后续最终候选按规定导出重载，在完整ImageNet与ADE验证集上分别对照原RepQ及同条件FP，优先判断ADE mIoU，同时报告其余规定指标。",
+          "statement": "候选可能改善冻结ADE迁移，但分类改善不构成该预测的证据。"
+        }
+      ],
+      "research_question": "历史新实例消融提示非概率激活量化可能是主要瓶颈，但没有证明当前RepQ种子存在同一问题。保留完整RepQ方案的权重、LN重参数化和概率量化，仅对其余非概率激活采用静态分通道MSE裁剪，能否减少局部误差及累计输出偏差，并改善分类和冻结分割迁移？",
+      "round": 1,
+      "scope": {
+        "limits": "历史诊断未定位当前RepQ种子的具体瓶颈；保留的LN共享A仍可能成为主导误差。浮点捕获与量化前缀的分布差异、ADE域偏移均可能消除局部收益。不推断低比特硬件加速。",
+        "planned": "官方非蒸馏DeiT-B的training-free static W4A4分类与冻结分割迁移；每个固定组最多16码字，覆盖仍须完整审计。",
+        "verified": "仅完成方案与所列文档读取，没有本次测量。"
+      },
+      "slot": "H2",
+      "sources": [
+        {
+          "ref": "ResearchBrief-6e0b590b3c3846cf9ab71e81550a70f8@1",
+          "status": "已读ResearchBrief正文",
+          "supports": "模型、静态W4A4约束、双任务协议、历史真实结果摘要及其跨实例限制；历史原始实验报告未独立深读，不作为当前种子成绩。"
+        },
+        {
+          "asset": "solutions/repq.md",
+          "status": "已完整读取",
+          "supports": "完整RepQ适配种子的组件、float LN观察、整数零点适配及待测状态；不声称已核实论文全文。"
+        },
+        {
+          "asset": "/root/data-fs/projects/Quantization_Agent_for_ViTs/EXP/validation/research_upgrade_20261107_r1/generation_live/solution_library/e430deab30c52bb0eaca40cc5d682eb6d3f9c4a83779b763a79634bb973d97d9.json",
+          "status": "已完整读取",
+          "supports": "所选基础方案身份、构造入口、冻结协议及空成绩。"
+        },
+        {
+          "asset": "methods/uniform_affine.md",
+          "status": "已完整读取",
+          "supports": "affine公式、MSE候选范围选择、分通道表示和常量通道处理。"
+        },
+        {
+          "asset": "methods/repq_ln.md",
+          "status": "已完整读取",
+          "supports": "真实LN边适配条件、变换后共享A要求、float观察差异及16码字风险。"
+        },
+        {
+          "status": "待检验推导",
+          "supports": "共享尺度限制有效分辨率的机制及四组辨别对照；不构成实测支持。",
+          "type": "theoretical_analysis"
+        }
+      ],
+      "title": "RepQ静态W4A4的非概率激活分通道裁剪：保留LN重参数化的瓶颈适配",
+      "validation_design": {
+        "escalation": "仅在局部结果支持功能性改善后，考虑全部预定义干预位点的整网search验证；分开报告局部NMSE、累计KL和任务性能，不以其中之一替代其它指标。所有结果与反例均保留，不按search结果重新挑选已报告位点。",
+        "final_protocol": "本次不执行。后续冻结最终候选并核验导出重载后，ImageNet final 50000张报告Top-1/Top-5及FP对照；ADE validation 2000张使用既有冻结Neck/UPerHead报告mIoU/mAcc/aAcc及FP对照，直接迁移分类校准状态，不进行ADE重新校准或训练，不用final搜索。",
+        "interpretation": "分通道minmax优于分张量minmax支持分辨率解释；分张量裁剪已达到同等效果则偏向裁剪解释；只有两者结合有效则支持交互机制；局部均无改善则撤回该位点机制判断，不把失败推广为所有激活位点均无效。原始RepQ另作外部基线。共同p网格不意味着共同实际码本。",
+        "priority_control": "后续首先在一条真实post-GELU→FC2边上进行四组小对照，固定输入捕获、权重、样本、舍入与16码字约束。按校准输入通道范围最大值/中位数比选择最强异质性位点，并明确这是机制压力测试，不代表全网平均收益。四组均仅替换该位点，其余模型保持同一冻结状态。"
+      }
+    },
+    "refs": [
+      "ResearchBrief-6e0b590b3c3846cf9ab71e81550a70f8@1"
+    ],
+    "run_id": "generation_live",
+    "schema_version": "qavit.cards/2",
+    "version": 1
+  },
+  "H3": {
+    "author": "generation",
+    "content_sha256": "f693504d2ae3b830224f34f94064d1746e5620deea7b0ce9e8617d5d7b8f11ff",
+    "created_at": "2026-11-07T08:00:33.899257+00:00",
+    "id": "HypothesisCard-2e9915f0a10b4a269fe0589836cd39ae@1",
+    "kind": "HypothesisCard",
+    "logical_id": "HypothesisCard-2e9915f0a10b4a269fe0589836cd39ae",
+    "parents": [],
+    "payload": {
+      "evidence_refs": [],
+      "feedback_used": [],
+      "hypothesis_type": "new_algorithm",
+      "implementation": {
+        "audit": "记录每头锚点、Value码本/scale/整数零点、概率reserve_zero状态和真实边界覆盖；检查未量化恒等变换、每组原生码本容量、导出重载一致及推理前后状态不变。常量恢复不构成原生低比特加速声明。",
+        "requirements": "后续由Coding通过自定义executor实现，Safeguard对照原始科学定义审查。Value平移必须位于其唯一A4边界之前，不能先量化原V再平移后重复量化；不改变Q/K分支。常量恢复必须在输出投影输入A4之前，不能静默跨越该量化边界。所有修改作用于副本，无优化器更新，不改浮点源模型。",
+        "status": "本次未实现、未申请或执行数值实验。已有AdaLog完整种子和相关方法文档可复用；需要新增Value分支图适配、闭式锚点拟合、局部候选评分及冻结序列化。"
+      },
+      "intervention": {
+        "anchor_fit": "先以32张规定校准图建立底座并保护其副本。按block顺序，在当前候选前缀下捕获本block的P与V：P来自固定底座Q/K及Softmax，V来自固定底座投影、但位于Value A4舍入之前。P̂使用固定底座概率量化器。对每个头汇集全部校准行，计算μ=mean(V)、S=Σm²、R=Σm(E−mμᵀ)。若S>0，定义c_reg=μ+R/(1.1S)；若S=0，定义c_reg=μ。系数1.1是预先选择的收缩规则，不是实测最优值。将c_reg各分量裁剪到对应Value校准分量的观测范围。候选集合为{0,μ,c_reg}。",
+        "base": "使用已读的完整AdaLog static W4A4种子作为完整配方底座；其成绩仍为pending_evaluation。保留W的per-channel affine percentile、普通A的affine percentile、预留零的概率/FC2 AdaLog以及独立FC2 bias补偿。新机制只修改每个头进入PV的Value坐标与注意力输出常量恢复，不改变概率码本算法。",
+        "candidate_selection": "对每个候选c，仅使用相同32张校准数据，以底座相同量化族、粒度和observer候选规则重新拟合Q4(V−c)。以Σ||P̂Q4(V−c)+c−PV||²选择锚点和相应Value量化状态；相同分数优先c=0。其它已冻结底座参数不随候选改变。逐block继续，最终冻结全部锚点和量化参数。包含c=0仅提供校准内回退，不保证独立数据不退化。",
+        "inference_and_contract": "在Value分支进入A4前减去c；PV仅接收P̂和Q4(V−c)，两者每个固定组均最多16码字且包含零；PV累加后加回静态c，再经过原有输出投影输入A4。Q/K、Linear/Conv主权重及输入、post-GELU和其余规定边界继续完整W4A4覆盖。禁止用运行时均值、行归一化或样本相关锚点。分类head、冻结分割neck/head保持FP并记录。"
+      },
+      "mechanism": "这是待验证的算法假设，不是已经定位的当前模型瓶颈。对单个注意力头，令P∈R^{Nq×Nk}为Softmax概率，P1=1，V∈R^{Nk×d}为Value，c∈R^d为跨图像、跨token共享的静态锚点。浮点恒等式为PV=P(V−1cᵀ)+1cᵀ。候选执行Ŷ=P̂ Q4(V−1cᵀ)+1cᵀ，其中P̂为冻结的四位概率量化器输出，Q4为包含零且最多16码字的冻结Value量化器。恢复项只含常量c，不读取未量化的P或V。令m=P̂1−1、E=(P̂−P)V，则Ŷ−PV=E−mcᵀ+P̂[Q4(V−1cᵀ)−(V−1cᵀ)]。第一项说明：即使概率标量误差不变，合适的静态锚点也可能消除与行质量缺陷m相关的输出误差。暂忽略Value舍入时，跨校准行最小化Σ||E−mcᵀ||²给出闭式回归锚点；但Value误差依赖c，所以实际候选必须重新拟合Value量化器并评分。适用条件是m具有非忽略能量，且E中存在可由跨样本共享向量解释的mcᵀ分量。最重要的替代解释是收益仅来自Value平移改善其四位范围，而非概率行和机制；另有可能是普通非概率激活误差主导，局部PV改善无法改变整网表现。",
+      "mechanism_relations": [
+        {
+          "explanation": "保留其完整量化配方，新增跨PV的Value坐标变换；不是更换对数base或单一超参数。",
+          "relation": "保留并扩展",
+          "target": "AdaLog static W4A4种子"
+        },
+        {
+          "explanation": "已有GELU→Linear平移通过实际decoded W恢复bias；本候选利用Softmax行和为1跨PV恢复静态Value锚点，并显式处理量化后行和不再为1的问题。",
+          "relation": "不同的平移恢复机制",
+          "target": "AdaLog adalog_bias"
+        }
+      ],
+      "predictions": [
+        {
+          "falsification": "若S接近零、E与m的相关分量很小，或回归锚点在独立数据上不优于零锚点，则该位点的行质量缺陷假说不获支持。",
+          "id": "p1",
+          "measurement": "同一block、相同P/P̂/V及底座参数，比较零锚点、均值锚点和回归锚点；分别报告概率MSE、m能量、头输出NMSE和Value舍入项大小，不将这些指标合并为任务性能。",
+          "statement": "在独立search输入上，回归锚点相对零锚点降低局部注意力输出误差；它不要求降低概率张量MSE，因为概率量化器保持相同。"
+        },
+        {
+          "falsification": "若优势在FP概率条件下完整保留，应将主要解释改为Value范围/舍入改善，而不能归因于行质量缺陷；若四位P下也不优于均值锚点，则没有证据支持回归锚点的额外价值。",
+          "id": "p2",
+          "measurement": "先在实际四位P下比较，再仅将PV概率恢复为同一Softmax的FP P；保持各候选自身已冻结的Value状态。此时m严格为零，误差只剩P[Q4(V−c)−(V−c)]。",
+          "statement": "若收益主要来自所提出的行质量机制，而非仅来自Value中心化，则在不重新拟合锚点和Value量化器的FP概率消融中，回归锚点相对均值锚点的优势应明显缩小。"
+        },
+        {
+          "falsification": "若局部输出误差改善而整网KL或任务性能不改善，则仅保留局部机制结论，不宣称完整方案优越。",
+          "id": "p3",
+          "measurement": "后续分别测整网logit KL、search任务表现及冻结最终候选的完整双任务指标；以ADE mIoU优先、ImageNet Top-1次之。",
+          "statement": "局部收益可能降低累计输出偏差，但不保证提升ImageNet Top-1或ADE20K mIoU；双任务改善是独立的待检验结果。"
+        }
+      ],
+      "research_question": "固定四位概率码本后，概率量化导致的行和偏差是否会将Value的共模分量放大为注意力输出误差？能否通过校准后冻结的Value平移及输出常量恢复，降低该误差，而不使用动态尺度、概率重归一化或高精度Value旁路？",
+      "round": 1,
+      "scope": {
+        "limits": "FP概率消融仅用于局部归因，不是最终候选。闭式拟合只针对概率误差分量，可能被Value舍入、前缀分布漂移、输出A4或普通激活瓶颈抵消；不外推硬件加速或其它模型。",
+        "planned": "官方非蒸馏DeiT-B；静态、跨样本共享的每头Value锚点；完整W4A4分类及无ADE再校准的冻结分割迁移。",
+        "verified": "仅完成资料读取和机制定义，无本次数值测量、代码交付、导出重载或任务成绩。"
+      },
+      "slot": "H3",
+      "sources": [
+        {
+          "ref": "ResearchBrief-6e0b590b3c3846cf9ab71e81550a70f8@1",
+          "status": "已读ResearchBrief正文；历史实验仅有其事实摘要，没有本次EvidenceCard。",
+          "supports": "模型、training-free/static W4A4约束、仅Generation范围及双任务协议；历史非概率A消融提醒本机制未必是主导瓶颈，不将历史成绩归于当前AdaLog实例。"
+        },
+        {
+          "asset": "solutions/adalog.md",
+          "configuration_asset": "/root/data-fs/projects/Quantization_Agent_for_ViTs/EXP/validation/research_upgrade_20261107_r1/generation_live/solution_library/d9714a16e452e2bd0741da46a9110e26e69a59b7411acb4138fe1de8794502f5.json",
+          "status": "方法说明和配置均已完整读取；双任务成绩待测。",
+          "supports": "完整底座及保留组件；不声称复现论文全套FPCS。"
+        },
+        {
+          "asset": "methods/adalog.md",
+          "status": "已读项目适配文档；未核实论文全文。",
+          "supports": "概率/FC2对数网格及reserve_zero四位适配。"
+        },
+        {
+          "asset": "methods/adalog_bias.md",
+          "status": "已读项目适配文档。",
+          "supports": "已有静态输入平移与bias恢复的机制参照；不作为本候选有效性证据。"
+        },
+        {
+          "asset": "/root/data-fs/projects/Quantization_Agent_for_ViTs/QAViT/docs/STATIC_W4A4.md",
+          "status": "已完整读取。",
+          "supports": "真实数值边界、最多16码字和冻结重载审计要求。"
+        },
+        {
+          "source": "本卡理论推导",
+          "status": "代数推导，尚无实测支持；未进行系统性相关工作排查，不主张世界首创。",
+          "supports": "行随机性恒等式、误差分解及收缩回归锚点。"
+        }
+      ],
+      "title": "行质量缺陷感知的静态Value锚点：在四位PV内消除概率量化的共模误差",
+      "validation_design": {
+        "controls": "冻结同一浮点checkpoint、底座W/A和概率量化状态、样本顺序、预处理及其它模块；各锚点只允许联动重拟合Value量化器。保留原始完整AdaLog种子，另设同流程零锚点对照，以分离额外重拟合和顺序回放效应。",
+        "decision_branches": "独立数据上回归锚点只在四位P条件占优，才支持继续扩展行质量机制；若均值锚点同样好，则撤回回归特异性主张，优先保留简单中心化；若均无改善，则不扩大实现。若只有校准误差下降，判断为过拟合风险而非有效机制。",
+        "eventual_full_protocol": "若升级最终候选，使用规定32张ImageNet校准，最多1000张search用于研究选择；冻结后实际导出并由宿主核验重载，在ImageNet validation 50000张报告Top-1/Top-5及同条件FP，在ADE20K validation 2000张报告mIoU/mAcc/aAcc及同条件FP。沿用既定冻结Neck/UPerHead，不以ADE重新校准或训练，不用final搜索。",
+        "generation_scope": "遵守本次仅Generation要求，以下均为后续验证设计，不是实验请求或完成记录。",
+        "priority_small_control": "最低成本先固定一个中间block（预先选blocks.5），在相同输入和P/P̂/V上比较零、均值、回归三个锚点，并做上述仅恢复FP概率的小消融。用32张calibration拟合，在预先固定的128张search图像上观察；不得从final取样或据结果另挑有利block。报告逐头结果而非只给最好头。"
+      }
+    },
+    "refs": [
+      "ResearchBrief-6e0b590b3c3846cf9ab71e81550a70f8@1"
+    ],
+    "run_id": "generation_live",
+    "schema_version": "qavit.cards/2",
+    "version": 1
+  }
+}

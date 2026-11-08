@@ -1,6 +1,6 @@
 # 可编辑的 PTQ 方法库
 
-本目录供人和 V2 角色直接通过 read_asset 阅读。`index.json` 是索引，每个 Markdown 是独立组件的说明；不提供整模型候选或论文配方。下文实现路径均相对 QAViT；来源索引中的外部路径保留历史溯源意义，不是框架运行依赖。
+本目录供人和 V2 角色直接通过 read_asset 阅读。`index.json` 是索引，每个 Markdown 是独立组件的说明；与完整方案库分开。下文实现路径均相对 QAViT；来源索引中的外部路径保留历史溯源意义，不是框架运行依赖。
 
 V2 的 context.method_catalog 直接给出简短标题、适用问题和 `read_asset(asset="methods/<id>.md")` 入口；索引可直接读取 `read_asset(asset="methods/index.json")`。资料查阅不需要申请实验或进入 Coding/Safeguard。宿主按当前调用的授权快照绑定文件哈希。已有 Profiling `query_method_library` / `read_method_document` 仍用于数值会话中的文档查询兼容：query 是关键词过滤，空查询浏览全部；会话文本及 SHA256 保存于 method_library.json。它们不是科研角色查阅资料的前置步骤。
 
@@ -19,7 +19,7 @@ V2 的 context.method_catalog 直接给出简短标题、适用问题和 `read_a
 
 例如新增独立激活方法时，先实现 `TargetMethod.fit/apply`，补 schema 和方法语义校验、导出参数校验/加载版本，再增加含 `activation` 映射的索引项和文档。不要把同一论文的其它方法硬编码进它的 fit/apply。全局白名单仍由任务配置决定。
 
-`execution/recipes.py` 保留为开发者离线数值回归资料；自主搜索不注册 `query_ptq_recipe`，不把既有 baseline 的完整方案放进任务或 memory。AdaLog（A网格与bias预处理独立）、AdaRound、GPTAQ v1已注册；ERQ/IGQ仍只作为人工研究参考，尚未开放执行。
+`execution/recipes.py` 保留原论文配置参考；`execution/baselines.py` 为新 static W4A4 完整种子提供独立构造入口，见 `docs/solutions/`。Generation 可直接采用、适配或组合；不把完整方案混入 Memory 知识。AdaLog（A网格与bias预处理独立）、AdaRound、GPTAQ v1已注册；ERQ/IGQ仍只作为人工研究参考，尚未开放执行。
 
 V2 科研流程与实验申请入口见 [主 README](../../README.md)。本目录只描述数值组件；局部诊断模型不能导出，正式模型的完整覆盖门槛保持生效。
 

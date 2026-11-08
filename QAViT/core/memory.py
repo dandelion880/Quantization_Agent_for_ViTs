@@ -395,7 +395,7 @@ class ResearchMemory:
         primary, secondary = scores["classification"]["top1"], scores["segmentation"]["mIoU"]
         state = self.snapshot()
         old = state["L1"]["incumbent"]
-        if old and (primary, secondary) <= (old["top1"], old["mIoU"]):
+        if old and (secondary, primary) <= (old["mIoU"], old["top1"]):
             return None
         for key in ("L0", "memory_version"):
             state.pop(key, None)

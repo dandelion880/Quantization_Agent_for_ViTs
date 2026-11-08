@@ -75,6 +75,10 @@ class Workflow(RoleInteraction, ExperimentRequests, WorkflowDriver):
         self.memory, self.retriever = ResearchMemory(self.journal), MemoryRetriever(self.journal)
         self.broker = ExperimentBroker(self.journal, self.brief["id"], self.budget, self.config['runtime'])
         self.runtime = TaskRuntime(self.run_dir, self.queue, self.budget, self.config["runtime"])
+        from core.solutions import SolutionLibrary
+        self.solutions = SolutionLibrary(self.journal, self.brief["payload"], shared=self.config.get("purpose") == "research")
+        if not read_only:
+            self.solutions.initialize()
         self.transport_blocked = None
 
 
@@ -382,6 +386,11 @@ class Workflow(RoleInteraction, ExperimentRequests, WorkflowDriver):
         recording_task = self.tasks().get(prefix + '/record')
         recorder = self.result_card(recording_task)
         if recorder or self.defer_recorder(recording_task) or recording_task is None:
+            if self.config["enable_l3"] and selected:
+                for ref in self.l3_outcome(number)["valid_evidence_refs"][-1:]:
+                    evidence = self.journal.card(ref)
+                    experiment = self.journal.card(evidence["payload"]["experiment_ref"])
+                    self.solutions.consider_round(number, evidence, experiment, ranking, validator=self.broker.validate_evidence_for)
             self.event("round_finished", prefix + "/finished", round=number, metareview_ref=recorder['id'] if recorder else None,
                        scientific_review='completed' if recorder or recording_task is None else 'pending',
                        selection_ref=ranking["id"], selected_slot=selected)

@@ -12,3 +12,5 @@ calibration.strategy=percentile 时，在显式 percentiles 中以张量 QDQ MSE
 
 percentile 减少离群值影响但可能截断任务重要尾部，应结合局部/任务误差。对非常窄的GELU负支，affine不一定解决所有问题，可比较其它网格；对概率长尾也不是专用log的替代保证。
 
+
+退化常量通道采用明确数值扩展：仅当hi==lo时把区间扩到零；全零通道用机器epsilon尺度。非退化通道保持原affine公式。这是有记录的工程适配，避免per-channel正常常量通道导致整网准备失败。

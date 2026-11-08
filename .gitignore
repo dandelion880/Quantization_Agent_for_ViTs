@@ -200,3 +200,19 @@ coverage.xml
 !/EXP/validation/adaptive_finish_20261106_r1/DELIVERY.json
 !/EXP/validation/adaptive_finish_20261106_r1/gpu_smoke.py
 !/EXP/validation/adaptive_finish_20261106_r1/ROLLBACK.md
+
+# Reviewed scientific upgrade delivery; raw runs, source snapshots and model packages stay local.
+!/EXP/validation/research_upgrade_20261107_r1/
+!/EXP/validation/research_upgrade_20261107_r1/REPORT.md
+!/EXP/validation/research_upgrade_20261107_r1/PSEUDOCODE.md
+!/EXP/validation/research_upgrade_20261107_r1/DELIVERY.json
+!/EXP/validation/research_upgrade_20261107_r1/HYPOTHESES.json
+
+# Reviewed Skill integration and resource inventory; raw runs/backups stay local.
+!/EXP/validation/scientific_skills_20261108_r1/
+!/EXP/validation/scientific_skills_20261108_r1/REPORT.md
+!/EXP/validation/scientific_skills_20261108_r1/PROJECT_RESOURCE_INVENTORY.md
+!/EXP/validation/scientific_skills_20261108_r1/PSEUDOCODE.md
+!/EXP/validation/scientific_skills_20261108_r1/DELIVERY.json
+!/EXP/validation/scientific_skills_20261108_r1/live_smoke.py
+!/EXP/validation/scientific_skills_20261108_r1/build_inventory.py

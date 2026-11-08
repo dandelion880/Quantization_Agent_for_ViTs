@@ -1,0 +1,247 @@
+{
+  "status": "completed",
+  "date": "2026-11-08T07:05:16.705765+00:00",
+  "baseline": "working tree at task start, HEAD 8d937f0, including pre-existing uncommitted research upgrade",
+  "source_identity": "8755e09ec924942f1147ccd3db52dedbba849a3f85344069f92ac02d21c2655a",
+  "changed_existing_files": [
+    ".gitignore",
+    "QAViT/README.md",
+    "QAViT/agents/interaction.py",
+    "QAViT/agents/prompts/common.md",
+    "QAViT/tests/data/prompt_readiness_baseline.json",
+    "STRUCTURE.md"
+  ],
+  "added_files": [
+    "QAViT/docs/SCIENTIFIC_SKILLS.md",
+    "QAViT/docs/skills/INDEX.md",
+    "QAViT/docs/skills/adapt-quantization-method/SKILL.md",
+    "QAViT/docs/skills/adapt-quantization-method/references/designing-a-remedy.md",
+    "QAViT/docs/skills/adapt-quantization-method/references/established-quantization-patterns.md",
+    "QAViT/docs/skills/assess-evidence-transfer/SKILL.md",
+    "QAViT/docs/skills/assess-evidence-transfer/references/evidence-scope.md",
+    "QAViT/docs/skills/assess-evidence-transfer/references/next-step-decisions.md",
+    "QAViT/docs/skills/design-discriminative-experiment/SKILL.md",
+    "QAViT/docs/skills/design-discriminative-experiment/references/experiment-patterns.md",
+    "QAViT/docs/skills/design-discriminative-experiment/references/metrics-and-references.md",
+    "QAViT/docs/skills/diagnose-ptq-failure/SKILL.md",
+    "QAViT/docs/skills/diagnose-ptq-failure/references/distribution-and-propagation.md",
+    "QAViT/docs/skills/diagnose-ptq-failure/references/fidelity-triage.md",
+    "QAViT/docs/skills/diagnose-ptq-failure/references/quantization-error-map.md",
+    "QAViT/tests/skill_evals/ROUTING_AND_REPLAY.md",
+    "QAViT/tests/test_scientific_skills.py"
+  ],
+  "deleted_project_files": [],
+  "unchanged_baseline_file_count": 229,
+  "archive": {
+    "name": "QAViT_scientific_skill_pack_v0_3.zip",
+    "sha256": "e75349c5e66dc45b252a2586ff9256afcd8d468be81f5bf705f02e4d35ea5194",
+    "deleted": true,
+    "unmodified_skill_bodies": 4,
+    "unmodified_strategy_references": 9
+  },
+  "tests": {
+    "scientific_skills": {
+      "passed": 6,
+      "seconds": 6.257
+    },
+    "full_regression": {
+      "passed": 542,
+      "failed": 0,
+      "seconds": 714.538
+    },
+    "structure_audit": {
+      "status": "passed",
+      "syntax_files": 164,
+      "snapshot_files": 248
+    },
+    "cpu_numeric_contracts": {
+      "calls": 6,
+      "status": "success",
+      "raw_evidence_files": 3,
+      "dataset": "seeded synthetic tiny ViT"
+    },
+    "cli_help": "passed",
+    "patch_whitespace": "passed",
+    "reverse_patch_check": "passed",
+    "delivery_scripts_compile": "passed",
+    "new_document_links": "passed"
+  },
+  "context_cost": {
+    "additional_routing_model_calls": 0,
+    "after_characters": 36067,
+    "before_characters": 33989,
+    "catalog_characters": 1384,
+    "delta_characters": 2078,
+    "scope": "deterministic assembled H3 input; character count, not tokens or wall latency",
+    "skill_bodies_in_initial_context": 0,
+    "skill_references_in_initial_context": 0
+  },
+  "live_smoke": {
+    "scope": "six autonomous scenario runs plus one explicit policy-use scenario; no scientific measurements",
+    "cases": [
+      {
+        "case": "A1",
+        "skills_available": false,
+        "status": "completed",
+        "model_calls": 1,
+        "host_tool_calls": 0,
+        "assets_read": [],
+        "elapsed_seconds": 126.26237505208701,
+        "usage": {
+          "input_tokens": 16959,
+          "output_tokens": 3981,
+          "reasoning_output_tokens": 2070,
+          "cached_input_tokens": 0
+        },
+        "output_ref": "HypothesisCard-8caf2a40043c468f8dc2e5716fea9b97@1"
+      },
+      {
+        "case": "A1",
+        "skills_available": true,
+        "status": "completed",
+        "model_calls": 2,
+        "host_tool_calls": 3,
+        "assets_read": [
+          "skills/diagnose-ptq-failure/SKILL.md",
+          "skills/design-discriminative-experiment/SKILL.md",
+          "methods/gptaq.md"
+        ],
+        "elapsed_seconds": 166.02516201976687,
+        "usage": {
+          "input_tokens": 38376,
+          "output_tokens": 5061,
+          "reasoning_output_tokens": 2586,
+          "cached_input_tokens": 0
+        },
+        "output_ref": "HypothesisCard-cd4d7ad093d74b62a43cfbbb292bcf04@1"
+      },
+      {
+        "case": "B1",
+        "skills_available": true,
+        "status": "completed",
+        "model_calls": 1,
+        "host_tool_calls": 0,
+        "assets_read": [],
+        "elapsed_seconds": 28.337501808069646,
+        "usage": {
+          "input_tokens": 15708,
+          "output_tokens": 679,
+          "reasoning_output_tokens": 104,
+          "cached_input_tokens": 0
+        },
+        "output_ref": "ReviewDecisionCard-8061da191aa54283915fa45ac5e7d92c@1"
+      },
+      {
+        "case": "C1",
+        "skills_available": true,
+        "status": "completed",
+        "model_calls": 2,
+        "host_tool_calls": 3,
+        "assets_read": [
+          "skills/adapt-quantization-method/SKILL.md",
+          "methods/smoothquant.md",
+          "methods/repq_ln.md"
+        ],
+        "elapsed_seconds": 161.9921342022717,
+        "usage": {
+          "input_tokens": 38246,
+          "output_tokens": 4746,
+          "reasoning_output_tokens": 2509,
+          "cached_input_tokens": 0
+        },
+        "output_ref": "HypothesisCard-3dbdf244233b4c4291fad56cf5c72a20@1"
+      },
+      {
+        "case": "D1",
+        "skills_available": true,
+        "status": "completed",
+        "model_calls": 1,
+        "host_tool_calls": 0,
+        "assets_read": [],
+        "elapsed_seconds": 27.733611799776554,
+        "usage": {
+          "input_tokens": 15724,
+          "output_tokens": 638,
+          "reasoning_output_tokens": 133,
+          "cached_input_tokens": 0
+        },
+        "output_ref": "ReviewDecisionCard-6260ef37779c492db9eddfbdac8cdd32@1"
+      },
+      {
+        "case": "A4",
+        "skills_available": true,
+        "status": "completed",
+        "model_calls": 1,
+        "host_tool_calls": 0,
+        "assets_read": [],
+        "elapsed_seconds": 15.803675818257034,
+        "usage": {
+          "input_tokens": 15705,
+          "output_tokens": 299,
+          "reasoning_output_tokens": 0,
+          "cached_input_tokens": 0
+        },
+        "output_ref": "ReviewDecisionCard-d1ede39d286b4b4fac00e97fad3bb6f3@1"
+      },
+      {
+        "case": "D_policy",
+        "skills_available": true,
+        "status": "completed",
+        "model_calls": 3,
+        "host_tool_calls": 3,
+        "assets_read": [
+          "skills/assess-evidence-transfer/SKILL.md",
+          "skills/assess-evidence-transfer/references/next-step-decisions.md",
+          "skills/assess-evidence-transfer/references/evidence-scope.md"
+        ],
+        "elapsed_seconds": 51.526500162668526,
+        "usage": {
+          "input_tokens": 51806,
+          "output_tokens": 807,
+          "reasoning_output_tokens": 91,
+          "cached_input_tokens": 0
+        },
+        "output_ref": "ReviewDecisionCard-1d504a334991419d882fe827ce9780cf@1"
+      }
+    ],
+    "checks": {
+      "all_seven_completed": true,
+      "all_four_skills_read": true,
+      "two_strategy_references_read": true,
+      "no_index_reread": true,
+      "no_duplicate_asset_calls_within_case": true,
+      "no_skill_ablation_completed": true,
+      "unrelated_shape_failure_used_no_skill": true,
+      "numeric_tasks": 0,
+      "actual_model_effort_reported": false
+    },
+    "total_model_calls": 11,
+    "total_host_tool_calls": 9,
+    "total_case_seconds": 577.6809608628973,
+    "usage": {
+      "input_tokens": 192524,
+      "output_tokens": 16211,
+      "reasoning_output_tokens": 7493,
+      "cached_input_tokens": 0
+    },
+    "interpretation": "Smoke confirms resource discovery/read/continuation and optionality, not causal research-quality gain."
+  },
+  "outputs": {
+    "report": "REPORT.md",
+    "project_inventory": "PROJECT_RESOURCE_INVENTORY.md",
+    "integration": "../../../QAViT/docs/SCIENTIFIC_SKILLS.md",
+    "pseudocode": "PSEUDOCODE.md",
+    "task_only_patch": "changes.patch",
+    "baseline_hashes": "before_manifest.json",
+    "raw_live": "live/",
+    "raw_tests": "regression.log"
+  },
+  "limits": [
+    "No long GPU research or full ImageNet/ADE L3 evaluation.",
+    "No statistical or blinded claim that Skills improve scientific quality.",
+    "B1/D1 chose no Skill; D_policy explicitly requested reuse of local strategy but named no file.",
+    "Real smoke exercised Generation/Judger; Evolution/Recorder access and original loops covered offline.",
+    "No actual model/effort echo from CLI; requested defaults are recorded separately.",
+    "Original package full behavioral evaluation and cross-model research remain unverified."
+  ]
+}

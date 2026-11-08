@@ -9,3 +9,5 @@
 网格忠于此版本官方WeightQuantizer：signed用amax/(2^(b-1)-1)，unsigned用零包含区间；与旧GPTQ中点网格有别。AdaLog bias依赖W时先把统计输入还原成有效中心输入，避免重复补偿。保留原始FP输出做对齐验证，记录dXXT范数。
 
 适配：逐图流式统计，输入A是项目独立的静态插件，不复用原仓库动态per-token A或整模型配方；当前不开放未经核对的Conv/输入组GPTAQ。空间O(in_features²)多个矩阵，代价高于GPTQ；FP32并关闭此计算的TF32。W/A、前缀、输入变换或calibration数据改变都使统计缓存失效。量化编码保存重载不重新校准；仅reference QDQ。
+
+W4 对称码默认 [-8,7]（16值）合法。`options.gptaq_signed_min=-7` 可显式适配为15值；裁剪搜索及逐列舍入均使用新下界，误差补偿基于新解码值，禁止事后夹取冒充原算法。仅用于signed W4，不要求选择该变体。

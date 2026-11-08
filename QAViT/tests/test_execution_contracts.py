@@ -257,7 +257,7 @@ class ReloadAndInterfaceTests(TempCase):
         payload, (backend, cfg, data) = self.interface()
         payload["execution"].pop("calibration")
         request = {"approval": {"candidate": {"path": str(self.root / "approved_source.py")}}}
-        invalid = ([], [{"split": "search"}], None, "evaluations", {"classification": []},
+        invalid = ([{"split": "search"}], None, "evaluations", {"classification": []},
                    {"classification": None}, {"classification": 1})
         for evaluations in invalid:
             with self.subTest(evaluations=evaluations):

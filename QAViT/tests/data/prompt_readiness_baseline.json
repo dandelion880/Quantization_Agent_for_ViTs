@@ -17,18 +17,18 @@
   },
   "explicit_fix_source": "EXP/validation/parent_evolution_20261029_r1/prompts.diff; authorized parent/final workflow update, 2026-10-29; EXP/validation/serial_debate_memory_20261029_r1/prompts.diff; authorized serial debate/shared science/fixed verdict update, 2026-10-29; EXP/validation/experiment_inputs_20261029_r1/prompts.diff; authorized experiment input and Brief-scope alignment, 2026-10-29",
   "explicit_prompt_fixes": {
-    "generate": "b36dcb3cd2fe8c0422a63d8556e4db26d8d25794d9c16510164f3aeea78826c6",
-    "evolve": "92e94461ad0ea4c9d8f16495a5765481a52b1adbd70e810713820bd69705add8",
-    "screen": "64b3ba639e2815abab5e0d112c72913b89baea87231d149f4a56b28719782401",
-    "position": "320b47eee581b6f3b520ff74bf4f81218c1d738a20d7856ba02396c836095361",
-    "arbitrate": "74f6b10975cb068ac7e8c31edea26b602fafb36feb501e5ec69ce1c5458b50c4",
-    "rank": "ac5e45959f4b43e3986758ffffe2a6a91398cfba15e3cc0a9700542003cbbdfa",
-    "plan_l3": "c032692e8ac6bdf54529a08d1b9bffe53e991645a92f8289ce5df8c9be7606f7",
-    "record": "952a852f6656fd3cf05bd15b52f4dafe0b2c74bbb437e7521a8cdc67ce4d8deb",
-    "code": "bbf9519c05ecdcc2ef33a15e359788b2ceb781134666fc100905b7e2ec8ab30e",
-    "safeguard": "c63b49509fb5e24f9c2d468ac16e6ea06f32e5002e3830d74a0b7ffccc0b5628",
-    "supervise": "8aa5cc824d945e2b036cd0bf65de58db9aff3807bc846b4d815ed72b930e8d82",
-    "interpret": "a09c3ae32e0ab73f6ba6bd4ee805b472c700b4f67ab46ab7020c185d9b236c39"
+    "generate": "1e88b47fe99e7fc54b427afc7207ed4819ca01d445fd81154b167c9610c1b4eb",
+    "evolve": "f91430045eeb93732f8a63edbc0d47e7ad64885fe37144e19d8c93e85b4e0f6e",
+    "screen": "1f1ca4ad840cae7633bea257704a78662e8d4d6586515ec5441023cb757cdcf5",
+    "position": "5845d5990605be7abaf9ca2669b81b57888e31b4cf7259e4e233f5bc15a9c8e9",
+    "arbitrate": "eb84506206e6bef740055dd3ec5df0a69c83bb588ad9751602fc3a7e0c663c04",
+    "rank": "332f54a6aa781ff0441e9696714a8bd462f8b1a44c918ab2a1eb53cf0c302d6d",
+    "plan_l3": "88dff01262e1adb95d184ca29a6e7768f42991c3367479c25b744b09315dfdd1",
+    "record": "49fd7db076e32a6498cc84ec303b2ad969df10eb5345e2500d3bab3e18f49bb6",
+    "code": "901ebe2795f3b4eacf9106aeb6699baee17c9ad4ec0155b3cf9f956fa7708b4c",
+    "safeguard": "9b4e46ae06e534faad8c447144f0ea7eae659caa2d7b864085abb64deb851201",
+    "supervise": "d6e893d2a3b9ec6ccdcc1d1030564be78d9c460861d536cb026d791dc45e4ff6",
+    "interpret": "172d49ae9911d2026778636c8789b34e4b7e3792929f9021c40d248f37c1c22d"
   },
   "prompt_sha256": "259b92b5df62985f14c642eb5c7a8646f2bfe026675b95ba0ee0722c8a77740a",
   "roles_sha256": "4626c8f2653c790e888d09cf55eb3e5e4a2340758c6cfa0ce56bbce79befc0a1",
@@ -42,8 +42,16 @@
   "research_refactor_note": "2026-11-03 authorized research simplification: 3-field scientific Recorder, host provenance/identity, minimal intent input and experimental reasoning. Full diff and validation in EXP/validation/research_refactor_20261103_r1/changes.patch.",
   "generation_loop_note": "2026-11-04: only Generation/Evolution autonomous pre-H experiments, selected support refs and removal of routine Judger approval/interpretation. See EXP/validation/generation_loop_20261104_r1/prompts.diff.",
   "single_implementation_note": "2026-11-05: remove Reference and dual implementation tasks; preserve immutable request, single Coding implementation and Safeguard semantic review; host fills deterministic fields; Recorder partial scope and per-item pending knowledge; local output repair across roles.",
-  "current_prompt_sha256": "1f0c3e62aa9590c22b935c825a065d2f418d76cf0e04d2578fc545ac0401fb5a",
+  "current_prompt_sha256": "ffe183847a9c58509ceaef98e1432238ef7e77e385fae581b345bf821906ab8d",
   "research_gate_cleanup_note": "2026-11-05: remove historical-page completion gates and mandatory feedback/appendix forms; optional scientific rows have isolated issues, verdicts use rationale, host binds selection defaults, single Coding and intent review remain. See EXP/validation/research_gates_20261105_r1.",
   "end_to_end_repair_note": "2026-11-05 authorized consistent service continuation, L3 revision/defer, immediate valid evidence, optional historical interpretation and on-demand reads. See EXP/validation/end_to_end_repair_20261105_r1/changes.patch.",
-  "parallel_debate_note": "2026-11-06 authorized independent initial matches and final join; only position/arbitrate scheduling sentences changed. See EXP/validation/parallel_debate_20261106_r1/prompts.diff."
+  "parallel_debate_note": "2026-11-06 authorized independent initial matches and final join; only position/arbitrate scheduling sentences changed. See EXP/validation/parallel_debate_20261106_r1/prompts.diff.",
+  "research_upgrade_note": "2026-11-07: common static W4A4, complete-solution H1/H2, adaptation and failure semantics; no extra review stages.",
+  "explicit_schema_fixes": {
+    "profile_ptq_candidates": "609efe80a641d6f42ef7637760f2e0de5459a3655eecda0cfd7ac8da34eaf9fe",
+    "validate_experiment": "c533c59761ac66013e9246e9a0aa8ec2f2941c4b625222cc9dbaadf8bd6648b4",
+    "compose_experiment": "44cea8eff7442d24c5ab3da5281ed83992985a8912bcf5c34bd528942fe09005"
+  },
+  "research_upgrade_schema_note": "Explicit reserve_zero and gptaq_signed_min numerical options; original schema hashes preserved.",
+  "scientific_skills_note": "2026-11-08: optional scientific Skill catalog and on-demand read_asset guidance only; no tool schema, workflow or submission changes. See EXP/validation/scientific_skills_20261108_r1/changes.patch."
 }

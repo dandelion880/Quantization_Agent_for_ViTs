@@ -218,3 +218,5 @@ knowledge_directory 提供有限的 L2 目录、知识状态和复盘时点，�
 
 
 当前对象的证据交付使用同一规则：从已绑定 Hypothesis、Review、Experiment 的明确支持引用追加 Evidence 观测和各自冻结条件，覆盖筛查、交锋、选择、演化、plan_l3 及 Coding/Safeguard。不递归展开普通历史 refs；Evidence 的条件卡不会再次触发旧 trial 链。按提交快照、角色可见性及同回合隔离过滤，同一来源只交付一次；大型结果保持既有统计投影、覆盖说明和精确 read_card 展开入口。Recorder 继续使用增量批次，不能借交接规则重新注入全历史。
+
+当前 H1 为成熟完整方案驱动，H2 为完整方案上的真实瓶颈改进，H3 保持开放创新；旧 existing_method/engineering/new_algorithm 卡片枚举保留。H1/H2 自然说明起点和改动，不增固定措辞或审核门槛。Top-3 独立于 Memory，按协议分桶持久化在 EXP/solutions，每轮完成后有效双任务按 (ADE20K mIoU, ImageNet Top-1) 降序更新；待测种子保留空成绩。完整源码、配置、协议和版本可按 configuration_asset 获取，失败与未入选发现仍由 Recorder/Memory 保存。统一 [W4A4协议](STATIC_W4A4.md) 只在最终完整方案检查全覆盖。

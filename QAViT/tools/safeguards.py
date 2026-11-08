@@ -23,7 +23,7 @@ CAPABILITY_MODULES = {"os", "sys", "subprocess", "socket", "ctypes", "importlib"
 # these sources grants no execution capability or access to private run assets.
 # One list drives both the model-visible index and snapshot-bound host grants.
 PUBLIC_INTERFACE_FILES = (
-    'model.py', 'pipeline.py', 'contracts.py', 'plugin_contracts.py', 'calibration.py', 'plugin_math.py',
+    'baselines.py', 'model.py', 'pipeline.py', 'contracts.py', 'plugin_contracts.py', 'calibration.py', 'plugin_math.py',
     'adalog.py', 'adaround.py', 'capabilities.py', 'codecs.py', 'comparison.py', 'coordinate.py',
     'diagnostics.py', 'evaluation.py', 'gptaq.py', 'grids.py', 'local_comparison.py', 'method_library.py',
     'methods.py', 'metrics.py', 'objectives.py', 'operators.py', 'planning.py', 'plugin_tools.py',

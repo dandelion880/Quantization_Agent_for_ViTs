@@ -1,0 +1,77 @@
+{
+  "solutions": [
+    {
+      "id": "gptaq_w4a4",
+      "title": "GPTAQ v1 static W4A4 adaptation",
+      "builder": "ptq_agent.execution.baselines.build_baseline",
+      "builder_arguments": {
+        "name": "gptaq",
+        "quantize_head": false
+      },
+      "source": {
+        "paper": "https://arxiv.org/abs/2504.02692v1",
+        "repository": "https://github.com/Intelligent-Computing-Lab-Panda/GPTAQ",
+        "commit": "d6bd2e41e9abc8f22a76d6ea789c450b6c143ced"
+      },
+      "read_asset": {
+        "asset": "solutions/gptaq.md"
+      },
+      "quantization": {
+        "protocol": "static_w4a4/1",
+        "head": "FP",
+        "neck": "FP",
+        "probability_zero_reserved": true
+      },
+      "limitations": "Mature method seed, not an exact paper recipe or verified same-protocol top-three score. Full dual-task evaluation pending."
+    },
+    {
+      "id": "adalog_w4a4",
+      "title": "AdaLog static W4A4 adaptation",
+      "builder": "ptq_agent.execution.baselines.build_baseline",
+      "builder_arguments": {
+        "name": "adalog",
+        "quantize_head": false
+      },
+      "source": {
+        "paper": "https://arxiv.org/abs/2407.12951v1",
+        "repository": "https://github.com/GoatWu/AdaLog",
+        "commit": "75a57d2515521bb1711159ea229d1a37665f3fed"
+      },
+      "read_asset": {
+        "asset": "solutions/adalog.md"
+      },
+      "quantization": {
+        "protocol": "static_w4a4/1",
+        "head": "FP",
+        "neck": "FP",
+        "probability_zero_reserved": true
+      },
+      "limitations": "Mature method seed, not an exact paper recipe or verified same-protocol top-three score. Full dual-task evaluation pending."
+    },
+    {
+      "id": "repq_w4a4",
+      "title": "RepQ-ViT static W4A4 adaptation",
+      "builder": "ptq_agent.execution.baselines.build_baseline",
+      "builder_arguments": {
+        "name": "repq",
+        "quantize_head": false
+      },
+      "source": {
+        "paper": "https://arxiv.org/abs/2212.08254",
+        "repository": "https://github.com/zkkli/RepQ-ViT",
+        "commit": "a160561b9233945e6680132f129d13041b787318"
+      },
+      "read_asset": {
+        "asset": "solutions/repq.md"
+      },
+      "quantization": {
+        "protocol": "static_w4a4/1",
+        "head": "FP",
+        "neck": "FP",
+        "probability_zero_reserved": true
+      },
+      "limitations": "Mature method seed, not an exact paper recipe or verified same-protocol top-three score. Full dual-task evaluation pending."
+    }
+  ],
+  "selection_basis": "Among locally available source-traced mature methods, GPTAQ/AdaLog/RepQ provide compensation, adaptive log and scale reparameterization baselines. Paper task results are not substituted for this strict protocol."
+}

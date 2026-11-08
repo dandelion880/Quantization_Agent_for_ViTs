@@ -3,6 +3,10 @@ from copy import deepcopy
 from core.cards import ContractError, fingerprint
 
 
+class EngineeringBlocked(RuntimeError):
+    """An implementation cannot execute; no scientific measurement is implied."""
+
+
 class ObservedData:
     def __init__(self, data):
         self._data = data
@@ -56,10 +60,19 @@ def execute_custom(plugin, payload, backend, cfg, data, directory):
     parameters = deepcopy(spec.get("parameters", {}))
     original_parameters = fingerprint(parameters)
     original = model_digest(backend.model)
+    frozen_receipts = []
+    def load_bound(ref):
+        from tools.frozen import load_frozen
+        binding = next((b for b in spec.get('frozen_sources', []) if b['evidence_ref'] == ref), None)
+        if binding is None:
+            raise ContractError('load_frozen requires a cited Evidence with a host-verified exported package')
+        model, receipt = load_frozen(binding, backend, cfg, data)
+        frozen_receipts.append({k: v for k, v in receipt.items() if k != 'manifest'})
+        return model, receipt
     try:
         value = plugin.execute(deepcopy(payload), {"candidate_model": candidate, "reference_model": backend.model,
             "data": observed, "backend": BackendView(), "configuration": deepcopy(cfg),
-            "parameters": parameters, "directory": str(directory)})
+            "parameters": parameters, "directory": str(directory), "load_frozen": load_bound})
     finally:
         for handle in handles:
             handle.remove()
@@ -67,7 +80,17 @@ def execute_custom(plugin, payload, backend, cfg, data, directory):
         raise ContractError("自定义执行改写了冻结基准或参数")
     if not isinstance(value, dict) or not isinstance(value.get("observations"), dict):
         raise ContractError("自定义实验缺少规范 observations")
+    if value.get('status') in ('engineering_blocked', 'blocked', 'failed') or value['observations'].get('status') in ('engineering_blocked', 'blocked', 'failed'):
+        raise EngineeringBlocked(str(value.get('reason') or value['observations'].get('reason') or value['observations']))
     evaluations = value["observations"].get("evaluations", {})
+    if isinstance(evaluations, list):
+        # Accept only unambiguous keyed rows; never guess metric ownership or sample IDs.
+        mapped = {}
+        for row in evaluations:
+            if not isinstance(row, dict) or not isinstance(row.get('kind'), str) or row['kind'] in mapped:
+                raise ContractError('observations.evaluations rows need a unique kind and actual data receipt')
+            mapped[row['kind']] = {k: v for k, v in row.items() if k != 'kind'}
+        evaluations = value['observations']['evaluations'] = mapped
     if not isinstance(evaluations, dict):
         raise ContractError("observations.evaluations 必须是对象")
     for name, row in evaluations.items():
@@ -118,7 +141,7 @@ def execute_custom(plugin, payload, backend, cfg, data, directory):
         if row.get("full_dataset") is True and actual["full_dataset"] is not True:
             raise ContractError("自定义评测 full_dataset 没有实际完整数据范围支持")
     value["execution_facts"] = {"measurement_kind": "custom_local_statistic" if sites else "custom_computation",
-        "sites": sorted(sites), "data": measured, "parameters": deepcopy(parameters), "forward_calls": len(calls)}
+        "frozen_loads": frozen_receipts, "sites": sorted(sites), "data": measured, "parameters": deepcopy(parameters), "forward_calls": len(calls)}
     value["sample_selection"] = {split: row["sample_ids"] for split, row in measured.items()}
     return value
 

@@ -32,7 +32,7 @@ def apply(x, spec, params=None, options=None):
     positive = x + p["shift"]
     require(bool((positive >= -1e-7).all()), "AdaLog 出现超出已声明 shift 的负值")
     code = (-(positive / p["scale"]).clamp(1e-15, 1).log2() * 37 / p["base_q"]).round()
-    valid = code < 2 ** spec["bits"]
+    valid = code < 2 ** spec["bits"] - int((options or {}).get("reserve_zero", False))
     index = code.clamp(0, 2 ** spec["bits"] - 1).long()
     y = 2.0 ** (-p["table1"][index]) * p["table2"][index] * p["scale"]
     return (y * valid - p["shift"]).to(x.dtype)

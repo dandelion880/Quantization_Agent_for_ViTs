@@ -101,9 +101,15 @@ def fit(x, spec, method, *, percentiles=None):
 
 
 def affine_params(lo, hi, bits):
+    require(bool(torch.isfinite(lo).all()) and bool(torch.isfinite(hi).all()) and bool((hi >= lo).all()),
+            "affine observer 遇到非有限/反向区间")
+    # Defined constant-channel extension: include zero only for degenerate ranges.
+    # Nondegenerate upstream affine arithmetic is unchanged.
+    dead = hi == lo
+    lo = torch.where(dead, torch.minimum(lo, torch.zeros_like(lo)), lo)
+    hi = torch.where(dead, torch.maximum(hi, torch.zeros_like(hi)), hi)
     scale = (hi - lo) / (2 ** bits - 1)
-    # 原实现退化输入会除零；明确失败，不能偷偷换原论文的数学定义。
-    require(bool((scale > 0).all()) and bool(torch.isfinite(scale).all()), "affine observer 遇到零范围/非有限区间")
+    scale = torch.where(scale == 0, torch.full_like(scale, torch.finfo(scale.dtype).eps), scale)
     return {"scale": scale, "zero": (-lo / scale).round()}
 
 

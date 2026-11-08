@@ -1,0 +1,114 @@
+{
+  "status": "completed",
+  "source_version": "820442b80960daf5b9fbc3ab2a5ab8f59f8fdf28138d2fe3281ec51153a1f34e",
+  "numerical_library_sha256": "ba3ee3f48d9f56cc115c355a4ac218f59f2c07cee0543448a28130eebfdd64ff",
+  "preserved": [
+    "workflow",
+    "default budgets",
+    "parallel debates",
+    "adaptive GPU scheduling",
+    "on-demand Memory",
+    "historical evidence and verdicts"
+  ],
+  "verification": {
+    "full_regression": {
+      "tests": 535,
+      "passed": 534,
+      "failures": 1,
+      "seconds": 652.439,
+      "log": "regression_r2.log",
+      "failure": "subscription concurrency fixture competed with simultaneous real Generation",
+      "resolution": {
+        "isolated_suite_tests": 7,
+        "status": "passed",
+        "seconds": 9.825,
+        "log": "parallel_runtime_isolated.log"
+      }
+    },
+    "final_targeted": {
+      "tests": 77,
+      "status": "passed",
+      "seconds": 43.309,
+      "log": "final_targeted_r2.log"
+    },
+    "structure": {
+      "status": "passed",
+      "errors": [],
+      "syntax_files": 163,
+      "snapshot_file_count": 231,
+      "path": "structure_audit_delivery.json"
+    },
+    "contract_snapshot": {
+      "status": "passed",
+      "path": "delivery_contracts/contracts.json"
+    },
+    "real_generation": {
+      "status": "passed",
+      "real_llm_calls": 7,
+      "requested": [
+        [
+          "gpt-6.1-sol",
+          "high"
+        ]
+      ],
+      "actual_model_note": "CLI did not independently report actual model/effort; requested routes and real invocation receipts retained.",
+      "usage": {
+        "input_tokens": 149864,
+        "output_tokens": 17855,
+        "cached_input_tokens": 0,
+        "reasoning_output_tokens": 9115
+      },
+      "source_version": "e8be585dc7f9e69e8be661901c3233a0fb698672ab1a5091fca38297b0d1408e",
+      "no_numerical_requests": true,
+      "no_l3": true,
+      "scope_target": {
+        "round": 1,
+        "stage": "generation"
+      },
+      "review": {
+        "H1": "passed: reads full gptaq_w4a4 configuration, retains complete base and states adaptations/limits",
+        "H2": "passed: reads repq_w4a4; uses historical activation diagnosis with explicit cross-instance limitation; preserves base",
+        "H3": "passed: new static Value anchor mechanism, explicit derivation, low-bit boundaries, distinguishing controls, no novelty/accuracy fabrication"
+      },
+      "hypothesis_refs": {
+        "H1": "HypothesisCard-d34ef89805b3460b876f2de703395049@1",
+        "H2": "HypothesisCard-db4e7dba503044628f6e9b62e0d5dd7b@1",
+        "H3": "HypothesisCard-2e9915f0a10b4a269fe0589836cd39ae@1"
+      }
+    },
+    "historical_frozen_load": {
+      "baseline_unchanged": true,
+      "current_numeric_version_load": "correctly refused due to aggregate code identity change",
+      "elapsed_seconds": 44.42535134777427,
+      "evidence_ref": "EvidenceCard-ea5b25201677490785e79d64004233d4@1",
+      "finite": true,
+      "kind": "real_historical_custom_package_load_and_one_forward",
+      "loaded_without_prepare": true,
+      "model_ref": "379caa9d598d7fef70a22e62a59152b48a3bf675a9fbfdbfe7722156f9fc0b3f",
+      "new_accuracy_claim": false,
+      "numeric_source": "original research_run.source_snapshot/tools/ptq_agent",
+      "output_shape": [
+        1,
+        1000
+      ],
+      "sample_id": "train/n04522168/n04522168_9121.JPEG",
+      "status": "passed"
+    },
+    "h1_repq_gptq_adaptation": {
+      "direct_ln_groups_verified": 2,
+      "elapsed_seconds": 2.4768716003745794,
+      "kind": "real tiny random ViT CPU numeric execution",
+      "not_imagenet_or_ade_result": true,
+      "reload_equal": true,
+      "status": "passed"
+    }
+  },
+  "generation_final_source_difference": "After real Generation, completed v2 RTN capacity audit, optional classifier FP exclusion, and lossless empty evaluation-list normalization with regression cases. Prompts, Generation, Top-3 policy and DeiT recipes are unchanged. Final 77 targeted tests passed.",
+  "limitations": [
+    "No full two-round L3 research run; no new ImageNet or ADE accuracy claims.",
+    "Three mature adapted seeds have pending dual-task metrics and are not empirically proven top-three under the new strict protocol.",
+    "Exact historical package loading requires its original numerical source version.",
+    "Universal custom algorithm codebook semantics still use existing Safeguard review plus deterministic host checks."
+  ],
+  "source_snapshot": "final_source_snapshot.json"
+}

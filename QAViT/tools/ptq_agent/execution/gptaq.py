@@ -31,7 +31,7 @@ def statistics(records, teachers, device):
     return h, difference
 
 
-def grid(weight, bits, symmetric, clip=False):
+def grid(weight, bits, symmetric, clip=False, signed_min=None):
     """官方 WeightQuantizer 的 per-channel 网格（不同于旧 GPTQ 的中点网格）。"""
     zero = weight.new_zeros(weight.shape[0])
     lo, hi = torch.minimum(weight.amin(1), zero), torch.maximum(weight.amax(1), zero)
@@ -53,7 +53,7 @@ def grid(weight, bits, symmetric, clip=False):
         for i in range(80):
             s, z = params(1 - i / 100)
             q = (weight / s[:, None]).round() + z[:, None]
-            q = q.clamp(-maximum - 1 if symmetric else 0, maximum)
+            q = q.clamp((signed_min if signed_min is not None else -maximum - 1) if symmetric else 0, maximum)
             error = ((q - z[:, None]) * s[:, None] - weight).abs().pow(2.4).sum(1)
             better = error < best
             best[better], scale[better], offset[better] = error[better], s[better], z[better]
@@ -64,7 +64,7 @@ def grid(weight, bits, symmetric, clip=False):
 def fit(weight, hessian, difference, spec, options):
     w, h, dx = (t.detach().float().clone() for t in (weight, hessian, difference))
     rows, columns = w.shape
-    scale, zero = grid(w, spec["bits"], spec["symmetric"], options.get("gptaq_clip", False))
+    scale, zero = grid(w, spec["bits"], spec["symmetric"], options.get("gptaq_clip", False), options.get("gptaq_signed_min"))
     dead = torch.diag(h) == 0
     h[dead, dead], w[:, dead], dx[:, dead] = 1, 0, 0
     order = torch.argsort(torch.diag(h), descending=True) if options.get("actorder", False) else torch.arange(columns, device=w.device)
@@ -80,7 +80,8 @@ def fit(weight, hessian, difference, spec, options):
         local, error = w[:, start:end].clone(), torch.zeros_like(w[:, start:end])
         for j in range(end - start):
             column = local[:, j]
-            q = ((column / scale).round() + zero).clamp(0, 2 ** spec["bits"] - 1)
+            minimum = options.get("gptaq_signed_min", -2 ** (spec["bits"] - 1)) + 2 ** (spec["bits"] - 1) if spec["symmetric"] else 0
+            q = ((column / scale).round() + zero).clamp(minimum, 2 ** spec["bits"] - 1)
             decoded = scale * (q - zero)
             result[:, start+j], codes[:, start+j] = decoded, q.to(torch.uint8)
             err = (column - decoded) / h[start+j, start+j]

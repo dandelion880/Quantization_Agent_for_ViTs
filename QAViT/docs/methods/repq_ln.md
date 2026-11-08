@@ -14,7 +14,7 @@
 
 伪代码核心：从每通道(scale_c,zero_c)得到共享(scale,zero)，构造 input_scale/input_shift 和对应 W/bias补偿；先检查FP等价，重拟合变换后的W，A静态冻结。
 
-和PTF方案级互斥，同边SmoothQuant互斥。选择float观察不等于原prefix协议；必须在报告保留差异。收益需以局部及任务准确率检验。
+和同一LN链PTF、同边SmoothQuant互斥；不同LN链可以并列。选择float观察不等于原prefix协议；必须在报告保留差异。收益需以局部及任务准确率检验。
 
 
 ## 独立调用与诊断
@@ -24,3 +24,7 @@
 对照时固定其余网格、尺度和范围，比较无变换与此变换；检查FP等价门禁，以及变换后共享尺度是否改善误差。float与quantized_prefix的观察差异也必须明确。不得把通道间差异大直接等同于该变换必然提高分类精度。
 
 实现边界修复：float观察后显式对A使用percentile时，会在变换后的输入上重新拟合共享scale/zero，同时保留`repq_affine`执行标记；否则历史实现会在导出后重载时被严格拒绝。此分支是适配变体，不能称为原文quantized_prefix观察协议。修复不改变已选scale/zero、舍入、clipping或原prefix分支。
+
+图适配：timm norm1 输出还参与 shape/getattr，不代表有第二条需要数值补偿的消费边。pipeline 以真实张量 LN→Linear 输入相等核验，避免 FX Proxy 控制流或 users==1 误判。默认完整种子使用 float 观察的显式边仿射；这与官方 prefix 校准不同。W 方法独立，GPTAQ 另需 a_then_w/sequential；不能强迫其与 quantized_prefix 联用。
+
+原始 mean(z) 可能非整数，round(x/s)+z 后夹取两端可形成17个值。严格W4A4须核验冻结网格；可在变换后显式使用 affine percentile 重新拟合整数零点，或自主适配舍入/码本并说明差异。原始规则仍可用于局部诊断，不静默改写旧实现。

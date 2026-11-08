@@ -51,7 +51,7 @@ def plugin_capabilities(backend):
                        "adalog_bias": "GELU input shift; bias recomputed from actual decoded weight, independent from activation method"},
         "order": ["preprocess → W → A", "preprocess → A → W", "preprocess → W/A fitted on the same FP reference"],
         "conflicts": ["no preprocessing after any W/A quantization", "one preprocessing transform per edge",
-                      "PTF and RepQ are plan-wide mutually exclusive; PTF and SmoothQuant conflict on the same LN chain",
+                      "PTF conflicts with RepQ/SmoothQuant only on the same LN chain; disjoint chains may coexist",
                       "one activation quantizer per tensor edge; twin/log/RTN cannot overlap",
                       "post-GELU twin grid cannot follow an input affine transform"],
         "scale_selection": {"strategies": ["minmax", "search", "manual", "percentile", "coordinate"], "metrics": ["mse", "cosine", "hessian"],

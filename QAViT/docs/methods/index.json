@@ -28,7 +28,10 @@
       ],
       "paper": "基础量化",
       "document": "rtn.md",
-      "implementation": "tools/ptq_agent/execution/plugin_math.py:encode_rtn; codecs.py:fit/qdq"
+      "implementation": "tools/ptq_agent/execution/plugin_math.py:encode_rtn; codecs.py:fit/qdq",
+      "implementation_status": "local executable component; adaptation permitted; task accuracy requires measurement",
+      "compatibility_document": "rtn.md",
+      "sources": []
     },
     {
       "id": "uniform_full",
@@ -54,7 +57,16 @@
       ],
       "paper": "PTQ4ViT",
       "document": "uniform_full.md",
-      "implementation": "tools/ptq_agent/execution/grids.py:fit/apply"
+      "implementation": "tools/ptq_agent/execution/grids.py:fit/apply",
+      "implementation_status": "local executable component; adaptation permitted; task accuracy requires measurement",
+      "compatibility_document": "uniform_full.md",
+      "sources": [
+        {
+          "paper": "https://arxiv.org/abs/2111.12293",
+          "repository": "https://github.com/hahnyuan/PTQ4ViT",
+          "commit": "b42c790c2811e7835d435a9f9a6c64a079a7483a"
+        }
+      ]
     },
     {
       "id": "uniform_affine",
@@ -82,7 +94,16 @@
       ],
       "paper": "RepQ-ViT",
       "document": "uniform_affine.md",
-      "implementation": "tools/ptq_agent/execution/grids.py:fit/affine_qdq"
+      "implementation": "tools/ptq_agent/execution/grids.py:fit/affine_qdq",
+      "implementation_status": "local executable component; adaptation permitted; task accuracy requires measurement",
+      "compatibility_document": "uniform_affine.md",
+      "sources": [
+        {
+          "paper": "https://arxiv.org/abs/2212.08254",
+          "repository": "https://github.com/zkkli/RepQ-ViT",
+          "commit": "a160561b9233945e6680132f129d13041b787318"
+        }
+      ]
     },
     {
       "id": "uniform_minmax",
@@ -107,7 +128,16 @@
       ],
       "paper": "FQ-ViT",
       "document": "uniform_minmax.md",
-      "implementation": "tools/ptq_agent/execution/grids.py:fit/apply"
+      "implementation": "tools/ptq_agent/execution/grids.py:fit/apply",
+      "implementation_status": "local executable component; adaptation permitted; task accuracy requires measurement",
+      "compatibility_document": "uniform_minmax.md",
+      "sources": [
+        {
+          "paper": "https://arxiv.org/abs/2111.13824",
+          "repository": "https://github.com/megvii-research/FQ-ViT",
+          "commit": "5daf5915c715dc21d6afcd64e661652030e640ab"
+        }
+      ]
     },
     {
       "id": "gptq",
@@ -130,7 +160,16 @@
       ],
       "paper": "GPTQ",
       "document": "gptq.md",
-      "implementation": "tools/ptq_agent/execution/plugin_math.py:gptq; calibration.py:gram"
+      "implementation": "tools/ptq_agent/execution/plugin_math.py:gptq; calibration.py:gram",
+      "implementation_status": "local executable component; adaptation permitted; task accuracy requires measurement",
+      "compatibility_document": "gptq.md",
+      "sources": [
+        {
+          "paper": "https://arxiv.org/abs/2210.17323",
+          "repository": "https://github.com/IST-DASLab/gptq",
+          "commit": "2d65066eeb06a5c9ff5184d8cebdf33662c67faf"
+        }
+      ]
     },
     {
       "id": "twin_softmax",
@@ -153,7 +192,16 @@
       ],
       "paper": "PTQ4ViT",
       "document": "twin_softmax.md",
-      "implementation": "tools/ptq_agent/execution/plugin_math.py:fit_activation/activation_qdq"
+      "implementation": "tools/ptq_agent/execution/plugin_math.py:fit_activation/activation_qdq",
+      "implementation_status": "local executable component; adaptation permitted; task accuracy requires measurement",
+      "compatibility_document": "twin_softmax.md",
+      "sources": [
+        {
+          "paper": "https://arxiv.org/abs/2111.12293",
+          "repository": "https://github.com/hahnyuan/PTQ4ViT",
+          "commit": "b42c790c2811e7835d435a9f9a6c64a079a7483a"
+        }
+      ]
     },
     {
       "id": "log2",
@@ -176,7 +224,16 @@
       ],
       "paper": "FQ-ViT",
       "document": "log2.md",
-      "implementation": "tools/ptq_agent/execution/plugin_math.py:activation_qdq"
+      "implementation": "tools/ptq_agent/execution/plugin_math.py:activation_qdq",
+      "implementation_status": "local executable component; adaptation permitted; task accuracy requires measurement",
+      "compatibility_document": "log2.md",
+      "sources": [
+        {
+          "paper": "https://arxiv.org/abs/2111.13824",
+          "repository": "https://github.com/megvii-research/FQ-ViT",
+          "commit": "5daf5915c715dc21d6afcd64e661652030e640ab"
+        }
+      ]
     },
     {
       "id": "log_sqrt2",
@@ -199,7 +256,16 @@
       ],
       "paper": "RepQ-ViT",
       "document": "log_sqrt2.md",
-      "implementation": "tools/ptq_agent/execution/plugin_math.py:activation_qdq; grids.py:percentile_log"
+      "implementation": "tools/ptq_agent/execution/plugin_math.py:activation_qdq; grids.py:percentile_log",
+      "implementation_status": "local executable component; adaptation permitted; task accuracy requires measurement",
+      "compatibility_document": "log_sqrt2.md",
+      "sources": [
+        {
+          "paper": "https://arxiv.org/abs/2212.08254",
+          "repository": "https://github.com/zkkli/RepQ-ViT",
+          "commit": "a160561b9233945e6680132f129d13041b787318"
+        }
+      ]
     },
     {
       "id": "twin_gelu",
@@ -222,7 +288,16 @@
       ],
       "paper": "PTQ4ViT",
       "document": "twin_gelu.md",
-      "implementation": "tools/ptq_agent/execution/plugin_math.py:fit_activation/activation_qdq"
+      "implementation": "tools/ptq_agent/execution/plugin_math.py:fit_activation/activation_qdq",
+      "implementation_status": "local executable component; adaptation permitted; task accuracy requires measurement",
+      "compatibility_document": "twin_gelu.md",
+      "sources": [
+        {
+          "paper": "https://arxiv.org/abs/2111.12293",
+          "repository": "https://github.com/hahnyuan/PTQ4ViT",
+          "commit": "b42c790c2811e7835d435a9f9a6c64a079a7483a"
+        }
+      ]
     },
     {
       "id": "asymmetric_gelu",
@@ -244,7 +319,10 @@
       ],
       "paper": "项目适配",
       "document": "asymmetric_gelu.md",
-      "implementation": "tools/ptq_agent/execution/plugin_math.py:fit_activation/activation_qdq"
+      "implementation": "tools/ptq_agent/execution/plugin_math.py:fit_activation/activation_qdq",
+      "implementation_status": "local executable component; adaptation permitted; task accuracy requires measurement",
+      "compatibility_document": "asymmetric_gelu.md",
+      "sources": []
     },
     {
       "id": "ptf",
@@ -267,7 +345,16 @@
       ],
       "paper": "FQ-ViT",
       "document": "ptf.md",
-      "implementation": "tools/ptq_agent/execution/plugin_math.py:fit_activation"
+      "implementation": "tools/ptq_agent/execution/plugin_math.py:fit_activation",
+      "implementation_status": "local executable component; adaptation permitted; task accuracy requires measurement",
+      "compatibility_document": "ptf.md",
+      "sources": [
+        {
+          "paper": "https://arxiv.org/abs/2111.13824",
+          "repository": "https://github.com/megvii-research/FQ-ViT",
+          "commit": "5daf5915c715dc21d6afcd64e661652030e640ab"
+        }
+      ]
     },
     {
       "id": "smoothquant",
@@ -290,7 +377,16 @@
       ],
       "paper": "SmoothQuant",
       "document": "smoothquant.md",
-      "implementation": "tools/ptq_agent/execution/plugin_math.py:smoothquant; pipeline.py:preprocess"
+      "implementation": "tools/ptq_agent/execution/plugin_math.py:smoothquant; pipeline.py:preprocess",
+      "implementation_status": "local executable component; adaptation permitted; task accuracy requires measurement",
+      "compatibility_document": "smoothquant.md",
+      "sources": [
+        {
+          "paper": "https://arxiv.org/abs/2211.10438",
+          "repository": "https://github.com/mit-han-lab/smoothquant",
+          "commit": "c61476d728e42ae0d8a35e7e78494edcac3237b5"
+        }
+      ]
     },
     {
       "id": "repq_ln",
@@ -314,7 +410,16 @@
       ],
       "paper": "RepQ-ViT",
       "document": "repq_ln.md",
-      "implementation": "tools/ptq_agent/execution/plugin_math.py:repq_ln; pipeline.py:preprocess"
+      "implementation": "tools/ptq_agent/execution/plugin_math.py:repq_ln; pipeline.py:preprocess",
+      "implementation_status": "local executable component; adaptation permitted; task accuracy requires measurement",
+      "compatibility_document": "repq_ln.md",
+      "sources": [
+        {
+          "paper": "https://arxiv.org/abs/2212.08254",
+          "repository": "https://github.com/zkkli/RepQ-ViT",
+          "commit": "a160561b9233945e6680132f129d13041b787318"
+        }
+      ]
     },
     {
       "id": "integer_layernorm",
@@ -336,7 +441,16 @@
       ],
       "paper": "FQ-ViT",
       "document": "integer_layernorm.md",
-      "implementation": "tools/ptq_agent/execution/operators.py:integer_layernorm"
+      "implementation": "tools/ptq_agent/execution/operators.py:integer_layernorm",
+      "implementation_status": "local executable component; adaptation permitted; task accuracy requires measurement",
+      "compatibility_document": "integer_layernorm.md",
+      "sources": [
+        {
+          "paper": "https://arxiv.org/abs/2111.13824",
+          "repository": "https://github.com/megvii-research/FQ-ViT",
+          "commit": "5daf5915c715dc21d6afcd64e661652030e640ab"
+        }
+      ]
     },
     {
       "id": "integer_softmax",
@@ -358,7 +472,16 @@
       ],
       "paper": "FQ-ViT",
       "document": "integer_softmax.md",
-      "implementation": "tools/ptq_agent/execution/operators.py:integer_softmax"
+      "implementation": "tools/ptq_agent/execution/operators.py:integer_softmax",
+      "implementation_status": "local executable component; adaptation permitted; task accuracy requires measurement",
+      "compatibility_document": "integer_softmax.md",
+      "sources": [
+        {
+          "paper": "https://arxiv.org/abs/2111.13824",
+          "repository": "https://github.com/megvii-research/FQ-ViT",
+          "commit": "5daf5915c715dc21d6afcd64e661652030e640ab"
+        }
+      ]
     },
     {
       "id": "scale_selection",
@@ -379,7 +502,21 @@
       ],
       "paper": "PTQ4ViT / RepQ-ViT / 项目接口",
       "document": "scale_selection.md",
-      "implementation": "tools/ptq_agent/execution/calibration.py; coordinate.py; plugin_contracts.py:calibration"
+      "implementation": "tools/ptq_agent/execution/calibration.py; coordinate.py; plugin_contracts.py:calibration",
+      "implementation_status": "local executable component; adaptation permitted; task accuracy requires measurement",
+      "compatibility_document": "scale_selection.md",
+      "sources": [
+        {
+          "paper": "https://arxiv.org/abs/2111.12293",
+          "repository": "https://github.com/hahnyuan/PTQ4ViT",
+          "commit": "b42c790c2811e7835d435a9f9a6c64a079a7483a"
+        },
+        {
+          "paper": "https://arxiv.org/abs/2212.08254",
+          "repository": "https://github.com/zkkli/RepQ-ViT",
+          "commit": "a160561b9233945e6680132f129d13041b787318"
+        }
+      ]
     },
     {
       "id": "calibration_order",
@@ -398,7 +535,10 @@
       ],
       "paper": "执行合同",
       "document": "calibration_order.md",
-      "implementation": "tools/ptq_agent/execution/pipeline.py:fit_model; plugin_contracts.py:validate_composition"
+      "implementation": "tools/ptq_agent/execution/pipeline.py:fit_model; plugin_contracts.py:validate_composition",
+      "implementation_status": "local executable component; adaptation permitted; task accuracy requires measurement",
+      "compatibility_document": "calibration_order.md",
+      "sources": []
     },
     {
       "id": "adalog",
@@ -420,6 +560,15 @@
         "base",
         "long",
         "tail"
+      ],
+      "implementation_status": "local executable component; adaptation permitted; task accuracy requires measurement",
+      "compatibility_document": "adalog.md",
+      "sources": [
+        {
+          "paper": "https://arxiv.org/abs/2407.12951v1",
+          "repository": "https://github.com/GoatWu/AdaLog",
+          "commit": "75a57d2515521bb1711159ea229d1a37665f3fed"
+        }
       ]
     },
     {
@@ -441,6 +590,15 @@
         "reparameterization",
         "decoded",
         "weight"
+      ],
+      "implementation_status": "local executable component; adaptation permitted; task accuracy requires measurement",
+      "compatibility_document": "adalog_bias.md",
+      "sources": [
+        {
+          "paper": "https://arxiv.org/abs/2407.12951v1",
+          "repository": "https://github.com/GoatWu/AdaLog",
+          "commit": "75a57d2515521bb1711159ea229d1a37665f3fed"
+        }
       ]
     },
     {
@@ -463,6 +621,15 @@
         "fixed",
         "grid",
         "alpha"
+      ],
+      "implementation_status": "local executable component; adaptation permitted; task accuracy requires measurement",
+      "compatibility_document": "adaround.md",
+      "sources": [
+        {
+          "paper": "https://proceedings.mlr.press/v119/nagel20a.html",
+          "repository": "https://github.com/qualcomm/aimet",
+          "commit": "7b60b5253b0a983132c2930ee91c76df748511d9"
+        }
       ]
     },
     {
@@ -487,6 +654,15 @@
         "quantized",
         "input",
         "compensation"
+      ],
+      "implementation_status": "local executable component; adaptation permitted; task accuracy requires measurement",
+      "compatibility_document": "gptaq.md",
+      "sources": [
+        {
+          "paper": "https://arxiv.org/abs/2504.02692v1",
+          "repository": "https://github.com/Intelligent-Computing-Lab-Panda/GPTAQ",
+          "commit": "d6bd2e41e9abc8f22a76d6ea789c450b6c143ced"
+        }
       ]
     }
   ]

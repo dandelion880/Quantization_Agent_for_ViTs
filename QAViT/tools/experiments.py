@@ -586,6 +586,10 @@ class ExperimentBroker:
             # All adapters (including factories) use the same host placement.
             # Physical ordinals never select a worker-local CUDA device.
         # 跨作业读取权限只由本次 Journal 派生，不能接受 Agent 自填的文件绑定。
+        from tools.frozen import bind_sources
+        execution.pop('frozen_sources', None)
+        if payload.get('evidence_refs'):
+            execution['frozen_sources'] = bind_sources(self.journal, payload['evidence_refs'])
         execution.pop("profile_evidence_bindings", None)
         profile_refs = []
         if execution["service"] == "profile" and execution.get("tool") == "read_profile_evidence":

@@ -100,6 +100,14 @@ def check_results(payload, brief, data):
     if not isinstance(observations, dict) or not observations:
         raise ContractError("测量证据缺少 observations")
     protocol = brief["evaluation_protocol"] if payload["level"] == "L3" else {}
+    if observations.get("status") in ("engineering_blocked", "blocked", "failed"):
+        raise ContractError("engineering failure is not completed numerical evidence")
+    if payload['level'] == 'L3' and spec.get('quantization_contract', {}).get('protocol'):
+        from core.static_w4a4 import check_audit
+        expected = observations.get('coverage', {}).get('static_w4a4', {})
+        if not expected.get('required_boundaries'):
+            raise ContractError('final static W4A4 missing host boundary coverage')
+        check_audit(observations.get('static_w4a4'), expected)
     evaluations = observations.get("evaluations", {})
     if not isinstance(evaluations, dict):
         raise ContractError("observations.evaluations 必须是对象")

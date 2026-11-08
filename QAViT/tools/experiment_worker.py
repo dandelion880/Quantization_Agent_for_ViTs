@@ -405,6 +405,16 @@ def evaluate_services(experiment, backend, cfg, data, directory, approval, gpus=
     if spec.get("calibration"):
         if calibration_ids != data_view(data, spec["calibration"], "calibration").ids("calibration"):
             raise ContractError("导出包实际校准样本与冻结 calibration 视图不一致")
+    static_receipt = {}
+    if spec.get('quantization_contract', {}).get('protocol'):
+        from core.static_w4a4 import check_audit
+        required = coverage['static_w4a4']
+        if native:
+            from core.static_w4a4 import native_audit
+            from ptq_agent.execution.sites import site_catalog
+            static_receipt = native_audit(model, plan, site_catalog(backend), required)
+        else:
+            static_receipt = check_audit(verifier.audit(model, plan).get('static_w4a4'), required)
     before = model_digest(model)
     evaluations = {}
     from tools.result_contract import classification_shard_fallback
@@ -444,7 +454,7 @@ def evaluate_services(experiment, backend, cfg, data, directory, approval, gpus=
     files.extend(asset(p) for p in sorted((directory / 'shards').glob('*/result.json')))
     if model_dir.parent == directory:
         files.extend(asset(p) for p in model_files or sorted(p for p in model_dir.rglob('*') if p.is_file()))
-    return {"observations": {"evaluations": evaluations, "coverage": coverage, "reload": reload_check,
+    return {"observations": {"static_w4a4": static_receipt, "evaluations": evaluations, "coverage": coverage, "reload": reload_check,
                               "representation": (plan["execution"]["mode"] if native else "approved_custom_executor") + "; native_low_precision_kernel_not_verified"},
             "artifacts": files, "model_ref": fingerprint({str(p.relative_to(model_dir)): file_sha256(p)
                                                           for p in model_dir.rglob('*') if p.is_file()}),

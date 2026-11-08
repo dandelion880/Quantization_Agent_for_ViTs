@@ -12,5 +12,5 @@ UINT4/6/8、per_channel、真实最后feature轴、static，options.ptf_k控制�
 
 PTF是量化器，integer_layernorm另行显式声明尺度边；使用PTF不自动改变LN运算。原文多批observer只在最后批评分指数，running minmax覆盖全池；省略observer_batch_size是单池变体。
 
-与RepQ-LN当前方案级互斥；与同LN链SmoothQuant互斥。需要测量实际通道差异和形状；若用户要求最粗粒度，需解释通道因子的收益及开销。
+与同一LN链的RepQ-LN/SmoothQuant互斥；不同LN链可以并列。需要测量实际通道差异和形状；若用户要求最粗粒度，需解释通道因子的收益及开销。
 

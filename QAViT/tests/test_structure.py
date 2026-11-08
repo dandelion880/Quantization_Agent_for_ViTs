@@ -88,7 +88,8 @@ class StructureContracts(unittest.TestCase):
         execution = resolve_execution(experiment_payload()['execution'], config['research_brief'])
         backend, cfg, _ = backend_and_data(execution)
         host = profile_host(backend, cfg, self.root / 'profile')
-        expected = read_json(QAVIT / 'tests/data/contract_golden.json')['schemas']
+        expected = {**read_json(QAVIT / 'tests/data/contract_golden.json')['schemas'],
+                    **read_json(QAVIT / 'tests/data/prompt_readiness_baseline.json').get('explicit_schema_fixes', {})}
         self.assertEqual(set(host.registry.definitions), set(expected))
         self.assertTrue(set(PROFILE_NAMES) <= set(expected))
         for name, tool in host.registry.definitions.items():

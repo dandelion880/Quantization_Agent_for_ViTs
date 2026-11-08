@@ -28,6 +28,8 @@ EXP 严格按 `.gitignore` 中的准确路径放行：`implementation/v2_structu
 | `QAViT/configs/` | 通用研究模板、唯一角色模型默认值、数值后端和只读资产配置 |
 | `QAViT/tests/` | 可复用离线测试、小型固定夹具与显式组件验证器；`test_minimal_fixes.py` 覆盖选择、L3 复盘/状态和 Profiling 证据读取；`test_experiment_preflight.py` 覆盖草案预检及原任务有限修复；`test_parent_evolution.py` 覆盖 H* 绑定、父子选择、恢复及下游交接；`test_serial_debate_memory.py` 覆盖按场推进、科研正文/索引、隔离和结案固定；输出写 EXP |
 | `QAViT/docs/` | 当前执行协议；EXPERIMENT_INPUTS.md 为直接交付的科学调用速查；CODE_INTERFACES.md 为单实现代码接口；环境依赖和方法说明 |
+| `QAViT/docs/skills/` | 四个可选科研 Skill、轻量 INDEX 与九份按需策略参考；复用 read_asset，无新工作流 |
+| `QAViT/tests/skill_evals/` | 原包科研情境正反例和人工回放设计，不属于运行时上下文 |
 | `EXP/runs/`、`EXP/validation/` | 历史/未来运行事实、测量、代码、日志和模型产物 |
 | `EXP/validation/serial_debate_memory_20261029_r1/` | 本批最小修改报告、独立提示词差异、当前流程伪代码与针对性 CPU 回归日志 |
 | `EXP/validation/experiment_inputs_20261029_r1/` | 输入整理报告、数据回执核对、提示词差异、伪代码及 CPU 回归日志 |
@@ -66,3 +68,7 @@ EXP 严格按 `.gitignore` 中的准确路径放行：`implementation/v2_structu
 2026-11-06 并行与预算收尾：`runtime/gpu_resources.py` 管理项目共享GPU租约及按需分配；`tools/classification_shards.py` 复用冻结包逐图分类与汇总。`runtime/budget.py`/`run_segments.py` 在新运行显式启用纯数值等待排除及持续余额监控。测试 `test_numeric_parallel_budget.py` 和 `test_parallel_requests.py` 覆盖等待、重叠、恢复与归属；本次报告、伪代码及有界验证在 `EXP/validation/parallel_finish_20261106_r1/`。
 
 2026-11-06 自适应资源修复：`runtime/gpu_resources.py` 冻结可见性/分配/显式授权交集和 UUID 身份；`tools/result_contract.py` 复用冻结必需结果判断分类分片能力；`runtime/task_runtime.py` 在有效回执与进程完全退出之间保留资源归属。`tests/test_adaptive_resources.py` 覆盖不同资源池、协议回退与慢收尾/恢复。`EXP/validation/adaptive_finish_20261106_r1/` 保存本轮修复前源码快照、伪代码、验证与报告；不覆盖历史实验。
+
+2026-11-07 最小科研能力升级：`core/static_w4a4.py`统一必要计算边界和冻结码本容量；`core/solutions.py`维护与Memory分离的协议专属Top-3，研究运行落盘于`EXP/solutions/`。`docs/solutions/`与`tools/ptq_agent/execution/baselines.py`保存三种成熟完整适配起点；`tools/frozen.py`提供已发布Evidence绑定的原包加载。`tests/test_research_upgrade.py`覆盖数值适配、合规、选优持久化与工程交接。`EXP/validation/research_upgrade_20261107_r1/`保存真实Generation、历史包加载、回归及报告；原始历史运行不覆盖。
+
+2026-11-08 首批科研 Skill：`docs/skills/` 保存四条策略及按需参考，`docs/SCIENTIFIC_SKILLS.md` 说明实际接口；只向研究角色交付短目录，读取复用原 `read_asset`。`tests/test_scientific_skills.py` 覆盖可发现性、续调去重、缺失与失败回退。完整有效目录及资源调用链见 [独立盘点报告](EXP/validation/scientific_skills_20261108_r1/PROJECT_RESOURCE_INVENTORY.md)，验证、当前伪代码和回退依据在同一交付目录。

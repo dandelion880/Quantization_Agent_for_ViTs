@@ -40,3 +40,9 @@ evaluations 支持 `{"kind":"classification","split":"search","count":16}`；该
 Coding 与 Safeguard 的 `public_interface_assets` 索引包含已发布的数值执行组件及共享量化数学依赖（包括 grids、codecs、sites、operators、metrics 等）。按需 `read_asset` 时仍核对本次调用冻结的路径与哈希；该入口不授权其他分支的实现/资产，也不赋予文件、进程或网络执行能力。
 
 实验草案可保留研究者明确采用的 `evidence_refs`。角色提交时先按调用快照核对可见性与引用类型；程序创建请求、绑定代码及冻结执行卡时，将这些证据同时放入封套 `refs`。该传播不改变科研内容，不放宽 Journal 的类型、封套或角色隔离检查。
+
+新 static W4A4 的共同规则见 [STATIC_W4A4.md](STATIC_W4A4.md)。完整方案起点通过 context.complete_solutions 的 configuration_asset 获取，方法插件仍独立。Coding 可以适配图和数学表示，注明差异；无需逐字官方实现。
+
+`experiment_v1` 可通过 `context['load_frozen'](evidence_ref)` 获得 `(model, receipt)`：请求 evidence_refs 必须引用可见、真实导出并经宿主重载的 Evidence。宿主绑定原批准加载源码及整个包的哈希，只调用 load，不调用 prepare，加载过程禁止读取校准/评测 batch，返回 actual frozen_loads 回执；不接受任意路径加载。载入后的局部消融仍由本次 Coding/Safeguard 审查，原包只读。
+
+自定义评测推荐 `observations.evaluations={"classification":{"metrics":{"top1":实际值},"split":"search","sample_ids":实际ID列表,"sample_count":实际数量,"full_dataset":false}}`。也接受每行带唯一 kind 的列表，宿主只做无损映射；不猜指标归属，不补造样本身份。纯局部多臂对比可将臂结果放 observations.arms，避免把多个模型混成一个标准分类结果。阻塞返回 `status="engineering_blocked"`（可在 observations 内）和 reason；宿主回传工程失败，不发布 completed 数值证据，也不自动重复修订同一停止桩。
