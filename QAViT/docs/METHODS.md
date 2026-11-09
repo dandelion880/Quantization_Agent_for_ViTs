@@ -11,6 +11,6 @@
 | 校准 | minmax/search/manual/percentile/coordinate；mse/cosine/hessian；并行或顺序 | 保留完整原参数。只读梯度诊断可属于 training-free，真实零梯度也应如实记录；内置 Hessian 加权搜索需要非零信号，信号全零时报告该算法不适用，不暗换搜索目标。 |
 | 仅资料或未接入本版 | 旋转、ERQ、全参数QAT、QPEFT及其它库外想法 | 名称并不等于本版有实现或实测；按研究需要提案并标未知，不自动扩展范围。 |
 
-方法卡：rtn、uniform_full、uniform_affine、uniform_minmax、gptq、gptaq、adaround、smoothquant、repq_ln、adalog_bias、twin_softmax、log2、log_sqrt2、twin_gelu、asymmetric_gelu、ptf、adalog、integer_layernorm、integer_softmax、scale_selection、calibration_order。
+逐项方法目录以 [methods/index.json](methods/index.json) 为准；维护与两种读取入口见 [方法库说明](methods/README.md)。本页只概括实现能力和验证边界，不另行维护方法清单。
 
 历史结果的位宽、覆盖和方法变体必须回到原运行事实核对，不能作为新 V2 运行的测量结论。具体算法取舍由当前角色与冻结实验决定；本说明不提供固定整网答案。

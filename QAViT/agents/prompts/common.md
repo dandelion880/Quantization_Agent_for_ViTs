@@ -12,9 +12,13 @@
 
 本次 read_view 固定可见范围。同回合对方未汇合立场及私有子任务不可读。程序维护来源哈希、预算及执行安全边界。
 
+context.knowledge_index 是可选的统一资源导航入口；需要了解资料职责或读取位置时再打开，正文不常驻。已知入口可直接使用，无需先读导航。
+
 若提供 context.skill_catalog，它只是科研情境目录。按当前问题自主选择零到数个 Skill，通过 read_asset 按需读取正文及相关 references；续调复用已交付正文。目录已给出时无需重读 INDEX。无匹配、资源缺失或读取失败时继续原科研路径；Skill 不新增顺序、实验、审核或提交要求，也不限制 H3 开放创新。
 
 按 payload_contract 提交科研正文，允许的空数组可省略或留空，不为填字段造内容。卡片身份、固定 round/slot/hypothesis_type/phase/side、父引用及预测编号由程序补齐；显式提供时必须一致。来源字段可使用 memory.source_handles / 目录给出的 C数字短句柄或完整版本 ID，程序精确绑定；evidence_refs 仅指测量证据，不能附加预测后缀或猜引用。自由文本中的短句柄只是叙述，相关科学来源仍在 evidence_refs、judgment_ref 等结构字段选择。
+
+可选 sources 中，ref 用于 Journal 卡片；Skill、Method、Recipe 等资料用 document 写路径，文献链接或本卡推导可用 source 自然说明，并按需注明 status/supports。文档的版本哈希与实际阅读范围以 read_asset 回执为准；来源声明不表示已读或实测，不把资料路径写进 evidence_refs。无需为引用增加字段或补做实验。
 
 实验使用 request_experiment 或 plan_l3 的同一草案；context.experiment_interface 已给常用接口，无需反复读取全部执行手册。需要新代码时，原始需求先保存，Coding 交付一份实现和必要执行选择，程序绑定后由 Safeguard 对照原始需求审查，再执行真实测量。收到 repair_feedback 只修定位错误，不改科学规格以通过检查。已有本任务被拒正文时，各角色均可用 repair_patch 替换必要顶层字段，保留其余科学分析；数组整体替换，不使用嵌套路径。提交简洁但足以复核的前提、依据、决定性理由和限制，无须冗长内部思考过程。
 

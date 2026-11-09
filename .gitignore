@@ -16,6 +16,13 @@
 
 # Ignore every EXP artifact unless its exact path has been reviewed below.
 /EXP/**
+!/EXP/evaluations/
+!/EXP/evaluations/integration_20261109_r1/
+!/EXP/evaluations/integration_20261109_r1/REPORT.md
+!/EXP/evaluations/integration_20261109_r1/PSEUDOCODE.md
+!/EXP/evaluations/integration_20261109_r1/validation_summary.json
+!/EXP/evaluations/integration_20261109_r1/isolation_audit.json
+!/EXP/evaluations/integration_20261109_r1/archive_removal.json
 !/EXP/implementation/
 !/EXP/implementation/v2_structure_20261027/
 !/EXP/implementation/v2_structure_20261027/REPORT.md
@@ -216,3 +223,13 @@ coverage.xml
 !/EXP/validation/scientific_skills_20261108_r1/DELIVERY.json
 !/EXP/validation/scientific_skills_20261108_r1/live_smoke.py
 !/EXP/validation/scientific_skills_20261108_r1/build_inventory.py
+
+# Reviewed knowledge organization delivery; raw runs, snapshots and logs stay local.
+!/EXP/validation/knowledge_resources_20261108_r1/
+!/EXP/validation/knowledge_resources_20261108_r1/REPORT.md
+!/EXP/validation/knowledge_resources_20261108_r1/PROJECT_RESOURCE_INVENTORY.md
+!/EXP/validation/knowledge_resources_20261108_r1/PSEUDOCODE.md
+!/EXP/validation/knowledge_resources_20261108_r1/DELIVERY.json
+!/EXP/validation/knowledge_resources_20261108_r1/build_inventory.py
+!/EXP/validation/knowledge_resources_20261108_r1/replay_citations.py
+!/EXP/validation/knowledge_resources_20261108_r1/live_smoke.py

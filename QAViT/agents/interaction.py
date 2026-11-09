@@ -170,7 +170,7 @@ class RoleInteraction:
             prediction_ids = set()
             for index, original in enumerate(rows):
                 try:
-                    row = self.resolve_card_refs(task, deepcopy(original))
+                    row = self.resolve_card_refs(task, deepcopy(original), source=(field == 'sources'))
                     if field == 'predictions' and isinstance(row, dict):
                         row.setdefault('id', 'p' + str(index + 1))
                         if row['id'] in prediction_ids:
@@ -253,20 +253,32 @@ class RoleInteraction:
                 resolve_claim=lambda claim: self.resolve_card_refs(task, claim))
         return content
 
-    def resolve_card_refs(self, task, content):
+    def resolve_card_refs(self, task, content, *, source=False):
         """提交与实验请求共用明确的卡片字段；不猜科学参数或自由文本身份。"""
         card_ref_keys = {'ref', 'evidence_ref', 'judgment_ref', 'metareview_ref', 'revision_ref',
                          'parent_ref', 'hypothesis_ref', 'experiment_ref', 'source_ref', 'trial_evidence_ref',
                          'selected_hypothesis_ref', 'parent_selection_ref', 'selection_ref', 'supersedes'}
         def resolve(value, key=''):
             if isinstance(value, dict):
+                # Older roles used sources.ref for static documents. Preserve those
+                # citations separately; they neither become Evidence nor grant assets.
+                if (key == 'sources' and isinstance(value.get('ref'), str) and 'document' not in value
+                        and Path(value['ref']).suffix in ('.md', '.json', '.txt')):
+                    try:
+                        path = self.asset_path(value['ref'])
+                    except (OSError, ValueError):
+                        path = None  # Invalid path remains an ordinary optional ref issue.
+                    if (path is not None and any(root in path.parents for root in (ROOT / 'reference', *self.knowledge_roots()))
+                            and str(path) in self.authorized_assets(task)):
+                        value = {**value, 'document': str(path)}
+                        del value['ref']
                 return {k: resolve(v, k) for k, v in value.items()}
             if isinstance(value, list):
                 return [resolve(v, key[:-1] if key.endswith('_refs') else key) for v in value]
             if isinstance(value, str) and key in card_ref_keys:
                 return self.require_visible(task, value)['id']
             return value
-        return resolve(content)
+        return resolve(content, 'sources' if source else '')
 
     @staticmethod
     def card_field(card, field):
@@ -986,6 +998,8 @@ class RoleInteraction:
         from core.static_w4a4 import DESCRIPTION
         context["static_w4a4_protocol"] = DESCRIPTION
         context.update(available_seconds=budget['remaining_seconds'], budget_receipt=budget)
+        if (ROOT / 'QAViT/knowledge/INDEX.md').is_file():
+            context['knowledge_index'] = {'read_asset': {'asset': 'QAViT/knowledge/INDEX.md'}}
         if 'literature_fetch' in TASKS[purpose]['tools']:
             context['literature_capabilities'] = {'pdf_text_extraction': find_spec('pypdf') is not None,
                 'pdf_dependency': 'pypdf', 'note': 'PDF 解析依赖未安装时只能保留原件，不能声称读过正文；HTTP/解析失败保留为未核实。'}
@@ -1010,10 +1024,13 @@ class RoleInteraction:
             from tools.profiling import PROFILE_NAMES
             context['services'] = {**SERVICES, 'profile': {**SERVICES['profile'], 'tools': list(PROFILE_NAMES)}}
             context['experiment_interface'] = (ROOT / 'QAViT/docs/EXPERIMENT_INPUTS.md').read_text()
-            context['method_catalog'] = [{**{k: row[k] for k in ('id', 'title', 'targets', 'document')},
-                'applicable_questions': row.get('tags', []),
-                'read_asset': {'asset': 'methods/' + row['document']}}
-                for row in read_json(ROOT / 'QAViT/docs/methods/index.json')['methods']]
+            try:
+                context['method_catalog'] = [{**{k: row[k] for k in ('id', 'title', 'targets', 'document')},
+                    'applicable_questions': row.get('tags', []),
+                    'read_asset': {'asset': 'methods/' + row['document']}}
+                    for row in read_json(ROOT / 'QAViT/docs/methods/index.json')['methods']]
+            except (OSError, ValueError, KeyError, TypeError):
+                pass  # Discovery metadata is optional; numerical contracts still apply.
             draft = inputs['context'].get('experiment_draft')
             if inputs['context'].get('experiment_ref'):
                 draft = self.require_visible(task, inputs['context']['experiment_ref'])['payload']
@@ -1069,7 +1086,7 @@ class RoleInteraction:
             '用 read_card 的 select 按位点、token、指标与数值范围定位；取消 select 即可完整分页读原件。'
             '可同批调用多次 read_card/read_asset 或分页 retrieve_memory；无需每次先检索。'
             '同一正文只在一个位置提供，续调保留已读分段；历史原件可按目录读取。反馈不是冻结规格或角色策略。')
-        context['reading_instructions'] += (' source_refs 是已归档来源，evidence_refs/sources.ref 是研究者实际采用的支持；'
+        context['reading_instructions'] += (' source_refs 是已归档来源；evidence_refs 指测量卡，sources.ref 指采用的 Journal 卡片，sources.document 指文档来源；'
             '当前假说、裁决和实验请求明确采用的 Evidence 主动交付有界观测及真实实验条件；来源链不自动展开为全历史。'
             'recording_status 区分事实归档与待完成复盘，knowledge_directory 保留结论状态、复盘时点及新证据检索入口。')
         return context
@@ -1294,6 +1311,18 @@ class RoleInteraction:
                 found.update(RoleInteraction.asset_references(item))
         return found
 
+    @staticmethod
+    def knowledge_roots():
+        return (ROOT / 'QAViT/docs', ROOT / 'QAViT/knowledge')
+
+    @staticmethod
+    def asset_path(asset):
+        path = Path(asset)
+        if path.is_absolute():
+            return path.resolve()
+        candidates = [ROOT / path, ROOT / 'QAViT' / path, ROOT / 'QAViT/docs' / path]
+        return next((p.resolve() for p in candidates if p.is_file()), candidates[-1].resolve())
+
     def authorized_assets(self, task):
         if 'assets' in self.read_view(task):
             return self.read_view(task)['assets']
@@ -1304,10 +1333,10 @@ class RoleInteraction:
                   for name in PUBLIC_INTERFACE_FILES} if purpose in ('code', 'safeguard') else set()
         static = self.read_view(task).get('static_assets')
         if static is None:
-            paths = [p for p in (ROOT / 'QAViT/docs').rglob('*') if p.suffix in ('.md', '.json', '.txt')]
+            paths = [p for root in self.knowledge_roots() for p in root.rglob('*') if p.suffix in ('.md', '.json', '.txt')]
             paths += [Path(p) for p in self.brief['payload'].get('source_documents', []) if isinstance(p, str)]
             static = {str(p.resolve()): file_sha256(p) for p in paths if p.is_file() and
-                      any(root in p.resolve().parents for root in (ROOT / 'reference', ROOT / 'QAViT/docs'))}
+                      any(root in p.resolve().parents for root in (ROOT / 'reference', *self.knowledge_roots()))}
         solution_assets = self.solutions.assets(sequence)
         allowed.update(solution_assets)
         allowed.update(static)
@@ -1399,7 +1428,7 @@ class RoleInteraction:
                 allowed[path] = manifest['source_sha256']
         return {path: digest or file_sha256(path) for path, digest in allowed.items() if Path(path).is_file()
                 and (path in public or path in solution_assets or any(root in Path(path).parents
-                                           for root in (self.run_dir, ROOT / 'reference', ROOT / 'QAViT/docs')))}
+                                           for root in (self.run_dir, ROOT / 'reference', *self.knowledge_roots())))}
 
     @journal_read
     def host_tool(self, task):
@@ -1447,10 +1476,7 @@ class RoleInteraction:
                 offset=args.get('offset', 0), limit=args.get('limit', 12), sequence=self.read_view(parent)['sequence'],
                 visible=lambda c: self.can_read_card(parent, c))
         if name == 'read_asset':
-            path = Path(args['asset'])
-            path = (path if path.is_absolute() else ROOT / path).resolve()
-            if not path.is_file() and not Path(args['asset']).is_absolute():
-                path = (ROOT / 'QAViT/docs' / args['asset']).resolve()
+            path = self.asset_path(args['asset'])
             allowed = self.authorized_assets(parent)
             if str(path) not in allowed or not path.is_file():
                 raise ContractError('资产读取限本调用已提交授权来源；立场隔离禁止目录旁路')

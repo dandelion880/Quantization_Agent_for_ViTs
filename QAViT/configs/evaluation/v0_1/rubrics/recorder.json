@@ -1,0 +1,65 @@
+{
+  "rubric_id": "qavit.eval_l0.recorder.v0_1",
+  "role": "recorder",
+  "purposes": ["record"],
+  "task_goal": "从本批已有科学卡片、有效/失败实验证据和已结案判断中生成忠实、条件明确、能迁移到下一轮的 Metareview；原始归档/来源绑定由程序负责，不要求重新审计所有卡片。",
+  "instructions": [
+    "只对可见科研材料中重要发现的科学综合评分；不要要求逐条覆盖本批全部原件或填写固定数量的知识条目。",
+    "knowledge_updates 可以为空；没有可靠发现时拒绝空洞总结、保留不确定性是好行为。",
+    "程序保证的不可变日志/哈希、记忆检索精度、Skill 本身不属于 Recorder LLM 的评分对象。",
+    "可以质疑 Judger 科学结论，但不得改写它已正式结案的比赛；下轮可更新知识，历史判断不倒写。"
+  ],
+  "criteria": [
+    {
+      "id": "R1", "name": "原始事实与来源忠实性", "dimension": "D_scientific_reasoning",
+      "question": "复盘是否不歪曲已提交假说、真实数值观察、运行状态和已结案结果？",
+      "inspect": ["recording_batch", "HypothesisCard/ReviewDecisionCard/EvidenceCard", "Metareview.scientific_analysis", "真实原始测量"],
+      "anchors": {
+        "0": "编造测量、把失败/待执行视为成功、把未入选方案说成最终方案，或明显篡改已结案裁决。",
+        "1": "主要事实正确，但一条重要测量/选择的来源、状态或条件解释不充分。",
+        "2": "关键科学结论可以逐项追溯到真实来源；正确区分 H* 与最终候选、实测与待测、程序归档与科学认可。"
+      }
+    },
+    {
+      "id": "R2", "name": "证据层级、适用条件与重复性", "dimension": "D_scientific_reasoning",
+      "question": "是否把局部诊断、整网代理指标、任务精度和独立重复分别正确对待？",
+      "inspect": ["EvidenceCard.measurement_source/status/provenance", "ExperimentCard.level", "Metareview.knowledge_updates/predictive_metrics"],
+      "anchors": {
+        "0": "把缓存/同次对照当独立重复，或用局部 NMSE 直接证明 ImageNet/ADE 任务精度及泛化。",
+        "1": "意识到证据有限，但模型、数据、位点、指标分母或对照条件仍有重要遗漏。",
+        "2": "正确限定作用范围、数据/模型条件及指标含义；仅在独立有效执行支持时使用 replicated，保留不能外推的部分。"
+      }
+    },
+    {
+      "id": "R3", "name": "矛盾、失败与替代解释综合", "dimension": "D_scientific_reasoning",
+      "question": "是否识别真正影响下一步判断的矛盾证据、混杂、负面结果和工程失败？",
+      "inspect": ["Metareview.scientific_analysis/recurring_failures/blind_spots/judgment_audit", "失败与证据原件"],
+      "anchors": {
+        "0": "无视明确反证或把工具/执行失败归因于算法无效；宣称一轮故障已构成重复规律。",
+        "1": "提到了矛盾或失败，但没有提出可信的机制解释及其对结论的影响。",
+        "2": "对关键冲突/负面结果给出证据界限和重要解释，区分算法缺陷、数据混杂、工程失败、尚无证据。"
+      }
+    },
+    {
+      "id": "R4", "name": "条件化知识提炼与可复用性", "dimension": "C_history_use",
+      "question": "是否形成能安全复用的知识（或准确判定当前没有），而不是堆砌表述或来源数量？",
+      "inspect": ["Metareview.knowledge_updates", "scope/status/rationale/evidence_refs", "旧 claim 修订关系"],
+      "anchors": {
+        "0": "产生与实际数据不符的普遍结论、证据归属错误，或把纯猜测冒充 verified knowledge。",
+        "1": "有价值的总结但重要适用条件、来源或新旧知识矛盾未明确；或在已有重要证据时只给空泛总结。",
+        "2": "提炼机制/条件/反例/可信度清楚的增量知识，必要时修订旧 claim；若无可靠新知识，明确保留不确定性而非凑条目。"
+      }
+    },
+    {
+      "id": "R5", "name": "下一轮的可行动科研指导", "dimension": "B_experiment_value",
+      "question": "是否能让下轮 Generation/Evolution 知道值得保留、修改、检验或停止的具体方向？",
+      "inspect": ["Metareview.generation_guidance/next_questions/resolved_questions", "已有历史反馈", "可用资源/方法"],
+      "anchors": {
+        "0": "只有鼓励/套话或错误方向，无法转化为下一步科研决策。",
+        "1": "指出方向但缺少最强替代解释、关键控制测量或优先级。",
+        "2": "明确哪些认识要保留/质疑，下一步最高信息价值的低成本对照以及升级验证/停止条件；不强迫下一轮照搬。"
+      }
+    }
+  ],
+  "not_applicable_policy": "真实发生且有科学材料的 record 五项通常适用。没有新增科学材料且程序跳过 Recorder 时不产生评价样本。失败或延期且正文未产生时，相关维度 unknown 并记录上下文原因，不机械记 0。"
+}

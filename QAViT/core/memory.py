@@ -528,7 +528,13 @@ class MemoryRetriever:
     @staticmethod
     def method_documents(query='', limit=4):
         root = Path(__file__).resolve().parents[1] / 'docs' / 'methods'
-        methods = json.loads((root / 'index.json').read_text())['methods']
+        try:
+            methods = json.loads((root / 'index.json').read_text())['methods']
+            if not isinstance(methods, list) or any(not isinstance(row, dict) or
+                    not all(k in row for k in ('id', 'title', 'document')) for row in methods):
+                return {'entries': [], 'policy': 'optional method index unavailable; continue research'}
+        except (OSError, ValueError, KeyError, TypeError):
+            return {'entries': [], 'policy': 'optional method index unavailable; continue research'}
         tokens = lexical_tokens(query)
         ranked = sorted(methods, key=lambda row: len(tokens & lexical_tokens(canonical(row))), reverse=True)
         return {'entries': [{'id': row['id'], 'title': row['title'], 'applicable_problems': row.get('tags', []),

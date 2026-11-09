@@ -1,0 +1,10 @@
+{
+  "baseline_source_files": 252,
+  "changed_existing_qavit_files": [
+    "QAViT/README.md"
+  ],
+  "historical_files_checked": 11217,
+  "historical_changes": [],
+  "production_code_unchanged": true,
+  "note": "Baseline captured after the user's pre-existing workspace edits; no reset or overwrite of those edits."
+}

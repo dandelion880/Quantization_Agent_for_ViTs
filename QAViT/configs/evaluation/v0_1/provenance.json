@@ -1,0 +1,84 @@
+{
+  "schema_version": "qavit.eval_l0.resources/1",
+  "archive_name": "QAViT_Eval_L0_Rubrics_v0_1.zip",
+  "archive_sha256": "dd85ee57de5b84abfafffd6c31742884db1a5f2c8e72beea9816ab085fe52329",
+  "files": {
+    "SOURCES.md": {
+      "sha256": "7794bc6c3b5eb2cb0f669af3b17fc93b4788275a4e59b849eea775339073fb8e",
+      "bytes": 1674,
+      "zip_member": "QAViT_Eval_L0_Rubrics_v0_1/SOURCES.md"
+    },
+    "README.md": {
+      "sha256": "c26c5fc036076f7bc33a07974268deff8d879326c6c3a3b6a0656673ffdea5ff",
+      "bytes": 3914,
+      "zip_member": "QAViT_Eval_L0_Rubrics_v0_1/README.md"
+    },
+    "prompts/judge_system.md": {
+      "sha256": "e3cb85adece0d7529071109becf82a9cf64e4a6c8c48ea83ff21649399fddae6",
+      "bytes": 5980,
+      "zip_member": "QAViT_Eval_L0_Rubrics_v0_1/prompts/judge_system.md"
+    },
+    "prompts/judge_case.md": {
+      "sha256": "6871af6bd41f13c8a9095530c0d47861ebf9bba65e8a4f735469b309e7dd936e",
+      "bytes": 3371,
+      "zip_member": "QAViT_Eval_L0_Rubrics_v0_1/prompts/judge_case.md"
+    },
+    "contracts/judge_result.schema.json": {
+      "sha256": "a6cddeeb63c0ce9ffbfd632f431669e6b43b6a439cf4d12a2e04d5ba72c8a551",
+      "bytes": 3054,
+      "zip_member": "QAViT_Eval_L0_Rubrics_v0_1/contracts/judge_result.schema.json"
+    },
+    "INTEGRATION.md": {
+      "sha256": "8fd7fd25e6b458b24d5d8c00fbd4fa9c31dd37e93cbde4ae78704005b79b062c",
+      "bytes": 8691,
+      "zip_member": "QAViT_Eval_L0_Rubrics_v0_1/INTEGRATION.md"
+    },
+    "VALIDATION.md": {
+      "sha256": "266887b8dada91f05bf60121e68f272c1a149332a806b08b12e53ffa5fa2dfa6",
+      "bytes": 3397,
+      "zip_member": "QAViT_Eval_L0_Rubrics_v0_1/VALIDATION.md"
+    },
+    "rubrics/generation.json": {
+      "sha256": "a3da758d5886772d53cc423d29945dda3e80ce1bfc1f37718b84dc573a5a260d",
+      "bytes": 6083,
+      "zip_member": "QAViT_Eval_L0_Rubrics_v0_1/rubrics/generation.json"
+    },
+    "rubrics/evolution.json": {
+      "sha256": "bc2ebbc2c3b25a3f02329b2d6baefd1101b4e2776a60ca617788437478087c26",
+      "bytes": 4635,
+      "zip_member": "QAViT_Eval_L0_Rubrics_v0_1/rubrics/evolution.json"
+    },
+    "rubrics/judger.json": {
+      "sha256": "dab2aff21dbfa591080ec29287c51c73d9ecdd3a5fc953bd0301eff2da33225f",
+      "bytes": 16841,
+      "zip_member": "QAViT_Eval_L0_Rubrics_v0_1/rubrics/judger.json"
+    },
+    "rubrics/safeguard.json": {
+      "sha256": "7d62aa768a391a91b8c0beeca3b72963b2f6e0e7c462d23a30d0611cde37cfbb",
+      "bytes": 4545,
+      "zip_member": "QAViT_Eval_L0_Rubrics_v0_1/rubrics/safeguard.json"
+    },
+    "rubrics/recorder.json": {
+      "sha256": "44af5591a5b5b5d3ecc1e239ff257ff06160ca14f304ff2d577da3aecc8fbec0",
+      "bytes": 5130,
+      "zip_member": "QAViT_Eval_L0_Rubrics_v0_1/rubrics/recorder.json"
+    },
+    "rubrics/coding.json": {
+      "sha256": "b539e519e67c9acc56c352ec3fae0e3ded0e773d18757b2c6e4a5e02f2fb8931",
+      "bytes": 5345,
+      "zip_member": "QAViT_Eval_L0_Rubrics_v0_1/rubrics/coding.json"
+    },
+    "CODEX_PROMPT.md": {
+      "sha256": "08f349c987dec2cc885ffdde83fa8710704cbb4f303281c97af92014b6225d0b",
+      "bytes": 2952,
+      "zip_member": "QAViT_Eval_L0_Rubrics_v0_1/CODEX_PROMPT.md"
+    },
+    "PRINCIPLES.md": {
+      "sha256": "4704a9b742ba4ff9d7ae314828f0be598ee5264317fcb361ace274d856d66783",
+      "bytes": 7662,
+      "zip_member": "QAViT_Eval_L0_Rubrics_v0_1/PRINCIPLES.md"
+    }
+  },
+  "authority": "User supplied v0.1; files preserved byte for byte",
+  "placement_reason": "configs/evaluation is outside RoleInteraction.knowledge_roots; avoid changing production scientific asset permissions."
+}

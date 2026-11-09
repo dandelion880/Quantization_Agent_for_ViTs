@@ -126,6 +126,8 @@ Memory 的唯一事实来源仍为 Journal 和不可变卡片；目录、输入�
 
 大型 Evidence 的客观统计视图也受展示预算控制：保留可交付的结果和条件，对未展示部分列出大小、精确字段/选择读取入口及不完整标志。全体统计、极值、符号冲突只代表描述性统计，不推导科学结论；必要反证和未展开材料不静默丢弃。`read_card(select={site,token_type,metric,...})` 可精确展开原始标量。旧工具正文在研究进展后转为短回执，沿用 research_note 保存当前解释与下一步理由；原工具页和来源仍可读。预算仅用于组装和展示，不限制科学提交。
 
+统一静态资源入口是按需的 `context.knowledge_index`。目录、角色交付、数值文档兼容和跨运行边界见 [资源生命周期](RESOURCE_LIFECYCLE.md)。可选 sources.ref 指 Journal 卡片，sources.document 指文档；旧输出把当前授权静态文本路径放入 ref 时兼容改存 document，保留科研内容，不把文档当 Evidence 或阅读证明。
+
 `read_card(ref, field?, offset?, limit?)`：field 是 JSON pointer（如 `/payload/observations`）；短卡默认返回完整卡片，长卡或指定 field/分页参数返回 canonical JSON 文本页面和 sha256/next_offset。`read_asset` 按字符分页读取 UTF-8 文本。两者单页最多 12000 字符，可用现有 tool_calls 批次同时读多卡、多字段、多页。query 可省略或为空对象；显式 text/ID/过滤值类型校验保持；已知输入错误继续返回原任务并沿用有限修复，未知程序异常不吞掉。
 
 订阅传输保留原 `name/arguments_json` 封套；多个独立工具用 `name="__tool_batch__"`，arguments_json 解码为 `{"calls":[{"name":"read_card","arguments":{"ref":"完整ID","offset":0}},...]}`。宿主解码为原有 tool_calls 列表，所有参数/实验草案先预检，再各自入队；运行期某项无权限/失败不吞掉同批其他结果。不得夹带决策、嵌套批次或同批依赖；工具预算为零时批次也不开放。格式和合同错误共用当前失败步骤最多两次连续修复；CLI 完成/身份/隔离检查仍在之前，整批调用的已知失败用量正常结算。

@@ -1,0 +1,277 @@
+{
+  "status": "completed",
+  "base_commit": "6c5879879fb2fbe971c2a47db28480861f4843e1",
+  "initial_worktree_clean": true,
+  "generated_at": "2026-11-08T10:26:26.413641+00:00",
+  "source_sha256": "12bfd7b3a93338d57a0a5bc8e404dd43278137ea9da052a30b0237fe96cee618",
+  "tests": {
+    "full_second": {
+      "status": "failed",
+      "tests": 549,
+      "seconds": 1110.943,
+      "log": "full_regression_r2.log"
+    },
+    "full_first": {
+      "status": "failed",
+      "tests": 549,
+      "seconds": 747.532,
+      "log": "full_regression.log"
+    },
+    "resources": {
+      "status": "passed",
+      "tests": 7,
+      "seconds": 7.857,
+      "log": "targeted_r2.log"
+    },
+    "adaptive_recheck": {
+      "status": "passed",
+      "tests": 13,
+      "seconds": 6.587,
+      "log": "adaptive_recheck.log"
+    },
+    "paired_worker_checks": {
+      "current": {
+        "status": "passed",
+        "tests": 9,
+        "seconds": 14.489,
+        "log": "runtime_current.log"
+      },
+      "baseline": {
+        "status": "passed",
+        "tests": 9,
+        "seconds": 14.157,
+        "log": "runtime_baseline.log"
+      }
+    },
+    "static": {
+      "status": "passed",
+      "errors": [],
+      "syntax_files": 166,
+      "snapshot_file_count": 253
+    },
+    "compatibility": {
+      "changed_historical_files": [],
+      "checks": {
+        "backend_config": true,
+        "config": true,
+        "historical_method_snapshot_exact_content": true,
+        "measurements_used": true,
+        "profile_distribution/comparison": true,
+        "profile_distribution/shapes": true,
+        "profile_distribution/summary": true,
+        "profile_plugin_sites/comparison": true,
+        "profile_plugin_sites/shapes": true,
+        "profile_plugin_sites/summary": true,
+        "profile_sensitivity/comparison": true,
+        "profile_sensitivity/shapes": true,
+        "profile_sensitivity/summary": true,
+        "protected_history_unchanged": true,
+        "query_ptq_plugins": true,
+        "query_ptq_sites": true,
+        "query_structure_except_observed_free_bytes": true,
+        "registry": true
+      },
+      "historical_snapshot": "EXP/validation/scientific_skills_20261108_r1/cpu_contracts/profile/method_library.json",
+      "historical_snapshot_sha256": "9b449c7a72e9c601f8320c4411fa5975ae9001aa1fcead24420cbfd965ee8e8a",
+      "limits": "CPU synthetic summaries compared exactly; runtime paths/identity receipts differ by run; no full task accuracy claim.",
+      "physical_free_bytes_not_compared": {
+        "current": 72860610560,
+        "old": 75201056768
+      },
+      "protected_historical_files": 83,
+      "status": "passed"
+    },
+    "citation_replay": [
+      {
+        "case": "A1_skills",
+        "status": "completed",
+        "original_source_issues": 3,
+        "document_citations_preserved": 3,
+        "remaining_issues": [],
+        "mechanism_unchanged": true
+      },
+      {
+        "case": "C1_skills",
+        "status": "completed",
+        "original_source_issues": 4,
+        "document_citations_preserved": 3,
+        "remaining_issues": [
+          {
+            "field": "sources",
+            "index": 4,
+            "issue": "未提交或未知卡片引用: 本卡理论推导",
+            "submission": {
+              "ref": "本卡理论推导",
+              "status": "待实验验证",
+              "supports": "稀疏预测坐标的浮点恒等关系及其可能改变联合量化误差的机制；不提供经验收益证明。"
+            }
+          }
+        ],
+        "mechanism_unchanged": true
+      }
+    ]
+  },
+  "live_smoke": {
+    "cases": [
+      {
+        "case": "resource_choice",
+        "status": "completed",
+        "numeric_tasks": 0,
+        "elapsed_seconds": 265.81256954558194,
+        "model_calls": 3,
+        "tool_calls": [
+          {
+            "arguments": {
+              "asset": "skills/adapt-quantization-method/SKILL.md"
+            },
+            "error": null,
+            "key": "smoke/resource_choice/tools/a1/05669a69f097",
+            "name": "read_asset",
+            "state": "completed"
+          },
+          {
+            "arguments": {
+              "asset": "solutions/repq.md"
+            },
+            "error": null,
+            "key": "smoke/resource_choice/tools/a1/bbadb502c67e",
+            "name": "read_asset",
+            "state": "completed"
+          },
+          {
+            "arguments": {
+              "asset": "methods/repq_ln.md"
+            },
+            "error": null,
+            "key": "smoke/resource_choice/tools/a1/29790c7428d5",
+            "name": "read_asset",
+            "state": "completed"
+          },
+          {
+            "arguments": {
+              "asset": "/root/data-fs/projects/Quantization_Agent_for_ViTs/EXP/validation/knowledge_resources_20261108_r1/live/resource_choice_skills/solution_library/e430deab30c52bb0eaca40cc5d682eb6d3f9c4a83779b763a79634bb973d97d9.json"
+            },
+            "error": null,
+            "key": "smoke/resource_choice/tools/a2/8ffa1ceda47d",
+            "name": "read_asset",
+            "state": "completed"
+          },
+          {
+            "arguments": {
+              "asset": "skills/adapt-quantization-method/references/designing-a-remedy.md"
+            },
+            "error": null,
+            "key": "smoke/resource_choice/tools/a2/50b62226cef0",
+            "name": "read_asset",
+            "state": "completed"
+          }
+        ],
+        "sources": [
+          {
+            "document": "solutions/repq.md",
+            "status": "已读本地全文；完整种子尚待本协议评测",
+            "supports": "完整参照方案、构造入口及与官方配方的差异。"
+          },
+          {
+            "document": "methods/repq_ln.md",
+            "status": "已读本地全文；未核实外部论文全文",
+            "supports": "LN 重参数化依赖实际消费边，不能从模块名称推定；冻结码本须核验。"
+          },
+          {
+            "ref": "ResearchBrief-d3cbf87949014f25aa46d684bb89cd2e@1",
+            "status": "已读 ResearchBrief；题设不是实测证据",
+            "supports": "幅度失衡前提、许可位点、fixture 和仅特征保真度的研究边界。"
+          },
+          {
+            "source": "本卡算法推导",
+            "status": "待检验候选，不声称世界首创",
+            "supports": "通过固定 Gram 交叉项耦合标量舍入，以及逐对代理非增但整层误差未必非增的区别。"
+          }
+        ],
+        "submission_issues": [],
+        "requested": [
+          {
+            "model": "gpt-6.1-sol",
+            "reasoning_effort": "high"
+          },
+          {
+            "model": "gpt-6.1-sol",
+            "reasoning_effort": "high"
+          },
+          {
+            "model": "gpt-6.1-sol",
+            "reasoning_effort": "high"
+          }
+        ],
+        "actual": [
+          {
+            "model": null,
+            "reasoning_effort": null,
+            "source": "not_reported_by_cli"
+          },
+          {
+            "model": null,
+            "reasoning_effort": null,
+            "source": "not_reported_by_cli"
+          },
+          {
+            "model": null,
+            "reasoning_effort": null,
+            "source": "not_reported_by_cli"
+          }
+        ]
+      },
+      {
+        "case": "engineering_only",
+        "status": "completed",
+        "numeric_tasks": 0,
+        "elapsed_seconds": 16.875447082333267,
+        "model_calls": 1,
+        "tool_calls": [],
+        "sources": [],
+        "submission_issues": [],
+        "requested": [
+          {
+            "model": "gpt-6.1-sol",
+            "reasoning_effort": "medium"
+          }
+        ],
+        "actual": [
+          {
+            "model": null,
+            "reasoning_effort": null,
+            "source": "not_reported_by_cli"
+          }
+        ]
+      }
+    ],
+    "total_model_calls": 4,
+    "usage": {
+      "input_tokens": 79048,
+      "output_tokens": 7050,
+      "reasoning_output_tokens": 4622,
+      "cached_input_tokens": 3072
+    },
+    "real_llm": true,
+    "numeric_tasks": 0,
+    "gpu_experiments": 0,
+    "limits": "Hypothetical text scenarios; no empirical quantization gain or full research loop claimed. Reasoning tokens are included in output_tokens."
+  },
+  "preservation": {
+    "unchanged_static_knowledge_files": 40,
+    "changed": [],
+    "agents_only_added_organization_rule": true,
+    "common_prompt_character_delta": 280,
+    "skill_catalog_character_delta": 354
+  },
+  "physical_resource_moves": [],
+  "workflow_changes": false,
+  "tool_or_payload_schema_changes": false,
+  "agreed_structure_rule": "新增或修改文件按职责组织：角色/任务指令放 `QAViT/agents/prompts/`；静态科研知识由 `QAViT/knowledge/INDEX.md` 统一导航，现有 Skill、Method、方案种子及来源资料保留在 `QAViT/docs/{skills,methods,solutions,references}/`，新增知识优先放 `knowledge/`；系统、合同与接口说明放 `docs/`，执行实现放 `core/`、`runtime/`、`tools/`，配置与测试放 `configs/`、`tests/`；运行内 Journal/Memory/Evidence、协议方案库及验证产物放 `EXP/`。合理技术例外可按实际依赖保留原位，并同步更新导航与相关读取入口，不为目录形式迁移历史资产。",
+  "limits": [
+    "No full GPU research or ImageNet/ADE accuracy run.",
+    "No network paper/source revalidation or full combination benchmark.",
+    "Two full suites each passed 548/549 with different timing assertion failures; isolated current/baseline worker checks passed. Full-suite timing stability remains unverified.",
+    "Historical source-identity recovery still requires the existing explicit intervention."
+  ]
+}

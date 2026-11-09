@@ -18,6 +18,8 @@ QAViT（Quantization Agent for ViTs）是面向视觉 Transformer 量化研究�
 
 可复用且经过验证的能力应沉淀到 `QAViT/`；一次性探索与执行痕迹留在 `EXP/`。数据集、预训练权重等已有大型资产可从既有位置引用，无须复制进项目。
 
+新增或修改文件按职责组织：角色/任务指令放 `QAViT/agents/prompts/`；静态科研知识由 `QAViT/knowledge/INDEX.md` 统一导航，现有 Skill、Method、方案种子及来源资料保留在 `QAViT/docs/{skills,methods,solutions,references}/`，新增知识优先放 `knowledge/`；系统、合同与接口说明放 `docs/`，执行实现放 `core/`、`runtime/`、`tools/`，配置与测试放 `configs/`、`tests/`；运行内 Journal/Memory/Evidence、协议方案库及验证产物放 `EXP/`。合理技术例外可按实际依赖保留原位，并同步更新导航与相关读取入口，不为目录形式迁移历史资产。
+
 ## 3. 开发与研究纪律
 
 1. **先检查再行动**：理解相关代码、配置、已有实验及运行环境，优先复用可靠实现；修改限于任务所需，避免无关重构和重复建设。

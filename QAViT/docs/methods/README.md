@@ -23,4 +23,6 @@ V2 的 context.method_catalog 直接给出简短标题、适用问题和 `read_a
 
 V2 科研流程与实验申请入口见 [主 README](../../README.md)。本目录只描述数值组件；局部诊断模型不能导出，正式模型的完整覆盖门槛保持生效。
 
-`loop.require_method_documents` 仅保留旧配置兼容字段，当前科研与数值计划执行路径不以阅读记录判定能否提交或执行。`required_reads` 表示按需深读入口，不是阅读确认。文档不能代替实际测量；科学选择由研究角色负责，数值合同、真实范围、来源和重载检查继续执行。
+无调用方的历史 `require_plan_documents()` 阅读检查已移除；`query_method_library` / `read_method_document` 及其会话快照保持。`loop.require_method_documents` 仅保留旧配置兼容字段，当前科研与数值计划执行路径不以阅读记录判定能否提交或执行。`required_reads` 表示按需深读入口，不是阅读确认。文档不能代替实际测量；科学选择由研究角色负责，数值合同、真实范围、来源和重载检查继续执行。
+
+分类、权威来源与目录维护见 [统一导航](../../knowledge/INDEX.md)，会话快照和运行内外记忆边界见 [资源生命周期](../RESOURCE_LIFECYCLE.md)。

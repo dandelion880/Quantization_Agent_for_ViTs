@@ -1,74 +1,39 @@
 # 项目结构与修改入口
 
-业务结构保持 `QAViT/`、`EXP/`、`reference/`、`AGENTS.md`、`STRUCTURE.md` 五项。根目录 `README.md` 提供项目概览与使用入口；`.git/` 和 `.gitignore` 用于版本管理。
+五项业务入口保持 QAViT/、EXP/、reference/、AGENTS.md、STRUCTURE.md；根 README 提供项目概览，.gitignore 管版本边界。以下是模块导航；**逐文件的真实完整结构**及省略范围见 [本轮盘点报告](EXP/validation/knowledge_resources_20261108_r1/PROJECT_RESOURCE_INVENTORY.md)，由报告同目录的 build_inventory.py 扫描工作区生成，不是理想目录。
 
-Git 管理 QAViT 的稳定代码、Prompt、工具、轻量配置、文档和测试，包括 `tests/data/` 的小型夹具与模型构造源码的现有许可证。新增源码默认可跟踪，不对 QAViT 设置逐文件白名单。
-
-EXP 严格按 `.gitignore` 中的准确路径放行：`implementation/v2_structure_20261027/REPORT.md`，以及 `validation/research_refactor_20261103_r1/` 下的 `REPORT.md`、`PSEUDOCODE.md`、`DELIVERY.json`、`REPLAY_RESULT.json`、`complexity.json`。本轮另放行 `validation/generation_loop_20261104_r1/` 的 `REPORT.md`、`PSEUDOCODE.md`、`DELIVERY.json`、`REPLAY_RESULT.json`、`complexity.json`、`HISTORICAL_EVIDENCE.json`、`CALL_COMPARISON.json`。新增实验配置、指标或总结须先检查内容，再显式增加路径；原始日志、运行记录、快照和大型产物保留在本机。
-
-`QAViT/.runtime_pkgs/`、`QAViT/configs/assets/imagenet_manifest.json`、`reference/`、权重、数据集、缓存及凭据不入库；忽略不删除或移动任何本地资产。仓库克隆不包含完整运行环境，依赖及外部资产仍按 [环境说明](QAViT/docs/ENVIRONMENT.md) 准备。配置和来源记录中的本机路径保留原义，历史报告引用的原始证据也可能仅在本机可用。提交前检查暂存内容中的凭据与不适合公开的信息。
-
-| 位置 | 当前职责 |
+| 实际位置 | 职责 |
 |---|---|
-| `QAViT/run.py` | 唯一 V2 CLI：start/resume/status/report/answer/extend-budget |
-| `QAViT/core/workflow.py` | 科研阶段、初始三场独立推进并全部结案→持久化 H*→唯一父子场的两阶段选择和轮次推进；结案不改判 |
-| `QAViT/core/experiment_requests.py` | Generation/Evolution/Judger 自主实验→原任务续调；原始需求保存→Coding 单实现→程序绑定执行→Safeguard→真实执行；有效 L3 Evidence 与可选解释解耦 |
-| `QAViT/core/cards.py`、`journal.py` | 卡片合同、不可变事实、原子提交与重建 |
-| `QAViT/core/execution_contract.py`、`evidence_scope.py` | 结构化必需执行约束归并/独立核对，Evidence 规范范围、知识边界及精确字段匹配 |
-| `QAViT/core/evidence.py` | 大型观测的全量客观统计、极值来源与按位点/token/指标检索；不代替科研解释 |
-| `QAViT/core/debate.py`、`memory.py` | 直接胜负表、L0–L3 Memory、程序来源归档/科学综合状态与检索 |
-| `QAViT/agents/tasks.py`、`roles.py`、`prompts/` | 任务映射、工具 Schema、公共/角色/任务 Prompt 组装 |
-| `QAViT/agents/interaction.py` | 按 purpose 交付必需对象、分页目录、统一提交可见性与读取权限、工具响应去重和科研提交校验 |
-| `QAViT/runtime/` | driver、队列、worker 生命周期、预算、订阅传输、路径、保护、递归身份 |
-| `QAViT/tools/` | 实验协议、数值 worker、评测、Safeguard、文献和模型适配 |
-| `QAViT/tools/result_contract.py`、`runtime_interface.py` | 全服务 L3 实际结果协议、自定义 Data/Backend 宿主观测及 CPU 接口夹具 |
-| `QAViT/tools/data_receipt.py` | 从已有后端配置/清单及匹配校验身份派生实验数据回执；不加载模型、不代选科学参数 |
-| `QAViT/tools/ptq_agent/` | 纯数值工具库；无旧 Agent/Orchestrator/Memory/LLM 框架 |
-| `QAViT/tools/model_sources/`、`.runtime_pkgs/` | 保留的模型构造源码、第三方依赖及许可证 |
-| `QAViT/configs/` | 通用研究模板、唯一角色模型默认值、数值后端和只读资产配置 |
-| `QAViT/tests/` | 可复用离线测试、小型固定夹具与显式组件验证器；`test_minimal_fixes.py` 覆盖选择、L3 复盘/状态和 Profiling 证据读取；`test_experiment_preflight.py` 覆盖草案预检及原任务有限修复；`test_parent_evolution.py` 覆盖 H* 绑定、父子选择、恢复及下游交接；`test_serial_debate_memory.py` 覆盖按场推进、科研正文/索引、隔离和结案固定；输出写 EXP |
-| `QAViT/docs/` | 当前执行协议；EXPERIMENT_INPUTS.md 为直接交付的科学调用速查；CODE_INTERFACES.md 为单实现代码接口；环境依赖和方法说明 |
-| `QAViT/docs/skills/` | 四个可选科研 Skill、轻量 INDEX 与九份按需策略参考；复用 read_asset，无新工作流 |
-| `QAViT/tests/skill_evals/` | 原包科研情境正反例和人工回放设计，不属于运行时上下文 |
-| `EXP/runs/`、`EXP/validation/` | 历史/未来运行事实、测量、代码、日志和模型产物 |
-| `EXP/validation/serial_debate_memory_20261029_r1/` | 本批最小修改报告、独立提示词差异、当前流程伪代码与针对性 CPU 回归日志 |
-| `EXP/validation/experiment_inputs_20261029_r1/` | 输入整理报告、数据回执核对、提示词差异、伪代码及 CPU 回归日志 |
-| `EXP/validation/contract_interfaces_20261030_r1/` | 本轮合同/接口修复前复现、源码差异、当前伪代码、CPU 正反例及历史保护核对 |
-| `EXP/implementation/v2_structure_20261027/` | 本次唯一整理报告、流程伪代码、原件快照、变更清单和验证日志 |
-| `EXP/implementation/` 其它目录 | 历史实施事实，只读保留 |
-| `EXP/cache/` | 临时文件、依赖缓存、锁；不属于源码身份 |
-| `reference/` | coscientist 原论文和补充材料 |
+| QAViT/run.py | 科研运行 CLI：start/resume/status/report/answer/extend-budget |
+| QAViT/agents/prompts/ | common、七角色、任务目的片段；tasks.py/roles.py 映射和组装 |
+| QAViT/agents/interaction.py | 任务上下文、读取权限、分页/去重、来源与提交绑定 |
+| QAViT/knowledge/INDEX.md | 统一静态科研知识导航与维护入口，正文按需读取 |
+| QAViT/docs/skills/ | 原位保留的四 Skill 与九份 references，INDEX 触发表由 frontmatter 生成 |
+| QAViT/docs/methods/ | 原位保留的组件手册及 index.json；read_asset 为常规阅读入口 |
+| QAViT/docs/solutions/ | 原位保留的完整方案种子及说明，不是实测排名文件 |
+| QAViT/docs/references/ | PTQ 方法来源、版本、许可与历史核验线索 |
+| QAViT/docs/ | 系统/执行合同、实验/代码接口、环境、资源生命周期与历史导航 |
+| QAViT/core/workflow.py、experiment_requests.py | 自主研究/两阶段选择/轮次推进与实验请求；保留现有职责，不拆分大型文件 |
+| QAViT/core/cards.py、journal.py、memory.py、evidence.py | 合同、不可变事实、运行内知识修订、观测展示及检索 |
+| QAViT/core/solutions.py、static_w4a4.py | 协议专属完整方案库与必要数值边界 |
+| QAViT/core/debate.py、execution_contract.py、evidence_scope.py | 裁决表、冻结执行约束及证据适用范围 |
+| QAViT/runtime/ | driver/队列/worker、订阅传输、预算/GPU/运行段、保护及源码身份 |
+| QAViT/tools/ | 文献、实验服务、数值 worker、评测、代码审查与模型适配 |
+| QAViT/tools/evaluation/ | 独立 Eval-L0 离线 CLI；只读历史运行，计量/受限 Judge/评分校验/报告，不被科研主流程导入 |
+| QAViT/configs/evaluation/v0_1/ | 用户上传评分包的唯一原文及哈希来源；避开 docs/knowledge 的科研自动授权范围，详见 QAViT/docs/EVAL_L0.md |
+| QAViT/tests/evaluation/ | Eval-L0 CPU 接口、来源、时间边界、隔离与恢复测试；不生成科研代表性样本 |
+| QAViT/tools/ptq_agent/ | 纯数值实现、会话快照和工具注册；execution/baselines.py 与 recipes.py 保留实际构造器 |
+| QAViT/tools/model_sources/ | 固定模型构造源码与既有许可证 |
+| QAViT/configs/ | 通用研究模板、角色默认模型、数值/评测配置和只读资产清单 |
+| QAViT/tests/ | 单元/离线集成回归、静态审计、CPU 快照及显式真实组件验证器；data/ 为小型基线，skill_evals/ 为评估设计 |
+| EXP/runs/、inputs/、outputs/ | 历史及未来具体运行、输入、产物；Journal/Memory/Evidence 均属于各运行 |
+| EXP/validation/、implementation/ | 逐次验证/实施报告、日志、源码快照及复现材料；旧目录不充当当前执行实现 |
+| EXP/evaluations/ | 独立评价冻结原件、逐任务案例、Judge 回执、分项/聚合报告及本次接入验证；不回写原科研运行 |
+| EXP/cache/ | 临时文件、依赖缓存和锁，不属于源码身份 |
+| reference/ | 当前 coscientist 两份原始 PDF；不自动注入角色 |
 
-从 [QAViT/README.md](QAViT/README.md) 的阅读顺序进入。科研主循环、实验申请、角色交互和运行设施已分开；当前实现及验证边界在 README，具体未修复问题和历史索引在[整理报告](EXP/implementation/v2_structure_20261027/REPORT.md)。
+`EXP/solutions/<protocol_hash>/` 是已实现的研究运行共享方案库路径，只有需要时创建；本轮整理开始时尚不存在此顶层目录。验证运行的 solutions/ 位于自己的目录。不能为美观预建空库或移动历史桶。完整树仅列实际存在的目录。
 
-框架只依赖 QAViT 内实现和明确只读外部资产。实验生成代码可以来自当次 EXP 运行；不得从历史实施目录导入一次性框架。MVP 入口、五角色提示词、旧工作流与专用配置已删除，不保留 legacy 目录或兼容分支。数值计划 v2/v3、卡片协议等仍有实际用途的版本标识保持原义。
+物理知识路径保留以兼容已有 read_asset、数值会话文档快照、源码身份和历史来源；新增知识优先归入 knowledge/，合理依赖例外见 AGENTS.md。全部资源分类、权威位置、使用角色、发现和维护规则只在 [统一导航](QAViT/knowledge/INDEX.md) 集中说明；[生命周期](QAViT/docs/RESOURCE_LIFECYCLE.md) 解释实际调用与沉淀。
 
-历史 cards、commits、日志、快照和结果不迁移、不覆盖。整理后的版本创建新运行；其自身的恢复、预算延续、哈希检查与证据追踪保留。本次结构工作没有启动真实科研任务，不代表科研问题已解决。
-
-`EXP/validation/memfs_delivery_20261030_r1/`：Letta 官方固定版本参考、修改前快照与补丁、各 purpose 输入示例及体量对比、Recorder 增量整理/恢复和读取隔离 CPU 回归。
-
-`EXP/validation/research_simplification_20261031_r1/`：本轮科研导向最小简化报告、调用链及当前伪代码、历史输入的只读性能复现、CPU 回归与同请求四服务集成对照。历史实验资产不覆盖。
-
-`EXP/validation/real_research_tiny_20261031_r1/`：独立 CPU tiny ViT 真实 Judger 科研验证、两次实测 Evidence、Recorder/Generation 链路状态、完整原始轨迹、局部修复及回归。所有预算与源码干预只属于本次验证；失败材料保留。
-
-`EXP/validation/research_refactor_20261103_r1/`：当前科研简化报告、修改前快照、源码差异、当前伪代码、历史 Recorder 隔离回放、CPU 四服务集成与回归；所有角色脚本夹具和真实 LLM 调用明确区分。
-
-`EXP/validation/generation_loop_20261104_r1/`：本轮 Generation 自主循环、上下文/权限索引优化报告、当前伪代码、同历史快照前后回放、CPU 数值集成及回归；不启动长时间真实实验。
-
-`EXP/validation/single_implementation_20261105_r1/`：单实现实验链与确定性职责归位的回归、最短真实链验证、交付报告及当前伪代码。生产双实现 verification worker 与 Reference 提示词已移除；历史原件不改写。
-
-`EXP/validation/research_gates_20261105_r1/`：科研门禁集中清理、探索/最终条件区分、自定义执行器与只读梯度、可选提交项局部处理的回归及最短真实链。该目录仅精简 REPORT.md、PSEUDOCODE.md、DELIVERY.json 加入版本管理。
-
-`EXP/validation/memory_recorder_20261105_r1/`：记忆与 Recorder 精简、修改前源码、同轨迹离线开销比较、有界结果交付和跨轮回归、当前伪代码及报告；历史运行原件只读。
-
-`QAViT/runtime/run_segments.py`：仅用于新输入明确选择的累计运行段监控；固定截止、确认全部进程停止后结算，旧运行不迁移。`EXP/validation/controlled_run_20261105_r1/` 保存本次终点/计时/预检/shape 修订、定向验证、新输入及真实运行交付。
-
-`QAViT/tests/test_parallel_runtime.py`、`test_parallel_requests.py`：有界工作进程时间重叠、订阅槽、数值单槽、请求排队/流水及原任务回执回归。`EXP/validation/parallel_debate_20261106_r1/` 保存本轮并行化验证、最小真实CLI调用与当前伪代码；历史科研运行不覆盖。
-
-2026-11-06 并行与预算收尾：`runtime/gpu_resources.py` 管理项目共享GPU租约及按需分配；`tools/classification_shards.py` 复用冻结包逐图分类与汇总。`runtime/budget.py`/`run_segments.py` 在新运行显式启用纯数值等待排除及持续余额监控。测试 `test_numeric_parallel_budget.py` 和 `test_parallel_requests.py` 覆盖等待、重叠、恢复与归属；本次报告、伪代码及有界验证在 `EXP/validation/parallel_finish_20261106_r1/`。
-
-2026-11-06 自适应资源修复：`runtime/gpu_resources.py` 冻结可见性/分配/显式授权交集和 UUID 身份；`tools/result_contract.py` 复用冻结必需结果判断分类分片能力；`runtime/task_runtime.py` 在有效回执与进程完全退出之间保留资源归属。`tests/test_adaptive_resources.py` 覆盖不同资源池、协议回退与慢收尾/恢复。`EXP/validation/adaptive_finish_20261106_r1/` 保存本轮修复前源码快照、伪代码、验证与报告；不覆盖历史实验。
-
-2026-11-07 最小科研能力升级：`core/static_w4a4.py`统一必要计算边界和冻结码本容量；`core/solutions.py`维护与Memory分离的协议专属Top-3，研究运行落盘于`EXP/solutions/`。`docs/solutions/`与`tools/ptq_agent/execution/baselines.py`保存三种成熟完整适配起点；`tools/frozen.py`提供已发布Evidence绑定的原包加载。`tests/test_research_upgrade.py`覆盖数值适配、合规、选优持久化与工程交接。`EXP/validation/research_upgrade_20261107_r1/`保存真实Generation、历史包加载、回归及报告；原始历史运行不覆盖。
-
-2026-11-08 首批科研 Skill：`docs/skills/` 保存四条策略及按需参考，`docs/SCIENTIFIC_SKILLS.md` 说明实际接口；只向研究角色交付短目录，读取复用原 `read_asset`。`tests/test_scientific_skills.py` 覆盖可发现性、续调去重、缺失与失败回退。完整有效目录及资源调用链见 [独立盘点报告](EXP/validation/scientific_skills_20261108_r1/PROJECT_RESOURCE_INVENTORY.md)，验证、当前伪代码和回退依据在同一交付目录。
+Git 跟踪稳定源码、Prompt、知识、轻量配置、测试及许可证；EXP 仅按 .gitignore 的精确路径保存已检查的轻量交付，原始运行/快照/日志留本机。reference/、.runtime_pkgs/、完整 ImageNet 清单、数据、权重和凭据不入库。忽略不代表删除；环境与本地依赖见 [ENVIRONMENT](QAViT/docs/ENVIRONMENT.md)。历史导航集中在 [HISTORY](QAViT/docs/HISTORY.md)，不在这里追加每次实施日志。

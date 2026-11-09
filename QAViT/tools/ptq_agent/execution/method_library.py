@@ -74,38 +74,6 @@ class MethodLibrary:
                 "kind": "method_documentation_not_measurement"}
 
 
-def require_plan_documents(session, plan):
-    """确认实际查阅过独立契约；不替 LLM 推荐插件或组合整模型配方。"""
-    library = session.method_library
-    results = [row["result"] for row in session.state["tool_results"]
-               if row["result"]["status"] == "success"]
-    require(any(r["name"] == "query_method_library"
-                and r["data"].get("library_sha256") == library.sha256
-                and r["data"].get("methods") for r in results),
-            "提交前请用 query_method_library 查询本会话方法库；空query可查看全部索引",
-            code="missing_method_documentation")
-    read = {doc.get("id") for r in results if r["name"] == "read_method_document"
-            for doc in r["data"].get("documents", [r["data"]])
-            if doc.get("library_sha256") == library.sha256 and doc.get("id") in library.documents
-            and doc.get("sha256") == library.documents[doc["id"]]["sha256"]}
-    used = {(target, layer[target + "_method"]) for layer in plan["layers"]
-            for target in ("weight", "activation") if layer.get(target)}
-    used.update(("preprocess", row["method"]) for row in plan.get("preprocess", []))
-    used.update(("operator", row["method"]) for row in plan.get("operators", []))
-    missing = []
-    for target, method in sorted(used):
-        documents = {key for key, entry in library.entries.items()
-                     if method in entry["plugins"].get(target, [])}
-        if not documents.intersection(read):
-            missing.append({"plugin": f"{target}/{method}", "documents": sorted(documents)})
-    # 校准策略/阶段说明也来自可编辑索引，避免把默认值误当成已做尺度搜索。
-    controls = {key for key, entry in library.entries.items() if "calibration" in entry["targets"]}
-    missing.extend({"calibration_document": key} for key in sorted(controls - read))
-    require(not missing, f"请先 read_method_document 阅读尚未查阅的独立契约：{missing}；"
-            "阅读不等于选用所有方法，文档不能替代实测evidence",
-            code="missing_method_documentation")
-
-
 def register_method_library(session):
     path = session.run_dir / "method_library.json"
     library = MethodLibrary(snapshot=read_json(path) if path.is_file() else None)

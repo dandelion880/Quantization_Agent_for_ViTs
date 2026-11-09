@@ -17,18 +17,18 @@
   },
   "explicit_fix_source": "EXP/validation/parent_evolution_20261029_r1/prompts.diff; authorized parent/final workflow update, 2026-10-29; EXP/validation/serial_debate_memory_20261029_r1/prompts.diff; authorized serial debate/shared science/fixed verdict update, 2026-10-29; EXP/validation/experiment_inputs_20261029_r1/prompts.diff; authorized experiment input and Brief-scope alignment, 2026-10-29",
   "explicit_prompt_fixes": {
-    "generate": "1e88b47fe99e7fc54b427afc7207ed4819ca01d445fd81154b167c9610c1b4eb",
-    "evolve": "f91430045eeb93732f8a63edbc0d47e7ad64885fe37144e19d8c93e85b4e0f6e",
-    "screen": "1f1ca4ad840cae7633bea257704a78662e8d4d6586515ec5441023cb757cdcf5",
-    "position": "5845d5990605be7abaf9ca2669b81b57888e31b4cf7259e4e233f5bc15a9c8e9",
-    "arbitrate": "eb84506206e6bef740055dd3ec5df0a69c83bb588ad9751602fc3a7e0c663c04",
-    "rank": "332f54a6aa781ff0441e9696714a8bd462f8b1a44c918ab2a1eb53cf0c302d6d",
-    "plan_l3": "88dff01262e1adb95d184ca29a6e7768f42991c3367479c25b744b09315dfdd1",
-    "record": "49fd7db076e32a6498cc84ec303b2ad969df10eb5345e2500d3bab3e18f49bb6",
-    "code": "901ebe2795f3b4eacf9106aeb6699baee17c9ad4ec0155b3cf9f956fa7708b4c",
-    "safeguard": "9b4e46ae06e534faad8c447144f0ea7eae659caa2d7b864085abb64deb851201",
-    "supervise": "d6e893d2a3b9ec6ccdcc1d1030564be78d9c460861d536cb026d791dc45e4ff6",
-    "interpret": "172d49ae9911d2026778636c8789b34e4b7e3792929f9021c40d248f37c1c22d"
+    "generate": "8b4494ef46f08a61f616de09e7dfebe86529f396cd898834d8dd99574599b40e",
+    "evolve": "ec489d1b2c2727931e71c5a9c62512ce8fb213fdb184acd2a02e70f745a2ba68",
+    "screen": "442b5ab079770ba21e439103719eefa994ca27fe643db5a9e680632a6fa399f9",
+    "position": "dbf71fb3e774fed43c5c2d1c80cb98fdc7b15a6d12774275df43af6493f76115",
+    "arbitrate": "2143b80e22b084a26f86575e663d33a090e1eb038ab759f15cc064258a1595c1",
+    "rank": "307ab16f6c8c8aff9e46cfc16279e0cab82369f162624484eb6fc92a823b5f49",
+    "plan_l3": "6e37e937d0aa8b332682260c7d35f46b168677b540e80b4be4bdaeaf21332a3d",
+    "record": "9f94196c28c4c7954a21db370ccc6e2352ab04c279bdf4c33aa966c7c961c7ba",
+    "code": "2898fdc679d96bd9fa283456355563ad7657b9b6427eaf68457da36c5d7224cb",
+    "safeguard": "8b3b21540f77005e55f87d5c8f98b3b2d2a32e5671ebb10864d5f17ebee80b4c",
+    "supervise": "c02ee434f38d19a849dc95190c06ab3f9adab541521202b570b0fff1ca77aca5",
+    "interpret": "61f3b4adac2d973ec9c3d06a5836298d571fbb41e6f7dfbda5a7855154891a9b"
   },
   "prompt_sha256": "259b92b5df62985f14c642eb5c7a8646f2bfe026675b95ba0ee0722c8a77740a",
   "roles_sha256": "4626c8f2653c790e888d09cf55eb3e5e4a2340758c6cfa0ce56bbce79befc0a1",
@@ -53,5 +53,6 @@
     "compose_experiment": "44cea8eff7442d24c5ab3da5281ed83992985a8912bcf5c34bd528942fe09005"
   },
   "research_upgrade_schema_note": "Explicit reserve_zero and gptaq_signed_min numerical options; original schema hashes preserved.",
-  "scientific_skills_note": "2026-11-08: optional scientific Skill catalog and on-demand read_asset guidance only; no tool schema, workflow or submission changes. See EXP/validation/scientific_skills_20261108_r1/changes.patch."
+  "scientific_skills_note": "2026-11-08: optional scientific Skill catalog and on-demand read_asset guidance only; no tool schema, workflow or submission changes. See EXP/validation/scientific_skills_20261108_r1/changes.patch.",
+  "knowledge_resources_note": "2026-11-08: optional knowledge navigation pointer and sources.document vs Journal ref guidance; no new schema/role/workflow. See EXP/validation/knowledge_resources_20261108_r1/changes.patch."
 }
