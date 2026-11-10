@@ -155,7 +155,7 @@ def markdown(report):
     lines += ["", "数据范围、量化范围、分母和实际指标保留在原件；缓存不计独立重复，失败/局部诊断不冒充完整任务测量。",
               "", "## 边界与追溯", "", "[来源清单与实现版本](../manifest.json)；[原运行计量与关系](../run.json)。"]
     lines += ["- " + text(v) for v in report["limits"]]
-    lines += [f"- 排除 {len(report['excluded_tasks'])} 个无可评分 LLM 产出的任务（含程序 rank、仅预检等）；孤立执行 {len(report['orphan_executions'])} 个。"]
+    lines += [f"- 排除 {len(report['excluded_tasks'])} 个无适用评分或无可评分 LLM 产出的任务（含 G-only select 未有评分表、程序 rank、仅预检等）；孤立执行 {len(report['orphan_executions'])} 个。"]
     return "\n".join(lines) + "\n"
 
 

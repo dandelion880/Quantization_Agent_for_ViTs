@@ -15,7 +15,7 @@ def validation_config():
     config["runtime"]["experiment_concurrency"] = 1
     config["research_brief"] = {
         "scientific_question": "在随机小型ViT中，低比特激活输入MSE能否预测局部输出与整网输出偏差？请提出已有方法、工程改进和新机制三个可证伪假设，通过真实局部实验审查，不能外推为ImageNet/ADE精度。",
-        "goals": {"validation": "两轮小规模真实Agent职责验证；主动取证、H4改进、Memory反馈。至少针对真实争议取得一次L1/L2测量，必要时请求Coding扩展量化器。"},
+        "goals": {"validation": "两轮小规模真实Agent职责验证；H1/H2/H3、主动取证与方案修订、证据预选、Memory反馈。自主选择有决策价值的L1/L2测量，必要时请求Coding扩展量化器。"},
         "model": {"name": "seeded tiny ViT", "scope": {"model": "tiny_vit"}, "adapter": {
             "kind": "fixture", "factory": "QAViT/tests/fixtures.py:tiny_backend",
             "config_path": "QAViT/configs/deitb_backend.json", "backend_overrides": {

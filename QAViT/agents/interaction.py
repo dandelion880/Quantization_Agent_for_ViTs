@@ -1023,12 +1023,12 @@ class RoleInteraction:
             entry.pop('body', None)
         memory['directory'] = page
         state = self.memory.snapshot(sequence)
-        if state['L2'] and purpose in ('generate', 'evolve', 'screen', 'position', 'arbitrate', 'rank', 'record'):
+        if state['L2'] and purpose in ('generate', 'select', 'plan_l3', 'evolve', 'screen', 'position', 'arbitrate', 'rank', 'record'):
             memory['knowledge_directory'] = {'retrieve_memory': {'query': {'layer': 'L2'}, 'limit': 8},
                 'meaning': '按需查询可见知识状态、复盘时点和后续证据；明确绑定的旧知识保持原版本，不自动替换或注入无关结论。'}
         latest = page['latest_metareview_ref']
         self.deliver_bound_feedback(task, memory, state, latest, deliver)
-        if purpose in ('generate', 'evolve', 'screen', 'position', 'arbitrate', 'rank', 'record', 'supervise'):
+        if purpose in ('generate', 'select', 'plan_l3', 'evolve', 'screen', 'position', 'arbitrate', 'rank', 'record', 'supervise'):
             memory['current_research_state'] = self.memory.current_research_state(
                 sequence, visible=lambda c: self.can_read_card(task, c), excluded_refs=delivered, compact=True,
                 finding_refs=delivered)
@@ -1044,10 +1044,10 @@ class RoleInteraction:
                     finding.update(ref=ref, body_location='memory.cards', read_card={'ref': ref})
         if purpose == 'supervise':
             memory['program_state'] = {k: v for k, v in state['L1'].items() if k != 'open_questions'}
-        if purpose in ('record', 'generate', 'evolve', 'supervise'):
+        if purpose in ('record', 'generate', 'select', 'plan_l3', 'evolve', 'supervise'):
             memory['recording_status'] = self.memory.recording_status(sequence, visible=lambda c: self.can_read_card(task, c))
         budget = self.budget.input_receipt()
-        if purpose in ("generate", "evolve", "code", "safeguard", "record", "plan_l3"):
+        if purpose in ("generate", "select", "evolve", "code", "safeguard", "record", "plan_l3"):
             context["complete_solutions"] = self.solutions.catalog(sequence)
             context["solution_policy"] = "Top-3 complete reusable configurations, separate from Memory. Missing scores remain pending; no generation gate. H1/H2 explain their chosen base and changes naturally."
         from core.static_w4a4 import DESCRIPTION
@@ -1686,8 +1686,8 @@ class RoleInteraction:
             if prior and prior['payload'] == content:
                 return
             raise ContractError('已发布 Recorder 批次不可改写')
-        if purpose in ("rank", "evolve") and self.queue.get(task["task_id"])["state"] == "completed":
-            raise ContractError("选择或 H4 已持久化，不能重新提交并更换父子身份")
+        if purpose in ("select", "rank", "evolve") and self.queue.get(task["task_id"])["state"] == "completed":
+            raise ContractError("候选选择已持久化，不能重新提交并更换绑定身份")
         if purpose in ("position", "arbitrate"):
             if "-".join(context["pair"]) in self.matches(context["round"]):
                 raise ContractError("本场已结案，不能再次提交立场或改写最终裁决（包括 tie/undetermined）")
@@ -1770,6 +1770,20 @@ class RoleInteraction:
                 refs.add(bindings["parent_selection_ref"])
             content = {**content, **bindings, "direct_results": table, "candidate_refs": context["candidate_refs"],
                        "selection_source": "existing_verdicts_and_screening" if author == "program" else "judger"}
+        if purpose == 'select':
+            selected = content.get('selected_slot')
+            candidates = context['candidate_refs']
+            if selected is not None and selected not in candidates:
+                raise ContractError('预选只能引用本任务已提交的 H1/H2/H3 候选')
+            bindings = {'selection_stage': 'gonly_preselection',
+                        'selected_hypothesis_ref': candidates.get(selected),
+                        'candidate_refs': candidates, 'selection_source': 'generation', 'provisional': True}
+            for key, value in bindings.items():
+                if key in content and content[key] != value:
+                    raise ContractError('预选身份或证据阶段冲突: ' + key)
+            content.update(bindings)
+            content.setdefault('selection_basis', content['rationale'])
+            refs.update(candidates.values())
         staged = None
         if purpose == 'record':
             staged = self.run_dir / 'recording_submissions' / (task['task_id'] + f"-{task['attempt']}-{task['step']}.json")
@@ -1784,7 +1798,7 @@ class RoleInteraction:
         cards.append(card)
         if kind == "HypothesisCard":
             events.append(self.memory.live_update(round_number=context["round"], hypothesis_ref=card["id"]))
-        if purpose == "rank" and context["selection_stage"] == "final":
+        if purpose == "select" or (purpose == "rank" and context["selection_stage"] == "final"):
             events.append(self.memory.live_update(round_number=context["round"], selection={"slot": content["selected_slot"], "review_ref": card["id"]}))
         if purpose == "record":
             if content["round"] != context["round"]:

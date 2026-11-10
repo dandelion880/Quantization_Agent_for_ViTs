@@ -1,0 +1,4 @@
+本次只验证一次小规模真实 Generation→Coding→Safeguard→执行→Generation 科研反馈，不运行完整轮次或 L3。
+在形成H1前请申请一次真实 tensor_probe L1 实验，位点为 DeiT-B 的 blocks.0.attn.proj 输入。请 Coding 以 quantizer_v1 实现以下有意冻结的算法：使用4张calibration图像的激活，scale=max(quantile(abs(x),0.995)/7,1e-12)，静态per_tensor对称A4；round ties-to-even后clip[-8,7]再反量化。search4张，测量input_relative_mse与operator_output_relative_mse，FP模型与输入是同一对照，不训练、不读final。这是验证新代码接口的具体实验需求，不宣称该分位数已优于minmax。
+execution明确service=tensor_probe、requires_code=true、site=blocks.0.attn.proj、calibration={split:calibration,count:4}、evaluation={split:search,count:4}、parameters bits=4/signed=true/granularity=per_tensor/axis=null/group_size=null即可，其余实际执行选择可由Coding补齐。实验数值超时120秒，禁止全网校准、模型导出或整数据集测评。
+返回Evidence后分析数值与适用范围，形成一个以成熟方案为基础且明确局部证据局限的H1。不得申请第二个实验、重复执行或自行扩展时间预算。本次不读外部文献；可按需要读取本地技能。

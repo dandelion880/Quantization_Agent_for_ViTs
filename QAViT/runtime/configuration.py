@@ -1,7 +1,7 @@
 """运行输入校验与角色模型配置；模型默认值唯一来自 configs/models.json。"""
 import math
 
-from core.cards import ContractError, ROLES, validate_payload
+from core.cards import ContractError, ROLES, ACTIVE_ROLES, validate_payload
 from core.journal import read_json
 from runtime.paths import QAVIT
 
@@ -19,7 +19,7 @@ def model_defaults():
     return read_json(QAVIT / "configs/models.json")
 
 
-def config_check(config, *, resolve_resources=False):
+def config_check(config, *, resolve_resources=False, historical=False):
     if config.get("schema_version") != "qavit.research/2":
         raise ContractError("不是 v2 研究配置")
     validate_payload("ResearchBrief", config["research_brief"])
@@ -30,11 +30,13 @@ def config_check(config, *, resolve_resources=False):
     settings = config.setdefault("llm", {})
     settings.setdefault("provider", "codex_subscription")
     settings.setdefault("agent_models", model_defaults())
-    if set(settings["agent_models"]) != set(ROLES):
-        raise ContractError("需配置全部七角色模型路由")
+    if not set(ACTIVE_ROLES) <= set(settings["agent_models"]) <= set(ROLES):
+        raise ContractError("需配置 G-only 的 Generation、Coding、Safeguard、Recorder、Supervisor 模型路由")
     for value in settings["agent_models"].values():
         if not isinstance(value, (list, tuple)) or len(value) != 2 or not all(isinstance(v, str) and v for v in value):
             raise ContractError("模型路由须为 [model, effort]")
+    if not historical and list(settings["agent_models"]["generation"]) != ["gpt-6-astra", "high"]:
+        raise ContractError("G-only Generation 科研任务固定 gpt-6-astra / high；禁止运行覆盖降级")
     runtime = config.setdefault("runtime", {})
     if resolve_resources:
         from runtime.gpu_resources import resolve_runtime_resources
@@ -58,7 +60,7 @@ def config_check(config, *, resolve_resources=False):
     if any(type(gpu) is not int or gpu < 0 for gpu in runtime.get("allowed_gpus", [])):
         raise ContractError("GPU编号必须为非负整数")
     if type(runtime["llm_concurrency"]) is not int or not 1 <= runtime["llm_concurrency"] <= 4:
-        raise ContractError("LLM 总并发须为1到4：最多3个Judger及1个其它角色")
+        raise ContractError("LLM 总并发须为1到4；沿用既有订阅资源互斥")
     if config.get("enable_l3") is not True and config.get("enable_l3") is not False:
         raise ContractError("请明确本次运行是否启用 L3；验证配置必须关闭")
     if config["purpose"] == "validation" and config["enable_l3"]:

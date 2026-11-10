@@ -1,6 +1,6 @@
 # QAViT V2
 
-QAViT 让 LLM 负责量化科研推理，程序负责数值执行、身份与来源、状态和归档。科研运行入口 run.py，研究配置协议 qavit.research/2。保留七角色、Generation/Evolution 自主研究循环、并行 Judger、Coding 单实现→Safeguard→执行、Recorder、Supervisor 及既有预算/GPU 调度。
+QAViT 让 LLM 负责量化科研推理，程序负责数值执行、身份与来源、状态和归档。科研运行入口 run.py，研究配置协议 qavit.research/2。本分支为 G-only：Generation 统一承担科研任务（gpt-6-astra/high），保留 Coding 单实现→Safeguard→执行、Recorder、Supervisor 及既有预算/GPU 调度。稳定 Full 位于 main / full-baseline-20261110-8800006。
 
 ## 阅读与修改入口
 
@@ -13,7 +13,7 @@ QAViT 让 LLM 负责量化科研推理，程序负责数值执行、身份与来
 
 ## 主调用链
 
-core/workflow.py 的 advance/progress_selection/progress_match 组织 H1/H2/H3→筛查→三场初始辩论分别并行推进并全部结案→持久化 H*→Evolution 仅加强 H* 得到 H4→筛查→唯一 H4–H* 挑战→最终选择→可选 L3→Recorder→下一轮。结案不改判，复盘失败保留待办与原始证据。
+core/workflow.py 的 advance/progress_preselection 组织 H1/H2/H3 自主实验与修订→Generation 证据预选→Generation L3 规划与执行→Recorder→下一轮。不发布 Judger、Evolution 或 H4。L1/L2 不代替正式评价；有效 ImageNet + ADE20K L3 由程序按原协议更新 Top-3。局部失败保留已完成候选，预选失败保留已提交 H1；复盘失败保留原始证据并允许继续。
 
 core/experiment_requests.py 保存研究者原始实验需求，必要时交给 Coding 单实现，再绑定执行选择、Safeguard 审查并执行；证据返回原研究者继续判断。无需新增测量时可以直接提交。Skill、文档和方案种子仅辅助选择，不改变流程或限制 H3。
 
@@ -21,7 +21,7 @@ agents/tasks.py、roles.py、prompts/ 定义任务/角色/工具及提示词；a
 
 ## 环境与运行
 
-先按 [ENVIRONMENT.md](docs/ENVIRONMENT.md) 准备依赖、模型服务与只读资产。入口不安装或升级依赖。角色模型默认值唯一维护于 configs/models.json；输入可完整覆盖，生效配置冻结于 research_run.json，不自动回退。运行中源码、Prompt 或知识变化仍遵守既有身份与显式 intervention 恢复规则。
+先按 [ENVIRONMENT.md](docs/ENVIRONMENT.md) 准备依赖、模型服务与只读资产。入口不安装或升级依赖。角色模型默认值唯一维护于 configs/models.json；Generation 固定 gpt-6-astra/high，其他角色可显式覆盖，生效配置冻结于 research_run.json，不自动回退。运行中源码、Prompt 或知识变化仍遵守既有身份与显式 intervention 恢复规则。
 
 将 configs/research.json 复制到新的 EXP 目录并填写 ResearchBrief、评测协议、约束、资源及预算。模板故意不能直接运行。从项目根目录执行：
 
@@ -46,4 +46,4 @@ CUDA_VISIBLE_DEVICES='' OMP_NUM_THREADS=2 MKL_NUM_THREADS=2 python -B QAViT/test
 
 测试临时文件写 EXP/cache/tmp 并自动清理；报告/快照须用新的 EXP 路径。更新 Skill frontmatter 后用 audit_knowledge.py --write-skill-index 生成触发目录，普通检查不写文件。Prompt 修改需更新 tests/data/prompt_readiness_baseline.json 的明确差异。
 
-validate_code_service.py、validate_memory_service.py 会调用真实 LLM；validate_numeric.py 会加载真实模型资产，均须按当次任务范围与预算使用。历史验证不等于当前完整 GPU 科研性能基线。本轮整理与验证见 [交付报告](../EXP/validation/knowledge_resources_20261108_r1/REPORT.md)。
+validate_code_service.py、validate_memory_service.py 会调用真实 LLM；validate_numeric.py 会加载真实模型资产，均须按当次任务范围与预算使用。历史验证不等于当前完整 GPU 科研性能基线。本轮 G-only 验证见 [交付报告](../EXP/validation/gonly_20261110_r1/REPORT.md)。

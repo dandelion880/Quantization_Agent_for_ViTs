@@ -74,7 +74,7 @@ TOOLS = {t["name"]: t for t in [
         "唯一科研执行入口。给出实验目的、所需结果和科学约束；预测及决策影响可以省略。已有条件在 context.experiment_interface。"
         "宿主补全固定身份、资源、执行镜像和来源。已有算法直接传 plan，相同设置可用 layers[].modules 展开。"
         "新增代码先保存原始需求，再由 Coding 交付单份实现和必要执行选择，程序绑定后交 Safeguard 科学审查。"
-        "Generation/Evolution 可在形成 H 前多次申请或直接提交；常规实验不经 Judger 审批。"
+        "Generation 可在形成 H、候选综合和 L3 规划时自主取证；常规实验直接返回原任务。"
         "真实结果或失败返回原研究任务，由该任务解释并决定继续研究或提交。research_note 可保存当前解释/下一步理由。"
         "只有有效 Evidence 是实测；缓存不算独立重复，数据范围和预算仍严格核验。"
     ), object_schema({"experiment": EXPERIMENT_SUBMISSION_SCHEMA, "research_note": TEXT}, ["experiment"]))
@@ -96,6 +96,9 @@ def submission_schema(purpose):
     contract = deepcopy(PAYLOAD_SCHEMAS.get(TASKS[purpose]['output']))
     if contract is None:
         return None
+    if purpose == 'select':
+        contract['properties']['selected_slot'] = {'enum': ['H1', 'H2', 'H3', None]}
+        contract['required'].append('selected_slot')
     omitted = set()
     if purpose in ('generate', 'evolve'):
         omitted = {'round', 'slot', 'hypothesis_type', 'feedback_used'}

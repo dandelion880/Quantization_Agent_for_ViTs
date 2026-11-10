@@ -1,6 +1,6 @@
 # 本次任务：制定本次 L3 实验计划
 
-依据 context.task.selection_ref 对应的 final 选择、hypothesis_ref 对应的完整最终候选、选择理由、相关证据及 ResearchBrief，提交一份实验需求草案。不要把 Evolution 前的 H* 选择当成最终候选。宿主会接收并安排该计划；不要再通过 request_experiment 重复提交同一份最终 L3 计划。
+依据 context.task.selection_ref 对应的 Generation 预选、hypothesis_ref 对应的完整最终候选、选择理由、相关证据及 ResearchBrief，提交一份实验需求草案。保持预选绑定的完整候选身份，并落实其证据与限制；H1 兜底也需要真实正式验证。宿主会接收并安排该计划；不要再通过 request_experiment 重复提交同一份最终 L3 计划。
 
 L3 不以某项 L2 性能达标为前提。根据当前实际预算、资源与评测协议设计可执行计划；estimated_seconds 是数值任务自身的执行超时，可省略沿用独立 L3 默认 24 小时，也可按实际需求覆盖；不要求小于智能体活跃预算余额。若关键执行定义缺失，具体指出，不能用虚构路径或占位参数凑成计划。
 

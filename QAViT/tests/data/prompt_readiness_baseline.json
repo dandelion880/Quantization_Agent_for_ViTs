@@ -17,18 +17,19 @@
   },
   "explicit_fix_source": "EXP/validation/parent_evolution_20261029_r1/prompts.diff; authorized parent/final workflow update, 2026-10-29; EXP/validation/serial_debate_memory_20261029_r1/prompts.diff; authorized serial debate/shared science/fixed verdict update, 2026-10-29; EXP/validation/experiment_inputs_20261029_r1/prompts.diff; authorized experiment input and Brief-scope alignment, 2026-10-29",
   "explicit_prompt_fixes": {
-    "generate": "8b4494ef46f08a61f616de09e7dfebe86529f396cd898834d8dd99574599b40e",
-    "evolve": "ec489d1b2c2727931e71c5a9c62512ce8fb213fdb184acd2a02e70f745a2ba68",
-    "screen": "442b5ab079770ba21e439103719eefa994ca27fe643db5a9e680632a6fa399f9",
-    "position": "dbf71fb3e774fed43c5c2d1c80cb98fdc7b15a6d12774275df43af6493f76115",
-    "arbitrate": "2143b80e22b084a26f86575e663d33a090e1eb038ab759f15cc064258a1595c1",
-    "rank": "307ab16f6c8c8aff9e46cfc16279e0cab82369f162624484eb6fc92a823b5f49",
-    "plan_l3": "816844b6e31f7499d4502a1c532695e43014c71bbdfa2fcef495619b04828ce2",
-    "record": "9f94196c28c4c7954a21db370ccc6e2352ab04c279bdf4c33aa966c7c961c7ba",
-    "code": "2898fdc679d96bd9fa283456355563ad7657b9b6427eaf68457da36c5d7224cb",
-    "safeguard": "8b3b21540f77005e55f87d5c8f98b3b2d2a32e5671ebb10864d5f17ebee80b4c",
-    "supervise": "c02ee434f38d19a849dc95190c06ab3f9adab541521202b570b0fff1ca77aca5",
-    "interpret": "61f3b4adac2d973ec9c3d06a5836298d571fbb41e6f7dfbda5a7855154891a9b"
+    "generate": "9fe33f4ad98616494925eee4e3d155c144799fb31f0d8346068b288d22128e60",
+    "select": "865d318bd5ef7cb9f53877eb18c819735269906c0b7174267c61c409feb3efe0",
+    "evolve": "92ed60c635e66bd01e4a05375347d305c7cec21cc62cf9ec5440cab5d03d91e2",
+    "screen": "bd9d0109f05b23ea913b27f8310334a4ee4399517185ea226452926a7bb80a2f",
+    "position": "d2aec2cef1fcfe7241c72b07f82283213895a7c2c9e631365ff8f5aff1a09bea",
+    "arbitrate": "73c263f50f110295e506c758d4843a7a8b19dfa903b355bf26d9fbb8a6c706e9",
+    "rank": "c3b253e5e95fc6a9805bba77ec285023bbddd722707d001feb5ca7400f957692",
+    "plan_l3": "2c2fc2330342c14ae1664ad5abee1d333988810515c774dd4a71b881750124b3",
+    "record": "2dc996b838424539dc4f891a434850801d34c040e35c6f60f467cdbb7ce654e1",
+    "code": "9a3700d94c3f96def70a2f8536278c1ab860d02bdcac00a7759369b11e19c215",
+    "safeguard": "70e3808a7451f63b334b2833bfda22daefd1899923ab4192d50d405c297a537c",
+    "supervise": "8061905f30378ca126310c0f4696478ae65d74b69c01efaae9b45b25f18154ea",
+    "interpret": "35273d15546b2d63869a4c65a0c8ebef23bb6720a9e26e24517749b88e6863e0"
   },
   "prompt_sha256": "259b92b5df62985f14c642eb5c7a8646f2bfe026675b95ba0ee0722c8a77740a",
   "roles_sha256": "4626c8f2653c790e888d09cf55eb3e5e4a2340758c6cfa0ce56bbce79befc0a1",
@@ -55,5 +56,8 @@
   "research_upgrade_schema_note": "Explicit reserve_zero and gptaq_signed_min numerical options; original schema hashes preserved.",
   "scientific_skills_note": "2026-11-08: optional scientific Skill catalog and on-demand read_asset guidance only; no tool schema, workflow or submission changes. See EXP/validation/scientific_skills_20261108_r1/changes.patch.",
   "knowledge_resources_note": "2026-11-08: optional knowledge navigation pointer and sources.document vs Journal ref guidance; no new schema/role/workflow. See EXP/validation/knowledge_resources_20261108_r1/changes.patch.",
-  "numeric_timeout_note": "2026-11-09: plan_l3 clarifies independent 24h numerical timeout default, optional task override, and no comparison to remaining active budget. See EXP/validation/real_research_20261109_preflight/timeout_summary.json."
+  "numeric_timeout_note": "2026-11-09: plan_l3 clarifies independent 24h numerical timeout default, optional task override, and no comparison to remaining active budget. See EXP/validation/real_research_20261109_preflight/timeout_summary.json.",
+  "fix_notes": [
+    "G-only: Generation generate/select/plan_l3; evidence-driven revision and optional discriminative-experiment skill; Recorder receives preselection without H4."
+  ]
 }

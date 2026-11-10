@@ -193,6 +193,28 @@ class EvalTest(unittest.TestCase):
         excluded = read_json(self.output / "run.json")["excluded_tasks"]
         self.assertEqual(len(excluded), 2)
 
+    def test_gonly_selection_cost_is_kept_without_using_full_debate_rubric(self):
+        select = self.history.task('select', context={'selection_stage': 'gonly_preselection'})
+        self.history.call(select)
+        self.history.finish(select, {'selected_slot': 'H1', 'rationale': 'fixture'})
+        plan = self.history.task('plan_l3')
+        self.history.call(plan)
+        self.history.finish(plan)
+        # Preserve historical plan_l3 role compatibility as well.
+        legacy = self.history.task('plan_l3')
+        legacy['role'] = 'judger'
+        self.history.snapshot(legacy)
+        self.history.call(legacy)
+        self.history.finish(legacy)
+        manifest = prepare(self.history.root, self.output, self.rules)
+        self.assertEqual({c['role'] for c in manifest['cases']}, {'generation', 'judger'})
+        run = read_json(self.output / 'run.json')
+        self.assertEqual(run['excluded_tasks'][0]['reason'], 'gonly_selection_rubric_unavailable')
+        self.assertEqual(len(run['calls']), 3)
+        case = read_json(self.output / 'cases' / (manifest['cases'][0]['case_id'] + '.json'))
+        if case['role'] == 'generation':
+            self.assertIn('G-only 路由说明', render(self.output, case, self.rules)['case_prompt'])
+
     def test_rank_parent_final_separate_groups(self):
         for stage in ("parent", "final"):
             t = self.history.task("rank", context={"selection_stage": stage})

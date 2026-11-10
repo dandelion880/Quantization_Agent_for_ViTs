@@ -1,4 +1,4 @@
-"""按场推进与科研上下文的 CPU 回归；脚本卡片均为夹具，禁止启动 worker。"""
+"""G-only 与历史科研上下文的 CPU 回归；脚本卡片均为夹具，禁止启动 worker。"""
 from copy import deepcopy
 import json
 from pathlib import Path
@@ -12,12 +12,12 @@ from core.debate import INITIAL_PAIRS
 from core.journal import atomic_json, file_sha256
 from core.workflow import Workflow
 from tests.support import experiment_payload, hypothesis, review
-from tests import test_infrastructure as infrastructure, test_parent_evolution as evolution
+from tests import test_infrastructure as infrastructure, test_gonly as evolution
 
 
 class SerialDebateMemoryRegression(infrastructure.TempCase):
-    drive = evolution.ParentEvolutionRegression.drive
-    workflow_case = evolution.ParentEvolutionRegression.workflow_case
+    drive = evolution.GOnlyRegression.drive
+    workflow_case = evolution.GOnlyRegression.workflow_case
 
     def setUp(self):
         super().setUp()
@@ -59,90 +59,6 @@ class SerialDebateMemoryRegression(infrastructure.TempCase):
 
     def read(self, wf, task, name, **arguments):
         return wf.host_tool({"inputs": {"name": name, "arguments": arguments, "parent_task": task["task_id"]}})
-
-    def test_matches_advance_independently_and_join_only_after_last_close_and_restore(self):
-        wf, arb = self.drive(self.workflow_case(l3=False), stop=lambda t: t["inputs"]["purpose"] == "arbitrate")
-        for pair in INITIAL_PAIRS:
-            for side in ("A", "B"):
-                self.assertIn("r001/match/" + "-".join(pair) + "/e1/" + side, wf.tasks())
-        self.assertFalse(wf.matches(1))
-        spec, evidence = self.science(wf, "own_match", commit=False)[:2]
-        wf.journal.commit("fixture/own_match_evidence", cards=[spec, evidence])
-        wf.submit(arb, review("verdict", outcome="continue", decisive_reason="fixture: one unresolved question",
-                              evidence_refs=[evidence["id"]]), "fixture")
-        wf = Workflow(wf.run_dir)
-        wf.advance()
-        self.assertIn("r001/match/H1-H2/e2/A", wf.tasks())
-        self.assertNotIn("r001/select_parent", wf.tasks())
-        # 其它两场可以先结案；即使已知 H3 两胜，也必须等待第三场正式结案。
-        for pair in ("H2-H3", "H1-H3"):
-            task = wf.tasks()["r001/match/" + pair + "/e1/arbitrate"]
-            wf.queue.ready()
-            task = wf.queue.claim(task["task_id"])
-            wf.submit(task, review("verdict", outcome="B", decisive_reason="fixture: H3 wins"), "fixture")
-            wf = Workflow(wf.run_dir)
-            wf.advance()
-            self.assertNotIn("r001/select_parent", wf.tasks())
-            self.assertNotIn("r001/evolve/H4", wf.tasks())
-        wf, arb = self.drive(wf, parent="H3", stop=lambda t: t["inputs"]["purpose"] == "arbitrate")
-        self.assertEqual(arb["inputs"]["context"]["pair"], ["H1", "H2"])
-        self.assertEqual(arb["inputs"]["context"]["exchange"], 2)
-        own_prior = wf.result_card(wf.tasks()["r001/match/H1-H2/e1/arbitrate"])
-        self.assertIn(own_prior["id"], arb["inputs"]["refs"])
-        inherited = {card["id"] for card in wf.context(arb)["memory"]["cards"]}
-        self.assertTrue({own_prior["id"], spec["id"], evidence["id"]} <= inherited)
-        foreign = {row["verdict_ref"] for row in wf.matches(1).values()}
-        self.assertFalse(foreign.intersection(arb["inputs"]["refs"]))
-        wf.submit(arb, review("verdict", outcome="tie", decisive_reason="fixture: no decisive advantage"), "fixture")
-        # 裁决卡已提交但结案事件尚未发布时，不提前汇合。
-        self.assertNotIn("r001/select_parent", wf.tasks())
-        wf = Workflow(wf.run_dir)
-        wf.advance()
-        self.assertEqual(wf.matches(1)["H1-H2"]["outcome"], "tie")
-        parent = wf.result_card(wf.tasks()["r001/select_parent"])
-        self.assertEqual(parent["payload"]["selected_slot"], "H3")
-        self.assertEqual(parent["author"], "program")
-        sequence, keys = wf.journal.sequence, set(wf.tasks())
-        for _ in range(3):
-            wf = Workflow(wf.run_dir)
-            wf.advance()
-        self.assertEqual((wf.journal.sequence, set(wf.tasks())), (sequence, keys))
-        wf, _ = self.drive(wf, parent="H3", reload=True)
-        closures = [e for e in wf.journal.events if e["type"] == "match_closed"]
-        self.assertEqual([e["pair"] for e in closures], ["H2-H3", "H1-H3", "H1-H2", "H4-H3"])
-        publications = [e["commit_sequence"] for e in wf.journal.events if e["type"] == "task_snapshot"
-                        and e["task"]["state"] == "pending" and "/match/H4-H3/" in e["task"]["key"]]
-        self.assertGreater(min(publications), max(e["commit_sequence"] for e in closures[:3]))
-        sequence = wf.journal.sequence
-        for _ in range(3):
-            wf = Workflow(wf.run_dir)
-            self.assertTrue(wf.advance())
-        self.assertEqual(wf.journal.sequence, sequence)
-
-    def test_initial_closure_permutations_preserve_selection_and_no_early_join(self):
-        from itertools import permutations
-        for order in permutations(("H1-H2", "H1-H3", "H2-H3")):
-            with self.subTest(order=order):
-                wf, first = self.drive(self.workflow_case("order_" + "_".join(order), l3=False),
-                                       stop=lambda t: t["inputs"]["purpose"] == "arbitrate")
-                arbs = {pair: wf.tasks()["r001/match/" + pair + "/e1/arbitrate"] for pair in order}
-                for index, pair in enumerate(order):
-                    task = arbs[pair]
-                    if task["task_id"] != first["task_id"]:
-                        wf.queue.ready()
-                        task = wf.queue.claim(task["task_id"])
-                    wf.submit(task, review("verdict", outcome="B", decisive_reason="fixture: right candidate wins"), "fixture")
-                    wf = Workflow(wf.run_dir)
-                    wf.advance()
-                    self.assertEqual(len(wf.matches(1)), index + 1)
-                    if index < 2:
-                        self.assertNotIn("r001/select_parent", wf.tasks())
-                        self.assertNotIn("r001/evolve/H4", wf.tasks())
-                    else:
-                        selected = wf.result_card(wf.tasks()["r001/select_parent"])
-                        self.assertEqual(selected["payload"]["selected_slot"], "H3")
-                        self.assertEqual(set(selected["payload"]["reused_verdict_refs"]),
-                                         {v["verdict_ref"] for v in wf.matches(1).values()})
 
     def index(self, wf, task):
         offset, rows = 0, []
@@ -286,29 +202,17 @@ class SerialDebateMemoryRegression(infrastructure.TempCase):
         from agents.tasks import TASKS
         self.assertNotIn('reference', TASKS)
 
-    def test_late_evidence_cannot_replace_any_final_outcome_or_repeat_close(self):
-        for outcome in ("A", "B", "tie", "undetermined"):
-            with self.subTest(outcome=outcome):
-                wf, task = self.drive(self.workflow_case(outcome, l3=False),
-                                      stop=lambda t: t["inputs"]["purpose"] == "arbitrate")
-                wf.submit(task, review("verdict", outcome=outcome, decisive_reason="fixture final judgment"), "fixture")
-                with self.assertRaisesRegex(ContractError, "已提交"):
-                    wf.submit(task, review("verdict", outcome="A", decisive_reason="duplicate receipt"), "fixture")
-                wf.advance()
-                before = deepcopy(wf.matches(1))
-                old = wf.journal.card(before["H1-H2"]["verdict_ref"])
-                cards = self.science(wf, "late")
-                with self.assertRaisesRegex(ContractError, "已结案"):
-                    wf.submit(task, review("verdict", outcome="A", decisive_reason="late evidence",
-                                           evidence_refs=[cards[1]["id"]]), "fixture")
-                sequence = wf.journal.sequence
-                for _ in range(3):
-                    wf = Workflow(wf.run_dir)
-                    wf.advance()
-                self.assertEqual(wf.journal.sequence, sequence)
-                self.assertEqual(wf.matches(1), before)
-                self.assertEqual(wf.journal.card(old["id"]), old)
-                self.assertEqual(sum(e["type"] == "match_closed" for e in wf.journal.events), 1)
+    def test_late_evidence_cannot_overwrite_published_preselection(self):
+        wf, task = self.drive(self.workflow_case(l3=False),
+                              stop=lambda t: t['inputs']['purpose'] == 'select')
+        wf.submit(task, review('ranking', selected_slot='H1'), None)
+        old = wf.selection_card(1)
+        cards = self.science(wf, 'late')
+        with self.assertRaisesRegex(ContractError, '持久化'):
+            wf.submit(task, review('ranking', selected_slot='H2', evidence_refs=[cards[1]['id']]), None)
+        wf = Workflow(wf.run_dir)
+        self.assertEqual(wf.selection_card(1), old)
+        self.assertEqual(wf.matches(1), {})
 
     def test_legacy_revision_cards_and_recorded_results_remain_readable(self):
         wf = self.workflow(1)

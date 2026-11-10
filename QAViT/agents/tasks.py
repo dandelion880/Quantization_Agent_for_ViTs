@@ -12,6 +12,11 @@ TASKS = {'generate': {'role': 'generation',
                         'request_experiment'],
               'prompt': 'tasks/generate.md',
               'phase': None},
+ 'select': {'role': 'generation',
+            'output': 'ReviewDecisionCard',
+            'tools': ['read_card', 'read_asset', 'literature_search', 'literature_fetch', 'retrieve_memory', 'request_experiment'],
+            'prompt': 'tasks/select.md',
+            'phase': 'ranking'},
  'evolve': {'role': 'evolution',
             'output': 'HypothesisCard',
             'tools': ['read_card',
@@ -62,7 +67,7 @@ TASKS = {'generate': {'role': 'generation',
                     'request_experiment'],
           'prompt': 'tasks/rank.md',
           'phase': 'ranking'},
- 'plan_l3': {'role': 'judger',
+ 'plan_l3': {'role': 'generation',
              'output': 'ExperimentCard',
              'tools': ['read_card',
                        'read_asset',
@@ -106,3 +111,7 @@ TASKS = {'generate': {'role': 'generation',
                          'request_experiment'],
                'prompt': 'tasks/interpret.md',
                'phase': 'interpretation'}}
+
+# Full-era contracts remain readable for historical/evaluation fixtures only.
+# G-only never schedules these purposes; no Full workflow is selected at runtime.
+RETIRED_PURPOSES = frozenset({"screen", "position", "arbitrate", "rank", "evolve", "interpret"})

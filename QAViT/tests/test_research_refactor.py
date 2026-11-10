@@ -11,7 +11,7 @@ from agents.roles import role_spec
 from tools.experiments import expand_plan
 from tests.support import hypothesis, review, experiment_payload, validation_config
 from tests.test_infrastructure import TempCase
-from tests import test_memory_delivery as delivery, test_parent_evolution as parent_evolution
+from tests import test_memory_delivery as delivery, test_gonly as parent_evolution
 from tests import test_real_research_followup as followup
 
 
@@ -21,8 +21,8 @@ class ResearchRefactor(TempCase):
     tools = delivery.DeliveryRegression.tools
     read = delivery.DeliveryRegression.read
     evidence = followup.RealResearchFollowup.evidence
-    drive = parent_evolution.ParentEvolutionRegression.drive
-    workflow_case = parent_evolution.ParentEvolutionRegression.workflow_case
+    drive = parent_evolution.GOnlyRegression.drive
+    workflow_case = parent_evolution.GOnlyRegression.workflow_case
 
     def setUp(self):
         super().setUp()

@@ -103,7 +103,10 @@ class ResearchMemory:
         engineering, failures = [], []
         for task in latest_tasks.values():
             relevant = (task["kind"] in {"experiment", "experiment_request", "literature"}
-                        or task["inputs"].get("purpose") in {"code", "safeguard", "plan_l3"})
+                        or task["inputs"].get("purpose") in {"code", "safeguard", "plan_l3"}
+                        or (task["inputs"].get("purpose") in {"generate", "select"}
+                            and task["state"] in {"failed", "cancelled", "ineligible"}
+                            and task["attempt"] > 0))
             if relevant and task["state"] in {"completed", "failed", "cancelled", "ineligible"} and task["task_card"] not in covered:
                 engineering.append(task["task_card"])
                 result = task.get('result') or {}

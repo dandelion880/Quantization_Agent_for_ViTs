@@ -16,6 +16,7 @@ from jsonschema import Draft202012Validator
 KINDS = ("ResearchBrief", "HypothesisCard", "ReviewDecisionCard", "ExperimentCard",
          "EvidenceCard", "MetareviewCard", "TaskCard")
 ROLES = ("supervisor", "generation", "judger", "evolution", "recorder", "coding", "safeguard")
+ACTIVE_ROLES = tuple(role for role in ROLES if role not in ("judger", "evolution"))
 TEXT = {"type": "string", "minLength": 1, "pattern": r"\S"}
 STRINGS = {"type": "array", "items": TEXT}
 OBJECT = {"type": "object", "additionalProperties": True}

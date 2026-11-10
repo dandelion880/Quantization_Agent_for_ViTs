@@ -44,10 +44,12 @@ class Rules:
                     if set(criterion["anchors"]) != {"0", "1", "2"}:
                         raise EvalError("incomplete anchors")
         catalog = task_catalog()
-        expected = {p for p, t in catalog.items() if t["role"] != "supervisor"}
+        # v0.1 is an immutable Full-era scoring package. Do not invent a
+        # G-only selection rubric or rewrite uploaded authority to match routing.
+        expected = {p for p, t in catalog.items() if t["role"] != "supervisor" and p != "select"}
         if set(self.selected) != expected or len(rubric_ids) != 6:
-            raise EvalError("rubrics do not cover the current six roles / LLM purposes")
-        if any(catalog[p]["role"] != r["role"] for p, r in self.selected.items()):
+            raise EvalError("rubrics do not cover the frozen Full-era role / purpose contracts")
+        if any(catalog[p]["role"] != r["role"] for p, r in self.selected.items() if p != "plan_l3"):
             raise EvalError("role mapping mismatch")
         self.version = fingerprint(self.provenance)
 

@@ -6,9 +6,9 @@
 
 | 资源 | 权威来源与内容 | 发现、使用者及维护方式 |
 |---|---|---|
-| Prompt | [common](../agents/prompts/common.md)、七角色文件、tasks 任务片段；[roles.py](../agents/roles.py) 组装 | 每次角色调用常驻公共+本角色+本任务指令。维护者改原片段及 Prompt 哈希基线；不在 INDEX 重复定义角色规则 |
+| Prompt | [common](../agents/prompts/common.md)、当前五角色及历史兼容角色文件、tasks 任务片段；[roles.py](../agents/roles.py) 组装 | 每次角色调用常驻公共+本角色+本任务指令。维护者改原片段及 Prompt 哈希基线；不在 INDEX 重复定义角色规则 |
 | Contract | ResearchBrief 冻结本次科研问题；[cards.py](../core/cards.py)、[execution_contract.py](../core/execution_contract.py)、[static_w4a4.py](../core/static_w4a4.py) 及数值契约执行边界 | 各角色接收相关合同；维护者同步实现、接口说明和回归。文档、Skill 或方法名称不能改变可执行边界 |
-| Skill | [短目录](../docs/skills/INDEX.md) → SKILL.md → 各自 references | Generation/Evolution/Judger/Recorder 接收短目录，自选零到多个策略；正文按需 read_asset。维护者编辑 SKILL.md 的 name/description 与正文，再生成目录；不加新阶段或必做实验 |
+| Skill | [短目录](../docs/skills/INDEX.md) → SKILL.md → 各自 references | Generation/Recorder 接收短目录，自选零到多个策略；正文按需 read_asset。维护者编辑 SKILL.md 的 name/description 与正文，再生成目录；不加新阶段或必做实验 |
 | Method | [方法索引](../docs/methods/index.json) 与 [独立组件文档](../docs/methods/README.md) | 可申请实验的研究任务接收 context.method_catalog；retrieve_memory 的普通检索可附文档入口。参数、数学和适用条件由维护者编辑，执行能力仍以数值插件及合同为准 |
 | Recipe / 完整方案种子 | [种子清单](../docs/solutions/seeds.json)、[方案层次说明](../docs/solutions/README.md)；执行构造在 tools/ptq_agent/execution/baselines.py | 静态种子可按需 read_asset；运行时从 context.complete_solutions 的 configuration_asset 读当前协议配置。维护者改种子/构造器与配套测试，不填入未经当前协议实测的成绩 |
 | 来源 / references | [PTQ 来源索引](../docs/references/ptq_methods.json)、[模型资产来源](../configs/assets/deit_model_manifest.json)，以及项目 reference/ 原始论文 | 按需 read_asset 读取授权索引或文本；配置中的资产来源由宿主绑定，链接不扩大读取权限。文献工具保存下载原件与解析文本。维护者登记来源、版本、许可及验证边界；历史外部路径不是框架实现依赖 |

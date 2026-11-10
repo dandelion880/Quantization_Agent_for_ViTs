@@ -24,6 +24,8 @@ def client_for(role, settings):
     if settings.get("provider", "codex_subscription") != "codex_subscription":
         raise ContractError("本版仅核验过订阅通道；变更 provider 需要显式适配与验证")
     model, effort = settings.get("agent_models", model_defaults())[role]
+    if role == "generation" and (model, effort) != ("gpt-6-astra", "high"):
+        raise ContractError("G-only Generation 必须使用 gpt-6-astra / high，不允许静默降级")
     return SubscriptionTransport(model, effort, settings)
 
 

@@ -5,7 +5,7 @@
 | 实际位置 | 职责 |
 |---|---|
 | QAViT/run.py | 科研运行 CLI：start/resume/status/report/answer/extend-budget |
-| QAViT/agents/prompts/ | common、七角色、任务目的片段；tasks.py/roles.py 映射和组装 |
+| QAViT/agents/prompts/ | common、五个活动角色及历史兼容 Prompt、任务目的片段；tasks.py/roles.py 映射和组装 |
 | QAViT/agents/interaction.py | 任务上下文、读取权限、分页/去重、来源与提交绑定 |
 | QAViT/knowledge/INDEX.md | 统一静态科研知识导航与维护入口，正文按需读取 |
 | QAViT/docs/skills/ | 原位保留的四 Skill 与九份 references，INDEX 触发表由 frontmatter 生成 |
@@ -13,10 +13,10 @@
 | QAViT/docs/solutions/ | 原位保留的完整方案种子及说明，不是实测排名文件 |
 | QAViT/docs/references/ | PTQ 方法来源、版本、许可与历史核验线索 |
 | QAViT/docs/ | 系统/执行合同、实验/代码接口、环境、资源生命周期与历史导航 |
-| QAViT/core/workflow.py、experiment_requests.py | 自主研究/两阶段选择/轮次推进与实验请求；保留现有职责，不拆分大型文件 |
+| QAViT/core/workflow.py、experiment_requests.py | G-only 自主研究/预选/L3/轮次推进与实验请求；保留现有职责，不拆分大型文件 |
 | QAViT/core/cards.py、journal.py、memory.py、evidence.py | 合同、不可变事实、运行内知识修订、观测展示及检索 |
 | QAViT/core/solutions.py、static_w4a4.py | 协议专属完整方案库与必要数值边界 |
-| QAViT/core/debate.py、execution_contract.py、evidence_scope.py | 裁决表、冻结执行约束及证据适用范围 |
+| QAViT/core/debate.py、execution_contract.py、evidence_scope.py | Full 历史裁决表兼容、冻结执行约束及证据适用范围 |
 | QAViT/runtime/ | driver/队列/worker、订阅传输、预算/GPU/运行段、保护及源码身份 |
 | QAViT/tools/ | 文献、实验服务、数值 worker、评测、代码审查与模型适配 |
 | QAViT/tools/evaluation/ | 独立 Eval-L0 离线 CLI；只读历史运行，计量/受限 Judge/评分校验/报告，不被科研主流程导入 |
@@ -37,3 +37,5 @@
 物理知识路径保留以兼容已有 read_asset、数值会话文档快照、源码身份和历史来源；新增知识优先归入 knowledge/，合理依赖例外见 AGENTS.md。全部资源分类、权威位置、使用角色、发现和维护规则只在 [统一导航](QAViT/knowledge/INDEX.md) 集中说明；[生命周期](QAViT/docs/RESOURCE_LIFECYCLE.md) 解释实际调用与沉淀。
 
 Git 跟踪稳定源码、Prompt、知识、轻量配置、测试及许可证；EXP 仅按 .gitignore 的精确路径保存已检查的轻量交付，原始运行/快照/日志留本机。reference/、.runtime_pkgs/、完整 ImageNet 清单、数据、权重和凭据不入库。忽略不代表删除；环境与本地依赖见 [ENVIRONMENT](QAViT/docs/ENVIRONMENT.md)。历史导航集中在 [HISTORY](QAViT/docs/HISTORY.md)，不在这里追加每次实施日志。
+
+G-only 的当前伪代码与验证记录位于 [EXP/validation/gonly_20261110_r1](EXP/validation/gonly_20261110_r1/REPORT.md)；历史报告不覆盖。分支通过 Git worktree 独立开发，共用 Git 对象库。

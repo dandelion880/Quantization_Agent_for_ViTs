@@ -92,3 +92,7 @@ PYTHONDONTWRITEBYTECODE=1 CUDA_VISIBLE_DEVICES='' OMP_NUM_THREADS=2 MKL_NUM_THRE
 ```
 
 标准 QAViT CPU 回归仍可用原 `unittest discover -s QAViT/tests` 命令。评价实现和资源与其他自有文件一样纳入既有递归源码身份；恢复历史科研运行仍遵守原有显式干预要求，本模块不排除文件、不改哈希语义、不自动续跑。
+
+## G-only 路由兼容
+
+上传的 v0.1 评分包原文及哈希保持不变。Generation 的 plan_l3 沿用 JL1–JL3 的任务标准并明确角色迁移，Full 历史 Judger/plan_l3 仍可评价。新 select 的职责不等同旧 rank：资源和原始轨迹照常计量、冻结，科学质量标记 gonly_selection_rubric_unavailable，不套用父子辩论评分或编造分数；新评分标准需另行版本化。此离线限制不影响科研预选或 L3。

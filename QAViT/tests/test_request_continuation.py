@@ -230,11 +230,9 @@ class RequestContinuation(TempCase):
         self.assertEqual(len(measurements), 2)
         for number in (1, 2):
             hypotheses = wf.round_hypotheses(number)
-            self.assertEqual(set(hypotheses), {'H1', 'H2', 'H3', 'H4'})
-            self.assertEqual(len(wf.matches(number)), 4)
-            parent = hypotheses['H4']['parents'][0]
-            slot = next(k for k, h in hypotheses.items() if h['id'] == parent)
-            self.assertIn('H4-' + slot, wf.matches(number))
+            self.assertEqual(set(hypotheses), {'H1', 'H2', 'H3'})
+            self.assertEqual(wf.matches(number), {})
+            self.assertEqual(wf.selection_card(number)['author'], 'generation')
             self.assertTrue(wf.l3_outcome(number)['formal_validation_success'])
         self.assertTrue(all(h['payload']['feedback_used'] for h in wf.round_hypotheses(2).values()))
         self.assertFalse(any(t['inputs'].get('purpose') == 'interpret' for t in wf.tasks().values()))
@@ -243,7 +241,7 @@ class RequestContinuation(TempCase):
         self.assertEqual(wf.tasks()['r001/L3/revision1']['state'], 'completed')
 
     def test_defer_is_visible_optional_and_never_mixed_with_a_fabricated_plan(self):
-        spec = role_spec('judger', 'plan_l3', {}, {})
+        spec = role_spec('generation', 'plan_l3', {}, {})
         self.assertIn('defer_reason', spec['context']['payload_contract']['alternative']['properties'])
         wf, trial = self.planned('defer-contract')
         wf.queue.fail(trial['task_id'], {'code': 'fixture_failure'})

@@ -342,7 +342,13 @@ class WorkflowDriver:
         tasks = self.queue.snapshot()
         # A returned failure is part of the researcher's history, not unfinished
         # work. Reopening it after a revised plan would replay superseded science.
-        settled = {row['task'] for task in tasks.values() for row in task.get('tool_results', [])}
+        finished_rounds = {e['round'] for e in self.journal.events if e['type'] == 'round_finished'}
+        settled = {t['task_id'] for t in tasks.values()
+                   if t['inputs'].get('context', {}).get('round') in finished_rounds
+                   and t['inputs'].get('purpose') != 'record'}
+        settled.update(row['task'] for task in tasks.values() for row in task.get('tool_results', []))
+        settled.update(self.journal.card(e['failed_task_ref'])['payload']['task_id']
+                       for e in self.journal.events if e['type'] == 'selection_fallback')
         settled.update(t['inputs']['previous_request_task'] for t in tasks.values()
                        if t['inputs'].get('previous_request_task'))
         settled.update(t['inputs']['context']['previous_request_task'] for t in tasks.values()
@@ -379,11 +385,12 @@ class WorkflowDriver:
         status = status or (events[-1]["status"] if events else "created")
         if error is None and events and status == events[-1]["status"]:
             error = events[-1].get("error")
-        rounds = [{"round": n, "matches": self.matches(n), "l3_outcome": self.l3_outcome(n)}
+        rounds = [{"round": n, "preselection": self.selection_card(n), "l3_outcome": self.l3_outcome(n)}
                   for n in self.budget.snapshot()["rounds_started"]]
         attempts = [r["l3_outcome"] for r in rounds if r["l3_outcome"]["task_refs"]]
         value = {"schema_version": "qavit.report/2", "run_id": self.journal.run_id,
-                 "status": status, "error": error, "workflow_completed": status == "completed",
+                 "status": status, "error": error, "architecture": self.config.get("architecture", "full"),
+                 "workflow_completed": status == "completed",
                  "scope_target": self.config.get("scope_target"), "scope_target_reached": self.scope_target_reached(),
                  "completed_rounds": sorted({e["round"] for e in self.journal.events if e["type"] == "round_finished"}),
                  "formal_validation_success": bool(attempts) and all(r["formal_validation_success"] for r in attempts),
@@ -494,6 +501,8 @@ class WorkflowDriver:
                 try:
                     if not failures and self.mark_scope_target_if_ready():
                         status = "scope_target_reached"
+                    for number in self.budget.snapshot()["rounds_started"]:
+                        self.consider_l3(number)
                     pending = self.memory.recording_batch()
                     if pending['review_required']:
                         self.event('recorder_pending', f'recorder/pending/{self.journal.sequence}', batch=pending, reason=status)

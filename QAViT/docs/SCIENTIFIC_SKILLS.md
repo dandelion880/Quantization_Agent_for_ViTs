@@ -4,7 +4,7 @@
 
 ## 发现与读取
 
-`RoleInteraction.context()` 对 Generation、Evolution、Judger、Recorder 交付短 `context.skill_catalog`（INDEX.md）。Coding、Safeguard、Supervisor 不自动接收目录；所有角色另可从 context.knowledge_index 按需打开统一导航；原有 docs 读取入口保留。目录缺失时省略，不影响正常研究。
+`RoleInteraction.context()` 对 Generation、Recorder 交付短 `context.skill_catalog`（INDEX.md）。Coding、Safeguard、Supervisor 不自动接收目录；所有角色另可从 context.knowledge_index 按需打开统一导航；原有 docs 读取入口保留。目录缺失时省略，不影响正常研究。
 
 研究者依据当前问题选择零到数个 Skill。例如：
 
@@ -28,7 +28,7 @@
 | Toolbox | `context.services`、`context.experiment_interface`、`request_experiment` | 实际执行测量；Skill 中 profile/query 名称是 profile 服务的内部工具 |
 | Evidence / Recorder | 原实验回执、EvidenceCard、MetareviewCard | 原始观测与科研综合分开；经验由现有 Recorder/Memory 沉淀 |
 
-Skill 不自动改写方法库、Top-3 或 Memory，也不能把建议、文献、例子或局部代理指标当成当前实测。H1/H2/H3、固定 H*→H4、并行 Judger、Coding→Safeguard→执行、Recorder、Supervisor、科研合同及预算完全沿用原实现。
+Skill 不自动改写方法库、Top-3 或 Memory，也不能把建议、文献、例子或局部代理指标当成当前实测。G-only 由 Generation 完成 H1/H2/H3、预选和 L3 规划；Coding→Safeguard→执行、Recorder、Supervisor、科研合同及预算沿用原实现。
 
 ## 维护与验证
 

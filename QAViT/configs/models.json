@@ -4,15 +4,7 @@
     "low"
   ],
   "generation": [
-    "gpt-6.1-sol",
-    "high"
-  ],
-  "judger": [
-    "gpt-6.1-sol",
-    "medium"
-  ],
-  "evolution": [
-    "gpt-6.1-sol",
+    "gpt-6-astra",
     "high"
   ],
   "recorder": [

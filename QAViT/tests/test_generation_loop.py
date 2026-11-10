@@ -21,7 +21,7 @@ class GenerationLoop(TempCase):
     read = delivery.DeliveryRegression.read
     scripted = infrastructure.WorkflowSimulation.scripted
 
-    def test_two_rounds_with_pre_h_experiments_preserve_debates_h4_and_recorder(self):
+    def test_two_rounds_with_pre_h_experiments_preserve_candidates_selection_and_recorder(self):
         wf = self.workflow(2)
         experimented = set()
         for tick in range(150):
@@ -50,11 +50,9 @@ class GenerationLoop(TempCase):
         self.assertEqual(len(wf.memory.snapshot()['L3']), 2)
         for number in (1, 2):
             hs = wf.round_hypotheses(number)
-            self.assertEqual(set(hs), {'H1', 'H2', 'H3', 'H4'})
-            self.assertEqual(len(wf.matches(number)), 4)
-            parent = hs['H4']['parents'][0]
-            parent_slot = next(k for k, h in hs.items() if h['id'] == parent)
-            self.assertIn('H4-' + parent_slot, wf.matches(number))
+            self.assertEqual(set(hs), {'H1', 'H2', 'H3'})
+            self.assertEqual(wf.matches(number), {})
+            self.assertEqual(wf.selection_card(number)['author'], 'generation')
         self.assertTrue(all(h['payload']['feedback_used'] for h in wf.round_hypotheses(2).values()))
         self.assertFalse(wf.memory.recording_batch()['source_refs'])
 

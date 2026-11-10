@@ -45,5 +45,6 @@
   "llm": {
     "provider": "codex_subscription",
     "max_transport_retries": 2
-  }
+  },
+  "architecture": "gonly"
 }

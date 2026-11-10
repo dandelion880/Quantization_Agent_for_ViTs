@@ -72,6 +72,9 @@ def render(root, case, rules):
     template += ("\n\n来源 locator 使用 source_index 中的 #/ JSON pointer，可以继续向下定位已展示的 JSON 字段；"
                  "文本源码使用该 source 的根 locator，excerpt 必须是该位置的真实短摘录。每个 scored 项必须引用至少一个已展示来源；"
                  "不要引用未展开的卡片正文或事后材料。全量原始轨迹已冻结；缺失或未读材料使用 unknown。")
+    if case['purpose'] == 'plan_l3' and case['role'] == 'generation':
+        template += ("\nG-only 路由说明：本案例 plan_l3 由 Generation 承担；沿用原 JL1/JL2/JL3 的协议、执行、诚实性标准。"
+                     "原评分包中 Full 的父子身份规则只适用于实际存在的历史阶段；不得要求本案例生成 H4 或进行辩论。")
     return {"system_prompt": (rules.root / "prompts/judge_system.md").read_text(), "case_prompt": template,
             "supplied_sources": supplied}
 

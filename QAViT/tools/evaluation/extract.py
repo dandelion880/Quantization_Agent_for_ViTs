@@ -385,8 +385,8 @@ def prepare(run_path, output, rules, pricing=None):
         if task["kind"] != "llm":
             continue
         if purpose not in rules.selected:
-            reason = "supervisor_program_or_unsupported_purpose"
-        elif task.get("role") != catalog[purpose]["role"]:
+            reason = "gonly_selection_rubric_unavailable" if purpose == "select" else "supervisor_program_or_unsupported_purpose"
+        elif task.get("role") != catalog[purpose]["role"] and not (purpose == "plan_l3" and task.get("role") == "judger"):
             reason = "role_purpose_mismatch"
         elif purpose == "rank" and any((run.card(ref) or {}).get("author") == "program" or
                     (run.card(ref) or {}).get("payload", {}).get("selection_source") == "existing_verdicts_and_screening"

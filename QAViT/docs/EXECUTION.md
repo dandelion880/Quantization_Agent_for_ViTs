@@ -2,7 +2,7 @@
 
 ## QAViT v2 科研协议
 
-适用于 `schema_version=qavit.research/2`；这是当前唯一科研入口。数值计划的 schema_version=2/3 是模型包协议，与科研框架版本独立。
+本分支使用 `architecture=gonly`、`schema_version=qavit.research/2`；这是当前唯一科研入口。Full 历史可只读检查，执行恢复请使用 main 或基线 tag，不静默迁移架构。数值计划的 schema_version=2/3 是模型包协议，与科研框架版本独立。
 
 卡片合同位于 `core/cards.py`，版本为 `qavit.cards/2`。Agent 提交科研 payload；宿主补齐任务固定的 round/slot/type/phase/side、预测 ID、唯一绑定的前轮反馈引用，以及卡片 ID、版本、作者、来源和哈希。显式身份冲突仍拒绝。memory.source_handles 的短引用（如 C42）可用于结构化引用与 read_card；宿主按固定快照解析为完整 ID，不猜错别字或解析自由文本。允许完整数学推导、多条预测、来源和扩展字段，不限制科研正文长度。单次 CLI 的完整响应仍受传输保护限制，超限时拒绝不完整结果，不静默截断科研卡片。
 
@@ -21,19 +21,19 @@ ResearchBrief 分开保存用户硬约束、搜索空间、基准模型和评测
 
 Brief 的全网位宽、覆盖及最终评测要求属于最终候选，在既有 L3 阶段核验。L1/L2 探索按本次显式执行约束核验，允许局部干预、消融、浮点对照后观察整网输出；观察范围不产生干预范围声明。最终研究目标仍保存在 research_quantization_contract。位点种类展开等依赖真实模型目录的检查在 worker 加载模型后执行。自定义方法名、observer 和参数由批准源码解释；内置计划的枚举只限制实际使用内置执行器的请求。
 
-HypothesisCard 科研核心是 title、research_question、mechanism、intervention。预测、来源、机制关系、实现说明、验证设计、scope 和 feedback_used 均可省略或按需表达，不要求为满足格式编造内容。H1/H2/H3 分别是 existing_method/engineering/new_algorithm；H4 为 evolved，保留 improvement_objective 与固定 H* 的 parent_refs 关系；身份、轮次和唯一父引用由程序绑定。前轮反馈由程序交付，是否采纳及如何改进由研究者判断，不强制填写 feedback_used。
+HypothesisCard 科研核心是 title、research_question、mechanism、intervention。预测、来源、机制关系、实现说明、验证设计、scope 和 feedback_used 均可省略或按需表达，不要求为满足格式编造内容。H1/H2/H3 分别是 existing_method/engineering/new_algorithm；身份和轮次由程序绑定，本分支不生成 H4。前轮反馈由程序交付，是否采纳及如何改进由研究者判断，不强制填写 feedback_used。
 
-ReviewDecisionCard 保留 rationale 及本任务的实质决定。screening 的 eligible 必需；不合格时必须说明 hard_rejection_reasons，合格时可省略并补为空列表。similarity_analysis、evidence_gaps、uncertainties、论据/反驳/回应/预测数组等按需表达。裁决 outcome 为 A/B/tie/undetermined/continue，第5回合不能 continue；胜负依据可统一写在 rationale，decisive_reason 和 next_questions 可省略；continuation_assessment 可省略；若显式提供，仍核对其与未决结案的一致性。选择和 H4 关系、已结案不可改判及证据权限保持不变。
+ReviewDecisionCard 复用现有格式保存 Generation 预选（phase=ranking，仅为历史卡片类型兼容）与 Safeguard 审查；rationale 表达依据，evidence_refs 引用真实测量。Full 的筛查、辩论、H4 及旧 rank 合同只供历史读取与离线回归，不参与 G-only 调度。
 
 可选科研条目逐项处理：格式或引用有问题的条目连同具体问题保存在 submission_issues，不成为有效科学支持，其余有效科研产出可提交。顶层明确证据引用、固定身份或实质决定冲突仍返回准确错误。Recorder 核心只需 scientific_analysis；知识更新有问题时保存在 pending_knowledge_updates，不发布为已验证知识。
 
-两阶段均复用 rank/Judger 与 ReviewDecisionCard：`rNNN/select_parent` 的 selection_stage=parent，仅用 H1-H2、H1-H3、H2-H3 选定并持久化 H*；`rNNN/rank` 的 selection_stage=final，仅从 H4 与 H* 中确定最终候选。卡片绑定 candidate_refs、selected_hypothesis_ref 的完整 ID，最终卡另绑定 parent_selection_ref。禁止将四场合并为四候选全局排名。只有 final 选择写入 Memory 的 round_selection，并交给 L3、Recorder 与下一轮反馈；两个选择均进入 Recorder 科研上下文，是否逐项分析由科研需要决定。
+G-only 每轮发布 H1/H2/H3 三个 generate 任务，允许自主进行“静态知识/Memory→实验→反馈分析→修订→候选提交”。三条任务完成后由 Generation 的 `rNNN/select` 综合证据预选一项 L3 候选；局部失败保留已完成候选和失败来源。无筛查、三场辩论、父子挑战或旧排名计算。
 
-已有全胜者、仅余一个合格方案或没有合格方案时，程序直接引用已提交裁决/筛查完成现有 rank 任务，选择卡 author=program、selection_source=existing_verdicts_and_screening，不产生新的 LLM 判断或伪造测量。未决时仍由 Judger 给出 selected_slot 和选择理由，在当前阶段的直接结果第一组中选择，不能忽略明确胜负。provisional 缺省时从已有直接结果确定，显式冲突仍拒绝；selection_basis 可省略，程序原样使用 rationale 交接选择依据。H4 不合格保留合格父方案；初始全部不合格则两个选择均为空，跳过 Evolution 和 L3，正常 Recorder 与轮次收尾。
+预选绑定 candidate_refs、selected_hypothesis_ref 的完整版本 ID，selection_stage=gonly_preselection、selection_source=generation、provisional=true。selected_slot 可以为 null；不要求候选全部 L3，不按 L1/L2 代理指标晋升方案。选择卡及证据交付 Generation 的 plan_l3、Recorder 与下一轮反馈。预选失败时若已有 H1，程序保存明确标为 h1_availability_fallback 的可用兜底，未经科学排名或 L3；否则保留候选进入复盘。已完成轮次及已使用兜底的失败研究任务不会被通用 retry 重开；延期 Recorder 仍可显式重试。
 
-初始 H1–H2、H1–H3、H2–H3 三场独立推进，各自按需取证、讨论和结案；全部提交 match_closed 后才统一选择 H*。恢复时沿各场已有任务和结案事件继续，不重复结案。之后仍只比较 H4–H*。每场最终裁决包括 tie/undetermined 一经结案即固定，拒绝非空改判请求，不再生成改判字段或修订卡片。旧记录保持可读，不改写历史。每对最多五次交锋；本场取证、真实结果核验及 Recorder 科研知识更新保留，后到证据不能改写已结案结果。
+Generation 的 generate/select/plan_l3 均固定 gpt-6-astra/high，配置覆盖和直接调用不得降级；运行时逐次预检目录、档位和账户，服务端未回显身份时如实记为未知，回显冲突或降级拒绝接受。Coding、Safeguard、Recorder、Supervisor 沿用原角色配置。默认 llm_concurrency=4（可设1–4），现有非 Judger 订阅互斥继续使用；历史并发兼容代码不触发科研任务。
 
-默认 runtime.llm_concurrency=4（可设1–4）；Judger最多3个，每场同时1个；其它角色合计单通道。项目订阅锁保持3+1。数值实验使用独立 experiment_concurrency 上限，新模板为 auto，解析后等于允许 GPU 池大小（CPU 路径为1）；显式整数上限保持有效。原非数值worker合计上限llm_concurrency+1保留，数值不占这些槽。不以相同模型checkpoint或全局numeric锁串行化独立实验。GPU按空闲情况分配，以 UUID 文件租约跨进程互斥；worker及分片继承租约，忙卡留在ready队列，不占尝试/重试次数。Coding→Safeguard→执行→原请求Evidence链不变。旧运行显式并发1仍遵守原配置。
+数值实验使用独立 experiment_concurrency 上限，新模板为 auto，解析后等于允许 GPU 池大小（CPU 路径为1）；显式整数上限保持有效。原非数值worker合计上限llm_concurrency+1保留，数值不占这些槽。不以相同模型checkpoint或全局numeric锁串行化独立实验。GPU按空闲情况分配，以 UUID 文件租约跨进程互斥；worker及分片继承租约，忙卡留在ready队列，不占尝试/重试次数。Coding→Safeguard→执行→原请求Evidence链不变。旧运行显式并发1仍遵守原配置。
 
 新运行 runtime.allowed_gpus="auto"（省略时同义）从 CUDA 实际可见 UUID、容器设备访问和分配环境取交集，不直接使用主机全部 NVML 设备。支持 CUDA_VISIBLE_DEVICES 的实际逻辑映射及 SLURM_JOB_GPUS/SLURM_STEP_GPUS 分配范围；NVIDIA_VISIBLE_DEVICES 的 UUID 范围也会收窄。允许设备可在同一研究 JSON 中显式设为 NVML 编号或完整 GPU UUID 数组，[] 禁用 GPU；显式范围仍与实际可见性取交集。自动探测不可靠时可集中提供 runtime.gpu_inventory=[{"index":编号,"uuid":"完整GPU-UUID","device_node":"/dev/nvidia设备minor"}]，以 CUDA_VISIBLE_DEVICES=GPU-UUID,... 明确可见性；不会猜测不可靠的编号对应关系。新运行冻结解析后的 allowed_gpus、gpu_bindings 和 gpu_selection；恢复不扩大冻结池、不改配置身份，当前设备仅按冻结 UUID 匹配，即使 NVML 编号或设备 minor 改变也不换卡。暂时不可见的冻结设备保留排队；资源范围确需改变时使用新的研究输入。
 
@@ -49,9 +49,9 @@ resources.gpu 可选，指定时固定主卡；不指定时从 allowed_gpus 自�
 
 | 任务 | 必需交接材料 | 历史读取与限制 |
 |---|---|---|
-| generate / evolve | ResearchBrief、分配槽位、与当前对象明确关联的问题；generate 另获任务已绑定前轮 Meta 的 generation_guidance/next_questions/recurring_failures/blind_spots；evolve 获固定 H*、选择理由、批评及证据 | 当前正文和支持证据有界直供，长正文入口在 required_reads；完整 Meta-review、L2 和非绑定正文按需读取 |
-| screen / position / arbitrate / rank | 待审候选与阶段、当前/最近争点、新返回结果；position 指定一方，arbitrate 接收已汇合双方；rank 仅接收当前阶段结果 | 全部授权记录可分页发现和读取；对方本 exchange 未汇合立场不可读，结案不可改判 |
-| plan_l3 | final 选择卡、最终候选完整 ID、选择依据及明确引用的支持 Evidence 观测与条件、Brief 协议、数据回执与预算回执 | 原件按需精读；不拿初始 H* 代替最终候选，有效 L3 不因解释失败重复执行 |
+| generate | ResearchBrief、H1/H2/H3 分工、绑定前轮 Meta 的 generation_guidance/next_questions/recurring_failures/blind_spots；实验反馈和研究笔记 | 当前正文和支持证据有界直供，长正文入口在 required_reads；完整 Meta-review、L2 和非绑定正文按需读取 |
+| select | 三条已提交候选的固定版本、实测证据及条件、局部失败、Memory 与方案库 | 按需取证，预选不等于正式排名 |
+| plan_l3 | Generation 预选卡、最终候选完整 ID、选择依据及明确引用的支持 Evidence 观测与条件、Brief 协议、数据回执与预算回执 | 原件按需精读；保持候选版本，有效 L3 不因解释失败重复执行 |
 | code / safeguard | 不可改写的原始需求、执行条件；code 获当前源码及失败反馈，safeguard 获当前唯一源码 | 按任务授权读取公共接口及相关来源 |
 | interpret / record | 实测 Evidence 与对应定义；record 交付未综合的假设、实测证据、裁决/选择/解释与工程失败摘要 | 旧知识按需读取；长正文可分页定位；结果解释不覆盖测量，知识更新不改比赛裁决 |
 
@@ -87,17 +87,17 @@ execution 的 service 和必要科学参数可由已有服务请求直接指定�
 
 EvidenceCard 只由程序从真实工作进程回执构建，保存数值、配置、模型状态、代码、数据划分、种子、资源和原始结果引用。measurement_source 区分 real、synthetic_computation、test_double；随机模型真实运算不代表真实任务精度。科研解释保存在原研究者的 HypothesisCard、ReviewDecisionCard 或 Recorder 的 MetareviewCard 中，不能覆盖测量。
 
-Generation/Evolution 可在正式 H 之前执行零次或多次“问题/缺口→实验→解释→调整”循环。无需预先提交 H；程序完成参数/范围、预算、来源与可执行性检查后冻结并执行，不再创建常规 experiment_approval，也不另调 Judger 解释。Evidence 与失败回执直接返回等待请求的原 Generation/Evolution/Judger 任务，step 递增，保留问题、可选 research_note 及来源，下一次调用刷新可见快照。LLM 决定科学参数、解释结果与是否继续；程序补默认值并处理路由、状态、预算、缓存和原件。HypothesisCard 可用 evidence_refs 与 sources.ref 精确绑定实际采用的依据，不把全部已归档实验视为支持。
+Generation 可在正式 H 之前执行零次或多次“问题/缺口→实验→解释→调整”循环。无需预先提交 H；程序完成参数/范围、预算、来源与可执行性检查后冻结并执行，不再创建常规 experiment_approval，也不另调 Judger 解释。Evidence 与失败回执直接返回等待请求的原 Generation 任务，step 递增，保留问题、可选 research_note 及来源，下一次调用刷新可见快照。LLM 决定科学参数、解释结果与是否继续；程序补默认值并处理路由、状态、预算、缓存和原件。HypothesisCard 可用 evidence_refs 与 sources.ref 精确绑定实际采用的依据，不把全部已归档实验视为支持。
 
-单请求预算不足、执行失败、Coding/Safeguard 科学澄清和实现修订耗尽均返回原科研请求者，不等同全局耗尽或假说反证。等待中的 Generation/Evolution/Judger 按现有任务续调；程序根据已提交 plan_l3 创建的最终 L3 则由新的同角色 plan_l3/revisionN 接收原需求、失败或澄清及来源，再产生新的 L3/revisionN。已完成计划和冻结请求保持不变；恢复运行沿已有版本继续。可恢复工程故障仍按现有分类有限重试，新实现重新绑定条件并经 Safeguard，不重复未修改的失败源码。无法在已有范围内继续时，Judger 可用可选 defer_reason 如实说明未验证，正常进入 Recorder；只有用户才能决定的信息才进入人工澄清。
+单请求预算不足、执行失败、Coding/Safeguard 科学澄清和实现修订耗尽均返回原科研请求者，不等同全局耗尽或假说反证。等待中的 Generation 按现有任务续调；程序根据已提交 plan_l3 创建的最终 L3 则由新的同角色 plan_l3/revisionN 接收原需求、失败或澄清及来源，再产生新的 L3/revisionN。已完成计划和冻结请求保持不变；恢复运行沿已有版本继续。可恢复工程故障仍按现有分类有限重试，新实现重新绑定条件并经 Safeguard，不重复未修改的失败源码。无法在已有范围内继续时，Generation 可用可选 defer_reason 如实说明未验证，正常进入 Recorder；只有用户才能决定的信息才进入人工澄清。
 
-所有服务与请求来源的有效 Evidence 保存、规定数值协议核验完成后立即返回，不再为实验回执自动创建 interpret。原研究步骤或正常轮末 Recorder 承担解释；恢复时取消尚未启动且已无依赖必要的旧 interpret；已运行的 interpret 单独结算，均不撤销有效测量，也不触发重复执行。缓存保留原 execution_id 并标记 cache_reused，不冒充独立重复。报告与 CLI 分列 workflow_completed、formal_validation_success、numerical_validation_status、scientific_review_complete；每轮 l3_outcome 同时给出执行、解释和计划状态。completed 仅代表流程结束，不代表缺失或延期的 L3 已通过。三个初始 H 均形成并筛查后，才进入既定三场配对与 H4 父子挑战。
+所有服务与请求来源的有效 Evidence 保存、规定数值协议核验完成后立即返回，不再为实验回执自动创建 interpret。原研究步骤或正常轮末 Recorder 承担解释；恢复时取消尚未启动且已无依赖必要的旧 interpret；已运行的 interpret 单独结算，均不撤销有效测量，也不触发重复执行。缓存保留原 execution_id 并标记 cache_reused，不冒充独立重复。报告与 CLI 分列 workflow_completed、formal_validation_success、numerical_validation_status、scientific_review_complete；每轮 l3_outcome 同时给出执行、解释和计划状态。completed 仅代表流程结束，不代表缺失或延期的 L3 已通过。三条候选形成后进入 Generation 预选；失败及预算边界保留有效阶段成果。
 
 新 Evidence.scope 使用 `qavit.evidence_scope/1`：由冻结模型身份及宿主 execution_facts 生成 model/model_identity_sha256、measurement_kind、measurement_source、实际 site/quantization/位宽、parameters 和 data。完整模型数据范围包含导出包实际校准 ID 和本次评测 ID；局部激活探针不因研究目标 W4A4 而获得 weight_bits=4。自定义统计仅记录实际读取和前向访问、冻结参数，不把无法独立核验的量化目标提升为已执行事实。申请 scope 与 resolved_choices 仅存 provenance.research_target。
 
 Recorder 实证知识的完整 scope 由真实引用证据绑定模型、位点、位宽、参数及数据边界。模型可完全省略 scope 或只给科学条件；缺失的确定身份由程序补齐，明确冲突逐条记录。不同条件的比较按 scope.comparison 逐份保存 evidence_ref 和真实 scope，不取第一份或合并范围；比较差异、解释和限制写在既有 text/rationale。无法绑定的条目保留为待核实，不影响其他知识和科学分析。精确检索仍使用同一规范 scope，词法排序及四层结构不变。
 
-内置实验指纹覆盖实际 execution、L1/L2/L3 层级及计算资源，不以科学问题或控制说明的不同措辞区分相同计算。插件可读取完整正文，因而将其全部实际输入也纳入指纹。相同有效测量可复用；明确重复验证产生新的 execution_id，缓存命中不能计为重复验证。方法与假设的科学重复性由结构信息、来源、Memory 和 Judger 审查共同判断。
+内置实验指纹覆盖实际 execution、L1/L2/L3 层级及计算资源，不以科学问题或控制说明的不同措辞区分相同计算。插件可读取完整正文，因而将其全部实际输入也纳入指纹。相同有效测量可复用；明确重复验证产生新的 execution_id，缓存命中不能计为重复验证。方法与假设的科学重复性由结构信息、来源、Memory 和 Generation 的证据综合判断。
 
 L0 为不可变卡片/提交；L1 根据 Journal 维护本轮真实假说、实验、证据、选择与 incumbent，不能由 Recorder 引用子集覆盖；L2 为有状态、范围和出处的知识；L3 为每轮 Meta-review。Recorder 维护科研判断，程序检查来源并保护原始事实。knowledge_updates 可为空；每项科研输入是 text、status、evidence_refs、rationale。新 claim_id 可由程序生成；scope 可完全省略或部分提交，程序从引用证据绑定可确定字段；比较条件逐份绑定，冲突条目保留待核实。持久化项仍包含完整 claim_id、text、status、scope、evidence_refs、rationale；status 为 hypothesis/observed_once/replicated/refuted/conditional/abandoned。异质条件的对照使用 conditional 等适当状态，不因两个执行就视为重复验证。replicated 需要相同条件下不同执行与 replication_analysis；更新已有 claim_id 时，程序绑定 supersedes 为当前 revision_ref；显式冲突局部处理。judgment_audit 为可选的重点判断分析，条目含 judgment_ref、assessment、evidence_refs、reasoning，不要求穷举。Recorder 应解释预判与实测差异、指标价值、失败机制和下一轮问题。next_questions 只新增未决问题，省略或空数组均不清空旧问题；可选 resolved_questions/abandoned_questions 明确移除已解决/放弃的问题，无关闭审批。pending 沿 claim_id 与旧 revision_ref 修正、发布或 abandoned，原稿保留，当前待办只呈现仍待处理项，不启动额外修正文书调用。
 
@@ -114,8 +114,7 @@ Memory 的唯一事实来源仍为 Journal 和不可变卡片；目录、输入�
 | purpose | 默认必需材料 |
 |---|---|
 | generate | ResearchBrief、本轮类型/要求、简短目录、明确关联或分配的反馈；全局复盘及 L2 按需读 |
-| screen、position、arbitrate、rank、interpret、plan_l3 | 本次待审方案/比较对象、当前或最近争点、明确引用的判断/测量、本任务新返回的实验与对应冻结定义；其他场次和旧正文按需读 |
-| evolve | 唯一 H* 完整方案放在 task.parent_hypothesis，一处提供；选择依据、明确批评与绑定证据；不再次默认注入完整最新 Meta-review |
+| select、plan_l3 | 已提交候选、预选依据、明确引用的判断/测量、本任务新返回的实验与对应冻结定义；旧正文按需读 |
 | code、safeguard | 原始需求、已知执行条件及当前实现/修订反馈；Safeguard 另获绑定后的完整执行卡 |
 | record | 本批假设、Evidence/冻结定义、裁决/选择/解释；工程计数与失败原因；本批关键立场/争点直接交付，完整来源按需读 |
 | supervise | 当前任务、流程状态、预算和异常反馈，历史科研正文按需读 |
@@ -132,7 +131,7 @@ Memory 的唯一事实来源仍为 Journal 和不可变卡片；目录、输入�
 
 订阅传输保留原 `name/arguments_json` 封套；多个独立工具用 `name="__tool_batch__"`，arguments_json 解码为 `{"calls":[{"name":"read_card","arguments":{"ref":"完整ID","offset":0}},...]}`。宿主解码为原有 tool_calls 列表，所有参数/实验草案先预检，再各自入队；运行期某项无权限/失败不吞掉同批其他结果。不得夹带决策、嵌套批次或同批依赖；工具预算为零时批次也不开放。格式和合同错误共用当前失败步骤最多两次连续修复；CLI 完成/身份/隔离检查仍在之前，整批调用的已知失败用量正常结算。
 
-每次模型调用固定 `read_view.sequence`；目录、提醒、搜索、读卡和资产权限都先按这个提交快照过滤。工具批次沿用发起调用的快照；下一次调用（含实验回传）再刷新。Generation/Judger/Evolution 可发现此前提交的 ExperimentCard、EvidenceCard、公开论证/interpretation 及文献来源，不等待 Recorder。资产访问仅允许同一快照中明确关联的文件及固定项目资料，并绑定哈希；不能读取运行目录下任意日志/新文件绕过隔离。同回合对方立场、其私有子任务与间接引用均隔离。
+每次模型调用固定 `read_view.sequence`；目录、提醒、搜索、读卡和资产权限都先按这个提交快照过滤。工具批次沿用发起调用的快照；下一次调用（含实验回传）再刷新。Generation 可发现此前提交的 ExperimentCard、EvidenceCard、公开论证/interpretation 及文献来源，不等待 Recorder。资产访问仅允许同一快照中明确关联的文件及固定项目资料，并绑定哈希；不能读取运行目录下任意日志/新文件绕过隔离。同回合对方立场、其私有子任务与间接引用均隔离。
 
 Recorder 复用轮末及预算收尾的轻量同步任务。批次输入集中于新增假说及变化、实验目的/核心结果、关键裁决争点、相关旧依据与影响判断的失败。仅工程状态补记而无新增待综合科研材料时不单独启动 Recorder，工程记录照常归档；失败延期的科学材料继续 pending，不能标成已复盘。程序从已提交的 recorder_batch_completed.source_refs 重建已综合集合，批次按完整对象版本冻结，迟到产出不会被跳过。来源绑定、索引、游标、去重和完整原件均由程序维护；模型不填写覆盖清单。Meta-review、Memory 投影、批次完成事件与 TaskCard 原子发布，存储失败不推进游标；recording_submissions 只为已验证待发布草稿提供恢复入口。
 
@@ -206,7 +205,7 @@ Recorder 完全缺失或部分填写 scope 均由程序按引用证据补齐确�
 
 Recorder 完整提交被合同拒绝后，同任务后续输出格式失败单独记录原文与定位，保留已有完整被拒草稿；重发合法 repair_patch 仍可合并该草稿，并再次通过全部合同。该连续性只属于原任务，不能从其他任务借用草稿；格式和科学合同修复在当前失败步骤共用两次连续额度；未进入新步骤时保留被拒草稿。
 
-Recorder 的 recording_batch.source_refs 是新增整理覆盖集合，不是可读取依据的边界。当前批次正文已精确点名 claim_id/revision_ref 且直接引用对应旧 Metareview 时，只交付该 knowledge_updates 条目：短正文进入 memory.bound_feedback，长正文进入 required_reads；既有字段/祖先/完整分页覆盖可满足读取，不要求重复读取完整直接交付的正文。旧参考不加入本批 source_refs，其他历史仍按需。精确关联优先使用成对结构字段，无结构字段时兼容 claim_id=…、revision_ref=… 文本标注及外围句号、括号、引号/Markdown 反引号；ID 内部字符与显式版本不修补。Generation/Judger 等正常提交会核验明确点名的旧版本、claim 唯一性与本次调用权限，并将该版本保存为来源卡的直接 refs，Recorder 再次核对直接引用。不沿全部引用扩张，不凭相似文本或缺失版本推断，也不附送旧复盘其他无关正文。可见范围、权限、固定版本及科研 scope 校验保持不变。
+Recorder 的 recording_batch.source_refs 是新增整理覆盖集合，不是可读取依据的边界。当前批次正文已精确点名 claim_id/revision_ref 且直接引用对应旧 Metareview 时，只交付该 knowledge_updates 条目：短正文进入 memory.bound_feedback，长正文进入 required_reads；既有字段/祖先/完整分页覆盖可满足读取，不要求重复读取完整直接交付的正文。旧参考不加入本批 source_refs，其他历史仍按需。精确关联优先使用成对结构字段，无结构字段时兼容 claim_id=…、revision_ref=… 文本标注及外围句号、括号、引号/Markdown 反引号；ID 内部字符与显式版本不修补。Generation 等正常提交会核验明确点名的旧版本、claim 唯一性与本次调用权限，并将该版本保存为来源卡的直接 refs，Recorder 再次核对直接引用。不沿全部引用扩张，不凭相似文本或缺失版本推断，也不附送旧复盘其他无关正文。可见范围、权限、固定版本及科研 scope 校验保持不变。
 
 代码 manifest 证明文件身份，不独立授予权限：code 的已提交产物绑定生产任务，不能由公开实验或其他正文路径覆盖私有生产者。无任务归属的兼容交接仅接受 Safeguard 的确切 candidate 与 Coding 的 previous_candidate；默认源码交付也经过同一资产权限校验。
 
@@ -221,6 +220,8 @@ read_card(ref, select={site,token_type,metric,text,minimum,maximum}, field?, off
 knowledge_directory 提供有限的 L2 目录、知识状态和复盘时点，保留原条目与其支持证据，check_new_evidence 定位该判断之后的证据；出现新事实不自动推断旧知识失效。recording_status 显示待复盘缺口。source_refs 表示程序归档，evidence_refs/sources.ref 表示研究者实际采用的支持，二者不混同。
 
 
-当前对象的证据交付使用同一规则：从已绑定 Hypothesis、Review、Experiment 的明确支持引用追加 Evidence 观测和各自冻结条件，覆盖筛查、交锋、选择、演化、plan_l3 及 Coding/Safeguard。不递归展开普通历史 refs；Evidence 的条件卡不会再次触发旧 trial 链。按提交快照、角色可见性及同回合隔离过滤，同一来源只交付一次；大型结果保持既有统计投影、覆盖说明和精确 read_card 展开入口。Recorder 继续使用增量批次，不能借交接规则重新注入全历史。
+当前对象的证据交付使用同一规则：从已绑定 Hypothesis、Review、Experiment 的明确支持引用追加 Evidence 观测和各自冻结条件，覆盖生成、预选、plan_l3 及 Coding/Safeguard。不递归展开普通历史 refs；Evidence 的条件卡不会再次触发旧 trial 链。按提交快照、角色可见性及同回合隔离过滤，同一来源只交付一次；大型结果保持既有统计投影、覆盖说明和精确 read_card 展开入口。Recorder 继续使用增量批次，不能借交接规则重新注入全历史。
 
-当前 H1 为成熟完整方案驱动，H2 为完整方案上的真实瓶颈改进，H3 保持开放创新；旧 existing_method/engineering/new_algorithm 卡片枚举保留。H1/H2 自然说明起点和改动，不增固定措辞或审核门槛。Top-3 独立于 Memory，按协议分桶持久化在 EXP/solutions，每轮完成后有效双任务按 (ADE20K mIoU, ImageNet Top-1) 降序更新；待测种子保留空成绩。完整源码、配置、协议和版本可按 configuration_asset 获取，失败与未入选发现仍由 Recorder/Memory 保存。统一 [W4A4协议](STATIC_W4A4.md) 只在最终完整方案检查全覆盖。
+当前 H1 为成熟完整方案驱动，H2 为完整方案上的真实瓶颈改进，H3 保持开放创新；旧 existing_method/engineering/new_algorithm 卡片枚举保留。H1/H2 自然说明起点和改动，不增固定措辞或审核门槛。Top-3 独立于 Memory，按协议分桶持久化在 EXP/solutions，有效 L3 双任务在 Recorder 之前即可按 (ADE20K mIoU, ImageNet Top-1) 降序更新；待测种子保留空成绩。完整源码、配置、协议和版本可按 configuration_asset 获取，失败与未入选发现仍由 Recorder/Memory 保存。统一 [W4A4协议](STATIC_W4A4.md) 只在最终完整方案检查全覆盖。
+
+G-only 停机和预算收尾会接收已持久化回执、尝试归档有效 L3 方案并保存未完成阶段，不在 finally 新增模型调用。Top-3 的实测资格、双任务完整性、静态 W4A4、同协议比较和稳定平分规则沿用原实现。
