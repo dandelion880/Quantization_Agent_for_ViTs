@@ -91,3 +91,38 @@ class CodeAssetOwnershipRegression(TempCase):
         self.assertFalse(wf.can_read_card(task, wf.journal.card(code['task_card'])))
         self.assertNotIn(artifact['path'], wf.authorized_assets(task))
         with self.assertRaises(ContractError): wf.request_body(task)
+
+    def test_requester_can_read_completed_code_from_own_experiment(self):
+        wf = self.workflow(1); spec = self.public_spec(wf)
+        own = self.debate_task(wf)
+        rid, code, artifact = self.produced_code(wf, spec, own)
+        own, _ = self.begin(wf, wf.queue.get(own['task_id']))
+        self.assertTrue(wf.can_read_card(own, wf.journal.card(code['task_card'])))
+        self.assertIn('PRIVATE_CODE_OWNER', self.read(wf, own, 'read_asset', asset=artifact['path'])['text'])
+
+    def test_source_handoff_is_not_limited_to_judger_role(self):
+        wf = self.workflow(1); spec = self.public_spec(wf)
+        tid = wf.enqueue_role('own-generation', 'generate', refs=[wf.brief['id']],
+            context={'round': 1, 'slot': 'H1', 'hypothesis_type': 'existing_method'})
+        own = wf.queue.get(tid)
+        rid, code, artifact = self.produced_code(wf, spec, own)
+        own, _ = self.begin(wf, wf.queue.get(tid))
+        self.assertEqual(own['role'], 'generation')
+        self.assertIn('PRIVATE_CODE_OWNER', self.read(wf, own, 'read_asset', asset=artifact['path'])['text'])
+
+    def test_own_future_code_remains_hidden_until_next_call(self):
+        wf = self.workflow(1); spec = self.public_spec(wf)
+        own, _ = self.begin(wf, self.debate_task(wf))
+        rid, code, artifact = self.produced_code(wf, spec, own)
+        self.assertFalse(wf.can_read_card(own, wf.journal.card(code['task_card'])))
+        with self.assertRaises(ContractError): self.read(wf, own, 'read_asset', asset=artifact['path'])
+
+    def test_own_code_read_preserves_frozen_file_hash_check(self):
+        wf = self.workflow(1); spec = self.public_spec(wf)
+        own = self.debate_task(wf)
+        rid, code, artifact = self.produced_code(wf, spec, own)
+        own, _ = self.begin(wf, wf.queue.get(own['task_id']))
+        self.assertTrue(wf.can_read_card(own, wf.journal.card(code['task_card'])))
+        source = Path(artifact['path'])
+        source.write_text(source.read_text() + '# changed after reader snapshot\n')
+        with self.assertRaises(ContractError): self.read(wf, own, 'read_asset', asset=artifact['path'])

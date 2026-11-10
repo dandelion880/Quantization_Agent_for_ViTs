@@ -23,7 +23,7 @@
     "position": "dbf71fb3e774fed43c5c2d1c80cb98fdc7b15a6d12774275df43af6493f76115",
     "arbitrate": "2143b80e22b084a26f86575e663d33a090e1eb038ab759f15cc064258a1595c1",
     "rank": "307ab16f6c8c8aff9e46cfc16279e0cab82369f162624484eb6fc92a823b5f49",
-    "plan_l3": "6e37e937d0aa8b332682260c7d35f46b168677b540e80b4be4bdaeaf21332a3d",
+    "plan_l3": "816844b6e31f7499d4502a1c532695e43014c71bbdfa2fcef495619b04828ce2",
     "record": "9f94196c28c4c7954a21db370ccc6e2352ab04c279bdf4c33aa966c7c961c7ba",
     "code": "2898fdc679d96bd9fa283456355563ad7657b9b6427eaf68457da36c5d7224cb",
     "safeguard": "8b3b21540f77005e55f87d5c8f98b3b2d2a32e5671ebb10864d5f17ebee80b4c",
@@ -42,7 +42,7 @@
   "research_refactor_note": "2026-11-03 authorized research simplification: 3-field scientific Recorder, host provenance/identity, minimal intent input and experimental reasoning. Full diff and validation in EXP/validation/research_refactor_20261103_r1/changes.patch.",
   "generation_loop_note": "2026-11-04: only Generation/Evolution autonomous pre-H experiments, selected support refs and removal of routine Judger approval/interpretation. See EXP/validation/generation_loop_20261104_r1/prompts.diff.",
   "single_implementation_note": "2026-11-05: remove Reference and dual implementation tasks; preserve immutable request, single Coding implementation and Safeguard semantic review; host fills deterministic fields; Recorder partial scope and per-item pending knowledge; local output repair across roles.",
-  "current_prompt_sha256": "ffe183847a9c58509ceaef98e1432238ef7e77e385fae581b345bf821906ab8d",
+  "current_prompt_sha256": "c801f4e9aab7bd690f90c998b3d0f09d3ad7e533cd43c24357ab6eefaae5731f",
   "research_gate_cleanup_note": "2026-11-05: remove historical-page completion gates and mandatory feedback/appendix forms; optional scientific rows have isolated issues, verdicts use rationale, host binds selection defaults, single Coding and intent review remain. See EXP/validation/research_gates_20261105_r1.",
   "end_to_end_repair_note": "2026-11-05 authorized consistent service continuation, L3 revision/defer, immediate valid evidence, optional historical interpretation and on-demand reads. See EXP/validation/end_to_end_repair_20261105_r1/changes.patch.",
   "parallel_debate_note": "2026-11-06 authorized independent initial matches and final join; only position/arbitrate scheduling sentences changed. See EXP/validation/parallel_debate_20261106_r1/prompts.diff.",
@@ -54,5 +54,6 @@
   },
   "research_upgrade_schema_note": "Explicit reserve_zero and gptaq_signed_min numerical options; original schema hashes preserved.",
   "scientific_skills_note": "2026-11-08: optional scientific Skill catalog and on-demand read_asset guidance only; no tool schema, workflow or submission changes. See EXP/validation/scientific_skills_20261108_r1/changes.patch.",
-  "knowledge_resources_note": "2026-11-08: optional knowledge navigation pointer and sources.document vs Journal ref guidance; no new schema/role/workflow. See EXP/validation/knowledge_resources_20261108_r1/changes.patch."
+  "knowledge_resources_note": "2026-11-08: optional knowledge navigation pointer and sources.document vs Journal ref guidance; no new schema/role/workflow. See EXP/validation/knowledge_resources_20261108_r1/changes.patch.",
+  "numeric_timeout_note": "2026-11-09: plan_l3 clarifies independent 24h numerical timeout default, optional task override, and no comparison to remaining active budget. See EXP/validation/real_research_20261109_preflight/timeout_summary.json."
 }

@@ -12,6 +12,14 @@
 
 续调沿现有工具结果保留阅读内容，重复正文压缩；research_note 之前的旧结果可转成短入口，必要时重读。导航/Skill/方法发现目录不可用时可继续原科研路径，read_asset 失败回到原任务。数值执行所需的配置、插件合同和会话快照仍须真实有效，不能借“可选知识”跳过数值核验。
 
+## 宿主读取与同次请求去重
+
+Journal 的 `read_session` 只在一次宿主操作内复用已校验原件：每次新操作重新核验，操作内文件 stat 改变也重新解析/校验；返回对象始终独立。`card(ref, field=(...))` 只复制所需字段。ACL 祖先每张卡片一次已验证读取，Task/Review 保留原判断需要的正文，其它卡片只取引用头；授权仍按原序号、父链、首个产物 owner、manifest 和文件哈希判断。它不是持久内容缓存或权限缓存。
+
+队列仍由 Journal 的 task_snapshot 事件增量派生；一批新事件只复制各任务最终版本，完整历史事件/TaskCard不改写。默认 `snapshot()` 保留完整独立快照；仅需部分信息的宿主调用可使用 `snapshot(states=..., kinds=..., fields=...)`、`get_by_key` 或 `held_resources`，先选取再复制。任务提交、恢复、预算与调度语义不因字段投影改变。
+
+Evidence 统计仍遍历全部条目并保留哈希、覆盖说明、极值与反例读取入口；只为判断显示大小时，编码达到阈值便可停止。按原角色交付时，同一请求已完整提供且内容/顺序完全相同的长 sample_ids/sample_selection 副本，可替换为原字段的 read_card、sha256 和 body_location.same_value_as；首份完整列表仍在本次正文或完整工具结果中。样本数、split/full_dataset、科研条件、负面观测和其它列表不因此省略。指针不证明原件已全部读完，也不增加必读要求。
+
 ## 方法、方案和跨运行范围
 
 read_asset 是方法正文的普通入口，不触发实验。`MethodLibrary` 在数值 ProfileHost 初始化时冻结 methods/index.json 与方法全文到该会话 method_library.json；query_method_library/read_method_document 仍可用于旧数值调用及复现，查询并非额外 LLM，文档也不全量注入角色。快照与插件覆盖核验保持；`loop.require_method_documents` 是无执行效果的兼容字段。无调用方的历史 require_plan_documents 阅读检查已移除。

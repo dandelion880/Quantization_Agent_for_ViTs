@@ -6,6 +6,7 @@ causality, significance, and scientific support belong to the researcher.
 from collections import Counter
 from copy import deepcopy
 from fnmatch import fnmatchcase
+import json
 import math
 import re
 
@@ -67,30 +68,47 @@ def selected_leaves(value, field, select):
 def collection_summary(value, ref, field, *, max_characters=6000, focus=None):
     """Streaming statistics over ALL entries, including tail extrema and sign conflicts."""
     numbers, categories = {}, {}
-    for row in leaves(value, field):
-        metric, scalar = row['metric'], row['value']
+    def visit(node, path, metric):
+        # Summary arithmetic needs no row labels or per-leaf dictionaries. Keep the
+        # same depth-first order (including floating-point recurrence and tie order).
+        if isinstance(node, dict):
+            for key, child in node.items():
+                site_key = re.search(r'(?:^|\.)\d+(?:\.|::|$)', key)
+                visit(child, pointer(path, key), pointer(metric, '*site*' if site_key else key))
+            return
+        if isinstance(node, list):
+            child_metric = pointer(metric, '*')
+            for index, child in enumerate(node):
+                visit(child, pointer(path, index), child_metric)
+            return
+        scalar = node
         if type(scalar) in (int, float):
-            group = numbers.setdefault(metric, {'count': 0, 'mean': 0.0, 'negative': 0, 'zero': 0,
-                'minimum': {'value': scalar, 'field': row['field']},
-                'maximum': {'value': scalar, 'field': row['field']}})
+            group = numbers.get(metric)
+            if group is None:
+                group = numbers[metric] = {'count': 0, 'mean': 0.0, 'negative': 0, 'zero': 0,
+                    'minimum': {'value': scalar, 'field': path},
+                    'maximum': {'value': scalar, 'field': path}}
             group['count'] += 1
             # Weighted recurrence avoids overflowing the sum of large finite values.
             n = group['count']
             group['mean'] = group['mean'] * ((n - 1) / n) + scalar / n
             group['negative'] += scalar < 0
             group['zero'] += scalar == 0
-            for key, better in (('minimum', scalar < group['minimum']['value']),
-                                ('maximum', scalar > group['maximum']['value'])):
-                if better:
-                    group[key] = {'value': scalar, 'field': row['field']}
+            if scalar < group['minimum']['value']:
+                group['minimum'] = {'value': scalar, 'field': path}
+            if scalar > group['maximum']['value']:
+                group['maximum'] = {'value': scalar, 'field': path}
         else:
-            group = categories.setdefault(metric, {'count': 0, 'values': Counter(), 'all_values_shown': True})
+            group = categories.get(metric)
+            if group is None:
+                group = categories[metric] = {'count': 0, 'values': Counter(), 'all_values_shown': True}
             group['count'] += 1
             key = canonical(scalar)
             if len(key) <= 200 and (key in group['values'] or len(group['values']) < 8):
                 group['values'][key] += 1
             else:
                 group['all_values_shown'] = False
+    visit(value, field, '')
     # A bounded categorical preview is explicitly partial; exact values are queryable.
     for group in categories.values():
         group['values'] = dict(group['values'])
@@ -145,6 +163,22 @@ def prose_view(value, ref, field, allowance):
             'meaning': 'Long scientific text remains in the source; opening paragraph is not a summary.'}
 
 
+def _bounded_json_size(value, limit):
+    """Exact below the threshold; stop encoding once the display decision is known.
+
+    Input is already validated JSON from the immutable card. Full source hashing in
+    collection_summary remains unchanged; this only avoids serializing large trees
+    repeatedly to decide whether they fit in a small display.
+    """
+    size = 0
+    for chunk in json.JSONEncoder(ensure_ascii=False, sort_keys=True,
+                                 separators=(',', ':'), allow_nan=False).iterencode(value):
+        size += len(chunk)
+        if size > limit:
+            break
+    return size
+
+
 def project_observations(value, ref, field='/payload/observations', *, max_characters=6000, focus=None):
     """Budget deterministic metric views while leaving immutable data precisely readable.
 
@@ -154,7 +188,7 @@ def project_observations(value, ref, field='/payload/observations', *, max_chara
     """
     if not isinstance(value, (dict, list)):
         return prose_view(value, ref, field, max(12000, max_characters))
-    size = len(canonical(value))
+    size = _bounded_json_size(value, max(4000, max_characters))
     if size <= min(4000, max_characters):
         return deepcopy(value)
 
@@ -178,7 +212,7 @@ def project_observations(value, ref, field='/payload/observations', *, max_chara
     if large_table and size > max(4000, max_characters):
         return bounded_table()
     if isinstance(value, dict):
-        large = [k for k, v in value.items() if isinstance(v, (dict, list)) and len(canonical(v)) > 4000]
+        large = [k for k, v in value.items() if isinstance(v, (dict, list)) and _bounded_json_size(v, 4000) > 4000]
         child_budget = max(900, max_characters // max(1, len(large)))
         result = {k: project_observations(v, ref, pointer(field, k),
                     max_characters=child_budget if k in large else max_characters, focus=focus)

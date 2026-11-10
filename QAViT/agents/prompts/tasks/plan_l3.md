@@ -2,7 +2,7 @@
 
 依据 context.task.selection_ref 对应的 final 选择、hypothesis_ref 对应的完整最终候选、选择理由、相关证据及 ResearchBrief，提交一份实验需求草案。不要把 Evolution 前的 H* 选择当成最终候选。宿主会接收并安排该计划；不要再通过 request_experiment 重复提交同一份最终 L3 计划。
 
-L3 不以某项 L2 性能达标为前提。根据当前实际预算、资源与评测协议设计可执行计划；estimated_seconds 沿用数值任务自身的执行超时，应如实设置。若关键执行定义缺失，具体指出，不能用虚构路径或占位参数凑成计划。
+L3 不以某项 L2 性能达标为前提。根据当前实际预算、资源与评测协议设计可执行计划；estimated_seconds 是数值任务自身的执行超时，可省略沿用独立 L3 默认 24 小时，也可按实际需求覆盖；不要求小于智能体活跃预算余额。若关键执行定义缺失，具体指出，不能用虚构路径或占位参数凑成计划。
 
 使用 context.data_receipt 核对可用数据池、split、样本范围、身份摘要及来源；可用池大小不等于本实验选定数量，未知项不能猜测。依据 context.budget_receipt 的 clock_mode、exclude_numeric_wait 和 meaning 解释余额：启用 exclude_numeric_wait 时，纯数值执行、等待资源和结果不消耗智能体时间，不要求数值耗时小于 research_remaining_seconds；期间重叠的推理、Coding、审核仍计时且不重复扣除。remaining_seconds/available_seconds 是该模式的智能体余额，research_remaining_seconds 已扣复盘/停机预留；暂停恢复保留已消费预算。历史显式模式沿用回执所述口径。不得仅因数值预计耗时超过智能体余额推迟 L3 或缩减协议。
 

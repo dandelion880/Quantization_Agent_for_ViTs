@@ -210,6 +210,8 @@ Recorder 的 recording_batch.source_refs 是新增整理覆盖集合，不是可
 
 代码 manifest 证明文件身份，不独立授予权限：code 的已提交产物绑定生产任务，不能由公开实验或其他正文路径覆盖私有生产者。无任务归属的兼容交接仅接受 Safeguard 的确切 candidate 与 Coding 的 previous_candidate；默认源码交付也经过同一资产权限校验。
 
+研究者可读取自己 experiment_request 产出的已完成 Coding 源码；资格由本次冻结快照的宿主父任务链确认，仍核验立场隔离与文件哈希。Journal 的内部字段投影读取保留整卡校验及返回值独立性，避免为读取种类或实验引用反复复制大型证据。
+
 必需 Brief 的完整正文在 14000 字符内直接交付。Evidence 大型列表、密集数组和模块表由 core/evidence.py 扫描全量叶子：保留单独命名的聚合指标，给出每种统计的样本数、描述性均值、负值/零值数、极值及精确 JSON pointer，附原字段哈希和读取入口；不取前 N 行代替整体，均值不冒充合并实验指标。模块索引用于同类指标分组，原位点与极值路径不丢失。类别预览明确说明是否完整，全部值仍可检索。小视图直接交付；冻结规格、科研正文与必需源码仍按原有完整交付/分页规则处理。
 
 read_card(ref, select={site,token_type,metric,text,minimum,maximum}, field?, offset?, limit?) 可扫描原始 Evidence 全字段，按位点/token/指标通配或数值范围定位，返回带标签、精确路径与原字段哈希的叶子分页；默认 observations，limit 最大 50。过滤条件同时成立；取消 select 即按原接口完整分页读原件。检索不改原始结果，不扩大提交快照或 同回合立场权限。Hypothesis/Review 使用者自行判断指标意义与对照优劣。

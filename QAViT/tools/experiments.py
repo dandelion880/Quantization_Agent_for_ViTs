@@ -10,6 +10,7 @@ from importlib.metadata import version
 
 from runtime.paths import ROOT
 from runtime.identity import measurement_implementation
+from runtime.configuration import numeric_task_timeout
 from core.cards import ContractError, check_constraints, fingerprint, make_card, validate_payload, validate_schema, TEXT, OBJECT, PAYLOAD_SCHEMAS
 from core.journal import file_sha256, read_json
 from core.execution_contract import freeze_contract, declared_contract, declared_rules, research_contracts, merge, uses_quantization_contract
@@ -101,7 +102,7 @@ def prepare_request(payload, brief, runtime=None):
     value.setdefault('validation', {})
     value.setdefault('replication', {'requested': False, 'purpose': '', 'configuration_difference': {}})
     resources = value.setdefault('resources', {})
-    resources.setdefault('estimated_seconds', (runtime or {}).get('task_timeout_seconds', 300))
+    resources.setdefault('estimated_seconds', numeric_task_timeout(runtime, value['level']))
     resources.setdefault('cpu_threads', (runtime or {}).get('cpu_threads', 1))
     check_resources(resources, runtime)
     execution = value.setdefault('execution', {})

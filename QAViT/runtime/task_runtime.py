@@ -11,6 +11,7 @@ from core.cards import ContractError, fingerprint
 from core.journal import atomic_json, file_sha256, read_json
 from runtime.task_queue import process_identity, process_alive
 from runtime.identity import code_identity
+from runtime.configuration import numeric_task_timeout
 
 
 class TaskRuntime:
@@ -27,8 +28,7 @@ class TaskRuntime:
                 from runtime.gpu_resources import ResourceBusy
                 # An exited worker can release its OS lease before its durable
                 # receipt is accepted. The queue claim must agree with placement.
-                held = {key for current in self.queue.snapshot().values() if current['state'] == 'running'
-                        for key in current['resource_keys']}
+                held = self.queue.held_resources()
                 pool = [gpu for gpu in body['gpu_pool'] if 'gpu:' + str(gpu) not in held]
                 if body['gpu_pool'] and (not pool or body['pinned_gpu'] is not None and body['pinned_gpu'] not in pool):
                     raise ResourceBusy('GPU receipt still pending; task remains queued')
@@ -66,7 +66,9 @@ class TaskRuntime:
             execution = f"{task['task_id']}-a{attempt:04d}"
         directory = self.root / "jobs" / execution
         directory.mkdir(parents=True, exist_ok=True)
-        estimated = body.pop("estimated_seconds", self.settings.get("task_timeout_seconds", 600))
+        default_timeout = (numeric_task_timeout(self.settings, body.get('experiment', {}).get('payload', {}).get('level', 'L1'))
+                           if task['kind'] == 'experiment' else self.settings.get("task_timeout_seconds", 600))
+        estimated = body.pop("estimated_seconds", default_timeout)
         state = self.budget.reserve(execution, task["kind"], estimated_seconds=estimated,
                                     resources={"keys": task["resource_keys"]})
         deadline = time.time() + estimated
@@ -123,9 +125,7 @@ class TaskRuntime:
     def poll(self):
         """先接收完整回执，再判失联；死进程的中间文件永远不能构成 Evidence。"""
         completed = []
-        for task in self.queue.snapshot().values():
-            if task["state"] != "running":
-                continue
+        for task in self.queue.snapshot(states={"running"}).values():
             if not task.get("request_path"):
                 # 宿主操作在提交前中断：按幂等键重放，没有外部工作进程。
                 self.queue.change(task["task_id"], "retry", patch={"retry_after": 0})
@@ -207,8 +207,8 @@ class TaskRuntime:
 
     def stop(self):
         try:
-            for task in self.queue.snapshot().values():
-                if task["state"] != "running" or not task.get("request_path"):
+            for task in self.queue.snapshot(states={"running"}, fields=("process", "request_path")).values():
+                if not task.get("request_path"):
                     continue
                 identity = task.get("process")
                 marker = Path(task["request_path"]).parent / "started.json"
@@ -236,7 +236,7 @@ class TaskRuntime:
 
     def live_processes(self):
         identities = [read_json(path) for path in (self.root / "jobs").glob("*/processes/*.json")]
-        for task in self.queue.snapshot().values():
+        for task in self.queue.snapshot(fields=("process", "request_path")).values():
             if task.get("process"):
                 identities.append(task["process"])
             if task.get("request_path"):

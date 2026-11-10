@@ -1,7 +1,18 @@
 """运行输入校验与角色模型配置；模型默认值唯一来自 configs/models.json。"""
+import math
+
 from core.cards import ContractError, ROLES, validate_payload
 from core.journal import read_json
 from runtime.paths import QAVIT
+
+
+NUMERIC_TASK_TIMEOUT_SECONDS = {"L1": 3600, "L2": 10800, "L3": 86400}
+
+
+def numeric_task_timeout(runtime, level="L1"):
+    """Numerical deadlines are independent of the LLM task timeout and active budget."""
+    return (runtime or {}).get("numeric_task_timeout_seconds", {}).get(
+        level, NUMERIC_TASK_TIMEOUT_SECONDS[level])
 
 
 def model_defaults():
@@ -32,6 +43,13 @@ def config_check(config, *, resolve_resources=False):
     runtime.setdefault("llm_concurrency", 4)
     runtime.setdefault("experiment_concurrency", 1)
     runtime.setdefault("task_timeout_seconds", 600)
+    timeouts = runtime.setdefault("numeric_task_timeout_seconds", {})
+    if not isinstance(timeouts, dict) or set(timeouts) - set(NUMERIC_TASK_TIMEOUT_SECONDS):
+        raise ContractError("数值任务超时须为 L1/L2/L3 秒数映射")
+    for level, default in NUMERIC_TASK_TIMEOUT_SECONDS.items():
+        timeout = timeouts.setdefault(level, default)
+        if type(timeout) not in (int, float) or not math.isfinite(timeout) or timeout <= 0:
+            raise ContractError("数值任务超时必须为有限正数: " + level)
     for key in ("cpu_threads", "experiment_concurrency"):
         if type(runtime[key]) is not int or runtime[key] < 1:
             raise ContractError("运行资源需要正整数: " + key)

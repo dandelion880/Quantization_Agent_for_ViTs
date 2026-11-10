@@ -103,8 +103,8 @@ class Workflow(RoleInteraction, ExperimentRequests, WorkflowDriver):
             batch = self.memory.recording_batch()
             context.update(recording_batch=batch)
             refs = batch['source_refs']
-        producers = [t["task_id"] for t in self.queue.snapshot().values()
-                     if t["state"] == "completed" and set(t["outputs"]).intersection(refs)]
+        producers = [t["task_id"] for t in self.queue.snapshot(states={"completed"}, fields=("task_id", "outputs")).values()
+                     if set(t["outputs"]).intersection(refs)]
         # 同场 A/B、仲裁仍各自调用并串行领取；独立配对不共享订阅互斥锁。
         resources = ([f"llm:judger:{context['round']}:" + "-".join(context['pair'])]
                      if role == "judger" and context.get("pair") else ["llm:subscription"])
@@ -128,7 +128,7 @@ class Workflow(RoleInteraction, ExperimentRequests, WorkflowDriver):
 
     def round_refs(self, number):
         refs = set()
-        for task in self.queue.snapshot().values():
+        for task in self.queue.snapshot(fields=("key", "outputs")).values():
             if task["key"].startswith(f"r{number:03d}/"):
                 refs.update(task["outputs"])
         return sorted(refs)
@@ -143,7 +143,7 @@ class Workflow(RoleInteraction, ExperimentRequests, WorkflowDriver):
     def progress_selection(self, number, stage, hypotheses, screens, parent=None):
         """复用 rank 任务；明确裁决由程序引用，未决才等待 Judger 说明选择。"""
         key = f"r{number:03d}/" + ("select_parent" if stage == "parent" else "rank")
-        task = self.tasks().get(key)
+        task = self.queue.get_by_key(key)
         if task is None:
             parent_slot = parent["payload"]["selected_slot"] if parent else None
             candidates = ["H1", "H2", "H3"] if stage == "parent" else (["H4", parent_slot] if parent_slot else [])
@@ -195,14 +195,15 @@ class Workflow(RoleInteraction, ExperimentRequests, WorkflowDriver):
         if key:
             # 收尾复用用户已重试/回答的同批任务，不另开一个模型调用。
             review_refs = set(batch['scientific_refs'] + batch.get('scientific_failure_refs', []))
-            for task in self.queue.snapshot().values():
+            for task in self.queue.snapshot(states={"pending", "ready", "running", "retry", "waiting"},
+                                            fields=("task_id", "inputs", "state")).values():
                 if (task['inputs'].get('purpose') == 'record'
                         and task['state'] in ('pending', 'ready', 'running', 'retry', 'waiting')
                         and review_refs <= set(task['inputs']['context']['recording_batch']['source_refs'])):
                     return task['task_id']
         refs = batch['source_refs']
-        ranking = self.result_card(self.tasks().get(f"r{number:03d}/rank"))
-        parent = self.result_card(self.tasks().get(f"r{number:03d}/select_parent"))
+        ranking = self.result_card(self.queue.get_by_key(f"r{number:03d}/rank"))
+        parent = self.result_card(self.queue.get_by_key(f"r{number:03d}/select_parent"))
         outcome = self.l3_outcome(number)
         return self.enqueue_role(key or f"r{number:03d}/record", "record", refs=refs, context={
             "recording_batch": batch,
@@ -231,7 +232,8 @@ class Workflow(RoleInteraction, ExperimentRequests, WorkflowDriver):
         if any(t['inputs'].get('purpose') == 'record'
                and t['state'] in ('pending', 'ready', 'running', 'retry', 'waiting')
                and review_refs <= set(t['inputs']['context']['recording_batch']['source_refs'])
-               for t in self.queue.snapshot().values()):
+               for t in self.queue.snapshot(states={"pending", "ready", "running", "retry", "waiting"},
+                                            fields=("inputs", "state")).values()):
             return False  # 显式重试/澄清回答恢复原任务，旧 deferred 事件不能将其跳过。
         return any(e['type'] == 'recorder_deferred'
                    and (e['batch_id'] == batch['batch_id']
@@ -241,7 +243,7 @@ class Workflow(RoleInteraction, ExperimentRequests, WorkflowDriver):
 
     def progress_match(self, number, pair, hypotheses, screens):
         if "H4" in pair:
-            parent = self.result_card(self.tasks().get(f"r{number:03d}/select_parent"))
+            parent = self.result_card(self.queue.get_by_key(f"r{number:03d}/select_parent"))
             if not parent or tuple(pair) != ("H4", parent["payload"]["selected_slot"]):
                 raise ContractError("H4 只能与本轮已持久化的 H* 交锋")
         key = match_key(number, pair)
@@ -276,7 +278,7 @@ class Workflow(RoleInteraction, ExperimentRequests, WorkflowDriver):
                     "round": number, "pair": list(pair), "exchange": exchange, "side": side,
                     "position_for": pair[0 if side == "A" else 1], "max_exchanges": MAX_EXCHANGES,
                     "independence": "本次双方立场分别生成；此输入不包含本次另一方发言。"})
-                positions.append(self.result_card(self.tasks().get(position_key)))
+                positions.append(self.result_card(self.queue.get_by_key(position_key)))
             if all(positions):
                 self.enqueue_role(key + f"/e{exchange}/arbitrate", "arbitrate",
                                   refs=[*refs, *history, *[p["id"] for p in positions]], context={
@@ -331,7 +333,7 @@ class Workflow(RoleInteraction, ExperimentRequests, WorkflowDriver):
             # 所有已生成假设可比较机制，但当前轮各类型没有预设优先级。
             self.enqueue_role(screening, "screen", refs=[self.brief["id"], card["id"]],
                               context={"round": number, "slot": slot, "hypothesis_ref": card["id"]})
-            screen = self.result_card(self.tasks().get(screening))
+            screen = self.result_card(self.queue.get_by_key(screening))
             if screen:
                 screens[slot] = screen
         if not {"H1", "H2", "H3"} <= screens.keys():
@@ -349,10 +351,12 @@ class Workflow(RoleInteraction, ExperimentRequests, WorkflowDriver):
         if parent_slot:
             # 使用选择卡绑定的完整 ID，不能由同槽位后来出现的版本替换父方案。
             hypotheses[parent_slot] = self.journal.card(parent_ref)
-            related = [self.journal.card(ref) for ref in self.round_refs(number)]
-            critiques = [c for c in related if c["kind"] == "ReviewDecisionCard"
-                         and (parent_ref in c["refs"] or parent_slot in c["payload"].get("pair", []))]
-            evidence_refs = sorted({c["id"] for c in related if c["kind"] == "EvidenceCard"}
+            related = {ref: self.journal.card(ref, field=("kind",)) for ref in self.round_refs(number)}
+            reviews = [self.journal.card(ref) for ref, kind in related.items()
+                       if kind == "ReviewDecisionCard"]
+            critiques = [c for c in reviews
+                         if (parent_ref in c["refs"] or parent_slot in c["payload"].get("pair", []))]
+            evidence_refs = sorted({ref for ref, kind in related.items() if kind == "EvidenceCard"}
                                    | {ref for c in critiques for ref in c["payload"].get("evidence_refs", [])})
             critique_refs = [c["id"] for c in critiques]
             self.enqueue_role(prefix + "/evolve/H4", "evolve", refs=[self.brief["id"], parent["id"], parent_ref,
@@ -381,9 +385,9 @@ class Workflow(RoleInteraction, ExperimentRequests, WorkflowDriver):
                              'hypothesis_ref': ranking['payload']['selected_hypothesis_ref'],
                              'selection_stage': 'final', 'gate': 'remaining hard budget only'}):
                 return False
-        if prefix + "/record" not in self.tasks():
+        if self.queue.get_by_key(prefix + "/record") is None:
             self.enqueue_recorder(number)
-        recording_task = self.tasks().get(prefix + '/record')
+        recording_task = self.queue.get_by_key(prefix + '/record')
         recorder = self.result_card(recording_task)
         if recorder or self.defer_recorder(recording_task) or recording_task is None:
             if self.config["enable_l3"] and selected:
@@ -442,7 +446,7 @@ class Workflow(RoleInteraction, ExperimentRequests, WorkflowDriver):
                 or state["config"].get("clock_mode") != "active_segments"
                 or not state["effective_closeout_reserve_seconds"]):
             return False
-        recorder = self.tasks().get("r001/record")
+        recorder = self.queue.get_by_key("r001/record")
         first_finished = next((e for e in self.journal.events
                                if e["type"] == "round_finished" and e["round"] == 1), None)
         # Success is known as soon as poll accepts the ordinary Recorder receipt.

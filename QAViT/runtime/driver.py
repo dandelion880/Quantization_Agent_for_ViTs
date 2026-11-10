@@ -20,7 +20,8 @@ from runtime.gpu_resources import ResourceBusy, placement
 class WorkflowDriver:
     def dispatch_candidates(self):
         # 旧快照可保持任务身份/尝试和读取视图，只恢复其每场互斥资源。
-        tasks = self.queue.snapshot()
+        tasks = self.queue.snapshot(states={"pending", "ready", "retry", "waiting", "needs_clarification"},
+                                    kinds={"experiment", "llm"})
         for task in tasks.values():
             if task['kind'] == 'experiment' and task['state'] in ('pending', 'ready', 'retry', 'waiting'):
                 keys = [k for k in task['resource_keys'] if not k.startswith(('model:', 'gpu:'))]
@@ -35,7 +36,8 @@ class WorkflowDriver:
                 self.queue.change(task['task_id'], task['state'], patch={'resource_keys': [resource]})
         # 最近获得服务的配对后置；低并发配置和频繁续调时也不饿死其它场次。
         last_started = {}
-        for task in self.queue.snapshot().values():
+        for task in self.queue.snapshot(kinds={'llm'},
+                fields=('kind', 'role', 'inputs', 'started_unix')).values():
             context = task['inputs'].get('context', {})
             if task['kind'] == 'llm' and task['role'] == 'judger' and context.get('pair'):
                 group = (context['round'], tuple(context['pair']))
@@ -84,11 +86,11 @@ class WorkflowDriver:
         for candidate in self.dispatch_candidates():
             task = self.queue.get(candidate["task_id"])
             if task['kind'] == 'experiment':
-                parent = self.queue.snapshot().get(task['inputs'].get('parent_task'))
+                parent = self.queue.snapshot(fields=('experiment_ref',)).get(task['inputs'].get('parent_task'))
                 if (task['task_id'] in held_bindings or (parent and parent.get('experiment_ref')
                         and parent['experiment_ref'] != task['inputs'].get('experiment_ref'))):
                     continue  # Same pending request must finish its current binding/Safeguard first.
-            held = {key for t in self.queue.snapshot().values() if t["state"] == "running" for key in t["resource_keys"]}
+            held = self.queue.held_resources()
             if held.intersection(task["resource_keys"]):
                 continue
             if task["kind"] in ("host_tool", "experiment_request"):
@@ -106,7 +108,7 @@ class WorkflowDriver:
                     self.queue.fail(task["task_id"], {"code": type(exc).__name__, "message": str(exc)})
                 count += 1
                 continue
-            active = [t for t in self.queue.snapshot().values() if t["state"] == "running"]
+            active = list(self.queue.snapshot(states={"running"}, fields=("kind", "role")).values())
             if task["kind"] == "llm":
                 llms = [t for t in active if t['kind'] == 'llm']
                 if len(llms) >= self.config['runtime']['llm_concurrency']:
@@ -165,14 +167,14 @@ class WorkflowDriver:
         return count
 
     def update_numeric_wait(self):
-        tasks = list(self.queue.snapshot().values())
+        tasks = list(self.queue.snapshot(fields=("kind", "state")).values())
         numeric = any(t['kind'] == 'experiment' and t['state'] in ('pending', 'ready', 'running', 'retry') for t in tasks)
         agent = any(t['kind'] != 'experiment' and t['state'] in ('ready', 'running', 'retry') for t in tasks)
         self.budget.numeric_wait(numeric and not agent)
 
     def numeric_running(self):
-        return self.budget.excludes_numeric and any(t['kind'] == 'experiment' and t['state'] == 'running'
-                                                   for t in self.queue.snapshot().values())
+        return self.budget.excludes_numeric and bool(
+            self.queue.snapshot(states={'running'}, kinds={'experiment'}, fields=()))
 
 
     def wait_for(self, task, ids, **patch):
@@ -372,7 +374,7 @@ class WorkflowDriver:
     def summary(self, status=None, error=None):
         self.journal.refresh()
         events = [e for e in self.journal.events if e["type"] == "run_status"]
-        tasks = self.queue.snapshot()
+        tasks = self.queue.snapshot(fields=("task_id", "key", "state", "error", "clarification"))
         counts = {state: sum(t["state"] == state for t in tasks.values()) for state in sorted({t["state"] for t in tasks.values()})}
         status = status or (events[-1]["status"] if events else "created")
         if error is None and events and status == events[-1]["status"]:
@@ -431,7 +433,7 @@ class WorkflowDriver:
                     if not closing and budget["effective_closeout_reserve_seconds"] and budget["research_remaining_seconds"] <= 0:
                         self.runtime.stop()
                         self.poll()
-                        for task in self.queue.snapshot().values():
+                        for task in self.queue.snapshot(fields=("task_id", "state")).values():
                             if task["state"] not in ("completed", "failed", "cancelled", "ineligible"):
                                 self.queue.change(task["task_id"], "cancelled", patch={"error": {"code": "closeout_reserve"}})
                         self.event("budget_closeout_started", "budget/closeout", round=max(budget["rounds_started"], default=1))
@@ -451,11 +453,10 @@ class WorkflowDriver:
                             break
                         # 独立收尾任务避免覆盖中断的 Recorder，也不伪造 round_finished。
                         key = f"r{number:03d}/budget_record"
-                        if key not in self.tasks():
+                        recorded = self.queue.get_by_key(key)
+                        if recorded is None:
                             identifier = self.enqueue_recorder(number, incomplete=True, key=key)
                             recorded = self.queue.get(identifier)
-                        else:
-                            recorded = self.tasks()[key]
                         if recorded["state"] == 'completed' or self.defer_recorder(recorded):
                             status, error = "budget_stopped", "科研预算结束；收尾 Recorder 状态: " + recorded["state"]
                             break
@@ -464,7 +465,7 @@ class WorkflowDriver:
                         break
                     dispatched = self.dispatch()
                     self.update_numeric_wait()
-                    tasks = self.queue.snapshot().values()
+                    tasks = self.queue.snapshot(fields=("state",)).values()
                     if not dispatched and not any(t["state"] in ("running", "ready", "retry") for t in tasks):
                         status = "needs_clarification" if any(t["state"] == "needs_clarification" for t in tasks) else "blocked"
                         break

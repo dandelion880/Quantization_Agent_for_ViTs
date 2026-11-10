@@ -65,6 +65,18 @@ class RoleInteraction:
         return None
 
     def task_card_entitled(self, task, body, ref):
+        # A researcher may inspect code produced by its own experiment request.
+        # Use only committed host parent links at this call's frozen sequence.
+        if (body['inputs'].get('purpose') == 'code' and body.get('state') == 'completed'
+                and isinstance((body.get('result') or {}).get('artifact'), dict)):
+            sequence = self.read_view(task)['sequence']
+            if task.get('_acl_tasks_sequence') != sequence:
+                task['_acl_tasks_sequence'] = sequence
+                task['_acl_tasks'] = self.visible_task_snapshots(sequence)
+            parent = task['_acl_tasks'].get(body['inputs'].get('parent_task'))
+            if (parent and parent['kind'] == 'experiment_request'
+                    and parent['inputs'].get('parent_task') == task['task_id']):
+                return True
         history = task['inputs']['context'].get('implementation_history', [])
         handed_refs = {r for row in history for r in [row['source_task_ref'], *row['execution_task_refs']]}
         return (ref in handed_refs or body['task_id'] == task['task_id'] or body['inputs'].get('parent_task') == task['task_id']
@@ -120,7 +132,7 @@ class RoleInteraction:
                 if ref in seen or ref in proven:
                     continue
                 seen.add(ref)
-                value = card if ref == card['id'] else self.journal.card(ref)
+                value = card if ref == card['id'] else self.visibility_card(ref)
                 p = value['payload']
                 other_position = (value['kind'] == 'ReviewDecisionCard' and p.get('phase') == 'position'
                     and all(p.get(k) == context.get(k) for k in ('round', 'pair', 'exchange'))
@@ -131,14 +143,25 @@ class RoleInteraction:
             proven.update(seen)
         return True
 
-    def require_visible(self, task, ref):
+    @journal_read
+    def visibility_card(self, ref):
+        """Verified fields needed by the existing ACL, without copying observations."""
+        metadata = self.journal.cards.get(ref)
+        if metadata is None or metadata['kind'] in ('TaskCard', 'ReviewDecisionCard'):
+            return self.journal.card(ref)
+        # This read validates the whole card against the committed hash before
+        # using its indexed identity/kind; only the returned refs are copied.
+        refs = self.journal.card(ref, field=('refs',))
+        return {'id': ref, 'kind': metadata['kind'], 'refs': refs, 'payload': {}}
+
+    def require_visible(self, task, ref, *, field=()):
         if isinstance(ref, str) and re.fullmatch(r'C[1-9][0-9]*', ref):
             version = int(ref[1:])
             ref = next((r for r, v in self.journal.card_versions.items() if v == version), ref)
-        card = self.journal.card(ref)
+        card = self.visibility_card(ref) if field else self.journal.card(ref)
         if not self.can_read_card(task, card):
             raise ContractError('提交快照/权限拒绝读取：同回合立场隔离适用于所有入口')
-        return card
+        return self.journal.card(ref, field=field) if field else card
 
     def normalize_optional_analysis(self, task, submitted):
         """Optional scientific appendices are independent; preserve rejected rows verbatim."""
@@ -453,6 +476,35 @@ class RoleInteraction:
                         'sha256': fingerprint(provenance['resolved_execution'])}
         return value
 
+    def coalesce_condition_lists(self, card, view, bodies):
+        """Deliver identical long sample lists once, with exact sources for every copy.
+
+        Only complete lists already present in this request qualify. Objective views,
+        changed ordering, scalar conditions and scientific prose remain untouched.
+        """
+        def walk(value, field, sample=False):
+            if isinstance(value, list) and sample:
+                text = canonical(value)
+                if len(text) < 1000 or value != self.card_field(card, field):
+                    return value
+                digest = fingerprint(value)
+                source = {'ref': card['id'], 'field': field}
+                if digest in bodies:
+                    return {'read_card': source, 'sha256': digest,
+                            'body_location': {'same_value_as': bodies[digest]}}
+                bodies[digest] = source
+                return value
+            if isinstance(value, dict) and 'read_card' not in value:
+                return {k: walk(v, pointer(field, k), k == 'sample_ids' or field == '/payload/provenance/sample_selection')
+                        for k, v in value.items()}
+            return value
+        payload = view['payload']
+        if 'scope' in payload:
+            payload['scope'] = walk(payload['scope'], '/payload/scope')
+        for key in ('execution_facts', 'sample_selection'):
+            if key in payload.get('provenance', {}):
+                payload['provenance'][key] = walk(payload['provenance'][key], '/payload/provenance/' + key)
+
     def recorder_card(self, card):
         """A batch view of scientific changes, purposes and outcomes, without card envelopes."""
         if card['kind'] not in ('HypothesisCard', 'ReviewDecisionCard', 'ExperimentCard', 'EvidenceCard'):
@@ -515,7 +567,7 @@ class RoleInteraction:
             batch_refs = c['recording_batch']['scientific_refs']
             experiments = {ref: self.journal.card(ref) for ref in batch_refs
                            if self.journal.cards[ref]['kind'] == 'ExperimentCard'}
-            measured = {self.journal.card(ref)['payload']['experiment_ref'] for ref in batch_refs
+            measured = {self.journal.card(ref, field=('payload', 'experiment_ref')) for ref in batch_refs
                         if self.journal.cards[ref]['kind'] == 'EvidenceCard'}
             # Execution purpose/conditions accompany Evidence below. The original
             # request is already bound by that execution; only unfulfilled requests
@@ -531,17 +583,17 @@ class RoleInteraction:
                      ('position', 'verdict', 'ranking', 'interpretation'))):
                     refs.append(ref)
         elif purpose == 'evolve':
-            refs = [r for r in refs if self.journal.card(r)['kind'] != 'MetareviewCard']
+            refs = [r for r in refs if self.journal.card(r, field=('kind',)) != 'MetareviewCard']
         elif purpose == 'rank':
             refs = [*c.get('candidate_refs', {}).values(),
                     *[m['verdict_ref'] for m in self.selection_matches(c).values()]]
         elif purpose in ('position', 'arbitrate'):
             # 当前比较对象、当前/最近争点；更早交锋仍在分页目录中。
-            refs = [r for r in refs if self.journal.card(r)['kind'] != 'ReviewDecisionCard'
+            refs = [r for r in refs if self.journal.card(r, field=('kind',)) != 'ReviewDecisionCard'
                     or self.journal.card(r)['payload'].get('phase') == 'screening'
                     or self.journal.card(r)['payload'].get('exchange', 0) >= c.get('exchange', 1) - 1]
         elif purpose == 'supervise':
-            refs = [r for r in refs if self.journal.card(r)['kind'] == 'TaskCard']
+            refs = [r for r in refs if self.journal.card(r, field=('kind',)) == 'TaskCard']
         historical = self.historical_experiment_refs(task)
         for row, child, result in self.result_values(task):
             if child['kind'] == 'experiment_request':
@@ -552,7 +604,7 @@ class RoleInteraction:
         selected = list(dict.fromkeys(r for r in refs if self.journal.cards.get(r, {}).get('kind') != 'MetareviewCard'))
         for ref in list(selected):
             if self.journal.cards.get(ref, {}).get('kind') == 'EvidenceCard':
-                selected.append(self.journal.card(ref)['payload']['experiment_ref'])
+                selected.append(self.journal.card(ref, field=('payload', 'experiment_ref')))
         return list(dict.fromkeys(selected))
 
     def supporting_evidence_refs(self, task, card):
@@ -665,24 +717,24 @@ class RoleInteraction:
         # purpose 已选定的处理对象与出处分别绑定：共享 Evidence 不把另一方案变成当前对象。
         automatic = purpose not in ('record', 'supervise')
         selected = set(self.required_refs(task)) if automatic else set()
-        current = {r for r in selected if self.journal.card(r)['kind'] in
+        current = {r for r in selected if self.journal.card(r, field=('kind',)) in
                    ('HypothesisCard', 'ExperimentCard', 'EvidenceCard')}
-        bound = {r for r in selected if self.journal.card(r)['kind'] not in
+        bound = {r for r in selected if self.journal.card(r, field=('kind',)) not in
                  ('ResearchBrief', 'MetareviewCard', 'TaskCard')}
         provenance, todo = set(), list(bound)
         while todo:
             ref = todo.pop()
             if ref in provenance:
                 continue
-            card = self.require_visible(task, ref)
+            sources = self.require_visible(task, ref, field=('refs',))
             provenance.add(ref)
-            for source in card['refs']:
-                if self.journal.card(source)['kind'] in ('ExperimentCard', 'EvidenceCard'):
+            for source in sources:
+                if self.journal.card(source, field=('kind',)) in ('ExperimentCard', 'EvidenceCard'):
                     todo.append(source)
         bound.update(provenance)
-        hypotheses = {r for r in current if self.journal.card(r)['kind'] == 'HypothesisCard'}
-        experiments = {r for r in provenance if self.journal.card(r)['kind'] == 'ExperimentCard'}
-        evidence = {r for r in provenance if self.journal.card(r)['kind'] == 'EvidenceCard'}
+        hypotheses = {r for r in current if self.journal.card(r, field=('kind',)) == 'HypothesisCard'}
+        experiments = {r for r in provenance if self.journal.card(r, field=('kind',)) == 'ExperimentCard'}
+        evidence = {r for r in provenance if self.journal.card(r, field=('kind',)) == 'EvidenceCard'}
         feedback = memory.setdefault('bound_feedback', [])
         seen = set()
         def field(ref, pointer, reason, display_limit=None):
@@ -750,8 +802,8 @@ class RoleInteraction:
                     and payload.get('round') == debate.get('round')
                     and payload.get('pair') and payload['pair'] != debate.get('pair')):
                 continue
-            subjects = {r for r in card['refs'] if self.journal.card(r)['kind'] == 'HypothesisCard'}
-            spec_refs = {r for r in card['refs'] if self.journal.card(r)['kind'] == 'ExperimentCard'}
+            subjects = {r for r in card['refs'] if self.journal.card(r, field=('kind',)) == 'HypothesisCard'}
+            spec_refs = {r for r in card['refs'] if self.journal.card(r, field=('kind',)) == 'ExperimentCard'}
             if subjects:
                 linked = bool(subjects & hypotheses or (not hypotheses and spec_refs & current))
                 reason = 'current_subject_or_explicit_experiment'
@@ -801,7 +853,7 @@ class RoleInteraction:
             field(card['id'], '/payload/knowledge_updates/' + str(index), '当前对象引用证据所关联的知识及适用条件')
         context = task['inputs']['context']
         assigned = [r for key in ('feedback_refs', 'supervisor_feedback_refs') for r in context.get(key, [])]
-        assigned += [r for r in task['inputs']['refs'] if self.journal.card(r)['kind'] == 'TaskCard'
+        assigned += [r for r in task['inputs']['refs'] if self.journal.card(r, field=('kind',)) == 'TaskCard'
                      and self.journal.card(r)['payload']['inputs'].get('purpose') == 'supervise']
         for ref in dict.fromkeys(assigned):
             card = self.require_visible(task, ref)
@@ -857,11 +909,14 @@ class RoleInteraction:
                                      'all_sources': context['task']['recording_batch']['source_index']}
         bodies = self.complete_tool_bodies(task)
         delivered, presented = set(), {}
+        condition_bodies = {}
         def deliver(ref, location=None, *, expand_support=True):
             if ref in delivered:
                 return
             card = self.require_visible(task, ref)
             view = self.recorder_card(card) if purpose == 'record' else self.present_card(card)
+            if card['kind'] == 'EvidenceCard':
+                self.coalesce_condition_lists(card, view, condition_bodies)
             body = view['payload'] if card['kind'] == 'EvidenceCard' else view
             # 每个角色都必须完整接收 Brief；有界全文直送省去仅为读取任务的模型回合。
             direct_limit = 2 * self.DIRECT_CHARACTERS if card['kind'] == 'ResearchBrief' else self.DIRECT_CHARACTERS
@@ -1034,8 +1089,10 @@ class RoleInteraction:
             draft = inputs['context'].get('experiment_draft')
             if inputs['context'].get('experiment_ref'):
                 draft = self.require_visible(task, inputs['context']['experiment_ref'])['payload']
-            evidence = [self.journal.card(ref) for ref in delivered
-                        if self.journal.cards[ref]['kind'] == 'EvidenceCard']
+            # Data identity reuse needs status/provenance, never the observation arrays.
+            evidence = [{'id': ref, 'payload': {key: self.journal.card(ref, field=('payload', key))
+                         for key in ('status', 'measurement_source', 'experiment_ref', 'provenance')}}
+                        for ref in delivered if self.journal.cards[ref]['kind'] == 'EvidenceCard']
             context['data_receipt'] = data_receipt(self.brief['payload'], (draft or {}).get('execution'), evidence=evidence)
             context['data_receipt']['selection_source'] = (inputs['context'].get('experiment_ref') or 'context.task.experiment_draft.execution') if draft else '尚未提交本实验数据选择'
         if purpose == 'safeguard':
@@ -1080,7 +1137,7 @@ class RoleInteraction:
             if isinstance(result, dict):
                 handle_refs.update(r for r in (result.get('ref'), result.get('id')) if r in self.journal.cards)
         memory['source_handles'] = {self.retriever.handle(r): r for r in sorted(handle_refs)
-                                    if r in self.journal.card_versions and self.can_read_card(task, self.journal.card(r))}
+                                    if r in self.journal.card_versions and self.can_read_card(task, self.visibility_card(r))}
         context['reading_instructions'] = ('按 purpose 使用已交付正文；required_reads/required_assets 是未完整交付材料的深读入口，按当前判断需要读取，不以分页完成度阻塞提交。'
             'Evidence 大型表格/数组默认给有界客观统计、展示覆盖、正负混合提醒、极值位置和哈希入口；未展示指标可能含反证。均值仅描述性，不是合并科研指标；概览不表示已读全部行。'
             '用 read_card 的 select 按位点、token、指标与数值范围定位；取消 select 即可完整分页读原件。'
@@ -1211,11 +1268,11 @@ class RoleInteraction:
             if child['kind'] == 'experiment_request' and child['inputs'].get('research_note')), default=-1)
         complete_bodies = self.complete_tool_bodies(task) if complete_bodies is None else complete_bodies
         paths = {str(self.journal.card_path(r)): r for r in self.journal.cards}
-        full_refs = {r for r, view in delivered.items() if view == self.journal.card(r)}
+        direct_full = {r for r, view in delivered.items() if view == self.journal.card(r)}
+        full_refs = set(direct_full)
         full_refs |= {v['id'] for index, (_, _, v) in enumerate(values) if index >= note_boundary
                       and isinstance(v, dict) and v.get('id') in self.journal.cards
                       and v == self.journal.card(v['id'])}
-        direct_full = {r for r, view in delivered.items() if view == self.journal.card(r)}
         card_paths = {str(self.journal.card_path(ref)): ref for ref in full_refs}
         def equivalent_field(value):
             if not isinstance(value, dict) or 'text' not in value or value.get('ref') not in delivered:
@@ -1342,7 +1399,16 @@ class RoleInteraction:
         allowed.update(static)
         allowed.update({path: file_sha256(path) for path in public})
         refs = [ref for ref, entry in self.journal.cards.items() if entry['sequence'] <= sequence]
-        cards = [self.journal.card(ref) for ref in refs if self.journal.cards[ref]['kind'] != 'TaskCard']
+        cards = []
+        for ref in refs:
+            if self.journal.cards[ref]['kind'] == 'TaskCard':
+                continue
+            card = self.visibility_card(ref)
+            card['author'] = self.journal.card(ref, field=('author',))
+            if card['kind'] == 'EvidenceCard':
+                card['payload'] = {key: self.journal.card(ref, field=('payload', key))
+                                   for key in ('artifacts', 'experiment_ref')}
+            cards.append(card)
         tasks = self.visible_task_snapshots(sequence)
         # Committed queue snapshots already contain engineering ownership. Do not reload
         # every historical TaskCard to rediscover it; validate actual cards before any grant.
@@ -1381,7 +1447,7 @@ class RoleInteraction:
         def permitted(ref):
             if ref in task_bodies and not self.task_card_entitled(task, task_bodies[ref], ref):
                 return False
-            return self.can_read_card(task, self.journal.card(ref))
+            return self.can_read_card(task, self.visibility_card(ref))
         grants = {ref: permitted(ref) for ref in {owner for owner, _ in owners.values()}}
         for path, (owner, digest) in owners.items():
             if grants[owner]:
@@ -1394,7 +1460,7 @@ class RoleInteraction:
             for item in card['payload']['artifacts']:
                 path = str(Path(item['path']).resolve())
                 owner_ref, _ = owners.get(path, (card['id'], None))
-                owner = self.journal.card(owner_ref)
+                owner = self.visibility_card(owner_ref)
                 body = owner['payload']
                 if (owner['id'] == card['id'] or (owner['kind'] == 'TaskCard' and body['kind'] == 'experiment'
                         and card['id'] in body['outputs']

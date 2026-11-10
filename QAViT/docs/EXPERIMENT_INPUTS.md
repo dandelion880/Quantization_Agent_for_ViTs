@@ -38,4 +38,6 @@ Generation/Evolution 可在 H 正式提交前直接 request_experiment，多次�
 
 资源由宿主按本运行允许池分配；新输入 allowed_gpus=auto 使用实际可见与获分配设备的交集，也可集中显式指定编号/UUID。无需猜选固定卡，默认一实验一卡。resources.gpu 可固定主卡；gpu_count 可选并按能力/空闲卡尽力启用，目前仅 server 原生非训练冻结包的纯分类评测分片，其余沿单卡。必需时延、显存指标或不兼容结果协议保留原单卡测量，不能删指标、减样本或降低量化覆盖来启用多卡。卡忙正常排队，不消耗尝试。启用 exclude_numeric_wait 的运行中，estimated_seconds 仍是单任务超时，不因超过智能体余额拒绝实验；重叠的推理/Coding/审核正常计时。实际范围和回退原因由回执记录。
 
+数值超时独立于 LLM 的 runtime.task_timeout_seconds。省略 resources.estimated_seconds 时按 runtime.numeric_task_timeout_seconds 的 L1/L2/L3 取值，默认分别为 3600/10800/86400 秒（轻量诊断/较重局部实验/完整 L3）；可在运行配置按层级覆盖，或用 resources.estimated_seconds 显式覆盖本次任务，不增加估时审批。
+
 H1/H2 可引用 context.complete_solutions 的完整起点，局部改动不覆盖原方案。方法适配允许，缺失官方代码不阻塞自主实现。新最终 W4A4 使用 [STATIC_W4A4.md](STATIC_W4A4.md)；局部诊断不继承全网覆盖。exact frozen-state 消融在 evidence_refs 引用已发布包，Coding 可用 experiment_v1 的 load_frozen 回调；需要新实例时明确写新实例，不能替代确切包。

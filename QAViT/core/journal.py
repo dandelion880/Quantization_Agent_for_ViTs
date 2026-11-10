@@ -102,7 +102,7 @@ class Journal:
     def card_path(self, ref):
         return self.root / "cards" / (hashlib.sha256(ref.encode()).hexdigest() + ".json")
 
-    def card(self, ref):
+    def card(self, ref, *, field=()):
         if ref not in self.cards:
             raise ContractError("未提交或未知卡片引用: " + str(ref))
         path = self.card_path(ref)
@@ -112,14 +112,23 @@ class Journal:
             signature = (stat.st_dev, stat.st_ino, stat.st_size, stat.st_mtime_ns, stat.st_ctime_ns)
             cached = self._read_cache.get(ref)
             if cached and cached[0] == signature:
-                return deepcopy(cached[1])
+                value = cached[1]
+                for key in field:
+                    value = value[key]
+                return deepcopy(value)
         value = read_json(path)
         validate_card(value)
         if value["content_sha256"] != self.cards[ref]["sha256"]:
             raise ContractError("已提交卡片被改写: " + ref)
         if self._read_cache is not None:
-            self._read_cache[ref] = (signature, deepcopy(value))
-        return value
+            # The freshly parsed object is owned by this operation. Copy only
+            # the requested return value, not a second full card for field reads.
+            self._read_cache[ref] = (signature, value)
+        if field:
+            for key in field:
+                value = value[key]
+            return deepcopy(value)
+        return deepcopy(value) if self._read_cache is not None else value
 
     @contextmanager
     def read_session(self):

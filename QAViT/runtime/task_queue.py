@@ -47,15 +47,32 @@ class GlobalTaskQueue:
 
     def _refresh_tasks(self):
         self.journal.refresh()
+        latest = {}
         for event in self.journal.events[self._event_index:]:
             if event["type"] == "task_snapshot":
-                self._tasks[event["task"]["task_id"]] = deepcopy(event["task"])
+                latest[event["task"]["task_id"]] = event["task"]
+        # Replay every event in order, but copy only the last version of each task.
+        # Earlier snapshots stay immutable in the journal and remain auditable.
+        self._tasks.update({task_id: deepcopy(task) for task_id, task in latest.items()})
         self._event_index = len(self.journal.events)
         return self._tasks
 
-    def snapshot(self):
-        self._refresh_tasks()
-        return deepcopy(self._tasks)
+    def snapshot(self, *, states=None, kinds=None, fields=None):
+        """Independent values at this refresh; filter/project before copying.
+
+        The journal's existing incremental task index remains the only derived
+        state. Omitted filters preserve the complete public snapshot contract.
+        """
+        tasks = self._refresh_tasks()
+        return {task_id: deepcopy(task if fields is None else
+                    {key: task[key] for key in fields if key in task})
+                for task_id, task in tasks.items()
+                if (states is None or task["state"] in states)
+                and (kinds is None or task["kind"] in kinds)}
+
+    def held_resources(self):
+        return {key for task in self._refresh_tasks().values()
+                if task["state"] == "running" for key in task["resource_keys"]}
 
     def get(self, task_id):
         try:
@@ -63,9 +80,14 @@ class GlobalTaskQueue:
         except KeyError:
             raise ContractError("未知任务: " + task_id) from None
 
+    def get_by_key(self, key, default=None):
+        task_id = "task-" + fingerprint({"run": self.journal.run_id, "key": key})[:24]
+        task = self._refresh_tasks().get(task_id)
+        return deepcopy(task) if task is not None else default
+
     def enqueue(self, key, kind, *, role=None, inputs=None, depends_on=(), resource_keys=(), max_retries=2):
         task_id = "task-" + fingerprint({"run": self.journal.run_id, "key": key})[:24]
-        current = self.snapshot()
+        current = self._refresh_tasks()
         if task_id in current:
             return task_id
         if set(depends_on) - set(current):
@@ -116,7 +138,7 @@ class GlobalTaskQueue:
             if task["state"] == "waiting":
                 waiting = task.get("waiting_for", [])
                 if waiting and all(tasks[x]["state"] in TERMINAL for x in waiting):
-                    results = task["tool_results"] + [{"task": x, "state": tasks[x]["state"],
+                    results = deepcopy(task["tool_results"]) + [{"task": x, "state": tasks[x]["state"],
                                                        "call_id": tasks[x]["inputs"].get("call_id"),
                                                        "name": tasks[x]["inputs"].get("name", "request_experiment" if tasks[x]["kind"] == "experiment_request" else tasks[x]["kind"]),
                                                        "outputs": tasks[x]["outputs"],
@@ -139,15 +161,16 @@ class GlobalTaskQueue:
 
     def ready(self):
         self.promote()
-        tasks = self.snapshot()
+        tasks = self._refresh_tasks()
         held = {r for t in tasks.values() if t["state"] == "running" for r in t["resource_keys"]}
-        return [t for t in tasks.values() if t["state"] == "ready" and not held.intersection(t["resource_keys"])]
+        return [deepcopy(t) for t in tasks.values()
+                if t["state"] == "ready" and not held.intersection(t["resource_keys"])]
 
     def claim(self, task_id, *, input_versions=None, memory_version=None, request_path=None, execution_attempt=None):
         task = self.get(task_id)
         if task["state"] != "ready":
             raise ContractError("只能领取 ready 任务")
-        held = {r for t in self.snapshot().values() if t["state"] == "running" for r in t["resource_keys"]}
+        held = self.held_resources()
         if held.intersection(task["resource_keys"]):
             raise ContractError("相同资源已有运行任务")
         attempt = task["attempt"] + 1 if execution_attempt is None else execution_attempt
@@ -174,6 +197,6 @@ class GlobalTaskQueue:
             "retry_after": time.time() + min(2 ** task["retry_count"], 8) if retry else None})
 
     def cancel_unfinished(self, reason):
-        for task_id, task in self.snapshot().items():
+        for task_id, task in list(self._refresh_tasks().items()):
             if task["state"] not in TERMINAL:
                 self.change(task_id, "cancelled", patch={"error": {"code": reason}})

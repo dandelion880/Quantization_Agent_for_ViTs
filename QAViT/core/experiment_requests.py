@@ -45,7 +45,7 @@ class ExperimentRequests:
         # A host repair changes measurement identity, never the frozen data/model assets.
         verify_assets({k: v for k, v in old['payload']['execution'].items() if k != 'measurement_implementation'})
         suffix = '/revision' + str(task['code_revision']) if task.get('code_revision') else ''
-        code = self.tasks().get(task['key'] + '/code' + suffix)
+        code = self.queue.get_by_key(task['key'] + '/code' + suffix)
         candidate = (code.get('result') or {}).get('artifact') if code and code['state'] == 'completed' else None
         if not candidate or candidate['id'] != task['bound_code_id']:
             raise ContractError('恢复执行绑定缺少同一原请求的已完成代码')
@@ -63,11 +63,11 @@ class ExperimentRequests:
     def wake_pending_execution_rebinds(self):
         core, measurement = code_identity()['core_sha256'], measurement_implementation()
         held = set()
-        for task in self.queue.snapshot().values():
+        for task in self.queue.snapshot(kinds={"experiment_request"}).values():
             if task['kind'] != 'experiment_request' or task['state'] in TERMINAL:
                 continue
             suffix = '/revision' + str(task['code_revision']) if task.get('code_revision') else ''
-            trial = self.tasks().get(task['key'] + '/execute' + suffix)
+            trial = self.queue.get_by_key(task['key'] + '/execute' + suffix)
             handoff_pending = (task.get('rebound_execution_core') == core and trial
                 and trial['state'] in ('pending', 'ready', 'retry')
                 and trial['inputs']['experiment_ref'] != task.get('experiment_ref'))
@@ -257,13 +257,13 @@ class ExperimentRequests:
 
     def request_outcome(self, trial, tasks=None, *, required_level=None):
         """Rebuild numerical facts independently of any interpretation task state."""
-        tasks = tasks if tasks is not None else self.tasks()
+        lookup = tasks.get if tasks is not None else self.queue.get_by_key
         key, result = trial['key'], trial.get('result') or {}
         revision = trial.get('code_revision', 0)
         suffix = f'/revision{revision}' if revision else ''
-        execution = tasks.get(key + '/execute' + suffix)
-        interpretation = tasks.get(key + '/interpret')
-        code = tasks.get(key + '/code' + suffix)
+        execution = lookup(key + '/execute' + suffix)
+        interpretation = lookup(key + '/interpret')
+        code = lookup(key + '/code' + suffix)
         artifact = (code.get('result') or {}).get('artifact') if code else None
         cache_reused = bool(result.get('cache_reused') or
             (execution and (execution.get('result') or {}).get('cache_reused')) or
@@ -510,7 +510,7 @@ class ExperimentRequests:
                          "host_implementation_sha256": review_core,
                          "implementation_history": code_task["inputs"]["context"].get("implementation_history", [])},
                 depends=[code_task["task_id"]], parent_task=task["task_id"])
-            review_task = self.tasks().get(safeguard_key)
+            review_task = self.queue.get_by_key(safeguard_key)
             if self.stale_safeguard_owner(review_task):
                 raise ContractError("当前 Safeguard key 仍绑定过期宿主身份，拒绝消费其审批")
             review = self.result_card(review_task)
@@ -526,7 +526,7 @@ class ExperimentRequests:
             approval = approval_receipt(experiment, candidate, review)
         self.check_experiment_resources(experiment)
         trial_key = key + "/execute" + suffix
-        prior_trial = self.tasks().get(trial_key)
+        prior_trial = self.queue.get_by_key(trial_key)
         if prior_trial and prior_trial['inputs']['experiment_ref'] != experiment['id']:
             if (not task.get('rebound_execution_core') or prior_trial['state'] not in ('pending', 'ready', 'retry')
                     or prior_trial['outputs'] or (prior_trial['attempt'] and
@@ -560,7 +560,7 @@ class ExperimentRequests:
         # Evidence has already passed the execution protocol and immutable storage
         # checks. Interpretation belongs to the requester or the normal Recorder;
         # it is never a dependency for returning this numerical result.
-        interpretation = self.tasks().get(key + '/interpret')
+        interpretation = self.queue.get_by_key(key + '/interpret')
         interpreted = self.result_card(interpretation)
         self.queue.finish(task['task_id'], outputs=[evidence['id']], result={
             'status': 'completed', 'experiment_ref': experiment['id'], 'evidence_ref': evidence['id'],
