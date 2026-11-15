@@ -295,3 +295,6 @@ coverage.xml
 !/EXP/validation/gonly_repair_20261115_r2/RESULTS.json
 !/EXP/validation/gonly_repair_20261115_r2/gpu/
 !/EXP/validation/gonly_repair_20261115_r2/gpu/check_frozen.py
+
+!/EXP/validation/gonly_hardening_20261116_r1/verify_live_generation.py
+!/EXP/inputs/deitb_static_w4a4_gonly_20261115_r2/round_audit.py

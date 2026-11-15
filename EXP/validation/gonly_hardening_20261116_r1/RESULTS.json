@@ -81,6 +81,10 @@
     "measurement_source": "synthetic_computation",
     "actual_numeric_tool_execution": true,
     "initial_harness_failure_preserved": "live_generation_r1_result_initial_harness.json",
-    "new_formal_results": 0
+    "new_formal_results": 0,
+    "input_tokens": 191057,
+    "output_tokens": 6274,
+    "numeric_worker_seconds": 9.227,
+    "readonly_reverify_entry": "verify_live_generation.py"
   }
 }
