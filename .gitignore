@@ -271,3 +271,27 @@ coverage.xml
 !/EXP/validation/gonly_readiness_20261115_r1/gpu/check_frozen.py
 !/EXP/validation/gonly_readiness_20261115_r1/check_version_execution.py
 !/EXP/validation/gonly_readiness_20261115_r1/check_offline_projection.py
+
+# Reviewed boundary repairs and three-round run; raw jobs/weights/logs remain local.
+!/EXP/validation/gonly_hardening_20261116_r1/
+!/EXP/validation/gonly_hardening_20261116_r1/REPORT.md
+!/EXP/validation/gonly_hardening_20261116_r1/PSEUDOCODE.md
+!/EXP/validation/gonly_hardening_20261116_r1/RESULTS.json
+!/EXP/validation/gonly_hardening_20261116_r1/check_llm.py
+!/EXP/validation/gonly_hardening_20261116_r1/live_generation.py
+!/EXP/validation/gonly_hardening_20261116_r1/llm/
+!/EXP/validation/gonly_hardening_20261116_r1/llm/cli169_compatibility.json
+!/EXP/inputs/deitb_static_w4a4_gonly_20261115_r2/
+!/EXP/inputs/deitb_static_w4a4_gonly_20261115_r2/REPORT.md
+!/EXP/inputs/deitb_static_w4a4_gonly_20261115_r2/RESULTS.json
+!/EXP/inputs/deitb_static_w4a4_gonly_20261115_r2/input.json
+!/EXP/inputs/deitb_static_w4a4_gonly_20261115_r2/experiment_identity.json
+!/EXP/inputs/deitb_static_w4a4_gonly_20261115_r2/freeze_start.py
+!/EXP/inputs/deitb_static_w4a4_gonly_20261115_r2/monitor.py
+!/EXP/inputs/deitb_static_w4a4_gonly_20261115_r2/PSEUDOCODE.md
+
+!/EXP/validation/gonly_repair_20261115_r2/
+!/EXP/validation/gonly_repair_20261115_r2/REPORT.md
+!/EXP/validation/gonly_repair_20261115_r2/RESULTS.json
+!/EXP/validation/gonly_repair_20261115_r2/gpu/
+!/EXP/validation/gonly_repair_20261115_r2/gpu/check_frozen.py

@@ -378,7 +378,12 @@ class ExperimentRequests:
         plans.sort(key=lambda t: t['inputs'].get('context', {}).get('plan_revision', 0))
         related = plans + [t for k, t in tasks.items() if k == key or k.startswith(key + '/')]
         trial, plan = (trials[-1] if trials else None), (plans[-1] if plans else None)
-        current = plan if plan and (plan.get('result') or {}).get('defer_reason') else trial or plan
+        # A new planning revision is current even before it publishes a request.
+        # Keep the earlier execution facts separately instead of reporting its
+        # failed state as the state of the resumed planning step.
+        newer_plan = plan and (not trial or plan['inputs'].get('context', {}).get('plan_revision', 0)
+                              > trial['inputs'].get('plan_revision', 0))
+        current = plan if newer_plan or (plan and (plan.get('result') or {}).get('defer_reason')) else trial or plan
         result = (current.get('result') or {}) if current else {}
         status = ('deferred' if result.get('defer_reason') else
                   result.get('status', current['state']) if current['state'] == 'completed' else current['state']) if current else (
@@ -389,7 +394,10 @@ class ExperimentRequests:
         valid = list(dict.fromkeys(ref for outcome in outcomes for ref in outcome['valid_evidence_refs']))
         facts = [{'task_id': t['task_id'], 'key': t['key'], 'task_ref': t['task_card'],
                   'state': t['state'], 'result': t.get('result'), 'error': t.get('error')} for t in related]
-        return {**latest, 'status': status, 'tasks': facts, 'task_refs': [t['task_card'] for t in related],
+        return {**latest, 'status': status,
+                'planning_state': plan['state'] if plan else 'not_started',
+                'plan_revision': plan['inputs'].get('context', {}).get('plan_revision', 0) if plan else None,
+                'tasks': facts, 'task_refs': [t['task_card'] for t in related],
                 'valid_evidence_refs': valid, 'valid_evidence_missing': not bool(valid),
                 'evidence_issues': [issue for outcome in outcomes for issue in outcome['evidence_issues']],
                 'numerical_validation_status': 'validated' if valid else 'not_validated',

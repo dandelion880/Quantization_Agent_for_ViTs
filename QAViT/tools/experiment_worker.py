@@ -362,7 +362,7 @@ def evaluation_summary(requested, value):
                parallelism=deepcopy(value.get('parallelism', {})))
     return name, row
 
-def evaluate_services(experiment, backend, cfg, data, directory, approval, gpus=()):
+def evaluate_services(experiment, backend, cfg, data, directory, approval, gpus=(), *, deadline_unix=None):
     from ptq_agent.execution.pipeline import QuantizationExecutor, plan_uses_calibration
     from ptq_agent.execution.model import RTNExecutor
     from core.execution_contract import validate_plan_schema
@@ -470,13 +470,14 @@ def evaluate_services(experiment, backend, cfg, data, directory, approval, gpus=
     if dual_reason is None and len(gpus) > 1:
         from tools.dual_task_evaluation import evaluate_parallel
         evaluations = evaluate_parallel(experiment, backend, cfg, data, model, plan, coverage,
-                                        native, model_dir, directory, gpus, approval)
+                                        native, model_dir, directory, gpus, approval, deadline_unix=deadline_unix)
     else:
         evaluations = {}
         for requested in spec["evaluations"]:
             if requested["kind"] == "classification" and native and len(gpus) > 1 and fallback is None:
                 from tools.classification_shards import evaluate_parallel
-                value = evaluate_parallel(experiment, backend, cfg, data, model, plan, requested, model_dir, directory, gpus)
+                value = evaluate_parallel(experiment, backend, cfg, data, model, plan, requested, model_dir, directory, gpus,
+                                          deadline_unix=deadline_unix)
             else:
                 value = evaluate_task(backend, cfg, data, model, plan, requested, directory, native, coverage)
                 value['parallelism'] = {'shards': 1, 'mode': 'serial',
@@ -540,7 +541,8 @@ def run_experiment(request, directory):
         elif spec["service"] == "tensor_probe":
             result = tensor_probe(experiment, backend, cfg, data, directory, approval)
         elif spec["service"] in ("evaluate_artifact", "quantize_evaluate"):
-            result = evaluate_services(experiment, backend, cfg, data, directory, approval, request.get('gpus', []))
+            result = evaluate_services(experiment, backend, cfg, data, directory, approval, request.get('gpus', []),
+                                       deadline_unix=request.get('deadline_unix'))
         else:
             plugin = module_from_approval(approval, experiment)
             from tools.runtime_interface import execute_custom
@@ -557,7 +559,8 @@ def run_experiment(request, directory):
                     raise ContractError("custom_experiment 导出包必须位于本作业目录")
                 loaded_experiment = deepcopy(experiment)
                 loaded_experiment["payload"]["execution"].update(service="evaluate_artifact", model_dir=str(exported))
-                measured = evaluate_services(loaded_experiment, backend, cfg, data, directory, None)
+                measured = evaluate_services(loaded_experiment, backend, cfg, data, directory, None,
+                                             deadline_unix=request.get('deadline_unix'))
                 result["observations"].update(measured["observations"])
                 result.update({k: v for k, v in measured.items() if k != "observations"})
         if model_digest(backend.model) != original:

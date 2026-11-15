@@ -1519,10 +1519,17 @@ class RoleInteraction:
 
     @journal_read
     def revise_candidate(self, task, parent, args):
-        """Publish once, even if a host-tool receipt is lost after the Journal commit."""
+        """Recover the same immutable revision on either side of Journal publication."""
+        stored = self.queue.get(task['task_id'])
+        if (stored['kind'] != 'host_tool' or stored['inputs'].get('name') != 'revise_candidate'
+                or stored['inputs']['arguments'] != args
+                or stored['inputs']['parent_task'] != parent['task_id']):
+            raise ContractError('科学修订必须复用同一持久工具请求，不能更换请求正文或来源')
         prior = next((e for e in self.journal.events if e['type'] == 'candidate_revised'
                       and e['tool_task_id'] == task['task_id']), None)
         if prior:
+            if prior.get('request_sha256', fingerprint(args)) != fingerprint(args):
+                raise ContractError('已发布科学修订与工具请求不一致')
             return {'candidate_ref': prior['candidate_ref'], 'requires_reselection': True,
                     'validation_status': 'unvalidated_revision'}
         context = parent['inputs']['context']
@@ -1542,14 +1549,29 @@ class RoleInteraction:
         refs = self.scientific_refs(body, parent)
         for ref in refs:
             self.require_visible(parent, ref)
+        sequence = self.journal.sequence
         card = make_card('HypothesisCard', self.journal.run_id, body, previous=old,
                          parents=[old['id']], refs=sorted(set(refs) | {old['id']}), author='generation')
+        path = self.journal.card_path(card['id'])
+        if path.exists() and card['id'] not in self.journal.cards:
+            # A crash after cards_written leaves an unpublished immutable card.
+            # Its ID is fixed by the parent version; only make_card's timestamp
+            # may differ on replay. Do not replace or adopt different content.
+            pending = read_json(path)
+            from core.cards import validate_card
+            validate_card(pending)
+            stable = lambda value: {k: v for k, v in value.items() if k not in ('created_at', 'content_sha256')}
+            if stable(pending) != stable(card):
+                raise ContractError('已有不同的未发布候选修订，不能覆盖或借恢复替换正文')
+            card = pending
         self.journal.commit('candidate/revise/' + task['task_id'], cards=[card], events=[{
             'type': 'candidate_revised', 'round': context['round'], 'slot': body['slot'],
             'parent_ref': old['id'], 'candidate_ref': card['id'], 'tool_task_id': task['task_id'],
+            'request_sha256': fingerprint(args),
             'reason': args['reason'], 'change_type': 'scientific',
             'validation_status': 'unvalidated_revision', 'basis_evidence_refs': body.get('evidence_refs', [])},
-            self.memory.live_update(round_number=context['round'], hypothesis_ref=card['id'])])
+            self.memory.live_update(round_number=context['round'], hypothesis_ref=card['id'])],
+            expected_sequence=sequence)
         return {'candidate_ref': card['id'], 'requires_reselection': True,
                 'validation_status': 'unvalidated_revision'}
 

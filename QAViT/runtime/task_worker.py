@@ -16,27 +16,7 @@ from core.journal import atomic_json, file_sha256, file_lock, read_json
 from runtime.task_queue import process_identity
 from runtime.identity import code_identity
 from runtime.subscription import StructuredOutputError
-
-
-def failure_origin(exc, request):
-    """Use actual failing frames, not an exception's name, to route code repair."""
-    candidate = (request.get('approval') or {}).get('candidate') or {}
-    source = candidate.get('path')
-    if not source:
-        return 'host'
-    frames = traceback.extract_tb(exc.__traceback__)
-    if any(Path(frame.filename).resolve() == Path(source).resolve() for frame in frames):
-        return 'implementation'
-    # These contracts check returned values/state after the plugin frame has exited.
-    validators = {'tools/result_contract.py', 'core/execution_contract.py'}
-    if isinstance(exc, ContractError) and frames:
-        last = frames[-1]
-        if (any(last.filename.endswith('/' + name) for name in validators)
-                or last.name in ('execute_custom', 'tensor_probe', 'evaluate_services')
-                or (last.name == 'run_experiment' and any(term in str(exc) for term in
-                    ('缺少供宿主重载', '导出包必须位于', '改变了冻结基准模型')))):
-            return 'implementation'
-    return 'host'
+from runtime.failures import failure_origin, failure_details
 
 
 def work(request, directory):
@@ -100,7 +80,7 @@ def main():
             exc = ContractError("任务执行期间核心或数值实现变化，格式错误不得进入修复流程")
         error = exc.to_dict() if hasattr(exc, "to_dict") else {"code": type(exc).__name__, "message": str(exc)}
         if request['kind'] == 'experiment':
-            error['origin'] = failure_origin(exc, request)
+            error = failure_details(exc, request)
         result = {"status": "interrupted" if isinstance(exc, (InterruptedError, KeyboardInterrupt)) else "failed", "error": error}
         if failed_usage is not None:
             # A failed decode is still a paid/accounted model attempt, not an empty action.

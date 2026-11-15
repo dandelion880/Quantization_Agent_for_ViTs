@@ -14,6 +14,7 @@ from runtime.task_queue import process_alive
 from tools.result_contract import dual_task_fallback
 from tools.experiment_worker import evaluation_summary
 from tools.dual_task_evaluation import check_identity, evaluate_parallel
+from runtime.failures import RemoteWorkerError, failure_details
 from tests.test_adaptive_resources import classification_payload
 from tests.test_infrastructure import TempCase
 
@@ -152,11 +153,15 @@ def build_plan(*args):
         with patch('tools.experiment_worker.backend_and_data', return_value=(backend, cfg, data)), self.assertRaises(ContractError):
             run(request, path)
 
-    def exercise_child_failure(self, *, deadline=False, parent_failure=False):
+    def exercise_child_failure(self, *, deadline=False, parent_failure=False, reported_error=None, actual_request=False):
         model_dir = self.root / 'model'
         model_dir.mkdir()
         (model_dir / 'weights.pt').write_bytes(b'immutable')
-        atomic_json(self.root / 'request.json', {'deadline_unix': time.time() - 1 if deadline else time.time() + 10})
+        effective_deadline = time.time() - 1 if deadline else time.time() + 60
+        atomic_json(self.root / 'request.json', {'deadline_unix': time.time() - 1 if actual_request else effective_deadline})
+        request_path = self.root / ('request-resumed.json' if actual_request else 'request.json')
+        if actual_request:
+            atomic_json(request_path, {'deadline_unix': effective_deadline})
         popen = subprocess.Popen
         children = []
         def launch(command, **kwargs):
@@ -168,20 +173,41 @@ ready = {k:r[k] for k in ('model_digest','baseline_digest','plan_sha256','model_
 ready.update(status='completed',request_sha256=hashlib.sha256(p.read_bytes()).hexdigest())
 tmp = p.parent/'ready.tmp'; tmp.write_text(json.dumps(ready)); tmp.rename(p.parent/'ready.json')
 while not (p.parent/'start.json').exists(): time.sleep(.02)
-""" + ('time.sleep(30)' if deadline or parent_failure else 'raise SystemExit(7)')
+"""
+            if reported_error:
+                script += "\nready.update(status='failed',error=" + repr(reported_error) + ")\n"
+                script += "tmp=p.parent/'result.tmp'; tmp.write_text(json.dumps(ready)); tmp.rename(p.parent/'result.json')\nraise SystemExit(1)"
+            else:
+                script += 'time.sleep(30)' if deadline or parent_failure else 'raise SystemExit(7)'
             child = popen([sys.executable, '-B', '-c', script, command[-1]], **kwargs)
             children.append(child)
             return child
         raw = {'metrics': {'top1': 20., 'baseline_top1': 80.}, 'sample_count': 1,
                'sample_ids': ['a'], 'split': 'search', 'full_dataset_evaluation': False}
         with patch('tools.dual_task_evaluation.subprocess.Popen', side_effect=launch), \
+             patch.dict(os.environ, {'QAVIT_TASK_REQUEST_PATH': str(request_path)}), \
              patch('ptq_agent.execution.evaluation.model_digest', return_value='model'), \
              patch('tools.experiment_worker.evaluate_task', side_effect=RuntimeError('parent failed') if parent_failure else None,
                    return_value=raw):
-            with self.assertRaises((ContractError, TimeoutError, RuntimeError)):
+            with self.assertRaises((ContractError, TimeoutError, RuntimeError)) as caught:
                 evaluate_parallel({'id': 'x', 'payload': payload()}, SimpleNamespace(model=None), {}, None,
-                                  None, {}, {}, True, model_dir, self.root, [0, 1], None)
+                                  None, {}, {}, True, model_dir, self.root, [0, 1], None,
+                                  deadline_unix=read_json(request_path)['deadline_unix'])
+        error = failure_details(caught.exception, {})
+        if reported_error:
+            self.assertEqual(error['code'], reported_error['code'])
+            self.assertEqual(error['origin'], reported_error['origin'])
+            self.assertEqual(error['subprocess']['worker'], 'ade_frozen')
+            self.assertTrue(Path(error['subprocess']['worker_log']).is_file())
+            self.assertEqual(read_json(self.root / 'dual_task_failure.json')['error'], error)
+            self.assertNotIn('dual_tasks/segmentation/result.json',
+                             read_json(self.root / 'dual_task_failure.json')['partial_results'])
+        elif not deadline and not parent_failure:
+            self.assertEqual(error['code'], 'ChildProcessError')
+            self.assertEqual(error['origin'], 'host')
+            self.assertEqual(error['returncode'], 7)
         self.assertEqual(len(children), 1)
+        self.assertEqual(read_json(self.root / 'dual_tasks/segmentation/request.json')['deadline_unix'], effective_deadline)
         self.assertIsNotNone(children[0].poll())
         self.assertFalse(process_alive(read_json(self.root / 'processes/dual-segmentation.json')))
         self.assertEqual(read_json(self.root / 'dual_task_failure.json')['status'], 'failed')
@@ -196,3 +222,47 @@ while not (p.parent/'start.json').exists(): time.sleep(.02)
 
     def test_parent_failure_cleans_actual_child(self):
         self.exercise_child_failure(parent_failure=True)
+
+    def test_reported_implementation_error_survives_actual_child_boundary(self):
+        self.exercise_child_failure(reported_error={'code': 'TypeError', 'origin': 'implementation',
+                                                    'message': 'custom loader argument mismatch'})
+
+    def test_reported_timeout_stays_host_timeout(self):
+        self.exercise_child_failure(reported_error={'code': 'TimeoutError', 'origin': 'host',
+                                                    'message': 'dual-task deadline exceeded'})
+
+    def test_resumed_actual_request_supplies_child_deadline(self):
+        self.exercise_child_failure(actual_request=True)
+
+    def test_invalid_identity_cannot_relay_claimed_implementation_failure(self):
+        request = {k: k for k in ('model_digest', 'baseline_digest', 'plan_sha256', 'model_assets')}
+        path = self.root / 'request.json'
+        atomic_json(path, request)
+        failed = {**request, 'model_digest': 'different', 'request_sha256': file_sha256(path),
+                  'status': 'failed', 'error': {'code': 'TypeError', 'message': 'bad plugin', 'origin': 'implementation'}}
+        try:
+            check_identity(failed, request, path)
+            self.fail('identity mismatch must reject the claimed remote provenance')
+        except ContractError as exc:
+            self.assertNotIsInstance(exc, RemoteWorkerError)
+            self.assertEqual(failure_details(exc, {})['origin'], 'host')
+
+    def test_child_main_captures_actual_plugin_frames_and_original_type(self):
+        from tools import dual_task_evaluation
+        source = self.root / 'approved.py'
+        source.write_text("def load():\n    raise TypeError('actual plugin failure')\n")
+        namespace = {}
+        exec(compile(source.read_text(), str(source), 'exec'), namespace)
+        request = {k: k for k in ('model_digest', 'baseline_digest', 'plan_sha256', 'model_assets')}
+        request['approval'] = {'candidate': {'path': str(source)}}
+        path = self.root / 'request.json'
+        atomic_json(path, request)
+        with patch.object(sys, 'argv', ['dual-task', str(path)]), \
+             patch.object(dual_task_evaluation, 'run', side_effect=lambda *args: namespace['load']()), \
+             patch('tools.dual_task_evaluation.traceback.print_exc'), self.assertRaises(SystemExit):
+            dual_task_evaluation.main()
+        receipt = read_json(self.root / 'result.json')
+        with self.assertRaises(RemoteWorkerError) as caught:
+            check_identity(receipt, request, path)
+        self.assertEqual(failure_details(caught.exception, request)['code'], 'TypeError')
+        self.assertEqual(failure_details(caught.exception, request)['origin'], 'implementation')

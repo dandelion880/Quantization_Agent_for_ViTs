@@ -13,7 +13,7 @@ QAViT 让 LLM 负责量化科研推理，程序负责数值执行、身份与来
 
 ## 主调用链
 
-core/workflow.py 的 advance/progress_preselection 组织 H1/H2/H3 自主实验与修订→Generation 证据预选→Generation L3 规划与执行→Recorder→下一轮。不发布 Judger、Evolution 或 H4。L1/L2 不代替正式评价；有效 ImageNet + ADE20K L3 由程序按原协议更新 Top-3。局部失败保留已完成候选，预选失败保留已提交 H1；复盘失败保留原始证据并允许继续。
+core/workflow.py 的 advance/progress_preselection 组织 H1/H2/H3 自主实验与修订→Generation 证据预选→Generation L3 规划与执行→Recorder→下一轮。不发布 Judger、Evolution 或 H4。L1/L2 不代替正式评价；有效 ImageNet + ADE20K L3 由程序按原协议更新 Top-3。局部失败保留已完成候选，预选失败保留已提交候选及独立 B，不自动选中 H1；复盘失败保留原始证据并允许继续。
 
 core/experiment_requests.py 保存研究者原始实验需求，必要时交给 Coding 单实现，再绑定执行选择、Safeguard 审查并执行；证据返回原研究者继续判断。无需新增测量时可以直接提交。Skill、文档和方案种子仅辅助选择，不改变流程或限制 H3。
 

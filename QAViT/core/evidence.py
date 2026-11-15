@@ -16,9 +16,16 @@ from core.cards import canonical, fingerprint
 
 
 ARM_LABELS = ('arm', 'arm_id', 'arm_name', 'variant', 'variant_id', 'method', 'condition', 'treatment')
+ARM_COLLECTIONS = {'arms', 'arm_results', 'variants', 'treatments'}
 
 LABELS = {'site', 'site_id', 'module', 'name', 'token', 'tokens', 'token_type',
-          'variant', 'arm', 'category', 'split', 'metric'}
+          'category', 'split', 'metric', *ARM_LABELS}
+
+
+def arm_labels(value):
+    """Recorded identities only; structured labels retain an exact content digest."""
+    return {k: ({'sha256': fingerprint(value[k])} if isinstance(value[k], (dict, list)) else value[k])
+            for k in ARM_LABELS if isinstance(value, dict) and k in value}
 
 
 def pointer(path, key):
@@ -30,11 +37,12 @@ def leaves(value, field='', labels=None, metric=''):
     labels = labels or {}
     if isinstance(value, dict):
         labels = {**labels, **{k: v for k, v in value.items()
-                              if k in LABELS and isinstance(v, (str, int, float, bool))}}
+                              if k in LABELS and isinstance(v, (str, int, float, bool))},
+                  **arm_labels(value)}
         for key, child in value.items():
             # Module-keyed tables are rows too; keep their exact site in the label and
             # pointer while grouping the same metric across indexed modules.
-            site_key = re.search(r'(?:^|\.)\d+(?:\.|::|$)', key)
+            site_key = field.rsplit('/', 1)[-1] not in ARM_COLLECTIONS and re.search(r'(?:^|\.)\d+(?:\.|::|$)', key)
             yield from leaves(child, pointer(field, key), {**labels, 'site': key} if site_key else labels,
                               pointer(metric, '*site*' if site_key else key))
     elif isinstance(value, list):
@@ -77,16 +85,18 @@ def collection_summary(value, ref, field, *, max_characters=6000, focus=None):
         # same depth-first order (including floating-point recurrence and tie order).
         if isinstance(node, dict):
             for key, child in node.items():
-                site_key = re.search(r'(?:^|\.)\d+(?:\.|::|$)', key)
+                site_key = path.rsplit('/', 1)[-1] not in ARM_COLLECTIONS and re.search(r'(?:^|\.)\d+(?:\.|::|$)', key)
                 visit(child, pointer(path, key), pointer(metric, '*site*' if site_key else key))
             return
         if isinstance(node, list):
             child_metric = pointer(metric, '*')
             for index, child in enumerate(node):
-                labels = {k: child[k] for k in ARM_LABELS if isinstance(child, dict)
-                          and k in child and isinstance(child[k], (str, int, float, bool))}
+                labels = arm_labels(child)
                 # Arms are distinct measurements, never exchangeable repetitions.
-                group_metric = child_metric + ('[' + canonical(labels) + ']' if labels else '')
+                # An explicitly arm-keyed collection needs no guessed identity: its
+                # exact index remains distinct even when a producer omitted labels.
+                group_metric = (pointer(metric, index) if path.rsplit('/', 1)[-1] in ARM_COLLECTIONS
+                                else child_metric + ('[' + canonical(labels) + ']' if labels else ''))
                 visit(child, pointer(path, index), group_metric)
             return
         scalar = node
@@ -301,9 +311,12 @@ def evidence_facts(card, root=None):
         if key in observations:
             result[key] = project_observations(observations[key], ref, pointer('/payload/observations', key))
     if isinstance(observations.get('arms'), dict):
-        result['arm_results'] = {name: {key: deepcopy(arm[key]) for key in ('whole_network', 'metrics', 'summary', 'status', 'error')
+        result['arm_results'] = {name: {key: deepcopy(arm[key]) for key in (*ARM_LABELS, 'whole_network', 'metrics', 'summary', 'status', 'error')
                                       if key in arm}
                                 for name, arm in observations['arms'].items() if isinstance(arm, dict)}
+    elif isinstance(observations.get('arms'), list):
+        result['arm_results'] = project_observations(observations['arms'], ref, '/payload/observations/arms')
+    if 'arms' in observations:
         result['arm_source'] = {'read_card': {'ref': ref, 'field': '/payload/observations/arms'},
                                 'meaning': 'Distinct arms within one execution; not independent repetitions.'}
     evaluations = observations.get('evaluations', {})

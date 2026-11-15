@@ -86,11 +86,9 @@ class TaskRuntime:
             for key in ("task_id", "execution_id", "input_versions"):
                 if saved.get(key) != request[key]:
                     raise ContractError("未完成启动意图已过期，需显式恢复而非覆盖请求")
-            if (saved.get('gpus') != request.get('gpus') or saved.get('gpu_bindings') != request.get('gpu_bindings')
-                    or saved['resource_keys'] != request['resource_keys']
-                    or saved["deadline_unix"] <= time.time() or saved["deadline_unix"] > deadline
-                    or saved.get("budget_segment_id") != request["budget_segment_id"]
-                    or saved["memory_version"] != request["memory_version"] or saved["core_sha256"] != request["core_sha256"]):
+            if ({k: v for k, v in saved.items() if k != 'deadline_unix'} !=
+                    {k: v for k, v in request.items() if k != 'deadline_unix'}
+                    or saved["deadline_unix"] <= time.time() or saved["deadline_unix"] > deadline):
                 path = directory / ("request-" + fingerprint(request)[:20] + ".json")
                 atomic_json(path, request)
             else:
@@ -100,12 +98,16 @@ class TaskRuntime:
         self.queue.claim(task["task_id"], input_versions=input_versions,
                          memory_version=request["memory_version"], request_path=str(path), execution_attempt=attempt)
         env = {k: v for k, v in os.environ.items() if not any(x in k.upper() for x in ("API_KEY", "TOKEN", "SECRET"))}
-        threads = str(body.get("cpu_threads", self.settings.get("cpu_threads", 4)))
+        # Placement, thread settings and descendants all use the exact persisted
+        # request selected above, including a recovered launch intent.
+        threads = str(request.get("cpu_threads", self.settings.get("cpu_threads", 4)))
         env.update(PYTHONDONTWRITEBYTECODE="1", OMP_NUM_THREADS=threads, MKL_NUM_THREADS=threads)
-        env["CUDA_VISIBLE_DEVICES"] = str(body["gpu"]) if body.get("gpu") is not None else ""
-        if body.get('gpu_bindings'):
-            env['CUDA_VISIBLE_DEVICES'] = body['gpu_bindings'][0]['uuid']
-            env['QAVIT_ASSIGNED_GPU_UUIDS'] = ','.join(g['uuid'] for g in body['gpu_bindings'])
+        env["CUDA_VISIBLE_DEVICES"] = str(request["gpu"]) if request.get("gpu") is not None else ""
+        env.pop('QAVIT_ASSIGNED_GPU_UUIDS', None)
+        if request.get('gpu_bindings'):
+            env['CUDA_VISIBLE_DEVICES'] = request['gpu_bindings'][0]['uuid']
+            env['QAVIT_ASSIGNED_GPU_UUIDS'] = ','.join(g['uuid'] for g in request['gpu_bindings'])
+        env['QAVIT_TASK_REQUEST_PATH'] = str(path.resolve())
         env['QAVIT_GPU_LEASE_FDS'] = ','.join(map(str, lease_fds))
         env['QAVIT_RESOURCE_ASSIGNED'] = '1'
         try:

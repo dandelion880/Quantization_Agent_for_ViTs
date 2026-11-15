@@ -16,6 +16,7 @@ from core.cards import ContractError, fingerprint
 from core.journal import atomic_json, read_json, file_sha256
 from runtime.paths import QAVIT
 from runtime.task_queue import process_identity
+from runtime.failures import RemoteWorkerError, failure_details
 
 
 def package_files(directory):
@@ -30,11 +31,21 @@ def check_identity(result, request, request_path):
     if result.get('request_sha256') != file_sha256(request_path):
         raise ContractError('dual-task request identity mismatch')
     if result.get('status') != 'completed':
-        raise ContractError('dual-task evaluation failed: ' + str(result.get('error')))
+        raise RemoteWorkerError(result.get('error'), worker='ade_frozen',
+                                receipt=request_path.with_name('result.json'),
+                                worker_log=request_path.with_name('worker.log'))
+
+
+def check_loaded_identity(result, request, path):
+    """A custom loader's returned identity is its implementation contract."""
+    try:
+        check_identity(result, request, path)
+    except ContractError as exc:
+        raise ContractError(str(exc)) from exc
 
 
 def evaluate_parallel(experiment, backend, cfg, data, model, plan, coverage, native,
-                      model_dir, directory, gpus, approval):
+                      model_dir, directory, gpus, approval, *, deadline_unix=None):
     from tools.experiment_worker import evaluate_task, evaluation_summary
     from runtime.codex_cli import parent_guard
     from runtime.task_runtime import TaskRuntime
@@ -42,8 +53,7 @@ def evaluate_parallel(experiment, backend, cfg, data, model, plan, coverage, nat
     requested = {r['kind']: r for r in experiment['payload']['execution']['evaluations']}
     output = directory / 'dual_tasks' / 'segmentation'
     output.mkdir(parents=True, exist_ok=True)
-    parent_request = directory / 'request.json'
-    deadline = read_json(parent_request).get('deadline_unix') if parent_request.exists() else None
+    deadline = deadline_unix
     request = {'experiment': experiment, 'approval': approval, 'native': native,
         'model_dir': str(model_dir), 'model_assets': package_files(model_dir),
         'model_digest': model_digest(model), 'baseline_digest': model_digest(backend.model),
@@ -71,7 +81,9 @@ def evaluate_parallel(experiment, backend, cfg, data, model, plan, coverage, nat
                 check_identity(read_json(output / 'result.json'), request, path)
                 raise ContractError('dual-task child completed without ready handshake')
             if child.poll() is not None:
-                raise ContractError('ADE worker exited before ready: ' + str(output))
+                raise RemoteWorkerError({'code': 'ChildProcessError', 'origin': 'host',
+                    'message': 'ADE worker exited before ready', 'returncode': child.returncode},
+                    worker='ade_frozen', receipt=output / 'result.json', worker_log=output / 'worker.log')
             if deadline is not None and time.time() >= deadline:
                 raise TimeoutError('dual-task deadline exceeded while loading')
             time.sleep(.05)
@@ -89,7 +101,9 @@ def evaluate_parallel(experiment, backend, cfg, data, model, plan, coverage, nat
                 raise TimeoutError('dual-task experiment deadline exceeded')
             time.sleep(.05)
         if not (output / 'result.json').exists():
-            raise ContractError('ADE worker exited without result: ' + str(output))
+            raise RemoteWorkerError({'code': 'ChildProcessError', 'origin': 'host',
+                'message': 'ADE worker exited without result', 'returncode': child.poll()},
+                worker='ade_frozen', receipt=output / 'result.json', worker_log=output / 'worker.log')
         receipt = read_json(output / 'result.json')
         check_identity(receipt, request, path)
         if package_files(model_dir) != request['model_assets']:
@@ -110,10 +124,14 @@ def evaluate_parallel(experiment, backend, cfg, data, model, plan, coverage, nat
             'deadline_unix': deadline})
         return {name: summary, second: second_summary}
     except BaseException as exc:
+        partial = ['classification.json'] if (directory / 'classification.json').exists() else []
+        child_result = output / 'result.json'
+        if child_result.exists() and read_json(child_result).get('status') == 'completed':
+            partial.append('dual_tasks/segmentation/result.json')
         atomic_json(directory / 'dual_task_failure.json', {
-            'status': 'failed', 'error': type(exc).__name__ + ': ' + str(exc),
-            'partial_results': [name for name in ('classification.json', 'dual_tasks/segmentation/result.json')
-                                if (directory / name).exists()],
+            'status': 'failed', 'error': failure_details(exc, {'approval': approval}),
+            'partial_results': partial,
+            'child_result_ref': str(child_result) if child_result.exists() else None,
             'model_assets': request['model_assets'], 'finished_unix': time.time()})
         raise
     finally:
@@ -178,7 +196,7 @@ def run(request, path):
         result = {'model_digest': model_digest(model), 'baseline_digest': model_digest(backend.model),
                   'plan_sha256': fingerprint(plan), 'model_assets': package_files(model_dir),
                   'request_sha256': file_sha256(path), 'status': 'completed'}
-        check_identity(result, request, path)
+        check_loaded_identity(result, request, path)
         if request.get('start_barrier'):
             atomic_json(path.parent / 'ready.json', result)
             while not (path.parent / 'start.json').exists():
@@ -192,9 +210,8 @@ def run(request, path):
             raise TimeoutError('dual-task deadline exceeded before evaluation')
         value = evaluate_task(backend, cfg, data, model, plan, request['requested'], path.parent,
                               request['native'], coverage)
-        if (model_digest(model) != result['model_digest'] or model_digest(backend.model) != result['baseline_digest']
-                or package_files(model_dir) != result['model_assets']):
-            raise ContractError('dual-task evaluation mutated frozen model identity')
+        check_loaded_identity({**result, 'model_digest': model_digest(model),
+            'baseline_digest': model_digest(backend.model), 'model_assets': package_files(model_dir)}, request, path)
         return {**result, 'evaluation': value, 'started_unix': start, 'finished_unix': time.time()}
     finally:
         guard.remove()
@@ -213,7 +230,7 @@ def main():
     except BaseException as exc:
         traceback.print_exc()
         result = {k: request[k] for k in ('model_digest', 'baseline_digest', 'plan_sha256', 'model_assets')}
-        result.update(status='failed', error=type(exc).__name__ + ': ' + str(exc),
+        result.update(status='failed', error=failure_details(exc, request),
                       request_sha256=file_sha256(path), finished_unix=time.time())
     atomic_json(path.parent / 'result.json', result)
     if result['status'] != 'completed':

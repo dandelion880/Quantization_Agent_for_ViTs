@@ -387,14 +387,20 @@ class WorkflowDriver:
             error = events[-1].get("error")
         rounds = [{"round": n, "preselection": self.selection_card(n), "l3_outcome": self.l3_outcome(n)}
                   for n in self.budget.snapshot()["rounds_started"]]
-        attempts = [r["l3_outcome"] for r in rounds if r["l3_outcome"]["task_refs"]]
+        expected_rounds = list(range(1, self.config.get('budget', {}).get('max_rounds', 10) + 1))
+        validated_rounds = [r['round'] for r in rounds if r['l3_outcome']['formal_validation_success']]
+        # The aggregate describes the entire requested scope. A successful early
+        # round cannot stand in for skipped, deferred or not-yet-started rounds.
+        formal_success = (self.config['enable_l3'] and not self.config.get('scope_target')
+                          and bool(expected_rounds) and set(expected_rounds) <= set(validated_rounds))
         value = {"schema_version": "qavit.report/2", "run_id": self.journal.run_id,
                  "status": status, "error": error, "architecture": self.config.get("architecture", "full"),
                  "workflow_completed": status == "completed",
                  "scope_target": self.config.get("scope_target"), "scope_target_reached": self.scope_target_reached(),
                  "completed_rounds": sorted({e["round"] for e in self.journal.events if e["type"] == "round_finished"}),
-                 "formal_validation_success": bool(attempts) and all(r["formal_validation_success"] for r in attempts),
-                 "numerical_validation_status": "validated" if attempts and all(r["formal_validation_success"] for r in attempts) else "not_validated",
+                 "formal_validation_success": bool(formal_success),
+                 "numerical_validation_status": "validated" if formal_success else "not_validated",
+                 "expected_rounds": expected_rounds, "validated_rounds": validated_rounds,
                  "tasks": counts, "budget": self.budget.snapshot(), "memory": self.memory.snapshot(),
                  "rounds": rounds,
                  "clarifications": [{"task_id": t["task_id"], **t["clarification"]} for t in tasks.values() if t["state"] == "needs_clarification"],

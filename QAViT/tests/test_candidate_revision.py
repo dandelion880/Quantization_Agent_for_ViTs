@@ -1,6 +1,7 @@
 """Host revision transactions, evidence handoff and exact-version scheduling."""
 from copy import deepcopy
 from pathlib import Path
+from unittest.mock import patch
 import sys
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from core.cards import ContractError
@@ -75,6 +76,98 @@ class CandidateRevision(TempCase):
         plan = wf.tasks()['r001/plan_l3']
         self.assertEqual(plan['inputs']['context']['hypothesis_ref'], new['id'])
         self.assertFalse(wf.summary()['formal_validation_success'])
+
+    def test_precommit_card_interruption_reuses_exact_orphan_and_publishes_once(self):
+        wf, task = self.drive(self.workflow_case(), stop=lambda t: t['inputs']['purpose'] == 'select')
+        old = wf.round_hypotheses(1)['H2']
+        original = wf.journal.commit
+        def crash(key, **kwargs):
+            if key.startswith('candidate/revise/'):
+                def fault(stage):
+                    if stage == 'cards_written':
+                        raise OSError('injected revision precommit interruption')
+                kwargs['fault'] = fault
+            return original(key, **kwargs)
+        memory = wf.memory.snapshot()
+        with patch.object(wf.journal, 'commit', side_effect=crash), self.assertRaises(OSError):
+            self.revision(wf, task, old['id'])
+        child = wf.queue.get(wf.queue.get(task['task_id'])['waiting_for'][0])
+        from core.journal import read_json, file_sha256
+        orphan_path = wf.journal.card_path(old['logical_id'] + '@2')
+        orphan = read_json(orphan_path)
+        digest = file_sha256(orphan_path)
+        self.assertNotIn(orphan['id'], wf.journal.cards)
+        self.assertFalse(any(e['type'] == 'candidate_revised' for e in wf.journal.events))
+        self.assertEqual(wf.memory.snapshot()['L1'], memory['L1'])
+        wf = Workflow(wf.run_dir)
+        result = wf.host_tool(child)
+        self.assertEqual(wf.journal.card(result['candidate_ref']), orphan)
+        self.assertEqual(file_sha256(orphan_path), digest)
+        sequence = wf.journal.sequence
+        self.assertEqual(wf.host_tool(child), result)
+        self.assertEqual(wf.journal.sequence, sequence)
+        self.assertEqual(sum(e['type'] == 'candidate_revised' for e in wf.journal.events), 1)
+        self.assertEqual(wf.candidate_refs(1)['H2'], orphan['id'])
+        self.assertEqual(wf.journal.card(old['id']), old)
+        self.assertEqual(wf.memory.snapshot()['L1']['recent_hypotheses'].count(orphan['id']), 1)
+
+    def test_precommit_recovery_rejects_different_or_corrupt_orphan(self):
+        from core.cards import fingerprint
+        from core.journal import atomic_json, read_json
+        for corrupt in (False, True):
+            with self.subTest(corrupt=corrupt):
+                wf, task = self.drive(self.workflow_case(name='reject-' + str(corrupt)),
+                                      stop=lambda t: t['inputs']['purpose'] == 'select')
+                old = wf.round_hypotheses(1)['H2']
+                original = wf.journal.commit
+                def crash(key, **kwargs):
+                    if key.startswith('candidate/revise/'):
+                        def fault(stage):
+                            if stage == 'cards_written':
+                                raise OSError('injected revision precommit interruption')
+                        kwargs['fault'] = fault
+                    return original(key, **kwargs)
+                with patch.object(wf.journal, 'commit', side_effect=crash), self.assertRaises(OSError):
+                    self.revision(wf, task, old['id'])
+                child = wf.queue.get(wf.queue.get(task['task_id'])['waiting_for'][0])
+                path = wf.journal.card_path(old['logical_id'] + '@2')
+                orphan = read_json(path)
+                orphan['payload']['title'] = 'Different scientific proposal'
+                if not corrupt:
+                    orphan['content_sha256'] = fingerprint({k: v for k, v in orphan.items()
+                                                           if k != 'content_sha256'})
+                atomic_json(path, orphan)
+                wf = Workflow(wf.run_dir)
+                with self.assertRaisesRegex(ContractError, '哈希|不同的未发布'):
+                    wf.host_tool(child)
+                self.assertEqual(wf.candidate_refs(1)['H2'], old['id'])
+                self.assertFalse(any(e['type'] == 'candidate_revised' for e in wf.journal.events))
+                self.assertEqual(read_json(path), orphan)
+
+    def test_published_commit_interruption_and_request_identity(self):
+        wf, task = self.drive(self.workflow_case(), stop=lambda t: t['inputs']['purpose'] == 'select')
+        old = wf.round_hypotheses(1)['H2']
+        original = wf.journal.commit
+        def crash(key, **kwargs):
+            if key.startswith('candidate/revise/'):
+                def fault(stage):
+                    if stage == 'commit_published':
+                        raise OSError('injected revision postcommit interruption')
+                kwargs['fault'] = fault
+            return original(key, **kwargs)
+        with patch.object(wf.journal, 'commit', side_effect=crash), self.assertRaises(OSError):
+            self.revision(wf, task, old['id'])
+        child = wf.queue.get(wf.queue.get(task['task_id'])['waiting_for'][0])
+        wf = Workflow(wf.run_dir)
+        result = wf.host_tool(child)
+        self.assertEqual(wf.journal.card(result['candidate_ref'])['previous'], old['id'])
+        sequence = wf.journal.sequence
+        forged = deepcopy(child)
+        forged['inputs']['arguments']['reason'] = 'Different request reusing the same tool task'
+        with self.assertRaisesRegex(ContractError, '持久工具请求'):
+            wf.host_tool(forged)
+        self.assertEqual(wf.journal.sequence, sequence)
+        self.assertEqual(sum(e['type'] == 'candidate_revised' for e in wf.journal.events), 1)
 
     def test_engineering_repair_and_mixed_batch_do_not_create_revision(self):
         wf, task = self.drive(self.workflow_case(), stop=lambda t: t['inputs']['purpose'] == 'select')

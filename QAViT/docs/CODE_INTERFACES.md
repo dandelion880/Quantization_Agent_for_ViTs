@@ -13,6 +13,8 @@ Coding 必须返回完整 source；interface 可由已知执行条件绑定，ex
 
 实施错误携带当前源码与具体反馈返回 Coding，就地修订同一实验；每版重新绑定执行条件及审批。不得重跑未修改的失败代码。NameError、UnboundLocalError 等实际发生在提交实现中的异常同样进入修订；预算、资产与宿主接口问题单独保留工程原因；原始科学定义有实质歧义时才回到原研究者。修订共享现有有界额度，错误和旧版本保持可追溯。
 
+串行与并行共用异常来源判定。双任务子进程返回结构化 `error.code/message/origin`；父进程先核对冻结模型、方案、包与实际请求 hash，再转送原始类型和来源，附 `error.subprocess.worker/receipt/worker_log`。批准实现调用栈或其返回值合同错误仍回 Coding→Safeguard；超时、资源或宿主失败保留工程分类，无回执退出标为 `ChildProcessError/host`。身份不符的回执不能用其自报来源覆盖宿主拒绝。已成功兄弟任务保留为 partial result，失败回执另列；整体失败不发布完整 Evidence。恢复时 `run_experiment` 将当前实际请求的 `deadline_unix` 经 `evaluate_services` 显式传入双任务/分类分片父进程及子请求，不从旧 `request.json` 猜测时限；单一数值任务时限及预算不会按子进程重复计时。
+
 结构检查允许 torch、numpy、math、statistics、itertools、functools、collections、copy、dataclasses、typing、random、scipy、ptq_agent；文件、进程和网络能力由宿主提供。结构检查只约束可执行接口和工程边界，不构成数学正确性证明。真实执行继续检查有限值、数据身份、基准不变性和实际结果；浮点基准、基线对照与真实误差测量继续保留。
 
 正式 ServerBackend 的 reset() 检查浮点源模型保持 eval、参数不需梯度及权重/buffer 状态不变，不修改权重、不拟合量化参数。已有执行器和校准捕获可调用它，不能以空实现替代。
@@ -53,6 +55,8 @@ Coding 与 Safeguard 的 `public_interface_assets` 索引包含已发布的数�
 
 `core.evidence.evidence_facts` 是 Generation、Recorder、Memory 共用的 `key_facts`：保持 execution/experiment、协议 hash、冻结模型身份、实测范围及结果状态；标准双任务指标同时显示 FP/Q、Q−FP 和 percent/percentage_points。缺失值保持 `null` 和 `missing_FP_or_Q`，不由摘要猜测。新数值回执直接保留 ADE baseline 指标；旧卡仅可从其已绑定、位于原 run 下、hash 与样本/量化指标均匹配的 `segmentation.json` 补读，标记 historical_artifact_projection，不发布新测量或修改旧卡。
 
-大型样本 ID 列表只在交付视图折叠为有序 hash/count/read_card，原始卡片、资产与精确字段读取不变。超过 4000 字符的 scope.quantization 和 provenance.execution_facts.quantization 逐份投影为各自的 hash/count/精确字段入口，避免重复展开 97 位点的完整冻结配置；短表和 key_facts 中的模型/位宽/协议/测量不变。按 arm/variant/method/condition/treatment 分开数值统计；单次多臂不能当独立重复。明确记录的限制、反证和整网臂结果优先直达；对其余大表保留覆盖说明和精确查询入口。
+大型样本 ID 列表只在交付视图折叠为有序 hash/count/read_card，原始卡片、资产与精确字段读取不变。超过 4000 字符的 scope.quantization 和 provenance.execution_facts.quantization 逐份投影为各自的 hash/count/精确字段入口，避免重复展开 97 位点的完整冻结配置；短表和 key_facts 中的模型/位宽/协议/测量不变。按 arm/arm_id/arm_name、variant/variant_id、method/condition/treatment 分开数值统计和精确叶节点标签；结构化身份以完整内容 hash 区分。显式 arms/arm_results/variants/treatments 容器保留原字典键或列表索引，不把无标签臂或含数字的臂名折叠成位点均值。key_facts 支持字典及列表 arms，并保留身份、失败状态及精确读取入口；单次多臂不能当独立重复。明确记录的限制、反证和整网臂结果优先直达；对其余大表保留覆盖说明和精确查询入口。
+
+持久启动意图仅在任务/输入版本一致、请求正文完全一致且原 deadline 仍有效并不超出当前上限时复用。正文或资源变化、旧 deadline 失效时写独立 request-<hash>.json，保留原件；工作进程、环境和回执均绑定最终领取的确切请求。数值 worker 从其实际 request 传递 deadline_unix 到串行/并行评测及子任务，不从作业目录中同名的旧 request.json 猜测截止时间；预算累计和已领取尝试不重置。
 
 开放问题由 `question_records` 提供稳定 `question_id`。Recorder 用 `resolved_question_refs` / `abandoned_question_refs` 关闭指定问题，旧版原文数组仍兼容；摘要中的“已解决”不作模糊匹配，也不自动作科学判断。新字段必须指向历史已交付问题，重复关闭幂等，历史复盘不变。

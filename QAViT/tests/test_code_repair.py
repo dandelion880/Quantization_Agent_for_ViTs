@@ -114,6 +114,28 @@ class CodeRepairRegression(TempCase):
         self.assertEqual(len(wf.journal.find_cards('ExperimentCard')), 4)
         self.assertEqual(len(wf.journal.find_cards('EvidenceCard')), 0)
 
+    def test_dual_child_implementation_error_returns_full_provenance_to_coding(self):
+        from runtime.failures import RemoteWorkerError, failure_details
+        wf, tid = self.setup_request()
+        self.review_attempt(wf, tid, approve=True)
+        wf.queue.ready()
+        child = wf.queue.claim(wf.tasks()['fixture/request/execute']['task_id'])
+        remote = RemoteWorkerError({'code': 'TypeError', 'message': 'custom load failed', 'origin': 'implementation'},
+            worker='ade_frozen', receipt=self.root / 'child/result.json', worker_log=self.root / 'child/worker.log')
+        error = failure_details(remote, {})
+        wf.queue.fail(child['task_id'], error)
+        self.progress(wf, tid)
+        self.progress(wf, tid)
+        revision = wf.tasks()['fixture/request/code/revision1']
+        self.assertEqual(revision['inputs']['context']['revision_feedback']['error'], error)
+        restored = Workflow(wf.run_dir)
+        self.assertEqual(restored.queue.get(child['task_id'])['state'], 'failed')
+        self.assertEqual(restored.queue.get(tid)['code_revision'], 1)
+        self.review_attempt(restored, tid, approve=True)
+        self.assertIn('fixture/request/execute/revision1', restored.tasks())
+        self.assertEqual(len(restored.journal.find_cards('ReviewDecisionCard')), 2)
+        self.assertEqual(len(restored.journal.find_cards('EvidenceCard')), 0)
+
     def test_specification_clarification_returns_to_original_requester_after_restore(self):
         wf, tid = self.setup_request()
         rejected = self.review_attempt(wf, tid)

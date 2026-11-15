@@ -1,0 +1,86 @@
+{
+  "scope": "preparation_only_not_formal_L3",
+  "actual_start_utc": "2026-11-15",
+  "fixed_source_integration": {
+    "tests": 95,
+    "passed": 95,
+    "seconds": 152.142,
+    "log": "integration_final.log"
+  },
+  "initial_round_scope_run": {
+    "tests": 38,
+    "passed": 36,
+    "source_edit_identity_rejections": 2,
+    "log": "round_scope.log"
+  },
+  "revision_fault_injection": {
+    "tests": 5,
+    "passed": 5,
+    "logs": "revision/"
+  },
+  "dual_failure_and_coding": {
+    "tests": 57,
+    "initial_passed": 56,
+    "concurrent_prompt_identity_rejection": 1,
+    "failed_case_fixed_source_rerun_passed": true,
+    "logs": "../gonly_boundary_20261116_r1/"
+  },
+  "evidence_and_recovered_request": {
+    "purpose": "preparation engineering validation; not formal L3",
+    "evidence_tests": {
+      "passed": 15,
+      "new": 3,
+      "log": "evidence.log"
+    },
+    "request_recovery_and_numeric_timeout_tests": {
+      "passed": 7,
+      "new": 3,
+      "log": "request_recovery.log"
+    },
+    "gpu_result": "gpu/GPU_RESULTS.json",
+    "gpu_cleanup": "gpu/cleanup.json",
+    "gpu_overlap_seconds": 12.353677749633789,
+    "exact_quality_and_samples_equal": true,
+    "deadline_matches_actual_request": true,
+    "history_modified": false
+  },
+  "structure_audit": {
+    "status": "passed",
+    "syntax_files": 192,
+    "snapshot_files": 315
+  },
+  "llm_transport": {
+    "cli_version": "0.169.0",
+    "scientific_routes_changed": false,
+    "probes": [
+      "generation/astra/high",
+      "coding/sol/medium",
+      "recorder/luna/high",
+      "monitor/sol/ultra"
+    ],
+    "actual_identity": "not_reported_by_cli",
+    "receipt": "llm/cli169_compatibility.json"
+  },
+  "live_generation_result": "live_generation_r1_result.json",
+  "note": "Batches overlap; counts are not added as unique tests. No preparation metric is counted as a new formal result.",
+  "live_generation": {
+    "validation_passed": true,
+    "checks": {
+      "actual_tool_numeric_evidence_returned": true,
+      "bound_real_worker_receipts_and_hashes": true,
+      "executed_parameters_match_selected_intervention": true,
+      "no_l3_executed": true,
+      "no_retired_roles": true,
+      "registered_workers_all_exited": true,
+      "reselection_uses_current_versions": true,
+      "scientific_revision_published": true,
+      "selected_exact_version_actually_executed": true
+    },
+    "calls": 6,
+    "evidence": 3,
+    "measurement_source": "synthetic_computation",
+    "actual_numeric_tool_execution": true,
+    "initial_harness_failure_preserved": "live_generation_r1_result_initial_harness.json",
+    "new_formal_results": 0
+  }
+}

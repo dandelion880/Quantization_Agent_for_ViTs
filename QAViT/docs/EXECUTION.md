@@ -31,7 +31,7 @@ G-only 每轮发布 H1/H2/H3 三个 generate 任务，允许自主进行“静�
 
 预选绑定 candidate_refs、selected_hypothesis_ref 的完整版本 ID，selection_stage=gonly_preselection、selection_source=generation、provisional=true。selected_slot 可以为 null；不要求候选全部 L3，不按 L1/L2 代理指标晋升方案。选择卡及证据交付 Generation 的 plan_l3、Recorder 与下一轮反馈。预选失败保留候选与独立B进入复盘，不自动选择H1。B仅从既有incumbent/方案库已验证结果保留，种子单独保持可发现，不参与候选的成熟度竞争。已完成轮次的失败研究任务不会被通用 retry 重开；延期 Recorder 仍可显式重试。
 
-预选可单独调用 revise_candidate(parent_ref, hypothesis, reason, change_type="scientific") 提交完整科学修订。宿主事务发布同logical_id的下一不可变版本，记录父版本、理由及依据，旧Evidence不改且不验证新版本。恢复重放同工具任务只返回原版本。新候选快照重新预选，旧选择拒绝提交；L3草案持久绑定candidate_binding.selection_ref/hypothesis_ref，计划和数值请求沿引用链追溯确切版本。工程修复仍在原请求Coding链，不借此修改科学定义。
+预选可单独调用 revise_candidate(parent_ref, hypothesis, reason, change_type="scientific") 提交完整科学修订。宿主事务发布同logical_id的下一不可变版本，记录父版本、理由及依据，旧Evidence不改且不验证新版本。提交前中断遗留的孤立卡仅在完整校验且正文、身份和来源逐字段一致时复用原字节；不得覆盖不同或损坏的卡片。同一工具任务绑定持久请求；提交后恢复只返回原版本，不重复发布或推进 Memory。新候选快照重新预选，旧选择拒绝提交；L3草案持久绑定candidate_binding.selection_ref/hypothesis_ref，计划和数值请求沿引用链追溯确切版本。工程修复仍在原请求Coding链，不借此修改科学定义。
 
 Generation 的 generate/select/plan_l3 均固定 gpt-6-astra/high，配置覆盖和直接调用不得降级；运行时逐次预检目录、档位和账户，服务端未回显身份时如实记为未知，回显冲突或降级拒绝接受。Coding、Safeguard、Recorder、Supervisor 沿用原角色配置。默认 llm_concurrency=4（可设1–4），现有非 Judger 订阅互斥继续使用；历史并发兼容代码不触发科研任务。
 
@@ -103,7 +103,7 @@ Recorder 实证知识的完整 scope 由真实引用证据绑定模型、位点�
 
 L0 为不可变卡片/提交；L1 根据 Journal 维护本轮真实假说、实验、证据、选择与 incumbent，不能由 Recorder 引用子集覆盖；L2 为有状态、范围和出处的知识；L3 为每轮 Meta-review。Recorder 维护科研判断，程序检查来源并保护原始事实。knowledge_updates 可为空；每项科研输入是 text、status、evidence_refs、rationale。新 claim_id 可由程序生成；scope 可完全省略或部分提交，程序从引用证据绑定可确定字段；比较条件逐份绑定，冲突条目保留待核实。持久化项仍包含完整 claim_id、text、status、scope、evidence_refs、rationale；status 为 hypothesis/observed_once/replicated/refuted/conditional/abandoned。异质条件的对照使用 conditional 等适当状态，不因两个执行就视为重复验证。replicated 需要相同条件下不同执行与 replication_analysis；更新已有 claim_id 时，程序绑定 supersedes 为当前 revision_ref；显式冲突局部处理。judgment_audit 为可选的重点判断分析，条目含 judgment_ref、assessment、evidence_refs、reasoning，不要求穷举。Recorder 应解释预判与实测差异、指标价值、失败机制和下一轮问题。next_questions 只新增未决问题，省略或空数组均不清空旧问题；可选 resolved_questions/abandoned_questions 明确移除已解决/放弃的问题，无关闭审批。pending 沿 claim_id 与旧 revision_ref 修正、发布或 abandoned，原稿保留，当前待办只呈现仍待处理项，不启动额外修正文书调用。
 
-L3 失败、取消或拒绝也进入 Recorder；`task.l3_outcome` 默认交付请求/执行状态、子任务状态与失败原因、原文入口、有效证据及缺口；完整工程结果和长日志按需读取。报告的 `status=completed`、`workflow_completed=true` 仅表示流程完成。`formal_validation_success` 另行核验本轮冻结规格、执行指纹、协议及原始资产；已完成请求没有有效 L3 证据仍为 false。报告总值要求流程完成、至少一项 L3 申请且所有申请验证成功；各轮保留独立结果。该标志不表示假设正确、达到性能目标或完成了规格以外的评测。
+L3 失败、取消或拒绝也进入 Recorder；`task.l3_outcome` 默认交付请求/执行状态、子任务状态与失败原因、原文入口、有效证据及缺口；完整工程结果和长日志按需读取。报告的 `status=completed`、`workflow_completed=true` 仅表示流程完成。`formal_validation_success` 另行核验本轮冻结规格、执行指纹、协议及原始资产；已完成请求没有有效 L3 证据仍为 false。报告总值要求启用 L3、无仅 Generation 的 scope_target，并且配置目标内每一轮都有按冻结规格核验通过的 L3；未启动、跳过、延期轮均不能由其他轮成功代替。`expected_rounds`/`validated_rounds` 明示覆盖。数值验证与 Recorder/流程完成独立；各轮保留独立结果。新规划 revision 即使尚未派发请求，也以其 planning_state/plan_revision 呈现当前状态，同时保留上一请求的执行事实。该标志不表示假设正确、达到性能目标或完成了规格以外的评测。
 
 Recorder 只需提交 scientific_analysis；generation_guidance、next_questions 按需表达；可补充有证据支持的知识、关键判断分析、指标适用性、失败模式和盲点。程序绑定全部 source_refs、recording_batch_id 与 analysis_scope；来源覆盖表示纳入批次综合，不宣称每项经过科研认可。新提交不使用 reviewed_refs；兼容收到的旧字段时忽略，既不认定已审，也不拒绝有效复盘。
 
