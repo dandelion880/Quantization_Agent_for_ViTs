@@ -1,0 +1,109 @@
+{
+  "observed_at": "2026-11-15T22:40:56.926960+00:00",
+  "summary_sha256": "132d4928b3b006140f3eae5554b8c19f870539ac2045a20c190fcdc44427d8c2",
+  "managed_summary": {
+    "status": "completed",
+    "completed_rounds": [
+      1,
+      2,
+      3
+    ],
+    "workflow_completed": true,
+    "formal_validation_success": true,
+    "scientific_review_complete": true,
+    "state_saved": true,
+    "stop_event_saved": true,
+    "monitor_cleanup_completed": true,
+    "supervisor_exit_code": 0,
+    "finalization_errors": []
+  },
+  "budget": {
+    "elapsed_seconds": 12189.095690011978,
+    "remaining_seconds": 2210.904309988022,
+    "excluded_numeric_wait_seconds": 14111.011677503586,
+    "active_segment": null,
+    "extensions": [],
+    "segments": [
+      {
+        "commit_sequence": 9149,
+        "deadline_unix": 1794770395.2512445,
+        "elapsed_seconds": 12189.095690011978,
+        "excluded_numeric_wait_seconds": 14111.011677503586,
+        "owner": {
+          "boot_id": "6b5c6a20-dca9-4d23-9c43-b737d02324c4",
+          "pid": 486681,
+          "start_ticks": "842875933",
+          "state": "R"
+        },
+        "processes_stopped": true,
+        "reason": "Supervisor and registered CLI/workers exited",
+        "recovered_without_stop": false,
+        "remaining_at_start": 14400,
+        "segment_id": "segment-1",
+        "started_unix": 1794755995.2512445,
+        "stopped_unix": 1794782295.358612,
+        "type": "budget_segment_stopped",
+        "wall_seconds": 26300.107367515564
+      }
+    ]
+  },
+  "task_counts": {
+    "completed": 338,
+    "failed": 13
+  },
+  "active_tasks": [],
+  "owned_scientific_processes_found": [],
+  "launcher_pid_486681_exists": false,
+  "gpu_and_leases": [
+    {
+      "gpu_index": "0",
+      "uuid": "GPU-7b3cc098-9544-bc3b-f922-2dda1d35619b",
+      "memory_used_mib": 0,
+      "utilization_pct": 0,
+      "lease_lock_path": "EXP/cache/v2_resources/f886dd84a4e960bf6a2d2873da5c249bcb710b910febd662245e753a8318d6aa.lock",
+      "exists": true,
+      "exclusive_lock_available": true
+    },
+    {
+      "gpu_index": "1",
+      "uuid": "GPU-1f053b21-cd6a-49f3-b124-eba7081372cf",
+      "memory_used_mib": 0,
+      "utilization_pct": 0,
+      "lease_lock_path": "EXP/cache/v2_resources/d2b128fe3ea4e4f623f0f4617250fb95d7c20bb7c00134b0d715b96a3962e6aa.lock",
+      "exists": true,
+      "exclusive_lock_available": true
+    },
+    {
+      "gpu_index": "2",
+      "uuid": "GPU-df567935-d109-ae8c-1dec-9274a597bb77",
+      "memory_used_mib": 0,
+      "utilization_pct": 0,
+      "lease_lock_path": "EXP/cache/v2_resources/1705a4e88341fa4a28bc8868e117dd9753fa7e5f8c3703c06693b652969de66d.lock",
+      "exists": true,
+      "exclusive_lock_available": true
+    },
+    {
+      "gpu_index": "3",
+      "uuid": "GPU-a9bcbfca-6d9e-46ec-55e0-595e8a2b658c",
+      "memory_used_mib": 0,
+      "utilization_pct": 0,
+      "lease_lock_path": "EXP/cache/v2_resources/26bfa43db8d9d6f4e468b1ec84fa71eb75d4544e6f16a900e7ed415d59ece6e4.lock",
+      "exists": false,
+      "exclusive_lock_available": null
+    },
+    {
+      "gpu_index": "4",
+      "uuid": "GPU-cc9e24d0-5522-0bac-446f-e6608c62a9e6",
+      "memory_used_mib": 0,
+      "utilization_pct": 0,
+      "lease_lock_path": "EXP/cache/v2_resources/b039afc6972f871cf6444306afde1ddd9fd72fc240cbc029596927940a76f92c.lock",
+      "exists": true,
+      "exclusive_lock_available": true
+    }
+  ],
+  "verification_attempts": [
+    "Initial exclusive flock with read-only descriptor returned EBADF on this filesystem; r+b retry performed no file data writes.",
+    "round_audit has default one-shot mode; unsupported --once invocation was replaced by no mode flag."
+  ],
+  "note": "No run.py report command executed; all research/summary artifacts read-only."
+}

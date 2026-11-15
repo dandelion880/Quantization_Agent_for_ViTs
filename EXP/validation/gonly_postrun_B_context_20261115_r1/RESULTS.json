@@ -1,0 +1,20 @@
+{
+  "status": "passed",
+  "formal_intervention": false,
+  "formal_run_modified": false,
+  "formal_frozen_core_sha256": "6f5db3ec908f9e44ae2616b1e2f8ad6a8d2468b3f7ceffbcbe5c1f4a87ad2dec",
+  "postrun_core_sha256_at_check": "92dbd9fc776a441b6e2b782f41874b6223cca04e16a0215742c4d120aa0c6c57",
+  "final_regression": {
+    "passed": 20,
+    "seconds": 15.439,
+    "new_tests": 4,
+    "log": "regression_final.log"
+  },
+  "historical_context_check": "historical_context_check.json",
+  "run_files_stat_unchanged": 14204,
+  "LLM_calls": 0,
+  "numeric_executions": 0,
+  "historical_Memory_corrected": false,
+  "limitation": "Read-only context reconstruction; no real Recorder rerun or claim of measured prompt efficacy.",
+  "LLM_calls_scope": "New QAViT model calls only; external Codex engineering reasoning is in the separate external-session ledger."
+}

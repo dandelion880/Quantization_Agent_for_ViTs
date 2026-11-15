@@ -298,3 +298,15 @@ coverage.xml
 
 !/EXP/validation/gonly_hardening_20261116_r1/verify_live_generation.py
 !/EXP/inputs/deitb_static_w4a4_gonly_20261115_r2/round_audit.py
+!/EXP/inputs/deitb_static_w4a4_gonly_20261115_r2/make_monitor_draft.py
+!/EXP/inputs/deitb_static_w4a4_gonly_20261115_r2/compare_frozen_payloads.py
+!/EXP/inputs/deitb_static_w4a4_gonly_20261115_r2/external_cost.py
+!/EXP/inputs/deitb_static_w4a4_gonly_20261115_r2/finalize_delivery.py
+!/EXP/inputs/deitb_static_w4a4_gonly_20261115_r2/external_monitor_usage.json
+!/EXP/inputs/deitb_static_w4a4_gonly_20261115_r2/monitor_terminal_review.json
+!/EXP/inputs/deitb_static_w4a4_gonly_20261115_r2/scientific_memory_diagnosis.json
+!/EXP/validation/gonly_postrun_B_context_20261115_r1/
+!/EXP/validation/gonly_postrun_B_context_20261115_r1/REPORT.md
+!/EXP/validation/gonly_postrun_B_context_20261115_r1/RESULTS.json
+!/EXP/validation/gonly_postrun_B_context_20261115_r1/PSEUDOCODE.md
+!/EXP/validation/gonly_postrun_B_context_20261115_r1/check_history.py

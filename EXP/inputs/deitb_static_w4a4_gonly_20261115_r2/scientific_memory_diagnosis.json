@@ -1,0 +1,68 @@
+{
+  "observed_at": "2026-11-15T22:43:38.912922+00:00",
+  "conclusion": "Recorder R2/R3 compares completed candidate to already promoted current B; interpreting equality as absence of a new candidate or prior-B contrast confuses before/after states. The packages and frozen payloads do differ as recorded.",
+  "findings": [
+    {
+      "round": 2,
+      "selection_ref": "ReviewDecisionCard-6cefb2d4cc5d4139881ad1ff2d3ef6f8@1",
+      "pre_round_B_model_ref": "14e4fd32745a705cfa3d748250c5a16b756d7bcd48e12707df484ea5a0956857",
+      "new_candidate_model_ref": "c1c5ac43b4957e8afca2e8c4caca8f3cd1d3cc75eb72e0c8529bf2d00b6a27db",
+      "different_model_refs": true,
+      "recorder_ref": "MetareviewCard-da9388eba6e5400097ccf98020cf094c@1",
+      "recorder_blind_spots": [
+        "C45所列候选与保留B是同一solution/model_ref及同分结果，缺少AdaLog-only基线，不能据当前L3识别H2机制增量。",
+        "局部PV NMSE、整网KL与Top-1/ADE指标有冲突可能；当前单次局部诊断不能证明代理预测规律或泛化。"
+      ],
+      "recorder_guidance": "保留已通过L3审计的候选及B作为可复用有效结果，但不声称H2改动带来任务增益。下一轮最能改变判断的是同协议、同校准和FP对照下的AdaLog-only与仅首层Q逐head/H2候选完整双任务配对；若全L3成本不可接受，可先测固定其余量化状态的共享Q/逐head整网logit KL作筛选，但不得以此替代最终任务比较。H1应先以完整量化背景的CLS/patch受控门控实验检验修订；H3须先修复确切冻结包加载契约并完成码本匹配局部对照，不能直接升级昂贵L3。",
+      "persisted_L2_claims": [
+        {
+          "claim_id": "knowledge-9d818a1cedfec85cfed8",
+          "text": "在本项目官方非蒸馏deit_base_patch16_224、static W4A4、32张校准及规定完整双任务评测条件下，已验证H2候选的ImageNet Top-1/Top-5为72.394%/90.210%，ADE mIoU/mAcc/aAcc为28.4791%/38.1079%/71.5929%；相对配对FP分别存在9.402/5.384、11.3504/12.4987/7.1603个百分点差距。该事实描述候选绝对表现，不表明相对AdaLog-only的改动效应或普遍化表现。",
+          "rationale": "C45对应本次完成的真实完整验证；它与保留B记录的solution/model_ref及成绩相同，且没有同协议AdaLog-only比较，故只保存条件化绝对结果，不作候选增益或独立重复主张。",
+          "revision_ref": "MetareviewCard-da9388eba6e5400097ccf98020cf094c@1",
+          "evidence_refs": [
+            "EvidenceCard-46fbe7b34ad44eea8f72d04756d69074@1"
+          ]
+        }
+      ],
+      "independent_payload_comparison": "r2_frozen_payload_comparison.json"
+    },
+    {
+      "round": 3,
+      "selection_ref": "ReviewDecisionCard-f0f8e8f05ee94444b23ac84dd2a709be@1",
+      "pre_round_B_model_ref": "c1c5ac43b4957e8afca2e8c4caca8f3cd1d3cc75eb72e0c8529bf2d00b6a27db",
+      "new_candidate_model_ref": "6e5761dc523e30f6bde2ea3e3801e6adb8c5520a14ce3d6caffa96145f85a7a2",
+      "different_model_refs": true,
+      "recorder_ref": "MetareviewCard-ebf972d7c3254468898844216e3d8563@1",
+      "recorder_blind_spots": [
+        "H2 尚无同 AdaLog 基础、同协议的共享/逐 head Query 完整双任务因果对照；本轮 L3 候选与 B 身份相同。",
+        "单次局部执行中的 KL、NMSE、Top-1 冲突不能确立代理指标预测最终任务性能的规律。",
+        "H3 冻结包未进入加载器，机制预测尚未检验。"
+      ],
+      "recorder_guidance": "保留已验证 B 作为独立有效结果，但勿把本次相同 model_ref 的 L3 结果记作 H2 增量。下一轮若继续 H2，最有判别力的比较是同一 AdaLog-only 基础、相同校准与 FP 对照下，实际不同的共享 Query 与逐 head Query 包完成完整双任务；确认包身份不同后再评估。成本受限时可先在冻结其余状态下比较两者整网 logit KL 作筛选，但不能替代完整分类与 ADE 结论。H1 仅保留局部机制证据及任务风险；H3 先解决确切冻结包授权契约，不重复把加载失败当科学结果。",
+      "persisted_L2_claims": [
+        {
+          "claim_id": "knowledge-c96c9cb2ec4fd44c2c95",
+          "text": "本轮完整验证的 W4A4 包通过独立重载及全量 ImageNet/ADE 评测，但其 solution/model_ref 与保留的有效 B 相同；该次绝对双任务表现不能作为 H2 相对 B 的增量效果证据。",
+          "rationale": "全量配对 FP 指标确立该包表现；相同候选身份及结果限制了可作出的因果比较。分类与 ADE 均明显低于配对 FP，亦不应被局部 KL 证据掩盖。",
+          "revision_ref": "MetareviewCard-ebf972d7c3254468898844216e3d8563@1",
+          "evidence_refs": [
+            "EvidenceCard-ad61016bc2954c3695078601425890ae@1"
+          ]
+        }
+      ],
+      "independent_payload_comparison": "r3_frozen_payload_comparison.json"
+    }
+  ],
+  "persistent_memory_issue": "The post-promotion identity wording is retained in L2 claims knowledge-9d818a1cedfec85cfed8 and knowledge-c96c9cb2ec4fd44c2c95. History was not changed.",
+  "valid_remaining_limits": [
+    "No matched contemporaneous AdaLog-only full dual-task control for the original per-head intervention.",
+    "Only single fixed calibration/evaluation runs; no independent repetition or robust effect estimates.",
+    "Proxy KL/PV/logit/Top1 rankings conflict.",
+    "H3 mechanism never obtained valid numerical evidence; H1 complete method not evaluated by L3."
+  ],
+  "L1_open_questions": [
+    "在同协议、同AdaLog基础方案、相同校准及FP对照下，首层Query逐head相对共享Query对完整ImageNet与ADE指标的增量因果效应分别是多少？"
+  ],
+  "external_intervention": false
+}

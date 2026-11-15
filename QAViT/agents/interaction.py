@@ -880,6 +880,49 @@ class RoleInteraction:
             pointer = '/payload/result' if card['kind'] == 'TaskCard' else '/payload'
             field(ref, pointer, '宿主为本任务明确分配的反馈')
 
+    def recorder_B_transition(self, task, sequence):
+        """Read retained B at recorded selection/batch boundaries, never infer a control."""
+        inputs = task['inputs']['context']
+        number, selection = inputs.get('round'), inputs.get('selection_ref')
+        events = [e for e in self.journal.events if e['commit_sequence'] <= sequence]
+        snapshots = [e for e in events if e['type'] == 'task_snapshot']
+        selected_tasks = {e['task']['task_id'] for e in snapshots
+                          if e['task']['inputs'].get('purpose') == 'select'
+                          and selection and selection in e['task'].get('outputs', [])}
+        anchor = next((e for e in snapshots if e['task']['task_id'] in selected_tasks), None)
+        if anchor:
+            before_sequence = anchor['commit_sequence']
+            source = {'kind': 'selection_task_created', 'task_ref': anchor['task']['task_card'],
+                      'task_id': anchor['task']['task_id'], 'selection_ref': selection}
+        elif selection in self.journal.cards:
+            before_sequence = self.journal.cards[selection]['sequence']
+            source = {'kind': 'selection_card_published', 'selection_ref': selection}
+        else:
+            anchor = next((e for e in events if e['type'] == 'round_started' and e['round'] == number), None)
+            before_sequence = anchor['commit_sequence'] if anchor else None
+            source = {'kind': 'round_started' if anchor else 'unavailable_no_pre_l3_anchor'}
+        after_sequence = inputs.get('recording_batch', {}).get('through_sequence', sequence)
+        def retained(cutoff, basis):
+            if cutoff is None:
+                return {'status': 'unavailable_no_pre_l3_anchor', 'candidate': None, 'source': basis,
+                        'snapshot_sequence': None}
+            incumbent = self.memory.snapshot(cutoff)['L1'].get('incumbent')
+            value = self.solutions.fallback(incumbent, sequence=cutoff)
+            library = [e['commit_sequence'] for e in events
+                       if e['type'] == 'solution_library' and e['commit_sequence'] <= cutoff]
+            return {**value, 'snapshot_sequence': cutoff,
+                    'source': {**basis, 'solution_library_sequence': library[-1] if library else None}}
+        return {'round': number, 'selection_ref': selection,
+                'before_l3': retained(before_sequence, source),
+                'after_l3': retained(after_sequence, {'kind': 'recorder_batch_snapshot',
+                    'batch_id': inputs.get('recording_batch', {}).get('batch_id')}),
+                'solution_considerations': [{k: e[k] for k in ('commit_sequence', 'evidence_ref', 'selected', 'reason') if k in e}
+                    for e in events if e['type'] == 'solution_considered' and e.get('round') == number
+                    and e['commit_sequence'] <= after_sequence],
+                'meaning': 'before_l3 is B available at the recorded selection boundary; after_l3 is B retained at this recording batch. '
+                           'Equal candidate and after_l3 identities can result from promotion; compare before_l3 and exact Evidence. '
+                           'Retained historical measurements are not a new contemporaneous control or proof of causal effect.'}
+
     @journal_read
     def context(self, task):
         task = deepcopy(task)
@@ -1069,7 +1112,9 @@ class RoleInteraction:
         budget = self.budget.input_receipt()
         if purpose in ("generate", "select", "evolve", "code", "safeguard", "record", "plan_l3"):
             context["complete_solutions"] = self.solutions.catalog(sequence)
-            context["fallback_B"] = self.solutions.fallback(state["L1"].get("incumbent"))
+            context["fallback_B"] = self.solutions.fallback(state["L1"].get("incumbent"), sequence=sequence)
+            if purpose == 'record':
+                context['B_transition'] = self.recorder_B_transition(task, sequence)
             context["solution_policy"] = "Verified fallback B is retained independently of exploration. Complete bases and pending seeds are distinct; H1/H2 explain their chosen base and scientific changes. Select the next research investment without an H1 preference or maturity gate."
         from core.static_w4a4 import DESCRIPTION
         context["static_w4a4_protocol"] = DESCRIPTION

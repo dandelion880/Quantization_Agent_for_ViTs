@@ -15,7 +15,7 @@
     "screen": "cb32fba7c7a97acdfbd8ba2496436f5fb27b5bdfbed0dfeb9f44e992d73c9242",
     "supervise": "df6e270ade1059a1c20b9c76f53b8ae4cdbce6acf4892ddb5869b22a839ee39d"
   },
-  "explicit_fix_source": "EXP/validation/parent_evolution_20261029_r1/prompts.diff; authorized parent/final workflow update, 2026-10-29; EXP/validation/serial_debate_memory_20261029_r1/prompts.diff; authorized serial debate/shared science/fixed verdict update, 2026-10-29; EXP/validation/experiment_inputs_20261029_r1/prompts.diff; authorized experiment input and Brief-scope alignment, 2026-10-29; EXP/validation/gonly_hardening_20261116_r1/revision: same-request candidate revision recovery, actual UTC 2026-11-15; EXP/validation/gonly_hardening_20261116_r1: structured dual-task execution failures for Coding and Safeguard, actual UTC 2026-11-15",
+  "explicit_fix_source": "EXP/validation/parent_evolution_20261029_r1/prompts.diff; authorized parent/final workflow update, 2026-10-29; EXP/validation/serial_debate_memory_20261029_r1/prompts.diff; authorized serial debate/shared science/fixed verdict update, 2026-10-29; EXP/validation/experiment_inputs_20261029_r1/prompts.diff; authorized experiment input and Brief-scope alignment, 2026-10-29; EXP/validation/gonly_hardening_20261116_r1/revision: same-request candidate revision recovery, actual UTC 2026-11-15; EXP/validation/gonly_hardening_20261116_r1: structured dual-task execution failures for Coding and Safeguard, actual UTC 2026-11-15; EXP/validation/gonly_postrun_B_context_20261115_r1: post-formal read-only before/after retained B context, no formal-run intervention",
   "explicit_prompt_fixes": {
     "generate": "404fe32ca005e588aa4ac46e22259022970ac3f8005675d7a580fbd143d67451",
     "select": "c363ce12d4716d63b0770fbc992fc8818f7fc99cd2ec32ff6ca5ada3b8010044",
@@ -25,7 +25,7 @@
     "arbitrate": "73c263f50f110295e506c758d4843a7a8b19dfa903b355bf26d9fbb8a6c706e9",
     "rank": "c3b253e5e95fc6a9805bba77ec285023bbddd722707d001feb5ca7400f957692",
     "plan_l3": "6f719c782f74f7ffd213463f2e877cd013776e200bd0a43cc641e6cf89c99b32",
-    "record": "629db67be62260317c00f75c3f562703cccccdc8de0434bd8325e4f69d3b8444",
+    "record": "253ca460907787c8ec7f1bb9a024e67d2ba3c6f9d9ff345e9216d39c978f60d4",
     "code": "50322b44927a7ae1384fb8ac9582a949073b291392196c9f94a53951ae1e9f88",
     "safeguard": "5f3b430bfb952950231908cf1b4d5837c491a0778c04fd363359a5e32551478d",
     "supervise": "8061905f30378ca126310c0f4696478ae65d74b69c01efaae9b45b25f18154ea",

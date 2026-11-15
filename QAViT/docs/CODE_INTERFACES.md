@@ -60,3 +60,5 @@ Coding 与 Safeguard 的 `public_interface_assets` 索引包含已发布的数�
 持久启动意图仅在任务/输入版本一致、请求正文完全一致且原 deadline 仍有效并不超出当前上限时复用。正文或资源变化、旧 deadline 失效时写独立 request-<hash>.json，保留原件；工作进程、环境和回执均绑定最终领取的确切请求。数值 worker 从其实际 request 传递 deadline_unix 到串行/并行评测及子任务，不从作业目录中同名的旧 request.json 猜测截止时间；预算累计和已领取尝试不重置。
 
 开放问题由 `question_records` 提供稳定 `question_id`。Recorder 用 `resolved_question_refs` / `abandoned_question_refs` 关闭指定问题，旧版原文数组仍兼容；摘要中的“已解决”不作模糊匹配，也不自动作科学判断。新字段必须指向历史已交付问题，重复关闭幂等，历史复盘不变。
+
+Recorder 的 `B_transition.before_l3` 从所引用预选任务的首次持久快照重建 B；兼容缺少该任务的历史数据时使用决定卡发布时点，无决定则使用已记录 round_started，无可核实锚点明确 unavailable。`after_l3` 固定在本批 recording_batch.through_sequence，逐份携带 snapshot_sequence、来源和方案库事件序号；恢复、延期及预算收尾不把后轮 B 混成本轮晋升后 B。`solution_considerations` 只列该批已记录的本轮更新结果，不推断晋升。原 `fallback_B` 保持当前读取快照的兼容含义。以上均为只读交付，不重写原 Memory、不改变排序/晋升、也不把历史成绩转为同期控制。

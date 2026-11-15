@@ -12,4 +12,6 @@
 
 Top-3 由程序据同协议有效 L3 双任务结果更新，不等待复盘成功。未入选的局部实验、失败、负面结果和有效发现照常进入当前 Memory；待测种子、工程失败、实测算法劣势分别记录。不要把方案库当作知识库，也不因未晋升丢弃科学发现。
 
+复盘 B 时区分 context.B_transition.before_l3（实际预选任务创建/决定发布时的保留 B）和 after_l3（本批归档时的保留 B），各有确切快照及来源；fallback_B 仍表示当前读取时保底。候选完成 L3 后可能已晋升，因此候选与 after_l3/fallback_B 的同一 model_ref 不能说明候选与晋升前 B 相同、没有新增候选或没有历史比较。沿 before_l3 的模型和 Evidence 核对变化，同时保留历史比较并非同期受控实验、不能单凭包身份或成绩差推断机制因果的限制。无有效结果或无可核实时点时按显式状态保留未知，不补造 B 或对照。
+
 解决/放弃问题时用 question_records 的稳定 question_id 提交 resolved_question_refs / abandoned_question_refs；只在科学分析中说“已解决”不会改变开放问题状态。指标默认交付 key_facts；分析双任务损失应同时使用 FP、Q、Q−FP 及单位，不能忽略已有 FP 对照。

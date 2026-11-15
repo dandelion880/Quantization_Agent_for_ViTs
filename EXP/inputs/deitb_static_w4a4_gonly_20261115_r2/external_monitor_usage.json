@@ -1,0 +1,155 @@
+{
+  "as_of_utc": "2026-11-15T22:52:59.676795+00:00",
+  "scope": "external preparation, engineering, Codex monitoring and reporting; separate from QAViT scientific CLI and isolated preparation probes/Generation",
+  "sessions": [
+    {
+      "thread": "01a1dfbd-5076-7410-86a3-90409f026ac7",
+      "agent": "/root",
+      "session_contexts": [
+        {
+          "model": "gpt-6.1-sol",
+          "effort": "ultra"
+        }
+      ],
+      "as_of": "2026-11-15T22:52:05.936Z",
+      "usage": {
+        "input_tokens": 134752370,
+        "cached_input_tokens": 134280704,
+        "cache_write_input_tokens": 0,
+        "output_tokens": 90077,
+        "reasoning_output_tokens": 34467,
+        "total_tokens": 134842447
+      },
+      "usage_initial_baseline": {
+        "input_tokens": 0,
+        "cached_input_tokens": 0,
+        "cache_write_input_tokens": 0,
+        "output_tokens": 0,
+        "reasoning_output_tokens": 0,
+        "total_tokens": 0
+      }
+    },
+    {
+      "thread": "01a1dfbe-e28e-7bc0-b2ef-a7b9a469926c",
+      "agent": "/root/revision_recovery",
+      "session_contexts": [
+        {
+          "model": "gpt-6.1-sol",
+          "effort": "ultra"
+        }
+      ],
+      "as_of": "2026-11-15T15:20:04.844Z",
+      "usage": {
+        "input_tokens": 7347621,
+        "cached_input_tokens": 7237632,
+        "cache_write_input_tokens": 0,
+        "output_tokens": 23733,
+        "reasoning_output_tokens": 6779,
+        "total_tokens": 7371354
+      },
+      "usage_initial_baseline": {
+        "input_tokens": 0,
+        "cached_input_tokens": 0,
+        "cache_write_input_tokens": 0,
+        "output_tokens": 0,
+        "reasoning_output_tokens": 0,
+        "total_tokens": 0
+      }
+    },
+    {
+      "thread": "01a1dfbe-f767-7011-aa0a-e969dc111e6b",
+      "agent": "/root/dual_failures",
+      "session_contexts": [
+        {
+          "model": "gpt-6.1-sol",
+          "effort": "ultra"
+        }
+      ],
+      "as_of": "2026-11-15T15:14:53.315Z",
+      "usage": {
+        "input_tokens": 4326264,
+        "cached_input_tokens": 4265984,
+        "cache_write_input_tokens": 0,
+        "output_tokens": 15796,
+        "reasoning_output_tokens": 4524,
+        "total_tokens": 4342060
+      },
+      "usage_initial_baseline": {
+        "input_tokens": 0,
+        "cached_input_tokens": 0,
+        "cache_write_input_tokens": 0,
+        "output_tokens": 0,
+        "reasoning_output_tokens": 0,
+        "total_tokens": 0
+      }
+    },
+    {
+      "thread": "01a1dfbf-09b5-76d2-8391-1acbaf196268",
+      "agent": "/root/evidence_resume",
+      "session_contexts": [
+        {
+          "model": "gpt-6.1-sol",
+          "effort": "ultra"
+        }
+      ],
+      "as_of": "2026-11-15T22:51:49.544Z",
+      "usage": {
+        "input_tokens": 8915498,
+        "cached_input_tokens": 8675200,
+        "cache_write_input_tokens": 0,
+        "output_tokens": 30775,
+        "reasoning_output_tokens": 10420,
+        "total_tokens": 8946273
+      },
+      "usage_initial_baseline": {
+        "input_tokens": 0,
+        "cached_input_tokens": 0,
+        "cache_write_input_tokens": 0,
+        "output_tokens": 0,
+        "reasoning_output_tokens": 0,
+        "total_tokens": 0
+      }
+    },
+    {
+      "thread": "01a1dfc6-92e1-7760-811a-4d1b3c8b308e",
+      "agent": "/root/formal_monitor",
+      "session_contexts": [
+        {
+          "model": "gpt-6.1-sol",
+          "effort": "ultra"
+        }
+      ],
+      "as_of": "2026-11-15T22:44:10.276Z",
+      "usage": {
+        "input_tokens": 42770816,
+        "cached_input_tokens": 42499840,
+        "cache_write_input_tokens": 0,
+        "output_tokens": 78202,
+        "reasoning_output_tokens": 19512,
+        "total_tokens": 42849018
+      },
+      "usage_initial_baseline": {
+        "input_tokens": 0,
+        "cached_input_tokens": 0,
+        "cache_write_input_tokens": 0,
+        "output_tokens": 0,
+        "reasoning_output_tokens": 0,
+        "total_tokens": 0
+      }
+    }
+  ],
+  "totals": {
+    "input_tokens": 198112569,
+    "cached_input_tokens": 196959360,
+    "cache_write_input_tokens": 0,
+    "output_tokens": 238583,
+    "reasoning_output_tokens": 75702,
+    "total_tokens": 198351152
+  },
+  "notes": [
+    "cached input is a subset of input; reasoning output is a subset of output; do not add twice",
+    "reported repeated-context consumption, not unique evidence volume or a subscription invoice",
+    "session/request model metadata is visible; service actual identity remains unreported",
+    "snapshot excludes later reporting/final-answer usage"
+  ]
+}
