@@ -29,7 +29,9 @@ ReviewDecisionCard 复用现有格式保存 Generation 预选（phase=ranking，
 
 G-only 每轮发布 H1/H2/H3 三个 generate 任务，允许自主进行“静态知识/Memory→实验→反馈分析→修订→候选提交”。三条任务完成后由 Generation 的 `rNNN/select` 综合证据预选一项 L3 候选；局部失败保留已完成候选和失败来源。无筛查、三场辩论、父子挑战或旧排名计算。
 
-预选绑定 candidate_refs、selected_hypothesis_ref 的完整版本 ID，selection_stage=gonly_preselection、selection_source=generation、provisional=true。selected_slot 可以为 null；不要求候选全部 L3，不按 L1/L2 代理指标晋升方案。选择卡及证据交付 Generation 的 plan_l3、Recorder 与下一轮反馈。预选失败时若已有 H1，程序保存明确标为 h1_availability_fallback 的可用兜底，未经科学排名或 L3；否则保留候选进入复盘。已完成轮次及已使用兜底的失败研究任务不会被通用 retry 重开；延期 Recorder 仍可显式重试。
+预选绑定 candidate_refs、selected_hypothesis_ref 的完整版本 ID，selection_stage=gonly_preselection、selection_source=generation、provisional=true。selected_slot 可以为 null；不要求候选全部 L3，不按 L1/L2 代理指标晋升方案。选择卡及证据交付 Generation 的 plan_l3、Recorder 与下一轮反馈。预选失败保留候选与独立B进入复盘，不自动选择H1。B仅从既有incumbent/方案库已验证结果保留，种子单独保持可发现，不参与候选的成熟度竞争。已完成轮次的失败研究任务不会被通用 retry 重开；延期 Recorder 仍可显式重试。
+
+预选可单独调用 revise_candidate(parent_ref, hypothesis, reason, change_type="scientific") 提交完整科学修订。宿主事务发布同logical_id的下一不可变版本，记录父版本、理由及依据，旧Evidence不改且不验证新版本。恢复重放同工具任务只返回原版本。新候选快照重新预选，旧选择拒绝提交；L3草案持久绑定candidate_binding.selection_ref/hypothesis_ref，计划和数值请求沿引用链追溯确切版本。工程修复仍在原请求Coding链，不借此修改科学定义。
 
 Generation 的 generate/select/plan_l3 均固定 gpt-6-astra/high，配置覆盖和直接调用不得降级；运行时逐次预检目录、档位和账户，服务端未回显身份时如实记为未知，回显冲突或降级拒绝接受。Coding、Safeguard、Recorder、Supervisor 沿用原角色配置。默认 llm_concurrency=4（可设1–4），现有非 Judger 订阅互斥继续使用；历史并发兼容代码不触发科研任务。
 
@@ -39,7 +41,7 @@ Generation 的 generate/select/plan_l3 均固定 gpt-6-astra/high，配置覆盖
 
 resources.gpu 的数字是本运行冻结的 NVML 编号标签；CUDA worker 通过 UUID 只暴露所租主卡，其模型设备统一为逻辑 cuda:0。容器 /dev/nvidia minor 另行按 UUID 对应，不能由编号拼猜。每个运行进程仅解析一次设备身份（恢复进程重新解析），避免反复 CUDA 初始化造成瞬时占用；排队只刷新占用和租约，不支持运行中热插拔扩池。ADE 与其它后端共用此路径，不再对旧物理编号另设限制。完整 result.json 写出后继续保留任务和资源占用，等待登记的 worker/子进程退出；默认30秒退出宽限后仅清理这些已完成进程，再接收原回执，恢复也沿用此状态。科学结果不因正常退出收尾变成失败，设备不会在进程仍存活时释放。
 
-resources.gpu 可选，指定时固定主卡；不指定时从 allowed_gpus 自动选择。默认每实验一卡；可选 gpu_count 是尽力使用的卡数，不能突破授权集合。当前仅 server 后端、原生非训练 quantize_evaluate/evaluate_artifact 的纯 classification 评测支持实验内多卡：单卡prepare/校准/导出一次，分片重载同一冻结包，复用逐图evaluate和aggregate，按整数correct counts与FP64误差累加器汇总，核对模型、请求身份及完整不重复样本。仅在必需指标可汇总时启用；latency_ms、measured_speedup、CUDA显存等必需指标及无法解释的组合 required_results schema 自动选择原单卡评测，保留全部要求。局部探针、profiling、factory/fixture、自定义executor、ADE或混合评测仍沿单卡；少卡时减卡或单卡，忙卡等待。配置 experiment_concurrency=1 可限制跨实验数值并发，gpu_count=1 可限制实验内部多卡，均不改变 LLM 并发。实际卡和回退原因写入回执；分片原始结果归档，不填造未采集的性能统计，不从QDQ耗时声称部署加速。
+resources.gpu 可选，指定时固定主卡；不指定时从 allowed_gpus 自动选择。默认每实验一卡；同冻结包ImageNet/ADE双任务默认尽力申请两卡；可选 gpu_count 是尽力使用的卡数，不能突破授权集合。原有分类分片仅在 server 后端、原生非训练 quantize_evaluate/evaluate_artifact 的纯 classification 评测中启用：单卡prepare/校准/导出一次，分片重载同一冻结包，复用逐图evaluate和aggregate，按整数correct counts与FP64误差累加器汇总，核对模型、请求身份及完整不重复样本。仅在必需指标可汇总时启用；latency_ms、measured_speedup、CUDA显存等必需指标及无法解释的组合 required_results schema 自动选择原单卡评测，保留全部要求。新增同一冻结包的 classification+ade_frozen 双任务路径，各任务仍单卡，独立重载且核对同包身份；custom executor 需显式 parallel_frozen_load=True，否则串行并记录原因。局部探针、profiling、factory/fixture及其它混合任务仍沿单卡；少卡时减卡或单卡，忙卡等待。配置 experiment_concurrency=1 可限制跨实验数值并发，gpu_count=1 可限制实验内部多卡，均不改变 LLM 并发。实际卡和回退原因写入回执；分片原始结果归档，不填造未采集的性能统计，不从QDQ耗时声称部署加速。
 
 新模板明确启用 budget.clock_mode="active_segments"、budget.exclude_numeric_wait=true。累计智能体预算扣除纯数值执行/资源排队/结果等待的区间，并行推理、Coding、审核等期间仍扣时，重叠只计一次。数值 estimated_seconds 沿用单任务超时，不再与智能体剩余时长比较；已启动实验不会被总时长或收尾预留截断，余额不足时先接收它们，不再启动新工作。外层监控跟随同一余额，暂停只在所有自有进程退出后结算，恢复不重置消费；等待检查点之后的未知崩溃间隔保守计时。人工停止、磁盘限制及单任务超时保留。旧未启用的连续/活动段预算保持原语义。
 

@@ -63,9 +63,9 @@ def execute_custom(plugin, payload, backend, cfg, data, directory):
     frozen_receipts = []
     def load_bound(ref):
         from tools.frozen import load_frozen
-        binding = next((b for b in spec.get('frozen_sources', []) if b['evidence_ref'] == ref), None)
+        binding = next((b for b in spec.get('frozen_sources', []) if ref in (b['evidence_ref'], b.get('solution_id'))), None)
         if binding is None:
-            raise ContractError('load_frozen requires a cited Evidence with a host-verified exported package')
+            raise ContractError('load_frozen requires a cited Evidence or evaluated solution with a host-verified exported package')
         model, receipt = load_frozen(binding, backend, cfg, data)
         frozen_receipts.append({k: v for k, v in receipt.items() if k != 'manifest'})
         return model, receipt

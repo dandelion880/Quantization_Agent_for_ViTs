@@ -316,6 +316,52 @@ def tensor_probe(experiment, backend, cfg, data, directory, approval):
                             if experiment["payload"]["level"] == "L2" else {})}}}
 
 
+
+def evaluate_task(backend, cfg, data, model, plan, requested, directory, native, coverage):
+    if requested['kind'] == 'classification':
+        from tools.evaluating import evaluate
+        return evaluate(backend, cfg, data, model, plan, requested['split'], requested.get('count'), None,
+                        **({'native': False, 'sites': coverage['declared_sites']} if not native else {}))
+    if requested['kind'] == 'ade_frozen':
+        from tools.segmentation import evaluate
+        return evaluate(model, backend.model, directory, requested.get('count'))
+    raise ContractError('尚未注册评测适配器: ' + requested['kind'])
+
+
+def evaluation_summary(requested, value):
+    """Preserve paired task facts at the handoff; never invent absent FP values."""
+    if requested['kind'] == 'classification':
+        metrics = {k: v for k, v in value['metrics'].items()
+                   if isinstance(v, (int, float, bool)) or v is None}
+        for key in ('top1', 'top5'):
+            if type(metrics.get(key)) in (int, float) and type(metrics.get('baseline_' + key)) in (int, float):
+                metrics['delta_' + key + '_pp'] = metrics[key] - metrics['baseline_' + key]
+        row = {'metrics': metrics, 'sample_count': value['sample_count'],
+               'sample_ids': value['sample_ids'], 'split': value['split']}
+        name = 'classification'
+    else:
+        q = value['metrics'].get('quantized', value['metrics'].get('quant'))
+        if q is None:
+            raise ContractError('未知ADE结果字段；不能猜指标归属')
+        metrics = {k: q[k] for k in ('mIoU', 'mAcc', 'aAcc')}
+        fp = value['metrics'].get('fp', {})
+        for key in ('mIoU', 'mAcc', 'aAcc'):
+            if key in fp:
+                metrics['baseline_' + key] = fp[key]
+                metrics['delta_' + key + '_pp'] = q[key] - fp[key]
+        row = {'metrics': metrics, 'sample_count': value['images'],
+               'sample_ids': value['sample_ids'], 'split': 'ade_validation'}
+        name = 'segmentation'
+    percentage = {'top1', 'top5', 'mIoU', 'mAcc', 'aAcc'}
+    row.update(full_dataset=value['full_dataset_evaluation'],
+               metric_units={k: 'percentage_points' if k.endswith('_pp') else 'percent'
+                             for k in metrics if k.endswith('_pp') or k.removeprefix('baseline_') in percentage},
+               protocol={k: deepcopy(v) for k, v in value.get('protocol', {}).items()
+                         if k not in ('split_ids', 'selected_ids')},
+               protocol_detail_ref=name + '.json#/protocol',
+               parallelism=deepcopy(value.get('parallelism', {})))
+    return name, row
+
 def evaluate_services(experiment, backend, cfg, data, directory, approval, gpus=()):
     from ptq_agent.execution.pipeline import QuantizationExecutor, plan_uses_calibration
     from ptq_agent.execution.model import RTNExecutor
@@ -416,42 +462,33 @@ def evaluate_services(experiment, backend, cfg, data, directory, approval, gpus=
         else:
             static_receipt = check_audit(verifier.audit(model, plan).get('static_w4a4'), required)
     before = model_digest(model)
-    evaluations = {}
-    from tools.result_contract import classification_shard_fallback
+    from tools.result_contract import classification_shard_fallback, dual_task_fallback
     fallback = classification_shard_fallback(experiment['payload'], {})
-    for requested in spec["evaluations"]:
-        if requested["kind"] == "classification":
-            if native and len(gpus) > 1 and fallback is None:
+    dual_reason = dual_task_fallback(experiment['payload'])
+    if not native and getattr(plugin, 'parallel_frozen_load', False) is not True:
+        dual_reason = 'approved custom executor has not declared independent frozen loading'
+    if dual_reason is None and len(gpus) > 1:
+        from tools.dual_task_evaluation import evaluate_parallel
+        evaluations = evaluate_parallel(experiment, backend, cfg, data, model, plan, coverage,
+                                        native, model_dir, directory, gpus, approval)
+    else:
+        evaluations = {}
+        for requested in spec["evaluations"]:
+            if requested["kind"] == "classification" and native and len(gpus) > 1 and fallback is None:
                 from tools.classification_shards import evaluate_parallel
                 value = evaluate_parallel(experiment, backend, cfg, data, model, plan, requested, model_dir, directory, gpus)
             else:
-                value = evaluate(backend, cfg, data, model, plan, requested["split"], requested.get("count"), None,
-                             **({"native": False, "sites": coverage["declared_sites"]} if not native else {}))
-                value['parallelism'] = {'shards': 1, 'fallback': fallback,
-                                        'physical_gpus': list(gpus[:1])}
-            atomic_json(directory / "classification.json", value)
-            evaluations["classification"] = {"metrics": {k: v for k, v in value["metrics"].items()
-                                                           if isinstance(v, (int, float, bool)) or v is None},
-                                              "full_dataset": value["full_dataset_evaluation"],
-                                              "sample_count": value["sample_count"], "sample_ids": value["sample_ids"],
-                                              "split": value["split"]}
-        elif requested["kind"] == "ade_frozen":
-            from tools.segmentation import evaluate as ade
-            value = ade(model, backend.model, directory, requested.get("count"))
-            atomic_json(directory / "segmentation.json", value)
-            # 原适配器目前只核验该冻结head协议，不能冒称适配所有ViT分割头。
-            metric = value["metrics"].get("quantized", value["metrics"].get("quant"))
-            if metric is None:
-                raise ContractError("未知ADE结果字段；不能猜指标归属")
-            evaluations["segmentation"] = {"metrics": {k: metric[k] for k in ("mIoU", "mAcc", "aAcc")},
-                                             "full_dataset": value["full_dataset_evaluation"], "sample_count": value["images"],
-                                             "sample_ids": value["sample_ids"], "split": "ade_validation"}
-        else:
-            raise ContractError("尚未注册评测适配器: " + requested["kind"])
+                value = evaluate_task(backend, cfg, data, model, plan, requested, directory, native, coverage)
+                value['parallelism'] = {'shards': 1, 'mode': 'serial',
+                    'fallback': dual_reason or 'fewer than two allocated GPUs', 'physical_gpus': list(gpus[:1])}
+            name, summary = evaluation_summary(requested, value)
+            atomic_json(directory / (name + '.json'), value)
+            evaluations[name] = summary
     if model_digest(model) != before:
         raise ContractError("评测改变了候选模型状态")
     files = [asset(p) for p in sorted(directory.glob("*.json")) if p.name not in ("request.json", "started.json", "result.json")]
     files.extend(asset(p) for p in sorted((directory / 'shards').glob('*/result.json')))
+    files.extend(asset(p) for p in sorted((directory / 'dual_tasks').glob('*/*.json')))
     if model_dir.parent == directory:
         files.extend(asset(p) for p in model_files or sorted(p for p in model_dir.rglob('*') if p.is_file()))
     return {"observations": {"static_w4a4": static_receipt, "evaluations": evaluations, "coverage": coverage, "reload": reload_check,

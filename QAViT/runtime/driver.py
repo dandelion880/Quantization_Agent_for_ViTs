@@ -72,7 +72,7 @@ class WorkflowDriver:
             return {"kind": task["kind"], "experiment": experiment, "approval": inputs.get("approval"),
                     "candidate": inputs.get("candidate"),
                     "gpu": resources.get("gpu"), "cpu_threads": resources["cpu_threads"],
-                    **placement(experiment, self.config['runtime'], self.brief['payload']),
+                    **placement(experiment, self.config['runtime'], self.brief['payload'], approval=inputs.get('approval')),
                     "estimated_seconds": resources["estimated_seconds"]}
         if task["kind"] == "literature":
             return {"kind": "literature", **inputs, "estimated_seconds": 45}

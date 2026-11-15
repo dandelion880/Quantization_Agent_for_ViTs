@@ -17,15 +17,15 @@
   },
   "explicit_fix_source": "EXP/validation/parent_evolution_20261029_r1/prompts.diff; authorized parent/final workflow update, 2026-10-29; EXP/validation/serial_debate_memory_20261029_r1/prompts.diff; authorized serial debate/shared science/fixed verdict update, 2026-10-29; EXP/validation/experiment_inputs_20261029_r1/prompts.diff; authorized experiment input and Brief-scope alignment, 2026-10-29",
   "explicit_prompt_fixes": {
-    "generate": "9fe33f4ad98616494925eee4e3d155c144799fb31f0d8346068b288d22128e60",
-    "select": "865d318bd5ef7cb9f53877eb18c819735269906c0b7174267c61c409feb3efe0",
+    "generate": "404fe32ca005e588aa4ac46e22259022970ac3f8005675d7a580fbd143d67451",
+    "select": "425461c8645c397f89565773427f451b5c374377db57a9982d8721c9cc63d9c2",
     "evolve": "92ed60c635e66bd01e4a05375347d305c7cec21cc62cf9ec5440cab5d03d91e2",
     "screen": "bd9d0109f05b23ea913b27f8310334a4ee4399517185ea226452926a7bb80a2f",
     "position": "d2aec2cef1fcfe7241c72b07f82283213895a7c2c9e631365ff8f5aff1a09bea",
     "arbitrate": "73c263f50f110295e506c758d4843a7a8b19dfa903b355bf26d9fbb8a6c706e9",
     "rank": "c3b253e5e95fc6a9805bba77ec285023bbddd722707d001feb5ca7400f957692",
-    "plan_l3": "2c2fc2330342c14ae1664ad5abee1d333988810515c774dd4a71b881750124b3",
-    "record": "2dc996b838424539dc4f891a434850801d34c040e35c6f60f467cdbb7ce654e1",
+    "plan_l3": "6f719c782f74f7ffd213463f2e877cd013776e200bd0a43cc641e6cf89c99b32",
+    "record": "629db67be62260317c00f75c3f562703cccccdc8de0434bd8325e4f69d3b8444",
     "code": "9a3700d94c3f96def70a2f8536278c1ab860d02bdcac00a7759369b11e19c215",
     "safeguard": "70e3808a7451f63b334b2833bfda22daefd1899923ab4192d50d405c297a537c",
     "supervise": "8061905f30378ca126310c0f4696478ae65d74b69c01efaae9b45b25f18154ea",
@@ -59,5 +59,6 @@
   "numeric_timeout_note": "2026-11-09: plan_l3 clarifies independent 24h numerical timeout default, optional task override, and no comparison to remaining active budget. See EXP/validation/real_research_20261109_preflight/timeout_summary.json.",
   "fix_notes": [
     "G-only: Generation generate/select/plan_l3; evidence-driven revision and optional discriminative-experiment skill; Recorder receives preselection without H4."
-  ]
+  ],
+  "gonly_readiness_change": "2026-11-15: independent B, scientific revision and exact selection versions, paired evidence and stable question closure. Original assembled baselines retained."
 }

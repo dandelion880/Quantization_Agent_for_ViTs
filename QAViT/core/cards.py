@@ -118,6 +118,7 @@ PAYLOAD_SCHEMAS = {
         }, ["index", "submission", "issue", "status"])},
         "recurring_failures": STRINGS, "blind_spots": STRINGS,
         "next_questions": STRINGS, "resolved_questions": STRINGS, "abandoned_questions": STRINGS,
+        "resolved_question_refs": STRINGS, "abandoned_question_refs": STRINGS,
         "generation_guidance": {"type": "string"},
         "evidence_refs": STRINGS, "reviewed_refs": {**STRINGS, "uniqueItems": True},
     }, ["round", "scientific_analysis", "judgment_audit", "predictive_metrics", "knowledge_updates",
@@ -161,7 +162,7 @@ OPTIONAL_ANALYSIS_FIELDS = {
                            'arguments', 'objections', 'responses_to_prior', 'key_predictions', 'changed_judgments', 'next_questions', 'continuation_assessment',
                            'decisive_reason', 'selection_basis'),
     'MetareviewCard': ('judgment_audit', 'predictive_metrics', 'recurring_failures', 'blind_spots',
-                       'next_questions', 'resolved_questions', 'abandoned_questions', 'generation_guidance'),
+                       'next_questions', 'resolved_questions', 'abandoned_questions', 'resolved_question_refs', 'abandoned_question_refs', 'generation_guidance'),
 }
 
 MEMORY_QUERY_SCHEMA = object_schema({"text": {"type": "string"}, "evidence_ids": {**STRINGS, "minItems": 1},

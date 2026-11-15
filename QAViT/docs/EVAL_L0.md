@@ -96,3 +96,9 @@ PYTHONDONTWRITEBYTECODE=1 CUDA_VISIBLE_DEVICES='' OMP_NUM_THREADS=2 MKL_NUM_THRE
 ## G-only 路由兼容
 
 上传的 v0.1 评分包原文及哈希保持不变。Generation 的 plan_l3 沿用 JL1–JL3 的任务标准并明确角色迁移，Full 历史 Judger/plan_l3 仍可评价。新 select 的职责不等同旧 rank：资源和原始轨迹照常计量、冻结，科学质量标记 gonly_selection_rubric_unavailable，不套用父子辩论评分或编造分数；新评分标准需另行版本化。此离线限制不影响科研预选或 L3。
+
+新准备的案例携带 `evidence_projection=exact_lists_and_repeated_bodies/1`：独立 Judge 只对已冻结、当时可见的来源做精确长样本列表折叠和重复正文共用，保留 hash/count/原 locator，并显式指向首次展示正文。不同处理臂、科学文字、失败与反证不会被摘要合并，不补入事后读取的历史资产。旧冻结案例未带该版本时保持原 rendering 和已接受评分绑定；既有评分包原件不改。此优化降低重复上下文，不保证每个大案例都能落入输入上限。
+
+## G-only v0.2
+
+新prepare默认采用仓库派生gonly_v0_2；新增select标准与H1/H2/B、候选修订、配对证据/问题关闭标准。未经人工校准，不声称专家真值。`--rules-version v0_1`可明确选择旧包；judge/report/verify默认按已冻结manifest恢复版本。原v0_1与历史评分不变。新case标记精确重复正文和大型样本ID投影，仅减少重复传输，完整原件与引用位置保留。

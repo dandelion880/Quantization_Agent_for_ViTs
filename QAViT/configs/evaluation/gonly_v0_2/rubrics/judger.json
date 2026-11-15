@@ -1,0 +1,235 @@
+{
+  "rubric_id": "qavit.eval_l0.judger.v0_1",
+  "role": "judger",
+  "task_goal": "科学筛查、双方交锋、独立裁决、阶段选择、L3 计划和少量历史解释任务各有不同目标；必须按 purpose 选用独立子 Rubric。",
+  "global_rules": [
+    "用 ResearchBrief 目标及相同实验口径比较；不因为 H3/H4 新颖、某方案熟悉、发言篇幅长就偏袒。",
+    "明确区分不合格、证据不足、算法劣势、工程实现失败及运行资源不足；没有数值支持的猜想可以合格。",
+    "仅以当时该角色可见的卡片、回合公开信息、实际实验与来源判断；对 position 不要求看见同 exchange 尚未汇合的另一方立场。",
+    "程序生成的 rank 不给 Judger LLM 打分；存在自动复用直接结果、已结案裁决不可改判、H4 只能与 H* 配对等现行合同。",
+    "tie 表示当前依据不能判定决定性优劣，不等于统计学等价；undetermined 表示关键比较依据缺失或不相容，未决本身不应自动低分。"
+  ],
+  "purposes": {
+    "screen": {
+      "task_goal": "判断候选是否违反明确硬条件或存在使核心命题不可检验/不能成立的实质错误，同时识别已知方法关系与证据缺口；不是性能淘汰。",
+      "criteria": [
+        {
+          "id": "JS1", "name": "硬约束与核心错误判断", "dimension": "D_scientific_reasoning",
+          "question": "eligible 决策是否明确区分实质违约/逻辑错误与正常科研不确定性？",
+          "inspect": ["ResearchBrief.hard_constraints", "HypothesisCard 机制/范围", "screen.eligible/hard_rejection_reasons/rationale"],
+          "anchors": {
+            "0": "将缺乏实测、未实现或方法不熟悉自动判不合格；或明显核心硬违约却错误放行且缺少合理解释。",
+            "1": "总体方向合理，但对一个重要硬约束或核心逻辑点判断不充分/依据不明确。",
+            "2": "准确指出可定位的硬约束与致命逻辑问题，或有理由通过仍可检验的候选；拒绝理由具体且与任务要求一致。"
+          }
+        },
+        {
+          "id": "JS2", "name": "机制关系与既有方法辨别", "dimension": "C_history_use",
+          "question": "是否通过机制和实际可见来源辨别重复、适配、互补或未知关系？",
+          "inspect": ["screen.similarity_analysis", "相关方法/方案卡片", "文献读取回执"],
+          "anchors": {
+            "0": "凭名称或不完整搜索断言首创/抄袭/完全重复，或对已读关键机制做明显错误比较。",
+            "1": "识别部分相似点但没有解释核心机制差异与证据范围。",
+            "2": "能解释可见机制的同异、适配与互补关系；仅有线索时诚实保留未知，不以是否新颖作一票否决。"
+          }
+        },
+        {
+          "id": "JS3", "name": "证据缺口与审查边界", "dimension": "B_experiment_value",
+          "question": "是否指出足以影响后续判断的缺口，且没有把缺口混同科学反证？",
+          "inspect": ["screen.evidence_gaps/uncertainties", "假说预测", "证据范围"],
+          "anchors": {
+            "0": "完全漏掉直接影响资格/机制判断的问题，或用证据不足虚构负面结果。",
+            "1": "提出缺口但笼统、与决策关联弱，或遗漏主要混杂。",
+            "2": "指出最关键且可核实的缺口及其会怎样影响后续研究；同时明确什么不是资格硬拒绝理由。"
+          }
+        }
+      ]
+    },
+    "position": {
+      "task_goal": "为 context.task 指定的 A 或 B 一方提出最强诚实论证；这不是要求绝对中立，也不是允许隐瞒反证。",
+      "criteria": [
+        {
+          "id": "JP1", "name": "本方最强论证质量", "dimension": "D_scientific_reasoning",
+          "question": "是否围绕 ResearchBrief 与本方机制提出最有力、可复核且范围合适的论点？",
+          "inspect": ["context.task.side/position_for/pair", "position.arguments/rationale", "本方假设与证据"],
+          "anchors": {
+            "0": "站错立场、只用修辞/标签，或用编造的实测构造优势。",
+            "1": "本方论点相关但缺少关键机制、证据范围或比较基准。",
+            "2": "准确针对分配候选，提出与任务目标直接相关的最强机制/证据论证，说明适用条件。"
+          }
+        },
+        {
+          "id": "JP2", "name": "最强反方观点与自我弱点", "dimension": "D_scientific_reasoning",
+          "question": "是否诚实处理已公开的对方关键观点、不利证据和自身限制？",
+          "inspect": ["已公开的 prior exchange", "position.objections/responses_to_prior", "当时可见证据"],
+          "anchors": {
+            "0": "捏造对方主张、回避直接反证或伪称已看见本 exchange 尚未公开的信息。",
+            "1": "承认部分不利信息，但主要反证处理表面化或没有说明影响。",
+            "2": "准确复述真正有力的已公开异议，提出有效回应或明确让步，承认本方最重要弱点；首轮无 prior 时不强制回应不存在的内容。"
+          }
+        },
+        {
+          "id": "JP3", "name": "决定性争议识别", "dimension": "B_experiment_value",
+          "question": "是否找出能使这两方比较发生改变的争议与可区分预测？",
+          "inspect": ["position.key_predictions", "双方核心机制/预测", "实验草案"],
+          "anchors": {
+            "0": "只重复无关优点或堆砌实验，没有明确比较问题。",
+            "1": "找到相关争议，但预测与指标/条件/决策变化联系较弱。",
+            "2": "提出真正能区分双方或解释的关键问题，指出可观测对照及不同结果如何影响本方立场。"
+          }
+        }
+      ]
+    },
+    "arbitrate": {
+      "task_goal": "在双方本 exchange 立场已汇合后依据证据中立裁决 A/B/tie/undetermined，或在最多五回合内合理 continue。",
+      "criteria": [
+        {
+          "id": "JA1", "name": "证据有效性与外推范围", "dimension": "D_scientific_reasoning",
+          "question": "是否正确核实来源、测量状态、评测范围、可比条件和代理指标边界？",
+          "inspect": ["原始双方假设与立场", "EvidenceCard 与 ExperimentCard", "arbitrate.evidence_refs/rationale", "真实执行状态"],
+          "anchors": {
+            "0": "把局部改善当任务精度，使用不可比实验推断明确胜负，或把失败/缓存当新实测。",
+            "1": "主要来源处理正确，但漏掉一个可能改变裁决的范围、对照或替代解释问题。",
+            "2": "清楚区分已有测量与推论，核实比较口径、证据支持范围与关键混杂，不被虚假精确性误导。"
+          }
+        },
+        {
+          "id": "JA2", "name": "机制比较与反论证审查", "dimension": "D_scientific_reasoning",
+          "question": "是否正面比较两方最强机制与反例，避免立场偏见？",
+          "inspect": ["A/B positions", "arbitrate.rationale", "历史交锋与 changed_judgments"],
+          "anchors": {
+            "0": "凭方法名、新颖性或文字气势判胜负，或没有面对一方决定性反证。",
+            "1": "能比较主要观点，但对关键弱点、替代解释或目标权衡不足。",
+            "2": "公平核对双方最有力的论据、机制前提及缺陷，清楚区分共同结果和一方独有贡献。"
+          }
+        },
+        {
+          "id": "JA3", "name": "裁决与现有证据的一致性", "dimension": "D_scientific_reasoning",
+          "question": "A/B/tie/undetermined/continue 的选择是否符合证据状态与当前科研目标？",
+          "inspect": ["arbitrate.outcome/rationale", "配对关系与 ResearchBrief", "当前回合的证据与预算"],
+          "anchors": {
+            "0": "在缺乏决定性依据时强判胜负，或已有决定性优势却无理由一概未决；混淆 tie 与统计等效。",
+            "1": "裁决大体合理但决定性理由、证据差距或剩余边界没有说清。",
+            "2": "依据相同目标和证据做出适当决定；胜负给出决定性依据，tie/undetermined 解释为何，continue 有明确待解决争议。"
+          }
+        },
+        {
+          "id": "JA4", "name": "继续取证或结案的决策价值", "dimension": "B_experiment_value",
+          "question": "选择追加实验、继续辩论或及时结案是否符合当前可行资源和信息价值？",
+          "inspect": ["arbitrate.continuation_assessment/next_questions", "request_experiment 与结果", "Budget 与可用能力"],
+          "anchors": {
+            "0": "重复无新信息的交锋、要求无法改变结论的昂贵实验，或有明确可执行关键检验却无理由回避。",
+            "1": "提出有一定价值的下一步，但成本、可执行性或结果改变决策的条件不清。",
+            "2": "能优先选择低成本高区分力检验；当证据充分时及时结案，当不可行/预算不足时如实未决而非虚构。"
+          }
+        }
+      ]
+    },
+    "rank": {
+      "task_goal": "依据已结案直接比较表，在初始 H1/H2/H3 中选 H*，或在 final 阶段仅在 H4 与 H* 中选最终候选；保留未决。",
+      "applicability_note": "仅当 TaskCard 具有真实 LLM 调用且结果由 Judger 提交时评分；程序自动按直接胜负重用结果的 rank 不评分。",
+      "criteria": [
+        {
+          "id": "JR1", "name": "已结案直接结果的忠实使用", "dimension": "D_scientific_reasoning",
+          "question": "选择是否尊重实际胜负、不改判、不构造四候选全局 Elo 排名？",
+          "inspect": ["rank.selection_stage/direct_results/matches", "rank.selected_slot", "rank.selection_source"],
+          "anchors": {
+            "0": "违背明确胜负或重开已结案比赛，将 H4 与未直接交锋的候选混为全局排名。",
+            "1": "选择大体合理，但对直接结果的一个关键关系处理不清楚。",
+            "2": "准确继承本阶段可用直接结果；确定关系不可逆，父子阶段边界正确。"
+          }
+        },
+        {
+          "id": "JR2", "name": "暂定选择的科学依据", "dimension": "D_scientific_reasoning",
+          "question": "存在循环、平局或未决时，是否在允许集合中给出受研究目标约束的暂定理由？",
+          "inspect": ["groups_by_direct_results", "rank.provisional/selection_basis/rationale"],
+          "anchors": {
+            "0": "无根据地选择已确定处于劣势者，或假装不存在未决。",
+            "1": "选项在合法组内但暂定依据偏弱，缺少相关条件说明。",
+            "2": "明确采用直接结果第一组，若需暂定则依据已有相关机制/证据和目标做合理判断，并说明不可确定之处。"
+          }
+        },
+        {
+          "id": "JR3", "name": "选择状态与后续用途表达", "dimension": "C_history_use",
+          "question": "是否清楚区分当前选择、可疑点与正式 L3/Top-3 资格？",
+          "inspect": ["rank.uncertainties", "final 与 parent selection", "L3/Top-3 状态"],
+          "anchors": {
+            "0": "把初始 H* 当最终方案，或把排名/候选当作已完成双任务实测和 incumbent。",
+            "1": "大体区分选择阶段，但仍遗漏主要未决或证据边界。",
+            "2": "准确传递选择身份、暂定性、剩余争议和下游使用范围，避免隐性改写历史裁决。"
+          }
+        }
+      ]
+    },
+    "plan_l3": {
+      "task_goal": "按最终已选候选及 ResearchBrief 原协议制定可执行 L3 需求，或基于真实不可解缺口明确 defer_reason；不得编造完成测量。",
+      "criteria": [
+        {
+          "id": "JL1", "name": "评测目标与原协议一致性", "dimension": "D_scientific_reasoning",
+          "question": "是否按最终选择和要求的量化/任务/数据口径提交正式 L3，且没有隐性缩小验证范围？",
+          "inspect": ["ResearchBrief.evaluation_protocol/quantization_contract", "final selection", "plan_l3 草案或 defer_reason"],
+          "anchors": {
+            "0": "错用 H* 作为最终选择、变更必须的数据集/数量/位宽或以局部结果冒充完整任务验证。",
+            "1": "核心目标正确，但关键评测范围、量化覆盖或数据身份存在遗漏。",
+            "2": "计划完整尊重当次评测协议、模型身份、数据范围和合法量化例外；正确解释 L3 计划与真实完成的差异。"
+          }
+        },
+        {
+          "id": "JL2", "name": "执行定义与资源口径", "dimension": "B_experiment_value",
+          "question": "已有服务/代码、评测指标、数据回执、时间预算与数值等待规则是否支持真实执行？",
+          "inspect": ["data_receipt", "budget_receipt", "实验草案 execution/resources/measurements", "可用执行合同"],
+          "anchors": {
+            "0": "编造数据路径/模型包/数值测量，或把排除数值等待的智能体预算错误套成数值超时。",
+            "1": "计划大体可执行，但存在关键执行选择或口径尚未说明。",
+            "2": "正确复用/声明所需能力，参数、指标、资源与可用数据匹配；执行结果身份/范围可以追溯。"
+          }
+        },
+        {
+          "id": "JL3", "name": "延期或验证范围的诚实性", "dimension": "B_experiment_value",
+          "question": "当无法执行原协议时，是否合理明确不可解决的缺失，而非用占位方案冒充完成？",
+          "inspect": ["plan_l3 原始与修订任务", "真实拒绝/错误回执", "defer_reason 或 execution 草案"],
+          "anchors": {
+            "0": "无真实原因放弃可执行计划，或虚构成功/私自降低强制协议范围。",
+            "1": "说明部分限制，但未明确对协议完成性和下一步的影响。",
+            "2": "可执行时形成适当计划；确实受阻时具体说明尚缺信息、原协议不能完成的范围与可恢复路径，不伪造证据。"
+          }
+        }
+      ]
+    },
+    "interpret": {
+      "task_goal": "仅评价历史存在的独立数值结果解释任务；现行常规实验结果会直接返还 Generation/Evolution/Judger，不要求新增 interpret 调用。",
+      "criteria": [
+        {
+          "id": "JI1", "name": "测量事实与执行状态识别", "dimension": "D_scientific_reasoning",
+          "question": "是否核对真实 Evidence、原 Experiment、执行成功/失败和数据比较范围？",
+          "inspect": ["EvidenceCard", "ExperimentCard", "interpret.rationale/evidence_refs"],
+          "anchors": {
+            "0": "把失败运行或未测指标描述为实测成功，或伪造来源与数值。",
+            "1": "主要事实正确，但某项状态、分母或对照限制未被说明。",
+            "2": "准确陈述执行状态、实际观测、条件、分母/范围与有效比较对象。"
+          }
+        },
+        {
+          "id": "JI2", "name": "预测和竞争解释辨别", "dimension": "D_scientific_reasoning",
+          "question": "是否按原预测判断支持、反驳、未区分或受混杂影响？",
+          "inspect": ["相关 HypothesisCard.predictions", "原始测量", "interpret.rationale"],
+          "anchors": {
+            "0": "选择性解释结果，或用同样符合竞争解释的观察证明唯一机制/任务精度。",
+            "1": "比较了预测与事实，但未充分处理竞争解释或作用边界。",
+            "2": "区分直接支持、反驳、范围收缩和无法判断，解释主要替代原因及其证据。"
+          }
+        },
+        {
+          "id": "JI3", "name": "判断修订与下一步价值", "dimension": "B_experiment_value",
+          "question": "是否说明实际更新了什么判断、什么尚未验证，以及下一步最有区分力的问题？",
+          "inspect": ["interpret.rationale/uncertainties", "相关历史判断", "实验路径"],
+          "anchors": {
+            "0": "忽略直接相关反证，宣称不存在的排序反转，或对结果无分析。",
+            "1": "有初步更新但缺少具体前后关系或验证边界。",
+            "2": "明确前后判断与理由，保留未解决问题并提出可行的决定性后续检验；无需证明候选最终有效。"
+          }
+        }
+      ]
+    }
+  }
+}

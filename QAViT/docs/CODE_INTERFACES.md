@@ -46,3 +46,13 @@ Coding 与 Safeguard 的 `public_interface_assets` 索引包含已发布的数�
 `experiment_v1` 可通过 `context['load_frozen'](evidence_ref)` 获得 `(model, receipt)`：请求 evidence_refs 必须引用可见、真实导出并经宿主重载的 Evidence。宿主绑定原批准加载源码及整个包的哈希，只调用 load，不调用 prepare，加载过程禁止读取校准/评测 batch，返回 actual frozen_loads 回执；不接受任意路径加载。载入后的局部消融仍由本次 Coding/Safeguard 审查，原包只读。
 
 自定义评测推荐 `observations.evaluations={"classification":{"metrics":{"top1":实际值},"split":"search","sample_ids":实际ID列表,"sample_count":实际数量,"full_dataset":false}}`。也接受每行带唯一 kind 的列表，宿主只做无损映射；不猜指标归属，不补造样本身份。纯局部多臂对比可将臂结果放 observations.arms，避免把多个模型混成一个标准分类结果。阻塞返回 `status="engineering_blocked"`（可在 observations 内）和 reason；宿主回传工程失败，不发布 completed 数值证据，也不自动重复修订同一停止桩。
+
+历史已评测完整方案也可用 `ExperimentCard.solution_refs` 引用运行冻结目录中的 solution id，并将该 id 传给 `context['load_frozen']`。它使用与历史包匹配的隔离数值源码和原批准 executor；原包、原 Evidence 和源快照必须全部可核验。当前任务的模型、数据和资产身份仍须匹配，只允许既有设备迁移。失败不会降级为重新校准；原历史精度与本次新测量分开记录，详见 [方案库](solutions/README.md)。
+
+### 证据交付投影 v2（G-only）
+
+`core.evidence.evidence_facts` 是 Generation、Recorder、Memory 共用的 `key_facts`：保持 execution/experiment、协议 hash、冻结模型身份、实测范围及结果状态；标准双任务指标同时显示 FP/Q、Q−FP 和 percent/percentage_points。缺失值保持 `null` 和 `missing_FP_or_Q`，不由摘要猜测。新数值回执直接保留 ADE baseline 指标；旧卡仅可从其已绑定、位于原 run 下、hash 与样本/量化指标均匹配的 `segmentation.json` 补读，标记 historical_artifact_projection，不发布新测量或修改旧卡。
+
+大型样本 ID 列表只在交付视图折叠为有序 hash/count/read_card，原始卡片、资产与精确字段读取不变。超过 4000 字符的 scope.quantization 和 provenance.execution_facts.quantization 逐份投影为各自的 hash/count/精确字段入口，避免重复展开 97 位点的完整冻结配置；短表和 key_facts 中的模型/位宽/协议/测量不变。按 arm/variant/method/condition/treatment 分开数值统计；单次多臂不能当独立重复。明确记录的限制、反证和整网臂结果优先直达；对其余大表保留覆盖说明和精确查询入口。
+
+开放问题由 `question_records` 提供稳定 `question_id`。Recorder 用 `resolved_question_refs` / `abandoned_question_refs` 关闭指定问题，旧版原文数组仍兼容；摘要中的“已解决”不作模糊匹配，也不自动作科学判断。新字段必须指向历史已交付问题，重复关闭幂等，历史复盘不变。

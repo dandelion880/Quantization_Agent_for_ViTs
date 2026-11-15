@@ -18,6 +18,7 @@ from .rules import Rules
 
 def main(argv=None):
     parser = argparse.ArgumentParser(description="QAViT independent read-only historical Eval-L0")
+    parser.add_argument('--rules-version', choices=['v0_1', 'gonly_v0_2'])
     commands = parser.add_subparsers(dest="command", required=True)
     commands.add_parser("rules", help="verify the authoritative package and current role/purpose coverage")
     p = commands.add_parser("prepare", help="freeze a historical run and compute metrics; no model calls")
@@ -37,7 +38,12 @@ def main(argv=None):
         p = commands.add_parser(command)
         p.add_argument("evaluation")
     args = parser.parse_args(argv)
-    rules = Rules()
+    from .common import QAVIT
+    version = args.rules_version
+    if version is None:
+        version = ('gonly_v0_2' if args.command in ('prepare', 'rules') else
+                   read_json(Path(args.evaluation) / 'manifest.json')['rules_provenance'].get('resource_version', 'v0_1'))
+    rules = Rules(QAVIT / 'configs/evaluation' / version)
     if args.command == "rules":
         print(canonical({"status": "verified", "rules_fingerprint": rules.version,
                          "files": len(rules.provenance["files"]), "purposes": list(rules.selected)}))

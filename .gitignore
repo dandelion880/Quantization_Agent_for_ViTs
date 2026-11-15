@@ -256,3 +256,18 @@ coverage.xml
 !/EXP/inputs/deitb_static_w4a4_gonly_20261115_r1/analyze_run.py
 !/EXP/inputs/deitb_static_w4a4_gonly_20261115_r1/managed_terminal.json
 !/EXP/inputs/deitb_static_w4a4_gonly_20261115_r1/external_monitor_usage.json
+
+# G-only readiness: reviewed reports and reproducible lightweight checks only.
+!/EXP/validation/gonly_readiness_20261115_r1/
+!/EXP/validation/gonly_readiness_20261115_r1/REPORT.md
+!/EXP/validation/gonly_readiness_20261115_r1/PSEUDOCODE.md
+!/EXP/validation/gonly_readiness_20261115_r1/RESULTS.json
+!/EXP/validation/gonly_readiness_20261115_r1/replay_generation.py
+!/EXP/validation/gonly_readiness_20261115_r1/check_evidence_delivery.py
+!/EXP/validation/gonly_readiness_20261115_r1/solutions/
+!/EXP/validation/gonly_readiness_20261115_r1/solutions/check_history.py
+!/EXP/validation/gonly_readiness_20261115_r1/gpu/
+!/EXP/validation/gonly_readiness_20261115_r1/gpu/check_gpu.py
+!/EXP/validation/gonly_readiness_20261115_r1/gpu/check_frozen.py
+!/EXP/validation/gonly_readiness_20261115_r1/check_version_execution.py
+!/EXP/validation/gonly_readiness_20261115_r1/check_offline_projection.py

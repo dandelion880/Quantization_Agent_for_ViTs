@@ -162,7 +162,27 @@ def gpu_bindings(gpus, settings=None):
     return [by_index[g] for g in gpus if g in by_index]
 
 
-def placement(experiment, settings, brief=None):
+
+def approved_parallel_load(approval):
+    """Read an explicit literal capability without importing generated code."""
+    import ast
+    from core.journal import file_sha256
+    if not approval or approval.get('status') != 'approved':
+        return False
+    candidate = approval.get('candidate', {})
+    path = Path(candidate.get('path', ''))
+    if not path.is_file() or file_sha256(path) != candidate.get('source_sha256'):
+        raise ContractError('approved parallel executor source changed or missing')
+    tree = ast.parse(path.read_text())
+    declarations = []
+    for node in tree.body:
+        targets = node.targets if isinstance(node, ast.Assign) else [node.target] if isinstance(node, ast.AnnAssign) else []
+        if any(isinstance(t, ast.Name) and t.id == 'parallel_frozen_load' for t in targets):
+            declarations.append(node.value)
+    return (len(declarations) == 1 and isinstance(declarations[0], ast.Constant)
+            and declarations[0].value is True)
+
+def placement(experiment, settings, brief=None, *, approval=None):
     from tools.experiment_worker import backend_device
     payload = experiment['payload']
     spec, resources = payload['execution'], payload['resources']
@@ -170,18 +190,28 @@ def placement(experiment, settings, brief=None):
     cuda = str(device).startswith('cuda')
     pool = ([resources['gpu']] if resources.get('gpu') is not None
             else list(dict.fromkeys(settings.get('allowed_gpus', [])))) if cuda else []
-    requested = resources.get('gpu_count', 1)
+    from tools.result_contract import dual_task_fallback
+    dual = cuda and dual_task_fallback(payload) is None
+    custom_serial = dual and spec.get('requires_code') and not approved_parallel_load(approval)
+    if custom_serial:
+        dual = False
+    requested = resources.get('gpu_count', 2 if dual else 1)
     from tools.result_contract import classification_shard_fallback
     fallback = classification_shard_fallback(payload, brief or {})
     supported = cuda and fallback is None
+    if dual:
+        fallback = None
+    elif custom_serial:
+        fallback = 'approved custom code has no literal parallel_frozen_load=True declaration'
     # An explicit gpu pins the primary; other authorized GPUs may supply shards.
-    if supported and requested > 1 and pool:
+    if (supported or dual) and requested > 1 and pool:
         pool += [g for g in settings.get('allowed_gpus', []) if g not in pool]
     useful = max((r.get('count') or requested for r in spec.get('evaluations', [])), default=requested)
-    return {'gpu_pool': pool, 'gpu_count': min(requested, useful) if supported else 1,
+    return {'gpu_pool': pool, 'gpu_count': min(requested, 2) if dual else (min(requested, useful) if supported else 1),
             'pinned_gpu': resources.get('gpu') if cuda else None,
             'parallelism': {'requested_gpus': requested, 'classification_shards_supported': bool(supported),
-                            'fallback': None if supported else (fallback or 'CPU single-device execution')}}
+                            'dual_task_supported': dual,
+                            'fallback': None if supported or dual else (fallback or 'CPU single-device execution')}}
 
 
 _busy_cache = (0, set())

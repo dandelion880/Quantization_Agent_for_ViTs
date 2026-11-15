@@ -46,8 +46,9 @@ class Rules:
         catalog = task_catalog()
         # v0.1 is an immutable Full-era scoring package. Do not invent a
         # G-only selection rubric or rewrite uploaded authority to match routing.
-        expected = {p for p, t in catalog.items() if t["role"] != "supervisor" and p != "select"}
-        if set(self.selected) != expected or len(rubric_ids) != 6:
+        gonly = self.provenance.get('resource_version') == 'gonly_v0_2'
+        expected = {p for p, t in catalog.items() if t['role'] != 'supervisor' and (gonly or p != 'select')}
+        if set(self.selected) != expected or len(rubric_ids) != (7 if gonly else 6):
             raise EvalError("rubrics do not cover the frozen Full-era role / purpose contracts")
         if any(catalog[p]["role"] != r["role"] for p, r in self.selected.items() if p != "plan_l3"):
             raise EvalError("role mapping mismatch")

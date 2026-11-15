@@ -11,7 +11,7 @@ import re
 from runtime.paths import ROOT
 from core.cards import ContractError, canonical, fingerprint, make_card, validate_payload, validate_schema, TEXT, PAYLOAD_SCHEMAS
 from core.journal import file_sha256, read_json, atomic_json, journal_read
-from core.evidence import project_observations, selected_leaves, pointer
+from core.evidence import project_observations, selected_leaves, pointer, evidence_facts, compact_sample_lists, sample_list_view
 from core.debate import INITIAL_PAIRS, ranking_table, validate_verdict
 from agents.roles import tools_for, submission_schema
 from tools.experiments import SERVICES
@@ -440,6 +440,7 @@ class RoleInteraction:
                     cache.pop(next(iter(cache)))
                 cache[key] = project_observations(card['payload']['observations'], card['id'])
             value['payload']['observations'] = deepcopy(cache[key])
+            value['payload']['key_facts'] = evidence_facts(card, self.journal.root)
             provenance = value['payload']['provenance']
             for key in ('data_identity', 'model_identity'):
                 if key in provenance:
@@ -464,8 +465,17 @@ class RoleInteraction:
             if isinstance(selection, dict):
                 for name, ids in selection.items():
                     if isinstance(ids, list):
-                        selection[name] = project_observations(ids, card['id'],
+                        selection[name] = sample_list_view(ids, card['id'],
                             pointer('/payload/provenance/sample_selection', name))
+            # Full per-site frozen quantization tables are implementation detail.
+            # Keep each exact source independently addressable, never merge different recipes.
+            for container, field in ((scope, '/payload/scope'),
+                                     (facts, '/payload/provenance/execution_facts')):
+                quantization = container.get('quantization') if isinstance(container, dict) else None
+                if isinstance(quantization, (dict, list)) and len(canonical(quantization)) > 4000:
+                    container['quantization'] = {'read_card': {'ref': card['id'], 'field': field + '/quantization'},
+                        'sha256': fingerprint(quantization), 'items': len(quantization), 'complete': False,
+                        'meaning': 'Per-site frozen configuration remains in the immutable source; identity and measured results are in key_facts.'}
             # 冻结实验是必需交付对象；仅折叠已核对相同的执行正文，保留异常/旧记录原文。
             if 'resolved_execution' in provenance:
                 experiment = self.journal.card(card['payload']['experiment_ref'])
@@ -477,7 +487,7 @@ class RoleInteraction:
         return value
 
     def coalesce_condition_lists(self, card, view, bodies):
-        """Deliver identical long sample lists once, with exact sources for every copy.
+        """Deliver identical short sample lists once, with exact sources for every copy.
 
         Only complete lists already present in this request qualify. Objective views,
         changed ordering, scalar conditions and scientific prose remain untouched.
@@ -485,7 +495,7 @@ class RoleInteraction:
         def walk(value, field, sample=False):
             if isinstance(value, list) and sample:
                 text = canonical(value)
-                if len(text) < 1000 or value != self.card_field(card, field):
+                if value != self.card_field(card, field):
                     return value
                 digest = fingerprint(value)
                 source = {'ref': card['id'], 'field': field}
@@ -504,6 +514,16 @@ class RoleInteraction:
         for key in ('execution_facts', 'sample_selection'):
             if key in payload.get('provenance', {}):
                 payload['provenance'][key] = walk(payload['provenance'][key], '/payload/provenance/' + key)
+        if 'observations' in payload:
+            payload['observations'] = walk(payload['observations'], '/payload/observations')
+        # key_facts is a derived delivery view: point its lists at the original
+        # fields, never at a nonexistent key_facts field in the immutable card.
+        facts = payload.get('key_facts', {})
+        if 'conditions' in facts:
+            facts['conditions'] = walk(facts['conditions'], '/payload/scope')
+        if 'evaluations' in facts:
+            facts['evaluations'] = walk(facts['evaluations'], '/payload/observations/evaluations')
+
 
     def recorder_card(self, card):
         """A batch view of scientific changes, purposes and outcomes, without card envelopes."""
@@ -514,14 +534,14 @@ class RoleInteraction:
         if card['kind'] == 'ExperimentCard':
             payload = {k: v for k, v in payload.items() if k not in ('execution', 'resources', 'validation')}
             from core.evidence_scope import card_scope
-            payload['actual_conditions'] = card_scope(card)
+            payload['actual_conditions'] = compact_sample_lists(card_scope(card), card['id'], '/payload/scope')
             payload['execution_conditions'] = {k: deepcopy(v) for k, v in card['payload'].get('execution', {}).items()
                 if k not in ('backend', 'measurement_implementation', 'research_quantization_contract')}
             payload['execution_source'] = {'read_card': {'ref': card['id'], 'field': '/payload/execution'}}
         elif card['kind'] == 'EvidenceCard':
             from core.evidence_scope import card_scope
             payload = {k: v for k, v in payload.items() if k not in ('resources', 'artifacts', 'provenance')}
-            payload['actual_conditions'] = card_scope(card)
+            payload['actual_conditions'] = compact_sample_lists(card_scope(card), card['id'], '/payload/scope')
             payload['provenance_source'] = {'read_card': {'ref': card['id'], 'field': '/payload/provenance'}}
             # Provenance may contain scientific limitations; engineering identities have
             # exact sources, while status/source/conditions are always delivered.
@@ -531,7 +551,7 @@ class RoleInteraction:
         payload = {k: v for k, v in payload.items() if v not in (None, '', [], {})}
         from core.memory import short_field
         for key, original in list(payload.items()):
-            if key == 'observations':
+            if key in ('observations', 'key_facts'):
                 continue  # Already a bounded objective view; keep actual outcomes directly usable.
             source = '/payload/' + key
             if key == 'actual_conditions':
@@ -1049,7 +1069,8 @@ class RoleInteraction:
         budget = self.budget.input_receipt()
         if purpose in ("generate", "select", "evolve", "code", "safeguard", "record", "plan_l3"):
             context["complete_solutions"] = self.solutions.catalog(sequence)
-            context["solution_policy"] = "Top-3 complete reusable configurations, separate from Memory. Missing scores remain pending; no generation gate. H1/H2 explain their chosen base and changes naturally."
+            context["fallback_B"] = self.solutions.fallback(state["L1"].get("incumbent"))
+            context["solution_policy"] = "Verified fallback B is retained independently of exploration. Complete bases and pending seeds are distinct; H1/H2 explain their chosen base and scientific changes. Select the next research investment without an H1 preference or maturity gate."
         from core.static_w4a4 import DESCRIPTION
         context["static_w4a4_protocol"] = DESCRIPTION
         context.update(available_seconds=budget['remaining_seconds'], budget_receipt=budget)
@@ -1497,6 +1518,41 @@ class RoleInteraction:
                                            for root in (self.run_dir, ROOT / 'reference', *self.knowledge_roots())))}
 
     @journal_read
+    def revise_candidate(self, task, parent, args):
+        """Publish once, even if a host-tool receipt is lost after the Journal commit."""
+        prior = next((e for e in self.journal.events if e['type'] == 'candidate_revised'
+                      and e['tool_task_id'] == task['task_id']), None)
+        if prior:
+            return {'candidate_ref': prior['candidate_ref'], 'requires_reselection': True,
+                    'validation_status': 'unvalidated_revision'}
+        context = parent['inputs']['context']
+        if parent['inputs']['purpose'] != 'select' or self.selection_card(context['round']):
+            raise ContractError('科学修订只能在尚未完成的预选中发布')
+        old = self.require_visible(parent, args['parent_ref'])
+        candidates = self.candidate_refs(context['round'])
+        if (old['kind'] != 'HypothesisCard' or old['id'] not in context['candidate_refs'].values()
+                or candidates != context['candidate_refs']):
+            raise ContractError('修订必须基于当前候选的确切版本，过期请求不能覆盖新版本')
+        synthetic = deepcopy(parent)
+        synthetic['inputs'] = {**parent['inputs'], 'purpose': 'generate', 'context': {
+            **context, **{k: old['payload'][k] for k in ('round', 'slot', 'hypothesis_type')}}}
+        body = deepcopy(args['hypothesis'])
+        validate_schema(body, submission_schema('generate'), 'revision.hypothesis')
+        body = self.bind_submission(synthetic, body)
+        refs = self.scientific_refs(body, parent)
+        for ref in refs:
+            self.require_visible(parent, ref)
+        card = make_card('HypothesisCard', self.journal.run_id, body, previous=old,
+                         parents=[old['id']], refs=sorted(set(refs) | {old['id']}), author='generation')
+        self.journal.commit('candidate/revise/' + task['task_id'], cards=[card], events=[{
+            'type': 'candidate_revised', 'round': context['round'], 'slot': body['slot'],
+            'parent_ref': old['id'], 'candidate_ref': card['id'], 'tool_task_id': task['task_id'],
+            'reason': args['reason'], 'change_type': 'scientific',
+            'validation_status': 'unvalidated_revision', 'basis_evidence_refs': body.get('evidence_refs', [])},
+            self.memory.live_update(round_number=context['round'], hypothesis_ref=card['id'])])
+        return {'candidate_ref': card['id'], 'requires_reselection': True,
+                'validation_status': 'unvalidated_revision'}
+
     def host_tool(self, task):
         inputs = task['inputs']
         name, args = inputs['name'], inputs['arguments']
@@ -1507,6 +1563,8 @@ class RoleInteraction:
         if name not in schemas:
             raise ContractError('角色调用了未授权工具')
         validate_schema(args, schemas[name], name)
+        if name == 'revise_candidate':
+            return self.revise_candidate(task, parent, args)
         if name == 'read_card':
             card = self.require_visible(parent, args['ref'])
             field = args.get('field', '/payload/observations' if 'select' in args else '')
@@ -1568,6 +1626,8 @@ class RoleInteraction:
         validate_schema(response["tool_calls"], {"type": "array", "minItems": 1, "items": {
             "type": "object", "required": ["id", "name", "arguments"],
             "properties": {"id": TEXT, "name": TEXT, "arguments": {"type": "object"}}}}, "tool_calls")
+        if any(c['name'] == 'revise_candidate' for c in response['tool_calls']) and len(response['tool_calls']) != 1:
+            raise ContractError('科学修订单独提交，不能与实验或读取混合批次')
         # 先检查整个批次，避免后一个草案被拒绝时留下前一个已入队的实验。
         for call in response["tool_calls"]:
             if call["name"] not in allowed or call["id"] in call_ids:
@@ -1709,11 +1769,19 @@ class RoleInteraction:
             self.queue.finish(task["task_id"], result=content)
             return
         if purpose == "plan_l3":
+            selection = self.selection_card(context['round'])
+            if (not selection or selection['id'] != context['selection_ref']
+                    or selection['payload']['selected_hypothesis_ref'] != context['hypothesis_ref']):
+                raise ContractError('L3计划引用了过期选择或错误候选版本')
             if 'defer_reason' in content:
                 if set(content) != {'defer_reason'} or not isinstance(content['defer_reason'], str) or not content['defer_reason'].strip():
                     raise ContractError('延期只能提交非空 defer_reason；不能同时提交执行草案或伪称实验完成')
                 self.queue.finish(task['task_id'], result={'defer_reason': content['defer_reason']})
                 return
+            binding = {'selection_ref': context['selection_ref'], 'hypothesis_ref': context['hypothesis_ref']}
+            if 'candidate_binding' in content and content['candidate_binding'] != binding:
+                raise ContractError('L3执行绑定与预选确切版本冲突')
+            content['candidate_binding'] = binding
             original_request = deepcopy(content)
             content = self.broker.preflight(self.resolve_card_refs(task, content))
             self.broker.card_references(content)
@@ -1773,6 +1841,8 @@ class RoleInteraction:
         if purpose == 'select':
             selected = content.get('selected_slot')
             candidates = context['candidate_refs']
+            if candidates != self.candidate_refs(context['round']):
+                raise ContractError('预选已过期：候选存在新版本，必须重新预选')
             if selected is not None and selected not in candidates:
                 raise ContractError('预选只能引用本任务已提交的 H1/H2/H3 候选')
             bindings = {'selection_stage': 'gonly_preselection',

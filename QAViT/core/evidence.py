@@ -8,10 +8,14 @@ from copy import deepcopy
 from fnmatch import fnmatchcase
 import json
 import math
+import hashlib
+from pathlib import Path
 import re
 
 from core.cards import canonical, fingerprint
 
+
+ARM_LABELS = ('arm', 'arm_id', 'arm_name', 'variant', 'variant_id', 'method', 'condition', 'treatment')
 
 LABELS = {'site', 'site_id', 'module', 'name', 'token', 'tokens', 'token_type',
           'variant', 'arm', 'category', 'split', 'metric'}
@@ -79,7 +83,11 @@ def collection_summary(value, ref, field, *, max_characters=6000, focus=None):
         if isinstance(node, list):
             child_metric = pointer(metric, '*')
             for index, child in enumerate(node):
-                visit(child, pointer(path, index), child_metric)
+                labels = {k: child[k] for k in ARM_LABELS if isinstance(child, dict)
+                          and k in child and isinstance(child[k], (str, int, float, bool))}
+                # Arms are distinct measurements, never exchangeable repetitions.
+                group_metric = child_metric + ('[' + canonical(labels) + ']' if labels else '')
+                visit(child, pointer(path, index), group_metric)
             return
         scalar = node
         if type(scalar) in (int, float):
@@ -148,7 +156,9 @@ def collection_summary(value, ref, field, *, max_characters=6000, focus=None):
 
 CONTEXT_FIELDS = {'summary', 'status', 'conditions', 'comparison', 'scope', 'limitations',
                   'limitation', 'warnings', 'warning', 'counterevidence', 'contradictions',
-                  'conclusion', 'explanation', 'meaning', 'notes', 'failure', 'error'}
+                  'conclusion', 'explanation', 'meaning', 'notes', 'failure', 'error',
+                  'controls', 'metric_definitions', 'scope_limitations', 'whole_network',
+                  'paired_classification_counts', 'paired_sign_counts'}
 
 
 def prose_view(value, ref, field, allowance):
@@ -188,6 +198,13 @@ def project_observations(value, ref, field='/payload/observations', *, max_chara
     """
     if not isinstance(value, (dict, list)):
         return prose_view(value, ref, field, max(12000, max_characters))
+    if isinstance(value, list) and (field.rsplit('/', 1)[-1].endswith('sample_ids') or field.rsplit('/', 1)[-1] == 'split_ids'):
+        return sample_list_view(value, ref, field)
+    if isinstance(value, dict) and 'read_card' not in value:
+        # Compact identity lists before deciding whether scientific metrics fit.
+        compact = compact_sample_lists(value, ref, field)
+        if compact != value and _bounded_json_size(compact, max_characters) <= max_characters:
+            return compact
     size = _bounded_json_size(value, max(4000, max_characters))
     if size <= min(4000, max_characters):
         return deepcopy(value)
@@ -224,3 +241,118 @@ def project_observations(value, ref, field='/payload/observations', *, max_chara
         return result
     return [project_observations(v, ref, pointer(field, i), max_characters=max_characters, focus=focus)
             for i, v in enumerate(value)]
+
+
+def sample_list_view(value, ref, field):
+    """Exact ordered identity digest; IDs are not categorical scientific observations."""
+    if len(canonical(value)) <= 1000:
+        return deepcopy(value)
+    return {'read_card': {'ref': ref, 'field': field}, 'sha256': fingerprint(value),
+            'items': len(value), 'ordered': True, 'complete': False,
+            'meaning': 'Exact ordered sample IDs remain in the immutable source; no sampled preview.'}
+
+
+def compact_sample_lists(value, ref, field='', sample=False):
+    if isinstance(value, list):
+        if sample:
+            return sample_list_view(value, ref, field)
+        return [compact_sample_lists(v, ref, pointer(field, i)) for i, v in enumerate(value)]
+    if isinstance(value, dict):
+        if 'read_card' in value:
+            return deepcopy(value)
+        return {k: compact_sample_lists(v, ref, pointer(field, k),
+                    k.endswith('sample_ids') or field.rsplit('/', 1)[-1] in ('sample_selection', 'split_ids'))
+                for k, v in value.items()}
+    return deepcopy(value)
+
+
+def evidence_facts(card, root=None):
+    """Small shared handoff for Generation, Recorder and Memory, with immutable sources.
+
+    Legacy ADE paired metrics may be recovered only from an already bound, hash-checked
+    artifact in this run. It is a view of historical measurement, never a new Evidence.
+    No metric is inferred from prose or from a different execution/arm.
+    """
+    payload, ref = card['payload'], card['id']
+    provenance = payload.get('provenance', {})
+    observations = payload.get('observations', {})
+    result = {'status': payload.get('status'), 'measurement_source': payload.get('measurement_source'),
+              'execution_id': payload.get('execution_id'), 'experiment_ref': payload.get('experiment_ref'),
+              'protocol_hash': provenance.get('protocol_hash'),
+              'source': {'read_card': {'ref': ref}, 'sha256': card.get('content_sha256')},
+              'identity': {k: deepcopy(provenance[k]) for k in
+                  ('baseline_state_sha256', 'model_ref', 'model_unchanged') if k in provenance},
+              'evaluations': {}}
+    for key in ('model_identity', 'data_identity'):
+        if key in provenance:
+            original = provenance[key]
+            result['identity'][key] = {'sha256': fingerprint(original),
+                'read_card': {'ref': ref, 'field': '/payload/provenance/' + key}}
+    scope = payload.get('scope', {})
+    result['conditions'] = {k: compact_sample_lists(scope[k], ref, '/payload/scope/' + k)
+        for k in ('model', 'model_identity_sha256', 'measurement_kind', 'weight_bits', 'activation_bits', 'data') if k in scope}
+    for key in ('reload', 'status', 'failure', 'error', 'counterevidence', 'limitations', 'warnings'):
+        if key in observations:
+            result[key] = project_observations(observations[key], ref, '/payload/observations/' + key)
+        elif key in payload:
+            result[key] = deepcopy(payload[key])
+    for key in ('controls', 'metric_definitions', 'limitations', 'scope_limitations', 'counterevidence',
+                'paired_classification_counts', 'paired_sign_counts'):
+        if key in observations:
+            result[key] = project_observations(observations[key], ref, pointer('/payload/observations', key))
+    if isinstance(observations.get('arms'), dict):
+        result['arm_results'] = {name: {key: deepcopy(arm[key]) for key in ('whole_network', 'metrics', 'summary', 'status', 'error')
+                                      if key in arm}
+                                for name, arm in observations['arms'].items() if isinstance(arm, dict)}
+        result['arm_source'] = {'read_card': {'ref': ref, 'field': '/payload/observations/arms'},
+                                'meaning': 'Distinct arms within one execution; not independent repetitions.'}
+    evaluations = observations.get('evaluations', {})
+    if not isinstance(evaluations, dict):
+        result['evaluation_source'] = {'read_card': {'ref': ref, 'field': '/payload/observations/evaluations'},
+                                      'meaning': 'Legacy non-keyed evaluations require exact reading; arm ownership not inferred.'}
+        return result
+    for name, row in evaluations.items():
+        if not isinstance(row, dict):
+            continue
+        field = pointer('/payload/observations/evaluations', name)
+        metrics = deepcopy(row.get('metrics', {}))
+        sources = {'read_card': {'ref': ref, 'field': field + '/metrics'}}
+        legacy_source = None
+        if name == 'segmentation' and not any(k.startswith('baseline_') for k in metrics) and root:
+            for receipt in payload.get('artifacts', []):
+                path = Path(receipt.get('path', ''))
+                if path.name != 'segmentation.json':
+                    continue
+                try:
+                    path = path.resolve()
+                    if not path.is_relative_to(Path(root).resolve()):
+                        continue
+                    raw = path.read_bytes()
+                    if hashlib.sha256(raw).hexdigest() != receipt.get('sha256'):
+                        raise ValueError('artifact hash mismatch')
+                    original = json.loads(raw)
+                    quant = original.get('metrics', {}).get('quantized', original.get('metrics', {}).get('quant'))
+                    fp = original.get('metrics', {}).get('float', original.get('metrics', {}).get('fp'))
+                    if (original.get('sample_ids') != row.get('sample_ids') or not isinstance(fp, dict)
+                            or not isinstance(quant, dict) or any(quant.get(k) != metrics[k] for k in ('mIoU', 'mAcc', 'aAcc') if k in metrics)):
+                        raise ValueError('artifact scope/metric mismatch')
+                    metrics.update({'baseline_' + k: fp[k] for k in ('mIoU', 'mAcc', 'aAcc') if k in fp})
+                    legacy_source = {**receipt, 'json_pointer': '/metrics', 'basis': 'historical_artifact_projection; not_new_measurement'}
+                except (OSError, ValueError, TypeError) as exc:
+                    result.setdefault('source_issues', []).append({'path': str(path), 'reason': str(exc)})
+                break
+        pairs = {}
+        for metric in (('top1', 'top5') if name == 'classification' else ('mIoU', 'mAcc', 'aAcc') if name == 'segmentation' else ()):
+            q, fp = metrics.get(metric), metrics.get('baseline_' + metric)
+            if q is None and fp is None:
+                continue
+            numeric = type(q) in (int, float) and type(fp) in (int, float)
+            pairs[metric] = {'FP': fp, 'Q': q, 'unit': 'percent',
+                'delta_Q_minus_FP': q - fp if numeric else None, 'delta_unit': 'percentage_points',
+                'pair_status': 'paired' if numeric else 'missing_FP_or_Q'}
+        result['evaluations'][name] = {**{k: deepcopy(row[k]) for k in
+            ('split', 'sample_count', 'full_dataset', 'metric_units', 'status', 'error') if k in row},
+            'sample_ids': sample_list_view(row['sample_ids'], ref, field + '/sample_ids') if 'sample_ids' in row else None,
+            'metrics': metrics, 'paired_metrics': pairs, 'source': sources,
+            **({'legacy_paired_source': legacy_source} if legacy_source else {})}
+    return result

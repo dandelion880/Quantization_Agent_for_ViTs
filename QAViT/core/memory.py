@@ -10,7 +10,7 @@ import re
 
 from .cards import ContractError, canonical, fingerprint, MEMORY_QUERY_SCHEMA, PAYLOAD_SCHEMAS, validate_schema
 from .evidence_scope import matches as scope_matches, validate_claim_scope, bind_claim_scope, card_scope
-from .evidence import project_observations
+from .evidence import project_observations, evidence_facts, compact_sample_lists
 
 
 KNOWLEDGE_STATUSES = {"hypothesis", "observed_once", "replicated", "refuted", "conditional", "abandoned"}
@@ -41,6 +41,17 @@ def lexical_tokens(text):
     for part in re.findall(r"[\u3400-\u9fff]+", text):
         words.extend(part[i:i + 2] for i in range(max(1, len(part) - 1)))
     return set(words)
+
+
+def question_id(text):
+    return "question-" + fingerprint(text)[:20]
+
+
+def update_questions(previous, payload):
+    closed = set(payload.get("resolved_questions", [])) | set(payload.get("abandoned_questions", []))
+    refs = set(payload.get("resolved_question_refs", [])) | set(payload.get("abandoned_question_refs", []))
+    return list(dict.fromkeys(q for q in [*previous, *payload.get("next_questions", [])]
+                             if q not in closed and question_id(q) not in refs))
 
 
 def short_field(value, ref, field, limit=1400):
@@ -172,6 +183,11 @@ class ResearchMemory:
         if 'round' in value and value['round'] != round_number:
             raise ContractError('Meta-review 轮次错误')
         value['round'] = round_number
+        known_questions = {question_id(q) for ref in self.snapshot(batch.get('through_sequence'))['L3']
+                           for q in self.journal.card(ref)['payload'].get('next_questions', [])}
+        for field in ('resolved_question_refs', 'abandoned_question_refs'):
+            if any(ref not in known_questions for ref in value.get(field, [])):
+                raise ContractError(field + ' must refer to a delivered historical question_id')
         # Legacy declarations are accepted but never treated as observed reading facts.
         value.pop('reviewed_refs', None)
         for field in ('judgment_audit', 'predictive_metrics', 'knowledge_updates', 'recurring_failures',
@@ -364,9 +380,7 @@ class ResearchMemory:
         state['L1']['current_round'] = max(payload['round'], state['L1']['current_round'] or 0)
         if selection is not None:
             state['L1']['round_selection'] = selection
-        closed = set(payload.get('resolved_questions', [])) | set(payload.get('abandoned_questions', []))
-        state['L1']['open_questions'] = list(dict.fromkeys(q for q in
-            [*state['L1']['open_questions'], *payload.get('next_questions', [])] if q not in closed))
+        state['L1']['open_questions'] = update_questions(state['L1']['open_questions'], payload)
         for update in payload["knowledge_updates"]:
             old = state["L2"].get(update["claim_id"])
             if old and update.get("supersedes") != old["revision_ref"]:
@@ -427,8 +441,7 @@ class ResearchMemory:
         questions, question_sources = [], {}
         for review in reviews:
             payload = review['payload']
-            closed = set(payload.get('resolved_questions', [])) | set(payload.get('abandoned_questions', []))
-            questions = list(dict.fromkeys(q for q in [*questions, *payload.get('next_questions', [])] if q not in closed))
+            questions = update_questions(questions, payload)
             for index, question in enumerate(payload.get('next_questions', [])):
                 question_sources[question] = {'ref': review['id'], 'field': '/payload/next_questions/' + str(index)}
         if compact:
@@ -449,6 +462,7 @@ class ResearchMemory:
                 if key in scope}
             result['conditions_source'] = {'ref': ref, 'field': '/payload/scope'}
             result['observations'] = project_observations(payload['observations'], ref, max_characters=1200)
+            result['key_facts'] = evidence_facts(card, self.journal.root)
             for key in ('limitations', 'warnings', 'error'):
                 if key in payload:
                     result[key] = short_field(payload[key], ref, '/payload/' + key, 350)
@@ -457,6 +471,8 @@ class ResearchMemory:
         result = {'current_round': l1['current_round'],
                   'open_questions': [short_field(q, **question_sources[q], limit=700) for q in selected_questions],
                   'question_sources': [question_sources[q] for q in selected_questions],
+                  'question_records': [{'question_id': question_id(q), 'text': short_field(q, **question_sources[q], limit=700),
+                                        'source': question_sources[q]} for q in selected_questions],
                   'open_question_count': len(questions),
                   'more_questions': {'query': {'layer': 'L1'}, 'offset': question_offset + question_limit,
                                      'limit': question_limit} if question_offset + question_limit < len(questions) else None,
@@ -465,6 +481,21 @@ class ResearchMemory:
                                       if finding_refs is None or ref in finding_refs][-2:],
                   'history': {'retrieve_memory': {'query': {}, 'limit': 8}},
                   'fact_basis': 'Journal commits; review citations do not replace executed experiments'}
+        latest_tasks = {}
+        for event in self.journal.events:
+            if event['type'] == 'task_snapshot' and (sequence is None or event['commit_sequence'] <= sequence):
+                latest_tasks[event['task']['task_id']] = event['task']
+        failures = [task for task in latest_tasks.values()
+                    if task['kind'] in ('experiment', 'experiment_request')
+                    and task['state'] in ('failed', 'cancelled', 'ineligible')
+                    and visible(self.journal.card(task['task_card']))]
+        result['historical_execution_failures'] = [{
+            'task_id': task['task_id'], 'state': task['state'],
+            'error': short_field(task.get('error'), task['task_card'], '/payload/error', 500),
+            'result': short_field(task.get('result'), task['task_card'], '/payload/result', 700),
+            'read_card': {'ref': task['task_card']},
+            'meaning': 'Historical execution status, not an active issue or scientific refutation.'}
+            for task in failures[-3:]]
         if latest:
             result['latest_review'] = {'ref': latest['id'], **{key: short_field(latest['payload'][key], latest['id'],
                 '/payload/' + key, 700 if compact else 1400) for key in ('scientific_analysis', 'generation_guidance', 'blind_spots')
@@ -519,11 +550,14 @@ class MemoryRetriever:
         result = {key: short_field(body[key], ref, '/payload/' + key, 900) for key in fields if key in body}
         if card['kind'] == 'EvidenceCard':
             result['observations'] = project_observations(body['observations'], ref, max_characters=2400)
+            result['key_facts'] = evidence_facts(card, self.journal.root)
             result['interpretation'] = 'recorded observations; descriptive statistics are not scientific conclusions'
             spec = self.journal.card(body['experiment_ref'])['payload']
             result['experiment'] = {key: short_field(spec[key], body['experiment_ref'], '/payload/' + key, 700)
                                     for key in ('question', 'controls', 'validation') if key in spec}
         if card['kind'] == 'TaskCard':
+            result['execution_status'] = {key: short_field(body[key], ref, '/payload/' + key, 900)
+                                          for key in ('state', 'error', 'result', 'outputs') if key in body}
             result['literature'] = {key: short_field(body.get('result', {})[key], ref, '/payload/result/' + key, 1200)
                                     for key in ('text_preview', 'title', 'url', 'asset') if key in body.get('result', {})}
         return result
@@ -568,14 +602,16 @@ class MemoryRetriever:
                 break  # Knowledge retrieval does not need a scan of every scientific/engineering card.
             if meta["sequence"] > sequence or meta["kind"] not in ROLE_KINDS.get(role, set()) | {"ResearchBrief", "TaskCard"}:
                 continue
-            if meta['kind'] == 'TaskCard' and (meta.get('task_kind') != 'literature' or meta.get('state') != 'completed'):
+            if (meta['kind'] == 'TaskCard' and (meta.get('task_kind') != 'literature' or meta.get('state') != 'completed')
+                    and not (query.get('kind') == 'TaskCard' or ref in explicit)):
                 continue
             if query.get('kind') and meta['kind'] != query['kind']:
                 continue
             if explicit and ref not in explicit:
                 continue
             card = self.journal.card(ref)
-            if card['kind'] == 'TaskCard' and (card['payload']['kind'] != 'literature' or card['payload']['state'] != 'completed'):
+            if (card['kind'] == 'TaskCard' and (card['payload']['kind'] != 'literature' or card['payload']['state'] != 'completed')
+                    and not (query.get('kind') == 'TaskCard' or ref in explicit)):
                 continue
             if not visible(card):
                 continue

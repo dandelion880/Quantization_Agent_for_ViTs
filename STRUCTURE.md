@@ -39,3 +39,5 @@
 Git 跟踪稳定源码、Prompt、知识、轻量配置、测试及许可证；EXP 仅按 .gitignore 的精确路径保存已检查的轻量交付，原始运行/快照/日志留本机。reference/、.runtime_pkgs/、完整 ImageNet 清单、数据、权重和凭据不入库。忽略不代表删除；环境与本地依赖见 [ENVIRONMENT](QAViT/docs/ENVIRONMENT.md)。历史导航集中在 [HISTORY](QAViT/docs/HISTORY.md)，不在这里追加每次实施日志。
 
 G-only 的当前伪代码与验证记录位于 [EXP/validation/gonly_20261110_r1](EXP/validation/gonly_20261110_r1/REPORT.md)；历史报告不覆盖。分支通过 Git worktree 独立开发，共用 Git 对象库。
+
+本轮准备入口：`EXP/validation/gonly_readiness_20261115_r1/{REPORT,PSEUDOCODE}.md`。`QAViT/tools/dual_task_evaluation.py`负责同冻结包双任务单卡进程并行；`configs/evaluation/gonly_v0_2/`为独立派生评价包，旧包保留。

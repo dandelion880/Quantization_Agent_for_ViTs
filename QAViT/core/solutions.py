@@ -1,4 +1,4 @@
-"""Three reusable complete solutions, separate from scientific Memory and match ranking.
+"""Reusable complete solutions and independent retention fallback B.
 
 Journal snapshots are the run's read view. Shared protocol buckets are atomic
 and locked; source configurations remain available even after replacement.
@@ -6,7 +6,7 @@ and locked; source configurations remain available even after replacement.
 from copy import deepcopy
 from pathlib import Path
 import math
-from core.cards import ContractError, fingerprint
+from core.cards import ContractError, fingerprint, strict_loads
 from core.journal import atomic_json, read_json, file_lock, file_sha256
 from runtime.paths import ROOT
 
@@ -66,8 +66,48 @@ class SolutionLibrary:
             'protocol_hash': self.key, 'reason': 'mature seeds; pending scores are not empirical rankings'}])
         self.materialize()
 
+    def seeds(self):
+        """Seeds remain discoverable even when measured entries fill Top-3."""
+        if not hasattr(self, '_seeds'):
+            initial = read_json(self.journal.root / 'research_run.json')
+            raw = initial.get('source_snapshot', {}).get('docs/solutions/seeds.json')
+            # Seed definitions belong to the run's initial snapshot, not whichever
+            # engineering intervention happened most recently. Old incomplete
+            # metadata does not justify inventing a source binding.
+            source = self.source_record(sequence=0) if raw and initial.get('code_identity') else {}
+            definitions = strict_loads(raw)['solutions'] if raw else read_json(ROOT / 'QAViT/docs/solutions/seeds.json')['solutions']
+            self._seeds = [{**s, 'protocol_hash': self.key, 'configuration': deepcopy(self.brief), **source,
+                            'status': 'pending_evaluation', 'metrics': {'top1': None, 'mIoU': None}}
+                           for s in definitions]
+        return deepcopy(self._seeds)
+
+    def available(self, sequence=None):
+        rows = self.snapshot(sequence)
+        known = {r['id'] for r in rows}
+        return rows + [r for r in self.seeds() if r['id'] not in known]
+
+    def fallback(self, incumbent=None, sequence=None):
+        """B retains measured outcomes; it never competes for an exploration slot."""
+        rows = [r for r in self.snapshot(sequence) if r.get('status') == 'evaluated']
+        candidates = [{ 'solution_id': r['id'], 'model_ref': r['id'], 'metrics': r['metrics'],
+                        'evidence_refs': [r['evidence_ref']], 'run_dir': r.get('run_dir'),
+                        'configuration_asset': str(self.journal.root / 'solution_library' / (fingerprint(r['id']) + '.json')),
+                        'measurement_origin': 'current_run' if r.get('run_dir') == str(self.journal.root) else 'historical',
+                        'new_measurement': False} for r in rows]
+        if incumbent:
+            candidates.append({**deepcopy(incumbent), 'metrics': {'top1': incumbent['top1'], 'mIoU': incumbent['mIoU']},
+                               'measurement_origin': 'current_run', 'new_measurement': False})
+        candidates = [r for r in candidates if all(type(r['metrics'].get(k)) in (int, float)
+                      and math.isfinite(r['metrics'][k]) for k in ('top1', 'mIoU'))]
+        best = max(candidates, key=lambda r: (r['metrics']['mIoU'], r['metrics']['top1'])) if candidates else None
+        if best:
+            best.pop('previous', None)
+        return {'role': 'retained_verified_result', 'status': 'available' if best else 'pending_no_verified_result',
+                'candidate': best, 'competes_in_preselection': False,
+                'policy': 'Retain B while exploring H1/H2/H3; historical scores are not current measurements.'}
+
     def materialize(self):
-        for row in self.snapshot():
+        for row in self.available():
             target = self.journal.root / 'solution_library' / (fingerprint(row['id']) + '.json')
             body = deepcopy(row)
             if row.get('code'):
@@ -83,7 +123,7 @@ class SolutionLibrary:
 
     def assets(self, sequence=None):
         assets = {}
-        for row in self.snapshot(sequence):
+        for row in self.available(sequence):
             source = row.get('source_snapshot', {})
             if source and source['path'] not in assets and Path(source['path']).is_file() and file_sha256(source['path']) == source['sha256']:
                 assets[source['path']] = source['sha256']
@@ -97,8 +137,10 @@ class SolutionLibrary:
 
     def catalog(self, sequence=None):
         return [{**{k: v for k, v in row.items() if k not in ('configuration', 'source_snapshot', 'execution', 'artifacts', 'actual_quantization')},
-                 'configuration_asset': str(self.journal.root / 'solution_library' / (fingerprint(row['id']) + '.json'))}
-                for row in self.snapshot(sequence)]
+                 'configuration_asset': str(self.journal.root / 'solution_library' / (fingerprint(row['id']) + '.json')),
+                 'measurement_origin': ('current_run' if row.get('run_dir') == str(self.journal.root) else 'historical') if row.get('status') == 'evaluated' else 'unmeasured_seed',
+                 'new_measurement': False}
+                for row in self.available(sequence)]
 
     def consider_round(self, number, evidence, experiment, selection, *, validator):
         """Use the existing evidence validator; no extra LLM or accuracy threshold."""

@@ -270,7 +270,7 @@ def coverage_from_context(context):
 def build_case(run, task, calls, rules):
     purpose, role = task["inputs"]["purpose"], task["role"]
     context = task["inputs"].get("context", {})
-    case = {"schema_version": VERSION, "case_id": "case-" + fingerprint([run.run_id, task["task_id"], purpose])[:24],
+    case = {"schema_version": VERSION, "evidence_projection": "exact_lists_and_repeated_bodies/1", "case_id": "case-" + fingerprint([run.run_id, task["task_id"], purpose])[:24],
             "run_id": run.run_id, "task_id": task["task_id"], "task_key": task["key"],
             "role": role, "purpose": purpose, "rubric_id": rules.selected[purpose]["rubric_id"],
             "slot": context.get("slot"), "selection_stage": context.get("selection_stage"),

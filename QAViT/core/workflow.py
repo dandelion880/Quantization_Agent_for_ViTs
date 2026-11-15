@@ -128,8 +128,13 @@ class Workflow(RoleInteraction, ExperimentRequests, WorkflowDriver):
 
 
     def round_hypotheses(self, number):
-        return {card["payload"]["slot"]: card for card in self.journal.find_cards("HypothesisCard")
-                if card["payload"]["round"] == number}
+        # Only initial publications and the host revision transaction change candidates.
+        result = {card['payload']['slot']: card for card in self.journal.find_cards('HypothesisCard')
+                  if card['payload']['round'] == number and card['version'] == 1}
+        for event in self.journal.events:
+            if event['type'] == 'candidate_revised' and event['round'] == number:
+                result[event['slot']] = self.journal.card(event['candidate_ref'])
+        return result
 
 
     def round_refs(self, number):
@@ -146,44 +151,48 @@ class Workflow(RoleInteraction, ExperimentRequests, WorkflowDriver):
                 for pair in selection_pairs(context["selection_stage"], context.get("parent_slot"))}
 
 
+    def candidate_refs(self, number):
+        return {slot: card['id'] for slot, card in self.round_hypotheses(number).items()}
+
+    def selection_key(self, number):
+        base = f'r{number:03d}/select'
+        initial = self.queue.get_by_key(base)
+        refs = self.candidate_refs(number)
+        return (base if initial is None or initial['inputs']['context']['candidate_refs'] == refs
+                else base + '/' + fingerprint(refs)[:16])
+
     def selection_card(self, number):
-        selected = self.result_card(self.queue.get_by_key(f"r{number:03d}/select"))
-        if selected:
+        selected = self.result_card(self.queue.get_by_key(self.selection_key(number)))
+        if selected and selected['payload'].get('candidate_refs') == self.candidate_refs(number):
             return selected
+        # Keep historical fallbacks readable, but never create another H1 preference.
         return next((self.journal.card(e['selection_ref']) for e in self.journal.events
-                     if e['type'] == 'selection_fallback' and e['round'] == number), None)
+                     if e['type'] == 'selection_fallback' and e['round'] == number
+                     and self.journal.card(e['selection_ref'])['payload'].get('candidate_refs') == self.candidate_refs(number)), None)
 
     def progress_preselection(self, number, hypotheses, failures):
-        """Generation chooses from pinned candidates; failure retains the mature H1."""
+        """Pin a fresh decision to every candidate version; B is retained separately."""
+        candidates = self.candidate_refs(number)
+        for task in self.queue.snapshot(kinds={'llm'}).values():
+            context = task['inputs'].get('context', {})
+            if (task['inputs'].get('purpose') == 'select' and context.get('round') == number
+                    and context.get('candidate_refs') != candidates and task['state'] not in TERMINAL):
+                self.queue.change(task['task_id'], 'cancelled', patch={'error': {
+                    'code': 'stale_candidate_selection', 'message': '候选已有新版本，重新预选；旧任务与证据保留'}})
         selected = self.selection_card(number)
         if selected or not hypotheses:
             return selected
-        key = f"r{number:03d}/select"
-        identifier = self.enqueue_role(key, 'select', refs=[self.brief['id'], *self.round_refs(number),
-            *[t['task_card'] for t in failures]], context={
+        identifier = self.enqueue_role(self.selection_key(number), 'select',
+            refs=[self.brief['id'], *self.round_refs(number), *candidates.values(),
+                  *[t['task_card'] for t in failures]], context={
                 'round': number, 'selection_stage': 'gonly_preselection',
-                'candidate_refs': {slot: card['id'] for slot, card in hypotheses.items()},
+                'candidate_refs': candidates,
+                'revision_context': [{k: e[k] for k in ('parent_ref', 'candidate_ref', 'reason', 'change_type',
+                    'validation_status', 'basis_evidence_refs')} for e in self.journal.events
+                    if e['type'] == 'candidate_revised' and e['candidate_ref'] in candidates.values()],
                 'incomplete_slots': [t['inputs']['context']['slot'] for t in failures],
-                'meaning': 'L1/L2 guide mechanism research and preselection only. Formal comparison uses valid dual-task L3.'})
-        task = self.queue.get(identifier)
-        if task['state'] in ('failed', 'cancelled', 'ineligible') and 'H1' in hypotheses:
-            # Availability fallback, never a fabricated scientific ranking or measurement.
-            context = task['inputs']['context']
-            payload = {'phase': 'ranking', 'round': number, 'selected_slot': 'H1',
-                'selected_hypothesis_ref': context['candidate_refs']['H1'],
-                'candidate_refs': context['candidate_refs'], 'selection_stage': 'gonly_preselection',
-                'selection_source': 'h1_availability_fallback', 'provisional': True,
-                'rationale': 'Generation 预选未完成；保留已提交 H1 成熟方案作为可用兜底，未经正式性能比较。',
-                'evidence_refs': [], 'uncertainties': ['预选失败；L3 尚未验证。']}
-            payload['selection_basis'] = payload['rationale']
-            card = make_card('ReviewDecisionCard', self.journal.run_id, payload,
-                             refs=[*task['inputs']['refs'], task['task_card']])
-            self.journal.commit(key + '/fallback', cards=[card], events=[
-                {'type': 'selection_fallback', 'round': number, 'selection_ref': card['id'],
-                 'failed_task_ref': task['task_card']},
-                self.memory.live_update(round_number=number, selection={'slot': 'H1', 'review_ref': card['id']})])
-            return card
-        return self.result_card(task)
+                'meaning': 'Choose the value of the next research investment. B is retained independently; a new revision is unvalidated.'})
+        return self.result_card(self.queue.get(identifier))
 
     def consider_l3(self, number):
         """Persist valid L3 before Recorder/closeout; partial results never replace Top-3."""
@@ -291,11 +300,10 @@ class Workflow(RoleInteraction, ExperimentRequests, WorkflowDriver):
         if any(t['state'] not in TERMINAL for t in generators):
             return False
         # Keep exactly the submitted task outputs, including their version IDs.
-        hypotheses = {t['inputs']['context']['slot']: self.result_card(t)
-                      for t in generators if self.result_card(t)}
+        hypotheses = self.round_hypotheses(number)
         failures = [t for t in generators if not self.result_card(t)]
         ranking = self.progress_preselection(number, hypotheses, failures)
-        selection_task = self.queue.get_by_key(prefix + '/select')
+        selection_task = self.queue.get_by_key(self.selection_key(number))
         if selection_task and selection_task['state'] not in TERMINAL:
             return False
         selected = ranking['payload']['selected_slot'] if ranking else None

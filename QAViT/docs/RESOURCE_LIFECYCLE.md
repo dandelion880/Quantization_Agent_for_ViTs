@@ -47,3 +47,20 @@ request_experiment → 原始 ExperimentCard → 必要时 Coding 单实现 → 
 `sources.ref` 仍按 Journal 可见性解析；`evidence_refs` 仍仅能引用真实 EvidenceCard。为兼容旧输出，只有 sources 中可解析为**当前授权静态文本**的 ref 路径会改存 document；保留 status/supports 等内容，读过哪些字节及其哈希由原 read_asset 回执追溯。显式 document 是作者的文档来源声明，不自动证明已读，也不赋予新权限。未知卡片、错误或私有 ref 仍沿既有可选条目问题记录处理，其余有效正文继续提交。文档不会加入 scientific_refs 或测量支持链。
 
 旧提交中的 submission_issues 与不可变卡片不补写；兼容修正只作用于新提交。恢复仍执行原源码身份与显式干预规则；不能把静态知识编辑伪装成未改变源码的续跑。
+
+## 同包双任务评测
+
+冻结实验只含 classification 与 ade_frozen 两项、server 后端且无训练时，
+未显式给出 gpu_count 的资源请求最多取两张空闲授权卡；显式 gpu_count=1 保持串行。
+两项各自沿用原有单卡评测，母进程先完成一次 prepare/export/load 和 parity，
+ADE 子进程从同一不可变包独立 load；ready/start 握手完成身份核验后，
+分类在主卡与 ADE 在副卡同时启动原有评测。load 使用禁止读 batch 的 FrozenData，
+不会再次校准或分片，握手等待同样受数值超时与进程清理管理。
+自定义 make_executor.load 在子进程按原 Safeguard 批准源码导入，执行包文件、
+plan、FP 和 Q 全状态身份校验与原有审计；只有实现显式设置 parallel_frozen_load=True
+才启用独立重载并行；未声明时保留串行。不支持的后端/服务和卡不足均在结果中记录串行原因。
+
+子进程继承 GPU lease，进程身份写入作业 processes，受同一 TaskRuntime 的
+取消、数值超时与恢复清理管理；不额外预留或叠加子进程预算。失败保留已经完成
+的任务原件和 dual_task_failure.json，整次实验仍失败。dual_task_receipt.json
+记录同包 hash、设备和真实评测时间交集，实际并行以该回执而非配置判定。

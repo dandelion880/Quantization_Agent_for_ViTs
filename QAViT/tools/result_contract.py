@@ -42,6 +42,23 @@ def classification_shard_fallback(payload, brief):
     return None
 
 
+
+def dual_task_fallback(payload):
+    """Only two complete single-device evaluations of one immutable package.
+
+    No metric aggregation or protocol simplification: each original evaluator
+    produces its original result, including custom executor loaded packages.
+    """
+    spec = payload['execution']
+    if (spec.get('service') not in ('quantize_evaluate', 'evaluate_artifact')
+            or spec.get('resolved_choices', {}).get('training')
+            or spec.get('backend', {}).get('kind', 'server') != 'server'):
+        return 'backend/service does not support frozen dual-task loading'
+    rows = spec.get('evaluations', [])
+    if len(rows) != 2 or {r['kind'] for r in rows} != {'classification', 'ade_frozen'}:
+        return 'requires exactly classification and ade_frozen'
+    return None
+
 def result_requirements(payload, brief):
     spec = payload["execution"]
     protocol = brief["evaluation_protocol"] if payload["level"] == "L3" else {}

@@ -34,6 +34,15 @@ for field in ('resolved_choices', 'model_scope', 'backend', 'model_identity_sha2
 
 
 TOOLS = {t["name"]: t for t in [
+    tool("revise_candidate", (
+        "仅在预选中提交已有候选的完整科学修订。parent_ref 必须是当前确切版本；"
+        "hypothesis 使用 generate 的科学正文（title/research_question/mechanism/intervention及可选字段）。"
+        "reason 说明真实证据或理论变化及未验证范围；工程修复应沿原 Coding 请求处理，不发布科学新版本。"
+        "旧卡片不变，程序生成下一版本并重新预选；引用旧证据仅为修订依据，不验证新版本。"
+        "本工具单独调用，不与实验或其他工具同批。"
+    ), object_schema({"parent_ref": TEXT, "hypothesis": OBJECT, "reason": TEXT,
+                       "change_type": {"enum": ["scientific"]}},
+                      ["parent_ref", "hypothesis", "reason", "change_type"])),
     tool("read_card", (
         "按完整版本 ID 读取已提交且授权卡片；可用 field JSON pointer 读取精确字段。"
         "短卡返回完整正文；长卡或指定 field/offset/limit 返回 canonical JSON 文本分段，含 sha256/next_offset。"

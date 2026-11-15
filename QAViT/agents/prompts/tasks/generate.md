@@ -27,4 +27,4 @@
 
 不要创建卡片封套，也不要把待执行实验写成 EvidenceCard。
 
-H1/H2 使用 context.complete_solutions，按需 read_asset 读取 configuration_asset 和方法卡，自然说明选择的完整基础方案及保留/修改内容。三者共享 Brief 与按需 Memory，H3 仍独立探索新机制。
+H1/H2 可使用 context.complete_solutions 或其他来源清楚的完整方案，按需 read_asset 读取 configuration_asset 和方法卡，明确完整基础方案、改良内容及依据；不能只提交原种子充当改良。B 在 context.fallback_B 独立保留已验证成果。三者共享 Brief 与按需 Memory，H3 仍独立探索新机制。

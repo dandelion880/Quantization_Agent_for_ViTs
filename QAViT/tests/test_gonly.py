@@ -128,17 +128,16 @@ class GOnlyRegression(TempCase):
         self.assertEqual(wf.queue.get(failed['task_id'])['state'], 'failed')
         self.assertEqual(wf.summary()['completed_rounds'], [1])
 
-    def test_failed_selection_preserves_h1_without_faking_scientific_ranking(self):
+    def test_failed_selection_keeps_candidates_and_library_without_selecting_h1(self):
         wf, select = self.drive(self.workflow_case(), stop=lambda t: t['inputs']['purpose'] == 'select')
+        library = wf.solutions.snapshot()
         wf.queue.fail(select['task_id'], {'code': 'fixture_selection_failure'})
         wf = Workflow(wf.run_dir)
-        wf, plan = self.drive(wf, stop=lambda t: t['inputs']['purpose'] == 'plan_l3')
-        result = wf.selection_card(1)
-        self.assertEqual(result['payload']['selected_slot'], 'H1')
-        self.assertEqual(result['payload']['selection_source'], 'h1_availability_fallback')
-        self.assertEqual(result['author'], 'program')
-        self.assertEqual(result['payload']['evidence_refs'], [])
-        self.assertEqual(plan['inputs']['context']['hypothesis_ref'], wf.round_hypotheses(1)['H1']['id'])
+        wf, _ = self.drive(wf)
+        self.assertIsNone(wf.selection_card(1))
+        self.assertNotIn('r001/plan_l3', wf.tasks())
+        self.assertEqual(set(wf.round_hypotheses(1)), {'H1', 'H2', 'H3'})
+        self.assertEqual(wf.solutions.snapshot(), library)
         self.assertFalse(wf.summary()['formal_validation_success'])
 
     def test_all_generation_failures_keep_library_and_finish_without_fake_hypotheses(self):

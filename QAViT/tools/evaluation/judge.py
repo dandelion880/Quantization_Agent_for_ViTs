@@ -41,7 +41,35 @@ def supplied_sources(root, case):
         result.append({k: source[k] for k in ("source_id", "immutable_ref", "locator", "availability", "source_type")}
                       | {"content": redact(source_value(root, source), names, blind=True),
                          "boundary": {k: source[k] for k in ("execution_id", "visible_at_sequence", "delivery", "attribution") if k in source}})
-    return result
+    return project_sources(result) if case.get("evidence_projection") == "exact_lists_and_repeated_bodies/1" else result
+
+
+def project_sources(sources):
+    """Only exact identity lists and repeated bodies are elided; originals stay frozen.
+
+    Do not import later outcomes, summarize scientific prose, or combine arms.
+    Legacy frozen cases keep their original rendering and accepted score bindings.
+    """
+    seen = {}
+    def walk(value, source, loc, sample=False):
+        if isinstance(value, list) and sample and len(canonical(value)) > 1000:
+            return {'source_id': source, 'locator': loc, 'sha256': fingerprint(value),
+                    'items': len(value), 'ordered': True, 'projection': 'identity_list; original retained in frozen source'}
+        if isinstance(value, (dict, list, str)) and len(canonical(value)) > 2000:
+            key = fingerprint(value)
+            if key in seen:
+                return {'same_content_as': seen[key], 'sha256': key,
+                        'projection': 'exact repetition; cite the first displayed body'}
+            seen[key] = {'source_id': source, 'locator': loc}
+        if isinstance(value, dict):
+            return {k: walk(v, source, loc + '/' + k.replace('~', '~0').replace('/', '~1'),
+                            k.endswith('sample_ids') or loc.rsplit('/', 1)[-1] in ('sample_selection', 'split_ids'))
+                    for k, v in value.items()}
+        if isinstance(value, list):
+            return [walk(v, source, loc + '/' + str(i)) for i, v in enumerate(value)]
+        return value
+    return [{**source, 'content': walk(source['content'], source['source_id'], source['locator'])}
+            for source in sources]
 
 
 def render(root, case, rules):
