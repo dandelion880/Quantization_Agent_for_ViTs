@@ -1,0 +1,143 @@
+{
+  "schema_version": "qavit.research/2",
+  "name": "deitb_static_w4a4_gonly_20261115_r1",
+  "purpose": "research",
+  "enable_l3": true,
+  "research_brief": {
+    "scientific_question": "官方非蒸馏 deit_base_patch16_224 的 training-free static W4A4：在相同模型、数据与量化约束下，由研究智能体自主探索已有方法、工程改进和新机制，提升分类精度并评价 ADE20K 迁移表现。监控者不生成候选、不替代预选或科研结论，不预设必须优于基线。",
+    "goals": {
+      "research": "提出、比较、修订可证伪的量化机制，报告真实精度、机制证据、适用条件及负结果；具体方法、候选和实验由研究角色自主决定。",
+      "workflow": "基于当前 G-only v1 完成完整两轮：每轮 Generation 自主生成 H1/H2/H3，按需读取知识、开展 L1/L2、解释正负证据并修订；随后 Generation 综合证据预选、规划并执行原协议完整双任务 L3、Recorder。第二轮使用第一轮事实与复盘，第二轮结束停止。没有 Judger、Evolution 或 H4。",
+      "memory": "第二轮引用并利用第一轮 Evidence/Meta-review，避免无意义重复；保留现有 Memory/Recorder、结果回原请求者、单份 Coding→Safeguard→执行→Evidence 和 LLM 并发机制。",
+      "honesty": "按实际完成阶段报告，流程完成不等于完整正式验证；子集、失败、pending 与全量结果分别记录。",
+      "observability": "从真实轨迹检查新增静态知识导航、Scientific Skills、方法库、完整方案库、H1/H2基线兜底和Memory/Recorder是否形成有来源的科研决策与证据；不预设方法收益或要求额外实验。离线评价不进入科研决策。"
+    },
+    "model": {
+      "name": "Official non-distilled deit_base_patch16_224 ImageNet-1k pretrained",
+      "adapter": {
+        "kind": "server",
+        "config_path": "QAViT/configs/deitb_backend.json"
+      },
+      "scope": {
+        "model": "deit_base_patch16_224"
+      }
+    },
+    "hard_constraints": {
+      "activation_calibration": "static",
+      "calibration_samples": 32,
+      "training": false,
+      "compute_dtype": "FP32",
+      "notes": "沿用当前 QAViT/docs/STATIC_W4A4.md 的 static_w4a4/1 协议：模型主体 Linear/Conv 主权重 W4、输入 A4；Attention Q/K/V、用于 PV 的 Softmax 概率 P 及用于 FC2 的 post-GELU 均 A4，同一语义边不重复 QDQ。每个固定量化组至多16码字，零计入；量化参数在既定分类 calibration 上确定并于推理前冻结，不按当前图像/token重估，不在 search/final/ADE 上重新校准。head、neck 可 FP，实际选择须记录于 coverage.task_modules；LN、Softmax、GELU 内部、bias、残差、累加、CLS/位置embedding可保持高精度。冻结原始母模型checkpoint与ADE Neck/UPerHead，不训练或微调模型及任务头。允许PTQ校准、只读梯度诊断、训练无关重参数化与补偿；不静默改既有参考公式，不把QDQ当作原生INT4加速。"
+    },
+    "search_space": {
+      "autonomous_choices": "在硬约束下自主选择已有或新方法、量化格式/粒度/分组/轴、静态scale/zero-point、截断、校准、训练无关变换和补偿、工程改进及实验顺序。无强制Reference、interpret、必读或必做实验门槛。",
+      "diagnostics": "L1/L2可按科学问题使用明确子集、局部干预、消融、FP对照；既有17值参考须明确标记，不能混同最终16码字条件。",
+      "history": "不把历史实验自动当成本次实证；现有已验证资产可复用，本轮间按现有记忆机制传递。"
+    },
+    "quantization_contract": {
+      "protocol": "static_w4a4/1"
+    },
+    "evaluation_protocol": {
+      "kind": "imagenet_full_validation_and_ade_frozen_transfer",
+      "data_protocol": "imagefolder_manifest_v2",
+      "manifest_sha256": "7e560abfe98169fd72597ec87defd8bf12faadebdb3fb278bdbe9865ce400f4c",
+      "calibration_samples": 32,
+      "search_samples": 1000,
+      "batch_size": 1,
+      "full_dataset": true,
+      "reload_before_evaluation": true,
+      "evaluations": [
+        {
+          "kind": "classification",
+          "split": "final",
+          "count": 50000,
+          "metrics": [
+            "top1",
+            "top5",
+            "baseline_top1",
+            "baseline_top5"
+          ],
+          "full_dataset": true
+        },
+        {
+          "kind": "ade_frozen",
+          "count": 2000,
+          "metrics": [
+            "mIoU",
+            "mAcc",
+            "aAcc"
+          ],
+          "full_dataset": true
+        }
+      ],
+      "final_protocol": "每轮最终候选实际导出并由宿主核验重载实例，在ImageNet validation 50000张报告Top-1/Top-5及相同条件FP对照；ADE20K validation 2000张报告mIoU/mAcc/aAcc及相同条件FP对照。保留完整原始结果。不得缩样本后宣称完成。final只用于冻结最终候选评价，不用于重新校准或搜索。",
+      "ade_protocol": "沿用QAViT/configs/ade_evaluation.json预处理、数据和既有冻结Neck/UPerHead，直接迁移分类校准状态，不使用ADE重新校准/训练；分类head在ADE路径不执行。",
+      "fp_controls": "分类内置评测记录baseline_top1/top5；ADE原始segmentation.json记录fp与quantized完整指标，同等数据/预处理条件对照。"
+    },
+    "execution_guidance": {
+      "seed": 42,
+      "data_seeds": {
+        "calibration": 0,
+        "search": 20261008,
+        "final": 20261009
+      },
+      "resources": "沿用runtime auto授权GPU池和数值并发。独立局部实验默认一卡；较长原生非训练且指标兼容的纯分类请求可尽力内部多卡；不兼容/少卡按既有回退，混合分类/ADE按兼容路径执行，不改科研协议。",
+      "timeouts": "数值任务使用独立分级宽松超时：L1默认3600秒、L2默认10800秒、L3默认86400秒，可用resources.estimated_seconds按实际需要覆盖；与LLM调用超时分离。数值耗时无需小于Agent剩余活跃预算，不新增估时审批。已启动合法任务按自身时限完成。",
+      "budget": "两轮合计10800秒智能体预算，active_segments且排除纯数值执行、资源排队和结果等待；重叠推理/Coding/审核按既有规则计时且不重复扣除。恢复保留消费和尝试，预算耗尽按既有机制接收已启动数值任务，不启动新研究/复盘，不自动加时，未完成与pending如实保留。",
+      "monitoring": "监控者仅配置、监控与修复明确工程故障或不合理误拒；必要时正常暂停、确认自有进程停止、记录源码变化，通过resume --intervention恢复同一运行。可按授权停用内部多卡或进一步数值串行回退；不盲目重复高成本失败。"
+    },
+    "source_documents": [
+      "/root/data-fs/projects/Quantization_Agent_for_ViTs_gonly/QAViT/knowledge/INDEX.md",
+      "/root/data-fs/projects/Quantization_Agent_for_ViTs_gonly/QAViT/docs/STATIC_W4A4.md",
+      "/root/data-fs/projects/Quantization_Agent_for_ViTs_gonly/QAViT/docs/EXECUTION.md",
+      "/root/data-fs/projects/Quantization_Agent_for_ViTs_gonly/QAViT/docs/METHODS.md"
+    ],
+    "unresolved_inputs": []
+  },
+  "budget": {
+    "max_rounds": 2,
+    "wall_seconds": 10800,
+    "clock_mode": "active_segments",
+    "exclude_numeric_wait": true
+  },
+  "runtime": {
+    "cpu_threads": 4,
+    "allowed_gpus": "auto",
+    "llm_concurrency": 4,
+    "experiment_concurrency": "auto",
+    "task_timeout_seconds": 600,
+    "numeric_task_timeout_seconds": {
+      "L1": 3600,
+      "L2": 10800,
+      "L3": 86400
+    }
+  },
+  "llm": {
+    "provider": "codex_subscription",
+    "max_transport_retries": 2,
+    "agent_models": {
+      "supervisor": [
+        "gpt-6-luna",
+        "low"
+      ],
+      "generation": [
+        "gpt-6-astra",
+        "high"
+      ],
+      "recorder": [
+        "gpt-6-luna",
+        "high"
+      ],
+      "coding": [
+        "gpt-6.1-sol",
+        "medium"
+      ],
+      "safeguard": [
+        "gpt-6.1-sol",
+        "medium"
+      ]
+    },
+    "cli_path": "/root/.codex/packages/standalone/releases/0.167.0-x86_64-unknown-linux-musl/bin/codex"
+  },
+  "architecture": "gonly"
+}
