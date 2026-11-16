@@ -291,10 +291,13 @@ class DraftRepairRegression(TempCase):
         config.update(purpose="infrastructure_test", enable_l3=True)
         config["budget"]["min_free_bytes"] = 0
         wf = Workflow(self.root / "research", config)
-        tid = wf.enqueue_role("r001/plan_l3", "plan_l3", refs=[wf.brief["id"]], context={"round": 1})
-        wf.queue.ready()
-        task = wf.queue.claim(tid)
+        from tests.test_gonly import GOnlyRegression
+        # Exercise the current Generation/preselection contract before testing
+        # draft repair; a hand-created unbound L3 task is intentionally invalid.
+        wf, task = GOnlyRegression.drive(self, wf, stop=lambda t: t['inputs']['purpose'] == 'plan_l3')
         draft = experiment_payload("L3")
+        context = task['inputs']['context']
+        draft['candidate_binding'] = {key: context[key] for key in ('selection_ref', 'hypothesis_ref')}
         draft["execution"].update(service="quantize_evaluate", requires_code=True, interface="executor_v1",
             parameters={}, evaluations=[{"kind": "classification", "split": "search", "count": 4}])
         return wf, task, draft
@@ -370,7 +373,7 @@ class DraftRepairRegression(TempCase):
                 task = wf.queue.claim(task["task_id"])
         self.assertEqual(state["repair_count"], 2)
         self.assertEqual(wf.journal.find_cards("ExperimentCard"), [])
-        self.assertEqual(len(wf.tasks()), 1)
+        self.assertEqual(len([t for t in wf.tasks().values() if t['inputs'].get('purpose') == 'plan_l3']), 1)
 
     def test_ambiguous_draft_can_clarify_without_completion(self):
         wf, task, draft = self.plan()

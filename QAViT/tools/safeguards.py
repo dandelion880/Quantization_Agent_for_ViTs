@@ -25,7 +25,7 @@ CAPABILITY_MODULES = {"os", "sys", "subprocess", "socket", "ctypes", "importlib"
 PUBLIC_INTERFACE_FILES = (
     'baselines.py', 'model.py', 'pipeline.py', 'contracts.py', 'plugin_contracts.py', 'calibration.py', 'plugin_math.py',
     'adalog.py', 'adaround.py', 'capabilities.py', 'codecs.py', 'comparison.py', 'coordinate.py',
-    'diagnostics.py', 'evaluation.py', 'gptaq.py', 'grids.py', 'local_comparison.py', 'method_library.py',
+    'diagnostics.py', 'propagation.py', 'calibration_search.py', 'evaluation.py', 'gptaq.py', 'grids.py', 'local_comparison.py', 'method_library.py',
     'methods.py', 'metrics.py', 'objectives.py', 'operators.py', 'planning.py', 'plugin_tools.py',
     'profile_tools.py', 'recipes.py', 'runtime_state.py', 'search_context.py', 'sites.py',
     '../quantization/config.py', '../quantization/integer.py', '../schemas.py',

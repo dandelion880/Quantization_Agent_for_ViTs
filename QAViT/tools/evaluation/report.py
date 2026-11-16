@@ -21,7 +21,7 @@ def distribution(values):
 def error_stratum(error):
     error = error or {}
     code = error.get("code", "")
-    if error.get("origin") in ("host", "implementation"):
+    if error.get("origin") in ("host", "resource", "implementation", "request"):
         return error["origin"]
     if any(x in code for x in ("structured_output", "inner_json", "format_error")):
         return "model_output_format"

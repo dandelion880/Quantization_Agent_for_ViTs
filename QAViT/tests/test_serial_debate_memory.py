@@ -207,7 +207,9 @@ class SerialDebateMemoryRegression(infrastructure.TempCase):
                               stop=lambda t: t['inputs']['purpose'] == 'select')
         wf.submit(task, review('ranking', selected_slot='H1'), None)
         old = wf.selection_card(1)
-        cards = self.science(wf, 'late')
+        # Append only late evidence, not a new H3 candidate that correctly invalidates selection.
+        cards = self.science(wf, 'late', commit=False)
+        wf.journal.commit('fixture/late-evidence', cards=cards[:2])
         with self.assertRaisesRegex(ContractError, '持久化'):
             wf.submit(task, review('ranking', selected_slot='H2', evidence_refs=[cards[1]['id']]), None)
         wf = Workflow(wf.run_dir)

@@ -1,0 +1,32 @@
+{
+  "measurement_source": "synthetic_computation",
+  "sample_count": 2,
+  "formal_evaluation": false,
+  "boundaries": {
+    "blocks.0": {
+      "input_total": 0.003740834170480814,
+      "local_added": 1.1018291591770219e-05,
+      "upstream_mapped": 0.003737594833024042,
+      "output_total": 0.003719769604630781
+    },
+    "blocks.1": {
+      "input_total": 0.003719769604630781,
+      "local_added": 1.066016212128623e-05,
+      "upstream_mapped": 0.0037094720278225213,
+      "output_total": 0.0037717404638015224
+    }
+  },
+  "baseline_logit_mse": 0.00039858553356470925,
+  "intervention_logit_mse_reduction": {
+    "block0_fp": {
+      "output": 0.00026230937405194324
+    },
+    "block1_fp": {
+      "output": 0.00019710900307460847
+    },
+    "q0_bypass": {
+      "output": 0.0
+    }
+  },
+  "state_unchanged": true
+}

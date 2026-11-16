@@ -8,7 +8,7 @@
 | [adapt-quantization-method](adapt-quantization-method/SKILL.md) | 当已有可信量化瓶颈、明确理论缺口，或希望构造有机制依据的 PTQ 假设时使用。 帮助从成熟方法和现有可执行方案中提炼可迁移原理，选择最小针对性改动， 或形成可证伪的新机制。若只需诊断错误或按原样执行方案，则不必调用。 |
 | [assess-evidence-transfer](assess-evidence-transfer/SKILL.md) | 当 PTQ 候选已有局部、冻结前缀或初步任务证据，但可推广范围、反证或进一步 研究价值不明确时使用。判断是否补充小对照、升级独立整网评测、回退或暂停。 常规事实归档、已确定的直接执行和明确工程报错不需要本技能。 |
 | [design-discriminative-experiment](design-discriminative-experiment/SKILL.md) | 当至少两种 PTQ 机制能解释同一结果、候选收益可能被输入前缀或校准等因素 混杂、或下一次实验昂贵而需要更有判别力的证据时使用。设计可证伪预测、 受控对照与最小真实测量。普通既定评测和证据已足够的情形不必使用。 |
-| [diagnose-ptq-failure](diagnose-ptq-failure/SKILL.md) | 当 ViT PTQ 的整体精度或局部误差反常、不同量化位点或方案结果冲突， 而主导机制仍不清楚时使用。选择可信基线、W/A/耦合、分布、真实量化前缀 与传播诊断中的有用证据。已知只是工程报错或问题已定位时不必使用。 |
+| [diagnose-ptq-failure](diagnose-ptq-failure/SKILL.md) | 当 ViT PTQ 的整体精度或局部误差反常、不同量化位点或方案结果冲突， 或连续方案集中于同一位点而缺少全局依据时使用。从完整冻结方案区分局部新增、 上游累积与下游传播，以冻结干预寻找可改善位置和校准背景。已知只是工程报错时不必使用。 |
 <!-- SKILL_CATALOG_END -->
 
 读取方式：`read_asset({"asset":"skills/<Skill名称>/SKILL.md"})`；正文中的相对参考链接使用 `skills/<Skill名称>/references/<文件名>.md`。本目录随 context.skill_catalog 交付时无需再次读取；角色可按科研职责自行选择，不增读取权限限制。

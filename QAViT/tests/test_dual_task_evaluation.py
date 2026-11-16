@@ -227,6 +227,14 @@ while not (p.parent/'start.json').exists(): time.sleep(.02)
         self.exercise_child_failure(reported_error={'code': 'TypeError', 'origin': 'implementation',
                                                     'message': 'custom loader argument mismatch'})
 
+    def test_reported_request_error_survives_actual_child_boundary(self):
+        self.exercise_child_failure(reported_error={'code': 'RequestRevisionRequired', 'origin': 'request',
+            'message': 'frozen source missing', 'requested_source': 'missing', 'recovery': 'revise_request'})
+
+    def test_reported_resource_error_survives_actual_child_boundary(self):
+        self.exercise_child_failure(reported_error={'code': 'OutOfMemoryError', 'origin': 'resource',
+            'message': 'CUDA out of memory'})
+
     def test_reported_timeout_stays_host_timeout(self):
         self.exercise_child_failure(reported_error={'code': 'TimeoutError', 'origin': 'host',
                                                     'message': 'dual-task deadline exceeded'})

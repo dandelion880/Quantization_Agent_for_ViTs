@@ -73,7 +73,7 @@ TOOLS = {t["name"]: t for t in [
     ), object_schema({"url": TEXT}, ["url"])),
     tool("retrieve_memory", (
         "默认返回可用短正文、关键结果、实际条件、状态、限制及来源入口；程序组织，不额外调用模型。"
-        "省略 query、空 query 或 browse=true 默认浏览；text 词法排序；kind 过滤类型；layer=L1 查当前研究状态，L2 查知识修订。"
+        "省略 query、空 query 或 browse=true 默认浏览；text 词法排序；kind 过滤类型；layer=L1 查当前研究状态，L2 查当前知识修订；历史复盘 knowledge_revisions 指向替代记录，旧原文保留但不再当作当前结论。"
         "evidence_ids 指定完整 ID，其余字段按规范 scope 精确匹配；相关性不代表证据支持。"
         "offset/limit 支持分页（最多50），after_version 可取增量；next_offset 非空仍有条目。"
         "短视图不等于完整原件；read_card 按需展开，可同批调用。比较知识逐份保留条件，命中一组条件不代表其它组相同。所有结果先按本调用可见性过滤；无命中不等于无历史。"
@@ -81,7 +81,7 @@ TOOLS = {t["name"]: t for t in [
         "offset": {"type": "integer", "minimum": 0}, "limit": {"type": "integer", "minimum": 1, "maximum": 50}}, [])),
     tool("request_experiment", (
         "唯一科研执行入口。给出实验目的、所需结果和科学约束；预测及决策影响可以省略。已有条件在 context.experiment_interface。"
-        "宿主补全固定身份、资源、执行镜像和来源。已有算法直接传 plan，相同设置可用 layers[].modules 展开。"
+        "宿主补全固定身份、资源、执行镜像；冻结来源须由请求 evidence_refs/solution_refs 明确声明（无歧义的 controls 同名来源兼容规范化）。缺失或选择歧义返回 Generation 修订，不交 Coding 猜测。已有算法直接传 plan，相同设置可用 layers[].modules 展开。"
         "新增代码先保存原始需求，再由 Coding 交付单份实现和必要执行选择，程序绑定后交 Safeguard 科学审查。"
         "Generation 可在形成 H、候选综合和 L3 规划时自主取证；常规实验直接返回原任务。"
         "真实结果或失败返回原研究任务，由该任务解释并决定继续研究或提交。research_note 可保存当前解释/下一步理由。"

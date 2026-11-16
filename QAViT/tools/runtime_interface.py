@@ -3,6 +3,24 @@ from copy import deepcopy
 from core.cards import ContractError, fingerprint
 
 
+def select_frozen_source(bindings, ref=None):
+    from runtime.failures import RequestRevisionRequired
+    if ref is not None and (not isinstance(ref, str) or not ref.strip()):
+        raise ContractError('load_frozen(ref) requires a nonempty source identifier string')
+    matches = [b for b in bindings if ref is None or ref in (b.get('evidence_ref'), b.get('solution_id'), b.get('model_ref'))]
+    # Multiple citations to the identical immutable package are the same source.
+    unique = {}
+    for binding in matches:
+        identity = fingerprint({k: binding.get(k) for k in ('model_ref', 'model_dir', 'assets', 'candidate')})
+        if identity not in unique or binding.get('source_snapshot'):
+            unique[identity] = binding
+    if len(unique) != 1:
+        raise RequestRevisionRequired(
+            'load_frozen source is missing or ambiguous; Generation must cite/select an exact Evidence or evaluated solution',
+            requested_source=ref, available_sources=[{k: b.get(k) for k in ('evidence_ref', 'solution_id', 'model_ref')} for b in bindings])
+    return next(iter(unique.values()))
+
+
 class EngineeringBlocked(RuntimeError):
     """An implementation cannot execute; no scientific measurement is implied."""
 
@@ -61,12 +79,16 @@ def execute_custom(plugin, payload, backend, cfg, data, directory):
     original_parameters = fingerprint(parameters)
     original = model_digest(backend.model)
     frozen_receipts = []
-    def load_bound(ref):
+    def load_bound(ref=None):
         from tools.frozen import load_frozen
-        binding = next((b for b in spec.get('frozen_sources', []) if ref in (b['evidence_ref'], b.get('solution_id'))), None)
-        if binding is None:
-            raise ContractError('load_frozen requires a cited Evidence or evaluated solution with a host-verified exported package')
-        model, receipt = load_frozen(binding, backend, cfg, data)
+        binding = select_frozen_source(spec.get('frozen_sources', []), ref)
+        try:
+            model, receipt = load_frozen(binding, backend, cfg, data)
+        except Exception as exc:
+            # The selected immutable loader/package is a host dependency, not code
+            # that the current Coding task can rewrite. Preserve its original type.
+            from runtime.failures import FrozenSourceError
+            raise FrozenSourceError(str(exc), cause=exc) from exc
         frozen_receipts.append({k: v for k, v in receipt.items() if k != 'manifest'})
         return model, receipt
     try:

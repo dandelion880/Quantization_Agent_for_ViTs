@@ -498,11 +498,17 @@
         "MSE",
         "percentile",
         "coordinate",
-        "裁剪"
+        "裁剪",
+        "block_output",
+        "network_objective",
+        "teacher_kl",
+        "task_loss",
+        "CLS",
+        "patch"
       ],
       "paper": "PTQ4ViT / RepQ-ViT / 项目接口",
       "document": "scale_selection.md",
-      "implementation": "tools/ptq_agent/execution/calibration.py; coordinate.py; plugin_contracts.py:calibration",
+      "implementation": "tools/ptq_agent/execution/calibration.py; coordinate.py; plugin_contracts.py:calibration; calibration_search.py:search_frozen_scales",
       "implementation_status": "local executable component; adaptation permitted; task accuracy requires measurement",
       "compatibility_document": "scale_selection.md",
       "sources": [
@@ -531,7 +537,11 @@
         "组合",
         "sequential",
         "joint",
-        "预算"
+        "预算",
+        "block_schedule",
+        "reestimate",
+        "float_context",
+        "reverse_order"
       ],
       "paper": "执行合同",
       "document": "calibration_order.md",

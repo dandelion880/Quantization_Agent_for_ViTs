@@ -15,18 +15,18 @@
     "screen": "cb32fba7c7a97acdfbd8ba2496436f5fb27b5bdfbed0dfeb9f44e992d73c9242",
     "supervise": "df6e270ade1059a1c20b9c76f53b8ae4cdbce6acf4892ddb5869b22a839ee39d"
   },
-  "explicit_fix_source": "EXP/validation/parent_evolution_20261029_r1/prompts.diff; authorized parent/final workflow update, 2026-10-29; EXP/validation/serial_debate_memory_20261029_r1/prompts.diff; authorized serial debate/shared science/fixed verdict update, 2026-10-29; EXP/validation/experiment_inputs_20261029_r1/prompts.diff; authorized experiment input and Brief-scope alignment, 2026-10-29; EXP/validation/gonly_hardening_20261116_r1/revision: same-request candidate revision recovery, actual UTC 2026-11-15; EXP/validation/gonly_hardening_20261116_r1: structured dual-task execution failures for Coding and Safeguard, actual UTC 2026-11-15; EXP/validation/gonly_postrun_B_context_20261115_r1: post-formal read-only before/after retained B context, no formal-run intervention",
+  "explicit_fix_source": "EXP/validation/parent_evolution_20261029_r1/prompts.diff; authorized parent/final workflow update, 2026-10-29; EXP/validation/serial_debate_memory_20261029_r1/prompts.diff; authorized serial debate/shared science/fixed verdict update, 2026-10-29; EXP/validation/experiment_inputs_20261029_r1/prompts.diff; authorized experiment input and Brief-scope alignment, 2026-10-29; EXP/validation/gonly_hardening_20261116_r1/revision: same-request candidate revision recovery, actual UTC 2026-11-15; EXP/validation/gonly_hardening_20261116_r1: structured dual-task execution failures for Coding and Safeguard, actual UTC 2026-11-15; EXP/validation/gonly_postrun_B_context_20261115_r1: post-formal read-only before/after retained B context, no formal-run intervention; EXP/validation/gonly_research_capability_20261116_r1: source recovery, calibration execution, propagation diagnosis and append-only knowledge corrections",
   "explicit_prompt_fixes": {
-    "generate": "404fe32ca005e588aa4ac46e22259022970ac3f8005675d7a580fbd143d67451",
-    "select": "c363ce12d4716d63b0770fbc992fc8818f7fc99cd2ec32ff6ca5ada3b8010044",
+    "generate": "71149b1e8a40dd05a890cea40a416019e6c88d898b34f63f597d63d34052ea0e",
+    "select": "72d21d6a98756cb00569e88987a19c91c7e929dfa5d2e2211915b29e8a839e37",
     "evolve": "92ed60c635e66bd01e4a05375347d305c7cec21cc62cf9ec5440cab5d03d91e2",
     "screen": "bd9d0109f05b23ea913b27f8310334a4ee4399517185ea226452926a7bb80a2f",
     "position": "d2aec2cef1fcfe7241c72b07f82283213895a7c2c9e631365ff8f5aff1a09bea",
     "arbitrate": "73c263f50f110295e506c758d4843a7a8b19dfa903b355bf26d9fbb8a6c706e9",
     "rank": "c3b253e5e95fc6a9805bba77ec285023bbddd722707d001feb5ca7400f957692",
-    "plan_l3": "6f719c782f74f7ffd213463f2e877cd013776e200bd0a43cc641e6cf89c99b32",
-    "record": "253ca460907787c8ec7f1bb9a024e67d2ba3c6f9d9ff345e9216d39c978f60d4",
-    "code": "50322b44927a7ae1384fb8ac9582a949073b291392196c9f94a53951ae1e9f88",
+    "plan_l3": "2456141e278fb75a11e123434a53c12bcb5e1779d055676ddaf8a527988535ce",
+    "record": "bbff010cf21a208ee7c70db52efb2666c73668323998a8285f5dd7dc45107b87",
+    "code": "338c56d25ac67fdee2f12758ddecd3291ec233ddf33fda648d046475b028f8a8",
     "safeguard": "5f3b430bfb952950231908cf1b4d5837c491a0778c04fd363359a5e32551478d",
     "supervise": "8061905f30378ca126310c0f4696478ae65d74b69c01efaae9b45b25f18154ea",
     "interpret": "35273d15546b2d63869a4c65a0c8ebef23bb6720a9e26e24517749b88e6863e0"
@@ -49,9 +49,9 @@
   "parallel_debate_note": "2026-11-06 authorized independent initial matches and final join; only position/arbitrate scheduling sentences changed. See EXP/validation/parallel_debate_20261106_r1/prompts.diff.",
   "research_upgrade_note": "2026-11-07: common static W4A4, complete-solution H1/H2, adaptation and failure semantics; no extra review stages.",
   "explicit_schema_fixes": {
-    "profile_ptq_candidates": "609efe80a641d6f42ef7637760f2e0de5459a3655eecda0cfd7ac8da34eaf9fe",
-    "validate_experiment": "c533c59761ac66013e9246e9a0aa8ec2f2941c4b625222cc9dbaadf8bd6648b4",
-    "compose_experiment": "44cea8eff7442d24c5ab3da5281ed83992985a8912bcf5c34bd528942fe09005"
+    "profile_ptq_candidates": "2afa86850ea697d0187bc55176c259f73aa22b9624d6e141db05b9a310773bfa",
+    "validate_experiment": "c541e39e05b10306be512554874c4778125f9fd48bc7624644c57731717b7047",
+    "compose_experiment": "9ad55f27d21e9eb69d373ba978627a66562d7c31b59499b7c0508252ba013f99"
   },
   "research_upgrade_schema_note": "Explicit reserve_zero and gptaq_signed_min numerical options; original schema hashes preserved.",
   "scientific_skills_note": "2026-11-08: optional scientific Skill catalog and on-demand read_asset guidance only; no tool schema, workflow or submission changes. See EXP/validation/scientific_skills_20261108_r1/changes.patch.",

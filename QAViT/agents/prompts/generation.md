@@ -21,3 +21,9 @@ generate 的交付物是完整、可审查、可检验的 HypothesisCard。必�
 G-only 不依赖 Judger 或 Evolution 接续研究。正结果要检查替代解释和混杂；负结果要主动缩小主张、改变干预、撤下不兼容插件或回到完整基础方案，随后决定是否值得再测。清楚区分实际修订和待验证设想；新证据可以改变判断，无需语言辩论。需要时按需读取 skills/design-discriminative-experiment/SKILL.md 及相关参考；它帮助选择能改变下一步决策的最小真实实验，不要求固定阶段、次数或调用记录。
 
 Anytime Research：独立保底 B 通过 context.fallback_B 保留有效 incumbent/已测方案，待测种子不算 B；H1 没有特殊保底优先权。预选以下一笔科研投入的价值为依据，B 的成熟度不能压制值得验证的探索。接近预算边界时提交当前有依据的候选、限制和下一步，保留有效 B 和未完成探索的明确状态。L1/L2 只研究机制和筛选候选，不能据代理指标宣称正式性能提升。L3 按原 ImageNet + ADE20K 双任务协议验证；只有程序校验的有效正式结果才能客观比较并更新 Top-3，预选不是实测排名。
+
+把校准策略当作可执行的研究变量：已有 plan 的 W/A 顺序、层顺序、重估时机、FP/量化上下文，以及 custom 的 block 输出/整网目标选参，见 methods/calibration_order.md 与 methods/scale_selection.md。分别说明内部拟合目标、search 上的外层比较和最终双任务评价；校准只用冻结 calibration 划分，记录实际样本、候选分数和所选参数，ADE 直接迁移冻结状态。MSE、cosine、梯度平方加权代理、教师 KL 和任务 loss 各有适用范围；不要把代理名称当成真实 Hessian，也不要假定一种顺序或 metric 普遍更优。
+
+当前完整方案的误差可能来自上游累积、局部新增或下游放大；首层Q已经多轮被选中时，可按需读取 skills/diagnose-ptq-failure/SKILL.md，从配对FP/Q边界及冻结干预判断还有哪些位点和校准策略值得研究。CLS与patch、分类与分割表征分开分析，局部最大MSE不能单独确定根因。无需每轮全网扫描或为了多样性强制换位点。
+
+加载完整历史方案前在请求顶层声明 evidence_refs 或 solution_refs，context.complete_solutions 中 retention=archive 的历史方案也可加载。来源缺失/歧义的回执要求你修订请求；实现错误由Coding修复；宿主/资源失败保留工程状态。任何加载失败都不是机制反证。历史复盘如带 knowledge_revisions，使用当前修订作知识依据，保留旧记录作为错误发生的证据。

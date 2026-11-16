@@ -40,16 +40,25 @@ def bind_sources(journal, refs):
             if e['type'] == 'task_snapshot' and e['task']['kind'] == 'experiment'
             and e['task']['inputs'].get('experiment_ref') == p['experiment_ref']
             and ref in e['task']['outputs']), None)
-        bindings.append({'evidence_ref': ref, 'experiment_ref': p['experiment_ref'],
+        from core.solutions import SolutionLibrary
+        journal.card(p['experiment_ref'])  # Verify the committed card bytes before using its index.
+        # Evidence and solution IDs bind the same source era. A resumed host may
+        # have changed even though this is still the same scientific run.
+        source = SolutionLibrary(journal, {}, shared=False).source_record(journal.cards[p['experiment_ref']]['sequence'])
+        binding = {'evidence_ref': ref, 'experiment_ref': p['experiment_ref'],
             'model_ref': p['provenance']['model_ref'], 'model_dir': str(directory), 'assets': assets,
-            'candidate': deepcopy(approval['candidate']) if approval else None})
+            'candidate': deepcopy(approval['candidate']) if approval else None,
+            **deepcopy(source),
+            'source_cache': str(journal.root / 'solution_library' / 'source' / source['source_version'])}
+        _materialize_source(binding)
+        bindings.append(binding)
     return bindings
 
 
 def bind_solutions(journal, refs, brief):
     """Resolve only the run's committed protocol catalog, never an agent-supplied path."""
     from core.solutions import SolutionLibrary, protocol_key
-    rows = {r['id']: r for r in SolutionLibrary(journal, brief).snapshot()}
+    rows = {r['id']: r for r in SolutionLibrary(journal, brief).available()}
     bindings = []
     if not isinstance(refs, list) or any(not isinstance(r, str) for r in refs):
         raise ContractError('solution_refs must be a list of catalog solution IDs')
@@ -231,7 +240,12 @@ def load_frozen(binding, backend, cfg, data):
     candidate = binding.get('candidate')
     namespace, loading_backend, loading_cfg = None, backend, cfg
     if binding.get('source_snapshot'):
-        namespace, loading_backend, loading_cfg, factory = _historical_runtime(binding, backend, cfg)
+        _source_files(binding)  # Always verify the declared original source, even on same-version loads.
+        manifest_identity = read_json(Path(binding['model_dir']) / 'manifest.json')['identity']
+        current_identity = backend.identity()
+        numerical_hash = manifest_identity.get('agent_code_sha256')
+        if not numerical_hash or numerical_hash != current_identity.get('agent_code_sha256'):
+            namespace, loading_backend, loading_cfg, factory = _historical_runtime(binding, backend, cfg)
     if candidate:
         module = _candidate_module(candidate, namespace)
         factory = getattr(module, 'make_executor', factory)

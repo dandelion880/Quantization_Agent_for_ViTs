@@ -2,7 +2,7 @@
 
 当前实现从 [QAViT README](../README.md)、[资源导航](../knowledge/INDEX.md) 与 [STRUCTURE](../../STRUCTURE.md) 进入。历史报告记录当时版本、输入和验证范围；不因保留链接就视为当前能力或当前协议成绩。日志、原始卡片、数据、checkpoint 和源码快照保持原位，只读查阅；不要从历史 EXP 导入一次性框架代码作为当前运行依赖。
 
-本表列出本轮整理时各独立目录的 REPORT.md。完整有效文件树在 [本轮盘点](../../EXP/validation/knowledge_resources_20261108_r1/PROJECT_RESOURCE_INVENTORY.md)，部分原件仅在本机，是否入库以 .gitignore 为准。当前伪代码见 [本轮 PSEUDOCODE](../../EXP/validation/host_context_20261110_r1/PSEUDOCODE.md)。
+本表列出本轮整理时各独立目录的 REPORT.md。完整有效文件树在 [本轮盘点](../../EXP/validation/knowledge_resources_20261108_r1/PROJECT_RESOURCE_INVENTORY.md)，部分原件仅在本机，是否入库以 .gitignore 为准。当前伪代码见 [本轮 PSEUDOCODE](../../EXP/validation/gonly_research_capability_20261116_r1/PSEUDOCODE.md)。
 
 | 历史目录（相对 EXP） | 当时报告 |
 |---|---|
@@ -40,3 +40,5 @@
 | validation/two_rounds_20261104_r2 | [QAViT 真实运行最终报告 — 2026-11-04](../../EXP/validation/two_rounds_20261104_r2/REPORT.md) |
 
 其它入口：EXP/runs 为各运行事实与源码冻结，EXP/inputs 为具体研究配置，EXP/outputs 为历史整理输出，EXP/cache 为可重建临时数据。它们的目录名称不保证属于当前 V2 格式；恢复须遵守原身份/配置合同，不能批量迁移或重写成新格式。
+
+本轮针对性科研能力修订（未启动正式贯通）：[交付与剩余验证](../../EXP/validation/gonly_research_capability_20261116_r1/REPORT.md)。包含追加式历史知识更正、H3恢复、真实校准搜索及冻结传播诊断。

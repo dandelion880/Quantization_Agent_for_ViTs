@@ -196,7 +196,9 @@ def plan_key(plan):
                     item[target + "_calibration"] = calibration(layer, target)
             layers.append(item)
         # 省略默认值不是新实验；与pipeline实际默认值一致，不改提交的plan。
-        execution = {"within_stage": "parallel", "operator_calibration": "float", **plan["execution"]}
+        execution = {"within_stage": "parallel", "operator_calibration": "float",
+                     "calibration_unit": "operator", "layer_order": "forward",
+                     "reestimate_passes": 1, "calibration_context": "current", **plan["execution"]}
         preprocess = []
         for prep in plan["preprocess"]:
             item = {k: v for k, v in prep.items() if k != "evidence"}

@@ -166,3 +166,12 @@ def reconstruction_score(layer, module, records, transform, metric, *, weight=Fa
         total += score(row["y"], result, metric, row.get("gradient")) * count
         elements += count
     return total / elements
+
+
+def parameter_evidence(params):
+    """Compact actual fitted values, with hashes for larger per-channel arrays."""
+    from .model import tensor_digest
+    return {key: {"shape": list(value.shape), "dtype": str(value.dtype),
+                  "sha256": tensor_digest(value),
+                  **({"values": value.detach().cpu().tolist()} if value.numel() <= 128 else {})}
+            for key, value in params.items()}

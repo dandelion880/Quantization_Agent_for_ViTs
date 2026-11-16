@@ -68,6 +68,11 @@ def plan_schema(spec):
             "within_stage": {"enum": ["parallel", "sequential"]},
             "operator_calibration": {"enum": ["float", "progressive"]},
             "observer_batch_size": {"type": "integer", "minimum": 1},
+            "calibration_unit": {"enum": ["operator", "block"]},
+            "block_modules": arr(STR, minItems=1, uniqueItems=True),
+            "layer_order": {"enum": ["forward", "reverse"]},
+            "reestimate_passes": {"type": "integer", "minimum": 1},
+            "calibration_context": {"enum": ["current", "float"]},
         }, ["mode", "compute_dtype", "activation_calibration", "order"]),
         "preprocess": arr(obj({
             "method": {"enum": list(PREPROCESS_METHODS)},
@@ -133,6 +138,18 @@ def validate_composition(plan, known, config, *, classification_available=False,
     """先做无模型执行的组合检查，拒绝重叠位点、非法阶段和未实现的数学组合。"""
     from .contracts import SPEC, RAW_FLOATS, validate_spec
     require(plan["execution"]["mode"] in config["loop"]["execution_modes"], "执行方式不在用户允许范围")
+    execution = plan["execution"]
+    unit = execution.get("calibration_unit", "operator")
+    blocks = execution.get("block_modules", [])
+    require(bool(blocks) == (unit == "block"), "block 调度须显式 block_modules；operator 不消费该字段")
+    require(not any(a != b and b.startswith(a + ".") for a in blocks for b in blocks),
+            "block_modules 不能嵌套或重叠")
+    require(all(any(l["module"] == b or l["module"].startswith(b + ".") for l in plan["layers"])
+                for b in blocks), "block_modules 必须包含实际校准位点")
+    advanced = unit == "block" or execution.get("reestimate_passes", 1) > 1 or execution.get("calibration_context", "current") == "float"
+    require(not advanced or not plan.get("operators"), "block/重估/float上下文当前不支持整数复合算子，请使用独立 custom 实验")
+    require(not advanced or "observer_batch_size" not in execution,
+            "block/重估/float上下文不能混用 observer_batch_size 的渐进冻结语义")
     catalog = known
     protected = set(config["constraints"]["protected_modules"] + config["constraints"]["excluded_modules"])
     scope = config["loop"]["scope_modules"]
@@ -212,6 +229,8 @@ def validate_composition(plan, known, config, *, classification_available=False,
                 _validate_site_spec(validate_spec, spec, target, info["weight_shape"], sid, path)
                 require(calibration(layer, target)["strategy"] == "minmax", "GPTQ 使用原文量化器尺度；不可静默替换为 RTN scale 搜索")
                 if method == "gptaq":
+                    require(execution.get("calibration_context", "current") == "current",
+                            "GPTAQ 输入差补偿需要 current 上下文；float 上下文请明确另选方法")
                     require(spec["granularity"] == "per_channel", "GPTAQ 当前核对的是官方 per-channel 网格")
                     require(plan["execution"]["order"] == "a_then_w" and plan["execution"].get("within_stage") == "sequential",
                             "GPTAQ 需要已冻结 A 和逐层更新的真实量化输入：使用 a_then_w/sequential")
@@ -314,7 +333,11 @@ def validate_composition(plan, known, config, *, classification_available=False,
             require(layer["activation"]["granularity"] == "per_tensor", "RepQ-LN 最终使用 layer-wise scale")
             require(plan["execution"]["activation_calibration"] == "static", "RepQ-LN 需要冻结静态共享尺度")
             require(prep.get("calibration", {"strategy": "minmax"})["strategy"] in ("minmax", "percentile"), "RepQ observer 只能 minmax/percentile")
-            require(set(prep.get("calibration", {})) <= {"strategy", "percentiles"}, "预处理 observer 含未执行参数")
+            prep_calibration = prep.get("calibration", {"strategy": "minmax"})
+            legal_calibration = {"strategy", "percentiles"} if prep_calibration["strategy"] == "percentile" else {"strategy"}
+            require(set(prep_calibration) <= legal_calibration, "RepQ observer 包含未消费字段；minmax不使用metric/factors，percentile只消费percentiles")
+            require(prep.get("observation", "float") != "quantized_prefix" or execution.get("calibration_context", "current") == "current",
+                    "quantized_prefix observer不能同时声明float校准上下文")
         elif prep["method"] == "adalog_bias":
             require(catalog[name]["semantic"] == "post_gelu" and prep["norm"] is None,
                     "AdaLog bias 需要真实 GELU→Linear 输入边；不能修改相邻 LN")

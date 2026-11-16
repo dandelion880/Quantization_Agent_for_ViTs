@@ -472,6 +472,9 @@ class ExperimentRequests:
             suffix = f"/revision{revision}" if revision else ""
             code_key = key + "/code" + suffix
             failed_execution = tasks.get(key + "/execute" + suffix)
+            if failed_execution and failed_execution['state'] == 'failed' and (failed_execution.get('error') or {}).get('origin') == 'request':
+                self.return_request_failure(task, failed_execution)
+                return
             if failed_execution and failed_execution["state"] == "failed" and self.revisable_failure(failed_execution):
                 previous = tasks[code_key]["result"]["artifact"]
                 if self.revise_implementation(task, revision, previous, execution_error=failed_execution):
@@ -500,6 +503,10 @@ class ExperimentRequests:
                 try:
                     experiment = self.broker.bind_execution(request, candidate)
                 except ContractError as exc:
+                    from runtime.failures import FrozenSourceError, failure_details
+                    if isinstance(exc, FrozenSourceError):
+                        self.queue.fail(task['task_id'], failure_details(exc, {}))
+                        return
                     if self.revise_implementation(task, revision, candidate, binding_error=str(exc)):
                         return
                     self.queue.finish(task["task_id"], result={"status": "rejected", "reason": str(exc)})
@@ -558,6 +565,9 @@ class ExperimentRequests:
                 "experiment_ref": experiment["id"], "approval": approval, "parent_task": task["task_id"]}, resource_keys=self.experiment_resources(experiment))
             trial = self.tasks()[trial_key]
             if trial["state"] != "completed":
+                if trial["state"] == "failed" and (trial.get("error") or {}).get("origin") == "request":
+                    self.return_request_failure(task, trial)
+                    return
                 if (execution.get("requires_code") and trial["state"] == "failed" and revision < 2
                         and self.revisable_failure(trial)):
                     self.queue.change(task["task_id"], "retry", patch={"retry_after": 0})
@@ -577,6 +587,18 @@ class ExperimentRequests:
             'cache_reused': cache_reused, 'raw_fact_and_interpretation_separated': True})
 
 
+    def return_request_failure(self, task, trial):
+        """Return immutable failed execution to its scientific owner without Coding retries."""
+        error = trial['error']
+        self.queue.finish(task['task_id'], result={
+            'status': 'rejected', 'reason': 'request_revision_required',
+            'experiment_ref': task.get('experiment_ref') or task.get('request_ref'),
+            'execution_task_ref': trial['task_card'], 'error': error,
+            'numerical_validation_status': 'not_validated', 'recovery': 'revise_request',
+            'mechanism_measurement_completed': False, 'partial_execution_possible': True,
+            'instruction': 'Generation 根据明确来源/选择反馈提交修订实验请求；原请求、失败与源码保留。'
+                           'Coding 无法修改已冻结请求；加载失败不构成机制反证。'})
+
     def check_experiment_resources(self, experiment):
         from tools.experiments import check_resources
         check_resources(experiment['payload']['resources'], self.config['runtime'])
@@ -586,7 +608,7 @@ class ExperimentRequests:
         error = task.get("error") or {}
         if error.get("code") == "EngineeringBlocked":
             return False
-        if error.get("origin") == "host":
+        if error.get("origin") in ("host", "resource", "request"):
             return False
         # Resource, storage, process and host-version failures remain engineering
         # failures. Do not burn a Coding revision or rerun the same failed source.

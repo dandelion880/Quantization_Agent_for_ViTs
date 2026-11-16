@@ -805,7 +805,16 @@ class RoleInteraction:
                     for key in ('generation_guidance', 'next_questions', 'recurring_failures', 'blind_spots'):
                         if key not in card['payload']:
                             continue
-                        field(ref, '/payload/' + key, '宿主为本轮 Generation 绑定的前轮反馈；其余复盘按需读取')
+                        field(ref, '/payload/' + key, '宿主为本轮 Generation 绑定的前轮反馈；其余复盘按需读取', display_limit=1800)
+        # Explicit old references remain immutable, but current revisions travel
+        # with them so a known correction cannot silently propagate as old truth.
+        assigned_reviews = {r for r in task['inputs']['refs'] if self.journal.cards[r]['kind'] == 'MetareviewCard'}
+        assigned_claims = {c['claim_id'] for r in assigned_reviews for c in self.journal.card(r)['payload']['knowledge_updates']}
+        for claim in state['L2'].values():
+            if claim['claim_id'] in assigned_claims and claim['revision_ref'] not in assigned_reviews and self.can_read_card(task, self.journal.card(claim['revision_ref'])):
+                card = self.journal.card(claim['revision_ref'])
+                index = next(i for i, row in enumerate(card['payload']['knowledge_updates']) if row['claim_id'] == claim['claim_id'])
+                field(card['id'], '/payload/knowledge_updates/' + str(index), '显式引用的旧知识已有更正；原始证据保留', display_limit=2400)
         # 较早交锋的整卡保持按需；已记录的限制字段不按条数/年龄删除。
         # 不推断未结构化文字是否已解决，rationale 和明确问题/条件字段保守保留原文。
         demoted = set(task['inputs']['refs']) - selected if automatic else set()
@@ -1072,9 +1081,15 @@ class RoleInteraction:
             card = self.require_visible(task, ref)
             if card['kind'] != 'EvidenceCard':
                 continue
-            entry = self.retriever.entry(card)
-            history.append({k: v for k, v in entry.items() if k in
-                ('ref', 'kind', 'status', 'measurement_source', 'scope', 'body', 'read_card')})
+            from core.memory import short_field
+            entry = self.retriever.entry(card, include_body=False)
+            # History is navigation plus observed counterexamples/limits. Exact
+            # per-arm measurements stay queryable without repeating entire trials.
+            history.append({**{k: v for k, v in entry.items() if k in
+                ('ref', 'kind', 'title', 'status', 'measurement_source', 'scope', 'read_card')},
+                'observations': project_observations(card['payload']['observations'], ref, max_characters=1000),
+                'limits': {k: short_field(card['payload'][k], ref, '/payload/' + k, 350)
+                           for k in ('limitations', 'warnings', 'error') if k in card['payload']}})
         if history:
             memory['research_history'] = {'previous_results': history,
                 'meaning': 'Earlier experiment facts remain available alongside the current research note; full specs and raw data are on demand.'}

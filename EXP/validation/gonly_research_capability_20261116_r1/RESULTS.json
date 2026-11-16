@@ -1,0 +1,294 @@
+{
+  "status": "targeted_validation_passed",
+  "completed_at_utc": "2026-11-16T08:39:37.907053+00:00",
+  "branch": "ablation/gonly",
+  "base_commit": "037211ec0ca720990ba72145782c9eec0ab09590",
+  "implementation": {
+    "core_sha256": "13b263b30a72e2ca5d12fa04d6f50e1f26e3af8e91713f1be5fa77c6630c46a6",
+    "numerical_library_sha256": "c04050a4bceb2e360fe077afb5317b1a1c50fad1cc9bfb163777d15677a1520b"
+  },
+  "integration": {
+    "tests": 238,
+    "elapsed_seconds": 170.716,
+    "status": "passed",
+    "log": "EXP/validation/gonly_research_capability_20261116_r1/integration_final.log"
+  },
+  "knowledge_audit": {
+    "status": "passed",
+    "errors": [],
+    "skill_count": 4,
+    "method_count": 21,
+    "checked_pages": 55
+  },
+  "skill_validation": "Skill is valid!",
+  "memory": {
+    "correction_ref": "MetareviewCard-843410c1b498418da755a616f2c90747@1",
+    "commit_sequence": 9150,
+    "corrected_claims": [
+      {
+        "claim_id": "knowledge-9d818a1cedfec85cfed8",
+        "version": 2,
+        "ref": "MetareviewCard-843410c1b498418da755a616f2c90747@1",
+        "text": "R2候选与预选时B属于不同冻结包；候选后来晋升为当前B，晋升后的身份相等不能否定本轮新执行或方案改动。相对上一轮已完成方案，Top-1变化+0.044000、ADE mIoU变化+0.019455个百分点。这是既定协议下相邻完整方案的单次实测差异；不构成AdaLog-only同期配对消融、独立重复或机制因果证明。"
+      },
+      {
+        "claim_id": "knowledge-c96c9cb2ec4fd44c2c95",
+        "version": 2,
+        "ref": "MetareviewCard-843410c1b498418da755a616f2c90747@1",
+        "text": "R3候选与预选时B属于不同冻结包；候选后来晋升为当前B，晋升后的身份相等不能否定本轮新执行或方案改动。相对上一轮已完成方案，Top-1变化-0.204000、ADE mIoU变化+0.075941个百分点。这是既定协议下相邻完整方案的单次实测差异；不构成AdaLog-only同期配对消融、独立重复或机制因果证明。"
+      }
+    ],
+    "old_immutable_files_checked": 11442,
+    "original_head_matches_prior_readonly_audit": true,
+    "original_files_match": {
+      "research_run.json": true,
+      "summary.json": true,
+      "status.json": true
+    }
+  },
+  "calibration": {
+    "measurement_scope": "actual PyTorch tiny random Transformer; synthetic images and FP-argmax fixture labels; not scientific task accuracy",
+    "selection_results": [
+      {
+        "metric": "mse",
+        "unit": "network",
+        "context": "quantized",
+        "reference": "fp_model",
+        "token_scope": "all",
+        "selected_id": "1.0",
+        "selected_score": 4.76866470887705e-05
+      },
+      {
+        "metric": "cosine",
+        "unit": "network",
+        "context": "quantized",
+        "reference": "fp_model",
+        "token_scope": "all",
+        "selected_id": "1.0",
+        "selected_score": 0.0027943130862191725
+      },
+      {
+        "metric": "teacher_kl",
+        "unit": "network",
+        "context": "quantized",
+        "reference": "fp_model",
+        "token_scope": "all",
+        "selected_id": "1.0",
+        "selected_score": 2.3773558415150428e-05
+      },
+      {
+        "metric": "task_loss",
+        "unit": "network",
+        "context": "quantized",
+        "reference": "fp_model",
+        "token_scope": "all",
+        "selected_id": "0.6",
+        "selected_score": 6.608009917976177
+      },
+      {
+        "metric": "top1_error",
+        "unit": "network",
+        "context": "quantized",
+        "reference": "fp_model",
+        "token_scope": "all",
+        "selected_id": "0.4",
+        "selected_score": 0.0
+      },
+      {
+        "metric": "hessian_diag_ce",
+        "unit": "network",
+        "context": "quantized",
+        "reference": "fp_model",
+        "token_scope": "all",
+        "selected_id": "1.2",
+        "selected_score": 4.204473484816703e-09
+      },
+      {
+        "metric": "mse",
+        "unit": "block",
+        "context": "quantized",
+        "reference": "fp_model",
+        "token_scope": "all",
+        "selected_id": "0.4",
+        "selected_score": 0.009204666000698266
+      },
+      {
+        "metric": "mse",
+        "unit": "block",
+        "context": "quantized",
+        "reference": "fp_model",
+        "token_scope": "cls",
+        "selected_id": "0.8",
+        "selected_score": 2.8578399147742124e-06
+      },
+      {
+        "metric": "mse",
+        "unit": "block",
+        "context": "quantized",
+        "reference": "fp_model",
+        "token_scope": "patch",
+        "selected_id": "0.4",
+        "selected_score": 0.011504695556882735
+      },
+      {
+        "metric": "mse",
+        "unit": "block",
+        "context": "float",
+        "reference": "fp_model",
+        "token_scope": "all",
+        "selected_id": "1.0",
+        "selected_score": 2.789462164017631e-07
+      },
+      {
+        "metric": "mse",
+        "unit": "block",
+        "context": "float",
+        "reference": "fp_model",
+        "token_scope": "cls",
+        "selected_id": "1.0",
+        "selected_score": 2.9443422449543353e-07
+      },
+      {
+        "metric": "mse",
+        "unit": "block",
+        "context": "float",
+        "reference": "fp_model",
+        "token_scope": "patch",
+        "selected_id": "1.0",
+        "selected_score": 2.750742143783455e-07
+      },
+      {
+        "metric": "mse",
+        "unit": "block",
+        "context": "quantized",
+        "reference": "local_fp",
+        "token_scope": "all",
+        "selected_id": "0.8",
+        "selected_score": 2.312120869514703e-06
+      },
+      {
+        "metric": "mse",
+        "unit": "block",
+        "context": "quantized",
+        "reference": "local_fp",
+        "token_scope": "cls",
+        "selected_id": "0.8",
+        "selected_score": 2.2387966031926226e-06
+      },
+      {
+        "metric": "mse",
+        "unit": "block",
+        "context": "quantized",
+        "reference": "local_fp",
+        "token_scope": "patch",
+        "selected_id": "0.8",
+        "selected_score": 2.3304519360952227e-06
+      }
+    ]
+  },
+  "h3": {
+    "status": "completed",
+    "scope": "synthetic_computation; real PyTorch tiny ViT, original H3 functions; not DeiT mechanism or task evidence",
+    "execution_facts": {
+      "data": {
+        "calibration": {
+          "full_dataset": false,
+          "sample_count": 2,
+          "sample_ids": [
+            "interface-calibration-1",
+            "interface-calibration-0"
+          ],
+          "split": "calibration"
+        },
+        "search": {
+          "full_dataset": false,
+          "sample_count": 1,
+          "sample_ids": [
+            "interface-search-0"
+          ],
+          "split": "search"
+        }
+      },
+      "forward_calls": 5,
+      "frozen_loads": [
+        {
+          "evidence_ref": "engineering-h3-tiny-evidence",
+          "loaded_without_prepare": true,
+          "measurement_origin": "current_run",
+          "model_ref": "engineering-h3-tiny-model",
+          "new_measurement": false,
+          "solution_id": null,
+          "source_version": null
+        }
+      ],
+      "measurement_kind": "custom_computation",
+      "parameters": {},
+      "sites": []
+    },
+    "lambda_one_total_different_scalars": 0,
+    "interpretation": "Tiny five-arm ties are valid component measurements, not evidence of DeiT mechanism benefit"
+  },
+  "propagation": {
+    "measurement_source": "synthetic_computation",
+    "sample_count": 2,
+    "formal_evaluation": false,
+    "boundaries": {
+      "blocks.0": {
+        "input_total": 0.003740834170480814,
+        "local_added": 1.1018291591770219e-05,
+        "upstream_mapped": 0.003737594833024042,
+        "output_total": 0.003719769604630781
+      },
+      "blocks.1": {
+        "input_total": 0.003719769604630781,
+        "local_added": 1.066016212128623e-05,
+        "upstream_mapped": 0.0037094720278225213,
+        "output_total": 0.0037717404638015224
+      }
+    },
+    "baseline_logit_mse": 0.00039858553356470925,
+    "intervention_logit_mse_reduction": {
+      "block0_fp": {
+        "output": 0.00026230937405194324
+      },
+      "block1_fp": {
+        "output": 0.00019710900307460847
+      },
+      "q0_bypass": {
+        "output": 0.0
+      }
+    },
+    "state_unchanged": true
+  },
+  "readiness": {
+    "code_and_targeted_regression_ready": true,
+    "long_formal_run_started": false,
+    "current_gpu_environment_ready": false,
+    "original_deit_h3_mechanism_measured": false,
+    "reason": "NVML initialization failure / CUDA unavailable; CPU original package rejects 12 device-recomputed effective_bias hashes; authenticity checks retained"
+  },
+  "remaining_unvalidated": [
+    "GPU and original DeiT H3 measurement",
+    "real DeiT calibration/diagnostic decisions and ADE head path",
+    "formal dual-task benefits and independent repeats",
+    "live Generation/Recorder scientific quality or Skill effectiveness"
+  ],
+  "preserved_intermediate_failures": [
+    "source identity rejection during parallel edits",
+    "outdated preselection fixtures and Markdown code-link false positive",
+    "sequence lookup mock gap, then overbroad legacy-source replacement caught by integration",
+    "original DeiT CPU load audit rejection",
+    "tiny inserted quantizer training flags and missing-label rejection",
+    "maintenance verifier incorrectly expected derived checkpoint unchanged"
+  ],
+  "artifacts_sha256": {
+    "integration_final.log": "61dd2d2bbb052dbe042791c30cbc3c52d8c6b56a40a6a34cafc0cc48ecca87d3",
+    "integration_initial.log": "4c3e1c27518593b9bb153c037a7f6bf5e00a99a27fe4211ed95aa44319e0e825",
+    "integration_source_regression.log": "ba5da2ea539ce8e96856d89ce5bc892e3063f32e8c735cbe515cb1960c9d16d7",
+    "final_fixes.log": "176d6a7d99d590ec3ff5413a85a8ab5c108469221cf6c5f535a64bc9ee729629",
+    "knowledge_audit.log": "d4ab4a527d8a3a80a88df1a3e0b44b856c64e31b55d9d48272151c254c977937",
+    "skill_validate.log": "db349825903d66adffea3ecf1bd8e1803043e8a71cf1a051235dabc5371f5bb0",
+    "memory_correction_summary.json": "f53b687acde0b82b695bacd4c69f1213160191d6d3ea9f16cba37625693a2386",
+    "memory_correction_plan.json": "3ffe3df4ef5e3ac3981cc92b3661fad32ea3ec61698c770f2d99efd6d3918b05"
+  }
+}

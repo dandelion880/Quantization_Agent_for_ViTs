@@ -227,3 +227,5 @@ knowledge_directory 提供有限的 L2 目录、知识状态和复盘时点，�
 当前 H1 为成熟完整方案驱动，H2 为完整方案上的真实瓶颈改进，H3 保持开放创新；旧 existing_method/engineering/new_algorithm 卡片枚举保留。H1/H2 自然说明起点和改动，不增固定措辞或审核门槛。Top-3 独立于 Memory，按协议分桶持久化在 EXP/solutions，有效 L3 双任务在 Recorder 之前即可按 (ADE20K mIoU, ImageNet Top-1) 降序更新；待测种子保留空成绩。完整源码、配置、协议和版本可按 configuration_asset 获取，失败与未入选发现仍由 Recorder/Memory 保存。统一 [W4A4协议](STATIC_W4A4.md) 只在最终完整方案检查全覆盖。
 
 G-only 停机和预算收尾会接收已持久化回执、尝试归档有效 L3 方案并保存未完成阶段，不在 finally 新增模型调用。Top-3 的实测资格、双任务完整性、静态 W4A4、同协议比较和稳定平分规则沿用原实现。
+
+冻结来源声明以 ExperimentCard 顶层 evidence_refs/solution_refs 为准，兼容 controls 中的同名明确列表，原始请求保留。runtime 的 RequestRevisionRequired 连同请求来源、可选绑定和子进程路径进入回执，返回原科研申请者修订请求，不消耗 Coding 修订。已选来源损坏/身份拒绝归宿主、资源异常归资源处理；实现异常沿原 Coding→Safeguard。工程未执行不能记作机制不获支持。

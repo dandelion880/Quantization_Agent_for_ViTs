@@ -64,3 +64,9 @@ plan、FP 和 Q 全状态身份校验与原有审计；只有实现显式设置 
 取消、数值超时与恢复清理管理；不额外预留或叠加子进程预算。失败保留已经完成
 的任务原件和 dual_task_failure.json，整次实验仍失败。dual_task_receipt.json
 记录同包 hash、设备和真实评测时间交集，实际并行以该回执而非配置判定。
+
+## 事后知识更正与完整方案归档
+
+运行内知识仍由Recorder综合。明确授权的维护可调用 `ResearchMemory.append_correction`，仅为既有claim追加有证据、scope与supersedes绑定的Metareview；author=program，标记maintenance_correction/operator/reason/model_called=false，不冒充模型复盘或正式测量。同一幂等键不能换正文。原卡片/提交不改，派生checkpoint推进，原正式summary/status不重写。L2返回当前版本；历史复盘短视图附knowledge_revisions，详细历史仍按需read_card。
+
+SolutionLibrary的Top3仍只用于保留与B排序。available/catalog及冻结加载从本运行已提交的library/archive/considered事件发现完整历史方案；首次新运行可冻结同协议共享archive，后续读取不直接扫描共享桶以免泄露未来结果。排名外有效方案与未测种子分别标注，历史成绩不冒充新测量；configuration_asset与批准源码保持可追溯。

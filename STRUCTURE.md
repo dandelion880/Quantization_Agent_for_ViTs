@@ -8,7 +8,7 @@
 | QAViT/agents/prompts/ | common、五个活动角色及历史兼容 Prompt、任务目的片段；tasks.py/roles.py 映射和组装 |
 | QAViT/agents/interaction.py | 任务上下文、读取权限、分页/去重、来源与提交绑定 |
 | QAViT/knowledge/INDEX.md | 统一静态科研知识导航与维护入口，正文按需读取 |
-| QAViT/docs/skills/ | 原位保留的四 Skill 与九份 references，INDEX 触发表由 frontmatter 生成 |
+| QAViT/docs/skills/ | 原位保留的四 Skill 与十份 references，INDEX 触发表由 frontmatter 生成 |
 | QAViT/docs/methods/ | 原位保留的组件手册及 index.json；read_asset 为常规阅读入口 |
 | QAViT/docs/solutions/ | 原位保留的完整方案种子及说明，不是实测排名文件 |
 | QAViT/docs/references/ | PTQ 方法来源、版本、许可与历史核验线索 |
@@ -45,3 +45,5 @@ G-only 的当前伪代码与验证记录位于 [EXP/validation/gonly_20261110_r1
 恢复与异常传递的公共实现位于 `QAViT/runtime/failures.py`；本轮边界验证与当前伪代码见 `EXP/validation/gonly_hardening_20261116_r1/`，正式三轮运行输入与监控见 `EXP/inputs/deitb_static_w4a4_gonly_20261115_r2/`。准备验证与正式运行分别记账。
 
 三轮正式完结后，当前Recorder的B时点交付及最新伪代码见 `EXP/validation/gonly_postrun_B_context_20261115_r1/`；该源码修复未用于已冻结的三轮结果，原运行快照不回写。
+
+当前科研能力修订与针对性验证入口：`EXP/validation/gonly_research_capability_20261116_r1/REPORT.md`；数值API `execution/calibration_search.py` 与 `execution/propagation.py` 通过既有custom实验使用，方法与Skill分别按需发现。本轮包含追加的历史知识更正，原正式结果不回写；没有启动新一轮正式实验。

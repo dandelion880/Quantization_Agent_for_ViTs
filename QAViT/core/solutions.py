@@ -57,13 +57,16 @@ class SolutionLibrary:
                     **source,
                     'status': 'pending_evaluation', 'metrics': {'top1': None, 'mIoU': None}} for s in seeds]
         with file_lock(self.root / 'library.lock', timeout=10):
+            archived = [read_json(p) for p in sorted((self.root / 'archive').glob('*.json'))]
+            archived = [r for r in archived if r.get('protocol_hash') == self.key]
             path = self.root / 'top3.json'
             if path.exists():
                 entries = read_json(path)['entries']
             else:
                 atomic_json(path, {'protocol_hash': self.key, 'entries': entries})
         self.journal.commit('solutions/initialize', events=[{'type': 'solution_library', 'entries': entries,
-            'protocol_hash': self.key, 'reason': 'mature seeds; pending scores are not empirical rankings'}])
+            'protocol_hash': self.key, 'reason': 'mature seeds; pending scores are not empirical rankings'},
+            {'type': 'solution_archive', 'entries': archived, 'protocol_hash': self.key}])
         self.materialize()
 
     def seeds(self):
@@ -83,6 +86,19 @@ class SolutionLibrary:
 
     def available(self, sequence=None):
         rows = self.snapshot(sequence)
+        # Only committed run facts are visible. Never scan the mutable shared
+        # bucket during a role read: that would leak future/other-run results.
+        historical = {}
+        for event in self.journal.events:
+            if sequence is not None and event['commit_sequence'] > sequence:
+                continue
+            if event['type'] in ('solution_library', 'solution_archive'):
+                for row in event['entries']:
+                    historical[row['id']] = row
+            elif event['type'] == 'solution_considered' and event.get('entry'):
+                historical[event['entry']['id']] = event['entry']
+        known = {r['id'] for r in rows}
+        rows += [deepcopy(r) for k, r in historical.items() if k not in known]
         known = {r['id'] for r in rows}
         return rows + [r for r in self.seeds() if r['id'] not in known]
 
@@ -136,7 +152,9 @@ class SolutionLibrary:
         return assets
 
     def catalog(self, sequence=None):
-        return [{**{k: v for k, v in row.items() if k not in ('configuration', 'source_snapshot', 'execution', 'artifacts', 'actual_quantization')},
+        active = {r['id'] for r in self.snapshot(sequence)}
+        return [{**{k: v for k, v in row.items() if k in ('id', 'title', 'status', 'metrics', 'evidence_ref', 'hypothesis_ref')},
+                 'retention': 'top3' if row['id'] in active else ('archive' if row.get('status') == 'evaluated' else 'seed'),
                  'configuration_asset': str(self.journal.root / 'solution_library' / (fingerprint(row['id']) + '.json')),
                  'measurement_origin': ('current_run' if row.get('run_dir') == str(self.journal.root) else 'historical') if row.get('status') == 'evaluated' else 'unmeasured_seed',
                  'new_measurement': False}
@@ -189,7 +207,7 @@ class SolutionLibrary:
                 atomic_json(path, {'protocol_hash': self.key, 'entries': current})
             events = [{'type': 'solution_library', 'entries': current, 'protocol_hash': self.key},
                       {'type': 'solution_considered', 'round': number, 'evidence_ref': evidence['id'],
-                       'selected': candidate['id'] in {r['id'] for r in current}}]
+                       'selected': candidate['id'] in {r['id'] for r in current}, 'entry': candidate}]
         except ContractError as exc:
             events = [{'type': 'solution_considered', 'round': number, 'evidence_ref': evidence['id'],
                        'selected': False, 'reason': str(exc)}]

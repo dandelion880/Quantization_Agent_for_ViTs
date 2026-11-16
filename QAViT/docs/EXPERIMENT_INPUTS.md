@@ -40,4 +40,8 @@ Generation/Evolution 可在 H 正式提交前直接 request_experiment，多次�
 
 数值超时独立于 LLM 的 runtime.task_timeout_seconds。省略 resources.estimated_seconds 时按 runtime.numeric_task_timeout_seconds 的 L1/L2/L3 取值，默认分别为 3600/10800/86400 秒（轻量诊断/较重局部实验/完整 L3）；可在运行配置按层级覆盖，或用 resources.estimated_seconds 显式覆盖本次任务，不增加估时审批。
 
-H1/H2 可引用 context.complete_solutions 的完整起点，局部改动不覆盖原方案。方法适配允许，缺失官方代码不阻塞自主实现。新最终 W4A4 使用 [STATIC_W4A4.md](STATIC_W4A4.md)；局部诊断不继承全网覆盖。exact frozen-state 消融在 evidence_refs 引用已发布包，Coding 可用 experiment_v1 的 load_frozen 回调；需要新实例时明确写新实例，不能替代确切包。
+H1/H2 可引用 context.complete_solutions 的完整起点，局部改动不覆盖原方案。方法适配允许，缺失官方代码不阻塞自主实现。新最终 W4A4 使用 [STATIC_W4A4.md](STATIC_W4A4.md)；局部诊断不继承全网覆盖。exact frozen-state 消融在顶层 `evidence_refs: ["EvidenceCard-…@1"]` 或 `solution_refs: ["完整方案ID"]` 明确来源，Coding 用 `experiment_v1` 的 `context["load_frozen"](ref)` 加载。兼容 `controls.evidence_refs` / `controls.solution_refs` 的既有明确列表并合并去重；不从自然语言、路径或“当前B”猜来源。多个已引用来源可用于对照，调用时须明确选择；唯一绑定包时可省略 ref。已绑定包的确切 model_ref 与其 Evidence/solution id 可互换，身份或包有歧义时返回 Generation 修订请求。需要新实例时明确写新实例，不能替代确切包。
+
+完整冻结方案传播诊断可在现有 `experiment_v1` 中调用 `ptq_agent.execution.propagation.profile_frozen_propagation`：经 `context["load_frozen"](ref)` 读取明确引用的模型，再选择 block 边界和可选冻结干预。返回配对 FP/Q 输入与输出、同 Q 输入的 FP block 重放、局部新增/上游映射/总误差和交叉项、CLS/patch 与命名任务输出；记录样本和状态哈希，禁止 final 选点、不重校准。API、来源声明示例及覆盖限制见 [冻结传播参考](skills/diagnose-ptq-failure/references/frozen-propagation.md)。这是诊断 custom 路径，不新增正式实验配额或替代双任务评价。
+
+校准的原生计划选项为 `execution.plan.execution.{calibration_unit,block_modules,layer_order,reestimate_passes,calibration_context}`，与已有 `order/within_stage` 一起实际调度，见 [校准顺序](methods/calibration_order.md)。完整冻结背景中的block输出/少样本整网选参走custom数值API `ptq_agent.execution.calibration_search.search_frozen_scales`，见 [目标与样本合同](methods/scale_selection.md#完整冻结背景中的block整网目标)。不要把参数拟合分数当作外层search或最终双任务成绩。

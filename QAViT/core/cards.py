@@ -86,6 +86,7 @@ PAYLOAD_SCHEMAS = {
     "ExperimentCard": object_schema({
         "stage": {"enum": ["request", "execution"]},
         "request_ref": TEXT, "request_sha256": TEXT,
+        "evidence_refs": STRINGS, "solution_refs": STRINGS,
         "level": {"enum": ["L1", "L2", "L3"]}, "question": TEXT,
         "prediction": TEXT, "measurements": {"type": "array", "minItems": 1},
         "controls": OBJECT, "decision_impact": TEXT, "execution": OBJECT,

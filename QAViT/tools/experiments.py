@@ -92,10 +92,26 @@ def check_backend(adapter, brief):
         raise ContractError('execution.backend 与 ResearchBrief.model 的授权适配器冲突')
 
 
+def normalize_source_refs(payload):
+    """Known legacy structured citations are additive, never inferred from prose."""
+    value = deepcopy(payload)
+    controls = value.get('controls', {})
+    for key in ('evidence_refs', 'solution_refs'):
+        sources = []
+        for owner in (value, controls):
+            refs = owner.get(key, []) if isinstance(owner, dict) else []
+            if not isinstance(refs, list) or any(not isinstance(r, str) or not r.strip() for r in refs):
+                raise ContractError(key + ' must be a list of explicit source identifiers')
+            sources.extend(refs)
+        if sources or key in value:
+            value[key] = list(dict.fromkeys(sources))
+    return value
+
+
 def prepare_request(payload, brief, runtime=None):
     """Preserve scientific intent while filling only host defaults; no execution freeze."""
     validate_schema(payload, EXPERIMENT_DRAFT_SCHEMA, 'ExperimentCard draft')
-    value = deepcopy(payload)
+    value = normalize_source_refs(payload)
     value.setdefault('level', 'L1')
     value.setdefault('controls', {})
     value.setdefault('scope', {})
@@ -527,7 +543,15 @@ class ExperimentBroker:
         self.runtime = runtime
 
     def preflight(self, payload):
-        return preflight_experiment(payload, self.journal.card(self.brief_ref)["payload"], self.runtime)
+        value = preflight_experiment(payload, self.journal.card(self.brief_ref)["payload"], self.runtime)
+        self.card_references(value)
+        if value.get('solution_refs'):
+            from core.solutions import SolutionLibrary
+            known = {r['id'] for r in SolutionLibrary(self.journal, self.journal.card(self.brief_ref)['payload']).available()
+                     if r.get('status') == 'evaluated'}
+            if any(ref not in known for ref in value['solution_refs']):
+                raise ContractError('solution_refs must select evaluated complete solutions visible in this protocol catalog')
+        return value
 
     def card_references(self, payload, refs=()):
         """Preserve explicitly cited evidence in every host-created envelope.
@@ -535,7 +559,7 @@ class ExperimentBroker:
         Role visibility and alias resolution remain at the authored handoff;
         this broker validates kind/identity and never grants visibility itself.
         """
-        cited = payload.get('evidence_refs', [])
+        cited = normalize_source_refs(payload).get('evidence_refs', [])
         if not isinstance(cited, list) or any(not isinstance(ref, str) for ref in cited):
             raise ContractError('ExperimentCard.evidence_refs 必须为 EvidenceCard 引用列表')
         for ref in cited:
@@ -589,10 +613,14 @@ class ExperimentBroker:
         # 跨作业读取权限只由本次 Journal 派生，不能接受 Agent 自填的文件绑定。
         from tools.frozen import bind_sources, bind_solutions
         execution.pop('frozen_sources', None)
-        if payload.get('evidence_refs'):
-            execution['frozen_sources'] = bind_sources(self.journal, payload['evidence_refs'])
-        if payload.get('solution_refs'):
-            execution.setdefault('frozen_sources', []).extend(bind_solutions(self.journal, payload['solution_refs'], brief))
+        try:
+            if payload.get('evidence_refs'):
+                execution['frozen_sources'] = bind_sources(self.journal, payload['evidence_refs'])
+            if payload.get('solution_refs'):
+                execution.setdefault('frozen_sources', []).extend(bind_solutions(self.journal, payload['solution_refs'], brief))
+        except (ContractError, OSError) as exc:
+            from runtime.failures import FrozenSourceError
+            raise FrozenSourceError(str(exc)) from exc
         execution.pop("profile_evidence_bindings", None)
         profile_refs = []
         if execution["service"] == "profile" and execution.get("tool") == "read_profile_evidence":

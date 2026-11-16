@@ -15,3 +15,5 @@ Top-3 由程序据同协议有效 L3 双任务结果更新，不等待复盘成�
 复盘 B 时区分 context.B_transition.before_l3（实际预选任务创建/决定发布时的保留 B）和 after_l3（本批归档时的保留 B），各有确切快照及来源；fallback_B 仍表示当前读取时保底。候选完成 L3 后可能已晋升，因此候选与 after_l3/fallback_B 的同一 model_ref 不能说明候选与晋升前 B 相同、没有新增候选或没有历史比较。沿 before_l3 的模型和 Evidence 核对变化，同时保留历史比较并非同期受控实验、不能单凭包身份或成绩差推断机制因果的限制。无有效结果或无可核实时点时按显式状态保留未知，不补造 B 或对照。
 
 解决/放弃问题时用 question_records 的稳定 question_id 提交 resolved_question_refs / abandoned_question_refs；只在科学分析中说“已解决”不会改变开放问题状态。指标默认交付 key_facts；分析双任务损失应同时使用 FP、Q、Q−FP 及单位，不能忽略已有 FP 对照。
+
+若历史复盘检索结果有 knowledge_revisions 或知识带 supersedes，核对当前版本，保留原错误及更正来源。program author 的 maintenance_correction 是明确标注的事后工程维护，不是额外Recorder模型调用、正式轮次或新测量。校准内部拟合分数、外层search比较与最终双任务结果分别归纳；加载/来源/资源失败标记未执行，不能进入机制反证。全局诊断中的局部新增、上游映射和误差交叉项不能当成独立可加贡献，冻结干预收益也只限实际背景和样本。

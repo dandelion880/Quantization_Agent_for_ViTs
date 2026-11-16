@@ -52,7 +52,9 @@ class ScientificSkills(TempCase):
             self.assertEqual(result['sha256'], file_sha256(path))
             self.assertIsNone(result['next_offset'])
             self.assertIn(str(path.relative_to(QAVIT)), identity)
-            for target in re.findall(r'\]\(([^)]+)\)', path.read_text()):
+            # Code examples are not Markdown links (e.g. context['load_frozen'](ref)).
+            prose = re.sub(r'```[\s\S]*?```|`[^`\n]*`', '', path.read_text())
+            for target in re.findall(r'\]\(([^)]+)\)', prose):
                 if '://' not in target:
                     self.assertTrue((path.parent / target).is_file(), (path, target))
 
