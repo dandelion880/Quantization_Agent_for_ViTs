@@ -85,6 +85,8 @@ class Workflow(RoleInteraction, ExperimentRequests, WorkflowDriver):
         self.solutions = SolutionLibrary(self.journal, self.brief["payload"], shared=self.config.get("purpose") == "research")
         if not read_only:
             self.solutions.initialize()
+        from core.inspirations import InspirationLibrary
+        self.inspirations = InspirationLibrary(self.journal, self.solutions)
         self.transport_blocked = None
 
 
@@ -109,6 +111,10 @@ class Workflow(RoleInteraction, ExperimentRequests, WorkflowDriver):
             batch = self.memory.recording_batch()
             context.update(recording_batch=batch)
             refs = batch['source_refs']
+        if purpose == 'generate' and context.get('slot') == 'H3':
+            active = self.inspirations.active()
+            if active:
+                context.setdefault('inspiration_id', active['id'])
         producers = [t["task_id"] for t in self.queue.snapshot(states={"completed"}, fields=("task_id", "outputs")).values()
                      if set(t["outputs"]).intersection(refs)]
         # 同场 A/B、仲裁仍各自调用并串行领取；独立配对不共享订阅互斥锁。

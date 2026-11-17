@@ -369,6 +369,7 @@ class ExperimentRequests:
             if plan['state'] != 'completed' or (plan.get('result') or {}).get('defer_reason'):
                 return True
             self.queue.enqueue(current_request, 'experiment_request', role='supervisor', inputs={
+                **self.inspiration_request_binding(plan, plan['result']['draft']),
                 'draft': plan['result']['draft'],
                 'original_request': plan['result'].get('original_request', plan['result']['draft']),
                 'requester': plan['role'], 'refs': plan['inputs']['refs'], 'origin_task': plan['task_id'],
@@ -492,6 +493,18 @@ class ExperimentRequests:
                 'numerical_validation_status': 'validated' if success else 'partial' if valid else 'not_validated',
                 'formal_validation_success': success}
 
+    def inspiration_request_binding(self, author, draft=None):
+        explicit = (draft or {}).get('inspiration_id')
+        if explicit and explicit not in self.inspirations.snapshot(self.read_view(author)['sequence']):
+            raise ContractError('实验引用了未知或不可见的灵感')
+        if author['inputs'].get('purpose') not in ('generate', 'plan_l3'):
+            return {'inspiration_id': explicit} if explicit else {}
+        identifier = self.inspirations.bound_id(author, self.read_view(author)['sequence'])
+        if identifier and explicit and identifier != explicit:
+            raise ContractError('实验灵感与当前 H3/确切候选身份冲突；先更新灵感决定')
+        identifier = identifier or explicit
+        return {'inspiration_id': identifier} if identifier else {}
+
     def implementation_handoff(self, task):
         """Bind only same-researcher history or explicitly cited public Evidence producers."""
         tasks = self.queue.snapshot()
@@ -503,11 +516,14 @@ class ExperimentRequests:
             return (t['inputs'].get('purpose'), c.get('round'), c.get('slot'), tuple(c.get('pair', [])), c.get('side'))
         cited = set(task['inputs'].get('refs', [])) | set(task['inputs'].get('draft', {}).get('evidence_refs', []))
         history = []
+        identifier = task['inputs'].get('inspiration_id')
         for previous in tasks.values():
             if previous['kind'] != 'experiment_request' or previous['task_id'] == task['task_id']:
                 continue
             owner = self.request_author(previous, tasks)
             shared = bool(cited.intersection(previous.get('outputs', [])))
+            if identifier and previous['inputs'].get('inspiration_id') not in (None, identifier) and not shared:
+                continue
             if not shared and (not owner or actor(owner) != actor(author)):
                 continue
             ref = previous.get('experiment_ref') or previous.get('request_ref')
@@ -525,6 +541,13 @@ class ExperimentRequests:
                 'failures': [{'error': t.get('error'), 'worker_log': str(Path(t['request_path']).with_name('worker.log')) if t.get('request_path') else None}
                              for t in trials if t.get('error')],
                 'meaning': 'Prior implementation context, not a requirement to preserve its bug or algorithm choices.'})
+        identifier = task['inputs'].get('inspiration_id')
+        if identifier:
+            # The idea handoff survives a different round/author and failed or
+            # low-scoring attempts without requiring a complete solution entry.
+            prior = self.inspirations.recovery(identifier)['implementation_history']
+            own_ids = {row['candidate']['id'] for row in history}
+            history = [r for r in prior if r['candidate']['id'] not in own_ids] + history
         return history[-3:]
 
     def progress_request(self, task):

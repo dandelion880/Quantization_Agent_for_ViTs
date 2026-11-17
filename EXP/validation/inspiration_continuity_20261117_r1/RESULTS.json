@@ -1,0 +1,80 @@
+{
+  "status": "passed",
+  "validation_kind": "scripted_offline_cpu_contracts_not_scientific_results",
+  "runs": [
+    {
+      "log": "tests.log",
+      "tests": 39,
+      "status": "passed"
+    },
+    {
+      "log": "continuity_final.log",
+      "tests": 7,
+      "status": "passed"
+    }
+  ],
+  "unique_test_cases": 40,
+  "knowledge_audit": {
+    "status": "passed",
+    "errors": [],
+    "skill_count": 7,
+    "method_count": 21,
+    "checked_pages": 77
+  },
+  "syntax_check": {
+    "status": "passed",
+    "files": [
+      "QAViT/agents/interaction.py",
+      "QAViT/agents/roles.py",
+      "QAViT/agents/tasks.py",
+      "QAViT/core/cards.py",
+      "QAViT/core/experiment_requests.py",
+      "QAViT/core/inspirations.py",
+      "QAViT/core/workflow.py",
+      "QAViT/tests/test_inspirations.py"
+    ]
+  },
+  "git_diff_check": "passed",
+  "real_llm_calls": 0,
+  "real_model_evaluations": 0,
+  "coverage": [
+    "idea-only save without experiment or numerical reservation",
+    "single active idea and pause/resume/switch",
+    "idempotent recovery after published tool update",
+    "cutoff reads and stale update rejection",
+    "low unranked H3 survives restart and continues exact code/config/results",
+    "code revision to execution/result identity",
+    "hash tampering rejected",
+    "Recorder progress/absorption without state decisions",
+    "separate complete H1/H2 parents and B retention",
+    "all three final candidates enter unchanged L3"
+  ],
+  "limitations": [
+    "run-local idea library; no automatic cross-run merge",
+    "no live LLM/GPU research or metric improvement validation",
+    "scientific continuation and substantive changes remain Generation decisions"
+  ],
+  "source_sha256": {
+    "QAViT/README.md": "0706a64b295d051a43ba6fb0fc0d4da42e0f19826f55da0eb3dee85298d33399",
+    "QAViT/agents/interaction.py": "3eb09d74790f672135601d7eb52acc5fc3f32c81fa5f68cebbb043ffdfacc118",
+    "QAViT/agents/prompts/generation.md": "2621a91494247fa2c2814cff4f13fac4d2529ff9e33a3aa436d65a1971a6ddc4",
+    "QAViT/agents/prompts/recorder.md": "174baaa1294eb9f938df0a1aa7ead496f7d5dc8be035d9b17b639f5681542388",
+    "QAViT/agents/prompts/tasks/code.md": "6dc1e0371de64478d3dcb2cf5207a0cc0a80eff26255ea2684040b1485172d55",
+    "QAViT/agents/prompts/tasks/generate.md": "263cc86cd9e3fcd46aeba77759c33d4a626a99b77f43b70f85dd67f3271d2b51",
+    "QAViT/agents/prompts/tasks/select.md": "46ae5c06966e6afaaa3dfd56f506f7fa7363f591e02f0e198db75b88f19d5e0b",
+    "QAViT/agents/roles.py": "6caae01aa2766239ad9005f7cde7ef540a6aab10e338521549168942d56f6b3f",
+    "QAViT/agents/tasks.py": "1898cc3f0cde602975edcebe0bbaa120efcd3dfbebd4975142c6970d84080ee9",
+    "QAViT/core/cards.py": "ac13baa4bf221e2e7c75cba00b07bd18390459f9d451490db530dafa0e6a43aa",
+    "QAViT/core/experiment_requests.py": "026f8123dc2787550843dc7aa173f221ce6882a66245c4520f72207f7f26ca5a",
+    "QAViT/core/inspirations.py": "33d4ecf6a947c41345daf399d2b51e74ad0cc74ccd3a8172dfb3664058d6d558",
+    "QAViT/core/workflow.py": "a5d0c2e90c0fbd350a30638e4f17838a1d8bf90d5e76eb0bf4a283a063be797a",
+    "QAViT/docs/EXECUTION.md": "d0e90a0a9f46254ef1adf3b1ecd8941aff2fbd354470c0b8b953c456b92a7398",
+    "QAViT/docs/RESOURCE_LIFECYCLE.md": "9f38e7028e4919cd60e1bd9caba758ab8102f8708e55bb855883da152241a0d0",
+    "QAViT/docs/skills/adapt-quantization-method/SKILL.md": "33c158c41a689dd9f9603ae7c502684e92c1a4d20372f8fcd36969ee739c11bd",
+    "QAViT/docs/skills/evaluate-ptq-candidate/SKILL.md": "6c8cb88caf18347beb452b6fffbb84a5b0c397ce9e26169eba7fcd4654247ceb",
+    "QAViT/knowledge/INDEX.md": "a4be651384cb642825af2c677d3d851546dd8456dde2140f318e6438213bc680",
+    "QAViT/knowledge/research-skills/RESEARCH_CONVENTIONS.md": "70086fc00526d927764d4aed781e614d8f48ef723b95b945c341a4f30d952d15",
+    "QAViT/tests/data/prompt_readiness_baseline.json": "2646637bb68ac00c172a0a5e708a955e9e37dbe992ac1fb208b509d6a19e5a62",
+    "QAViT/tests/test_inspirations.py": "b769e9d7a45930b7f349b9f071dd79ecb306882790302074058526c90545bc21"
+  }
+}

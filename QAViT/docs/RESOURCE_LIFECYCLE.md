@@ -70,3 +70,16 @@ plan、FP 和 Q 全状态身份校验与原有审计；只有实现显式设置 
 运行内知识仍由Recorder综合。明确授权的维护可调用 `ResearchMemory.append_correction`，仅为既有claim追加有证据、scope与supersedes绑定的Metareview；author=program，标记maintenance_correction/operator/reason/model_called=false，不冒充模型复盘或正式测量。同一幂等键不能换正文。原卡片/提交不改，派生checkpoint推进，原正式summary/status不重写。L2返回当前版本；历史复盘短视图附knowledge_revisions，详细历史仍按需read_card。
 
 SolutionLibrary的Top3仍只用于保留与B排序。available/catalog及冻结加载从本运行已提交的library/archive/considered事件发现完整历史方案；首次新运行可冻结同协议共享archive，后续读取不直接扫描共享桶以免泄露未来结果。排名外有效方案与未测种子分别标注，历史成绩不冒充新测量；configuration_asset与批准源码保持可追溯。
+
+
+## 独立灵感库与跨轮接续
+
+`InspirationLibrary` 复用本运行 Journal，以 `inspiration_updated` 保存稳定 ID 的简短版本记录，以 `inspiration_task` / `inspiration_candidate` 绑定科研任务和确切候选。它独立于 SolutionLibrary；允许只有想法、依据、进展、问题和下一步，没有代码、完整方案或正指标。`update_inspiration` 不产生实验、不预留数值预算；新条目默认 paused，Generation 用 status 与 reason 激活、暂停、恢复或切换。切换原条目和旧源码都保留，最多一条 active。更新工具与回执幂等提交，中断后复用同一请求；旧快照不能覆盖新进展。Recorder 只能修改已有进展、待办、引用与已吸收部分，不能改变机制或活跃状态。
+
+H3 任务默认绑定当前 active ID；发布候选前已开展的研究请求及后续 L3 请求继承该 ID。旧调用未先建条目时，H3 提交可建立初始条目并关联同任务的请求；不自动导入旧运行。综合阶段针对某灵感取证可在实验草案提供 inspiration_id；不依靠实验描述猜归属。发布后的 H3 科学修订与 L3 始终沿其确切候选的灵感身份，后续切换不改写已有归属或取消三候选 L3。
+
+恢复视图从原 task_snapshot、ExperimentCard、EvidenceCard 和代码 manifest 派生，提供原始请求/配置、source_sha256、源码快照版本、执行结果和失败引用，不重复保存完整方案或大型产物。下一轮 H3 context.inspiration_continuation 默认给最近三个请求和代码入口、未完成事项及完整 read_inspiration 入口；原件保持可读，暂停条目同样可读。Coding/Safeguard 沿已有 implementation_history 直接取得原源码，仍核验文件哈希与可见序号；每份代码结果的 parent_code_ids 记录宿主交付的父代码上下文，实际增量和撤销方式由 Coding explanation 说明，不代表程序已验证科学派生关系。既有冻结包继续通过 evidence_refs/solution_refs 的严格来源恢复，失败或未导出的包不伪造为可加载模型。
+
+H1/H2 对库内完整父方案用 solution_derivation 保存 base_solution_id、changes、rollback；宿主绑定父记录的完整哈希和源码快照引用。该字段兼容旧卡片省略；库外父方案仍需在正文给出完整、可追溯定义。下一轮交付各槽位先前派生入口，原完整父方案和代码保留以供回退。可用灵感部分实际进入 H1/H2 后，以 absorbed_parts 的 part / target_ref 追加确切候选引用；部分吸收不暂停整个灵感，也不更换 H1/H2 的完整基础。弱保底不等于原样重交基线或每轮保证不降。
+
+低分、未入 Top-3、失败不会自动改动灵感状态。Generation 根据实际进展和具体下一步决策，Recorder 记录，宿主负责存取与调度。H1/H2/H3 最终候选仍全部进入原 L3；B 独立保留；正式方案仍按有效双任务 L3 的 ADE20K 主指标及既有规则更新。灵感库目前仅在本运行内跨轮/重启恢复，无跨运行自动合并或源码资产迁移。源码缺失/哈希不符沿既有错误处理返回，不从文字合成“恢复成功”；修改宿主后的历史恢复仍需要显式 intervention。

@@ -27,4 +27,6 @@
 
 不要创建卡片封套，也不要把待执行实验写成 EvidenceCard。
 
-H1/H2 可使用 context.complete_solutions 或其他来源清楚的完整方案，按需 read_asset 读取 configuration_asset 和方法卡，明确完整基础方案、改良内容及依据；不能只提交原种子充当改良。B 在 context.fallback_B 独立保留已验证成果。三者共享 Brief 与按需 Memory，H3 仍独立探索新机制。
+H1/H2 可使用 context.complete_solutions 或其他来源清楚的完整方案，按需 read_asset 读取 configuration_asset 和方法卡，明确完整基础方案、改良内容及依据；不能只提交原种子充当改良。B 在 context.fallback_B 独立保留已验证成果。三者共享 Brief 与按需 Memory；H3 优先接续当前活跃灵感，同一机制可以跨轮修复、调参、组合或简化。
+
+有库内完整父方案时，solution_derivation 用 base_solution_id、changes、rollback 简记父方案身份、实质增量和回退依据。H3 的 inspiration_id 由宿主绑定当前灵感；若需切换先 update_inspiration，不在提交时偷偷更换身份。

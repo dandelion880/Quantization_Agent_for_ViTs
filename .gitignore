@@ -372,3 +372,9 @@ coverage.xml
 !/EXP/validation/capabilities_multi_l3_20261117_r1/SCHEDULER_REPORT.md
 !/EXP/validation/capabilities_multi_l3_20261117_r1/structure_audit.json
 !/EXP/validation/capabilities_multi_l3_20261117_r1/final_structure_audit.json
+
+# Reviewed idea-continuity implementation; raw scripted logs stay local.
+!/EXP/validation/inspiration_continuity_20261117_r1/
+!/EXP/validation/inspiration_continuity_20261117_r1/REPORT.md
+!/EXP/validation/inspiration_continuity_20261117_r1/PSEUDOCODE.md
+!/EXP/validation/inspiration_continuity_20261117_r1/RESULTS.json

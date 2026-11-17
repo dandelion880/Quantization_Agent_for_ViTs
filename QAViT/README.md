@@ -17,7 +17,7 @@ core/workflow.py 的 advance/progress_preselection 组织 H1/H2/H3 自主实验�
 
 core/experiment_requests.py 保存研究者原始实验需求，必要时交给 Coding 单实现，再绑定执行选择、Safeguard 审查并执行；证据返回原研究者继续判断。无需新增测量时可以直接提交。Skill、文档和方案种子仅辅助选择，不改变流程或限制 H3。
 
-agents/tasks.py、roles.py、prompts/ 定义任务/角色/工具及提示词；agents/interaction.py 组织上下文、授权读取、去重和提交绑定。core/memory.py、journal.py、cards.py 维护运行事实与知识修订；core/solutions.py 单独维护协议完整方案。runtime/driver.py、task_queue.py、task_runtime.py、budget.py、gpu_resources.py 管启动、恢复、资源与回执。tools/ 下是真实数值执行实现，tools/ptq_agent/ 是纯数值库，无旧 Agent 框架运行依赖。
+agents/tasks.py、roles.py、prompts/ 定义任务/角色/工具及提示词；agents/interaction.py 组织上下文、授权读取、去重和提交绑定。core/memory.py、journal.py、cards.py 维护运行事实与知识修订；core/solutions.py 单独维护协议完整方案；core/inspirations.py 基于 Journal 保存独立灵感及跨轮恢复引用，不复制完整方案。runtime/driver.py、task_queue.py、task_runtime.py、budget.py、gpu_resources.py 管启动、恢复、资源与回执。tools/ 下是真实数值执行实现，tools/ptq_agent/ 是纯数值库，无旧 Agent 框架运行依赖。
 
 ## 环境与运行
 
@@ -47,3 +47,5 @@ CUDA_VISIBLE_DEVICES='' OMP_NUM_THREADS=2 MKL_NUM_THREADS=2 python -B QAViT/test
 测试临时文件写 EXP/cache/tmp 并自动清理；报告/快照须用新的 EXP 路径。更新 Skill frontmatter 后用 audit_knowledge.py --write-skill-index 生成触发目录，普通检查不写文件。Prompt 修改需更新 tests/data/prompt_readiness_baseline.json 的明确差异。
 
 validate_code_service.py、validate_memory_service.py 会调用真实 LLM；validate_numeric.py 会加载真实模型资产，均须按当次任务范围与预算使用。历史验证不等于当前完整 GPU 科研性能基线。本轮 G-only 验证见 [交付报告](../EXP/validation/gonly_20261110_r1/REPORT.md)。
+
+H3 默认持续发展一条活跃灵感，按确切代码、配置、结果和未完成事项接续；低分或未入 Top-3 不自动结束方向。Generation 决定继续/暂停/切换，Recorder 更新进展与引用；H1/H2 保留各自完整父方案及可回退增量，独立 B 和三候选 L3 不变。接口与边界见 [资源生命周期](docs/RESOURCE_LIFECYCLE.md#独立灵感库与跨轮接续)。当前离线检查和伪代码见 [本轮报告](../EXP/validation/inspiration_continuity_20261117_r1/REPORT.md)。

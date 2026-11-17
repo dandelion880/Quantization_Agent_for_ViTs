@@ -27,3 +27,5 @@
 来源可用可选 `sources.document` 记录 Skill/Method/Recipe 路径，`sources.ref` 留给 Journal 卡片，推导或文献用 `sources.source` 自然说明。实际阅读内容、范围和版本见 read_asset 回执；声明来源不能替代实验 Evidence。资源缺失或读取失败时，研究角色可保留未知并沿原路径继续。
 
 当前结构见 [STRUCTURE](../../STRUCTURE.md)，历史记录与产物入口见 [HISTORY](../docs/HISTORY.md)。
+
+运行内独立灵感由 `core/inspirations.py` 从 Journal 的 `inspiration_*` 事件派生，区别于完整方案与知识断言；Generation/Recorder 通过 `update_inspiration`、`read_inspiration` 更新/读取，实验和代码仍走原执行链。生命周期、恢复及父方案记录见 [资源生命周期](../docs/RESOURCE_LIFECYCLE.md#独立灵感库与跨轮接续)。

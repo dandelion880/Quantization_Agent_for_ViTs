@@ -4,6 +4,7 @@ from copy import deepcopy
 from core.cards import OBJECT, TEXT, object_schema, PAYLOAD_SCHEMAS, MEMORY_QUERY_SCHEMA, fingerprint
 from core.journal import file_sha256
 from agents.tasks import TASKS
+from core.inspirations import UPDATE_SCHEMA
 from tools.experiments import EXPERIMENT_DRAFT_SCHEMA
 
 PROMPTS = Path(__file__).with_name("prompts")
@@ -34,6 +35,17 @@ for field in ('resolved_choices', 'model_scope', 'backend', 'model_identity_sha2
 
 
 TOOLS = {t["name"]: t for t in [
+    tool('update_inspiration', (
+        '保存或更新独立灵感，不触发实验。新建省略 inspiration_id，提供 title/idea/basis/next_step；'
+        '默认 paused。Generation 用 status=active/paused 与具体 reason 决定继续、暂停、恢复或切换；'
+        '激活另一条时原活跃灵感自动暂停且成果保留。同一灵感沿用 ID，只提交变化字段。'
+        'progress/open_questions/next_step 简记进展、问题和下一步；source_refs 引用已有卡片；'
+        'absorbed_parts 用 part 与 H1/H2 的 target_ref 记录已吸收部分（追加、不删除）。'
+        'Recorder 只能更新已有条目的进展、问题、下一步建议及引用，不改科研状态。'
+        '本工具单独调用；返回稳定 ID 后再发实验。'
+    ), UPDATE_SCHEMA),
+    tool('read_inspiration', '读取灵感及准确的历史源码、配置、结果和失败入口；暂停成果也可恢复。',
+         object_schema({'inspiration_id': TEXT}, ['inspiration_id'])),
     tool("revise_candidate", (
         "仅在候选综合中提交已有候选的完整科学修订。parent_ref 必须是当前确切版本；"
         "hypothesis 使用 generate 的科学正文（title/research_question/mechanism/intervention及可选字段）。"
@@ -85,6 +97,7 @@ TOOLS = {t["name"]: t for t in [
         "新增代码先保存原始需求，再由 Coding 交付单份实现和必要执行选择，程序绑定后交 Safeguard 科学审查。"
         "Generation 可在形成 H、候选综合和 L3 规划时自主取证；常规实验直接返回原任务。"
         "真实结果或失败返回原研究任务，由该任务解释并决定继续研究或提交。research_note 可保存当前解释/下一步理由。"
+        "H3 自动绑定当前灵感；综合任务围绕某灵感取证时用 experiment.inspiration_id 显式关联，保存代码和失败以便接续。"
         "只有有效 Evidence 是实测；缓存不算独立重复，数据范围和预算仍严格核验。"
     ), object_schema({"experiment": EXPERIMENT_SUBMISSION_SCHEMA, "research_note": TEXT}, ["experiment"]))
 ]}

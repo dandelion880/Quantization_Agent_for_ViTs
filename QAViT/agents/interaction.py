@@ -77,6 +77,12 @@ class RoleInteraction:
             if (parent and parent['kind'] == 'experiment_request'
                     and parent['inputs'].get('parent_task') == task['task_id']):
                 return True
+        sequence = self.read_view(task)['sequence']
+        if task.get('_inspiration_acl_sequence') != sequence:
+            task['_inspiration_acl_sequence'] = sequence
+            task['_inspiration_source_refs'] = self.inspirations.source_task_refs(sequence)
+        if ref in task['_inspiration_source_refs']:
+            return True  # Host-bound idea assets; can_read_card still enforces branch visibility.
         history = task['inputs']['context'].get('implementation_history', [])
         handed_refs = {r for row in history for r in [row['source_task_ref'], *row['execution_task_refs']]}
         return (ref in handed_refs or body['task_id'] == task['task_id'] or body['inputs'].get('parent_task') == task['task_id']
@@ -238,6 +244,12 @@ class RoleInteraction:
         bindings = {}
         if purpose in ('generate', 'evolve'):
             bindings = {k: context[k] for k in ('round', 'slot', 'hypothesis_type')}
+            if purpose == 'generate' and context.get('slot') == 'H3':
+                identifier = self.inspirations.bound_id(task, self.read_view(task)['sequence'])
+                if identifier:
+                    bindings['inspiration_id'] = identifier
+                elif content.get('inspiration_id'):
+                    raise ContractError('先用 update_inspiration 激活/绑定灵感，不能在 H3 提交时更换身份')
             if purpose == 'evolve':
                 bindings['parent_refs'] = [context['parent_ref']]
             content.setdefault('feedback_used', [])
@@ -271,6 +283,14 @@ class RoleInteraction:
             if key in content and content[key] != value:
                 raise ContractError('提交与宿主固定身份冲突: ' + key)
             content[key] = value
+        if purpose == 'generate' and content.get('solution_derivation'):
+            derivation = content['solution_derivation']
+            bases = {r['id']: r for r in self.solutions.available(self.read_view(task)['sequence'])}
+            base = bases.get(derivation['base_solution_id'])
+            if base is None:
+                raise ContractError('父方案必须是已知完整方案；其他来源先在正文给出可追溯完整定义')
+            content['solution_derivation'] = {**derivation,
+                'base_sha256': fingerprint(base), 'base_source': deepcopy(base.get('source_snapshot'))}
         if purpose == 'record':
             content = self.memory.prepare_metareview(content, context['recording_batch'], context['round'],
                 resolve_claim=lambda claim: self.resolve_card_refs(task, claim))
@@ -1141,6 +1161,29 @@ class RoleInteraction:
             context["fallback_B"] = self.solutions.fallback(state["L1"].get("incumbent"), sequence=sequence)
             if purpose == 'record':
                 context['B_transition'] = self.recorder_B_transition(task, sequence)
+            context['inspiration_library'] = list(self.inspirations.snapshot(sequence).values())
+            identifier = self.inspirations.bound_id(task, sequence)
+            active = self.inspirations.active(sequence)
+            if identifier or active:
+                recovery = self.inspirations.recovery(identifier or active['id'], sequence)
+                context['inspiration_continuation'] = {**recovery,
+                    'requests': recovery['requests'][-3:],
+                    'implementation_history': recovery['implementation_history'][-3:],
+                    'request_count': len(recovery['requests']),
+                    'read_inspiration': {'inspiration_id': recovery['id']}}
+                if purpose == 'generate' and task['inputs']['context'].get('slot') == 'H3':
+                    for request in recovery['requests'][-3:]:
+                        for ref in request['evidence_refs']:
+                            deliver(ref, expand_support=False)
+            if purpose == 'generate' and task['inputs']['context'].get('slot') in ('H1', 'H2'):
+                slot = task['inputs']['context']['slot']
+                prior = [c for c in self.journal.find_cards('HypothesisCard')
+                         if c['payload']['slot'] == slot and c['payload']['round'] < task['inputs']['context']['round']
+                         and self.journal.cards[c['id']]['sequence'] <= sequence]
+                if prior:
+                    context['previous_derivation'] = {'hypothesis_ref': prior[-1]['id'],
+                        'solution_derivation': prior[-1]['payload'].get('solution_derivation'),
+                        'meaning': 'Retain the complete parent and trace incremental changes; no per-round score guarantee.'}
             context["solution_policy"] = "Verified fallback B is retained independently of exploration. Complete bases and pending seeds are distinct; H1/H2 explain their chosen base and scientific changes. Select the next research investment without an H1 preference or maturity gate."
         from core.static_w4a4 import DESCRIPTION
         context["static_w4a4_protocol"] = DESCRIPTION
@@ -1491,6 +1534,11 @@ class RoleInteraction:
                       any(root in p.resolve().parents for root in (ROOT / 'reference', *self.knowledge_roots()))}
         solution_assets = self.solutions.assets(sequence)
         allowed.update(solution_assets)
+        for identifier in self.inspirations.snapshot(sequence):
+            for request in self.inspirations.recovery(identifier, sequence)['requests']:
+                source = (request.get('host_source') or {}).get('source_snapshot')
+                if source:
+                    allowed[source['path']] = source['sha256']
         allowed.update(static)
         allowed.update({path: file_sha256(path) for path in public})
         refs = [ref for ref, entry in self.journal.cards.items() if entry['sequence'] <= sequence]
@@ -1592,6 +1640,33 @@ class RoleInteraction:
                                            for root in (self.run_dir, ROOT / 'reference', *self.knowledge_roots())))}
 
     @journal_read
+    def update_inspiration(self, task, parent, args):
+        stored = self.queue.get(task['task_id'])
+        if (stored['kind'] != 'host_tool' or stored['inputs'].get('name') != 'update_inspiration'
+                or stored['inputs']['arguments'] != args or stored['inputs']['parent_task'] != parent['task_id']):
+            raise ContractError('灵感更新必须绑定原持久工具请求')
+        prior = next((e for e in self.journal.events if e['type'] == 'inspiration_update_receipt'
+                      and e['tool_task_id'] == task['task_id']), None)
+        if prior:
+            return prior['result']
+        resolved = self.resolve_card_refs(parent, args)
+        # target_ref is intentionally not a generic card-ref alias elsewhere.
+        for part in resolved.get('absorbed_parts', []):
+            target = self.require_visible(parent, part['target_ref'])
+            if target['kind'] != 'HypothesisCard' or target['payload']['slot'] not in ('H1', 'H2'):
+                raise ContractError('已吸收部分须引用实际 H1/H2 候选版本')
+            part['target_ref'] = target['id']
+        sequence = self.journal.sequence
+        identifier, events = self.inspirations.update_events(resolved, parent, key=task['task_id'],
+                                                            sequence=self.read_view(parent)['sequence'])
+        row = next(e['entry'] for e in events if e['type'] == 'inspiration_updated' and e['entry']['id'] == identifier)
+        result = {'inspiration_id': identifier, 'status': row['status'], 'revision': row['revision'],
+                  'experiment_scheduled': False}
+        events.append({'type': 'inspiration_update_receipt', 'tool_task_id': task['task_id'], 'result': result})
+        self.journal.commit('inspirations/update/' + task['task_id'], events=events, expected_sequence=sequence)
+        return result
+
+    @journal_read
     def revise_candidate(self, task, parent, args):
         """Recover the same immutable revision on either side of Journal publication."""
         stored = self.queue.get(task['task_id'])
@@ -1618,6 +1693,13 @@ class RoleInteraction:
         synthetic['inputs'] = {**parent['inputs'], 'purpose': 'generate', 'context': {
             **context, **{k: old['payload'][k] for k in ('round', 'slot', 'hypothesis_type')}}}
         body = deepcopy(args['hypothesis'])
+        if old['payload'].get('inspiration_id'):
+            synthetic['inputs']['context']['inspiration_id'] = old['payload']['inspiration_id']
+        else:
+            prior_idea = next((e['inspiration_id'] for e in reversed(self.journal.events)
+                               if e['type'] == 'inspiration_candidate' and e['hypothesis_ref'] == old['id']), None)
+            if prior_idea:
+                synthetic['inputs']['context']['inspiration_id'] = prior_idea
         validate_schema(body, submission_schema('generate'), 'revision.hypothesis')
         body = self.bind_submission(synthetic, body)
         refs = self.scientific_refs(body, parent)
@@ -1644,7 +1726,8 @@ class RoleInteraction:
             'request_sha256': fingerprint(args),
             'reason': args['reason'], 'change_type': 'scientific',
             'validation_status': 'unvalidated_revision', 'basis_evidence_refs': body.get('evidence_refs', [])},
-            self.memory.live_update(round_number=context['round'], hypothesis_ref=card['id'])],
+            self.memory.live_update(round_number=context['round'], hypothesis_ref=card['id']),
+            *self.inspirations.candidate_events(synthetic, card)],
             expected_sequence=sequence)
         return {'candidate_ref': card['id'], 'requires_reselection': True,
                 'validation_status': 'unvalidated_revision'}
@@ -1659,6 +1742,10 @@ class RoleInteraction:
         if name not in schemas:
             raise ContractError('角色调用了未授权工具')
         validate_schema(args, schemas[name], name)
+        if name == 'update_inspiration':
+            return self.update_inspiration(task, parent, args)
+        if name == 'read_inspiration':
+            return self.inspirations.recovery(args['inspiration_id'], self.read_view(parent)['sequence'])
         if name == 'revise_candidate':
             return self.revise_candidate(task, parent, args)
         if name == 'read_card':
@@ -1722,8 +1809,8 @@ class RoleInteraction:
         validate_schema(response["tool_calls"], {"type": "array", "minItems": 1, "items": {
             "type": "object", "required": ["id", "name", "arguments"],
             "properties": {"id": TEXT, "name": TEXT, "arguments": {"type": "object"}}}}, "tool_calls")
-        if any(c['name'] == 'revise_candidate' for c in response['tool_calls']) and len(response['tool_calls']) != 1:
-            raise ContractError('科学修订单独提交，不能与实验或读取混合批次')
+        if any(c['name'] in ('revise_candidate', 'update_inspiration') for c in response['tool_calls']) and len(response['tool_calls']) != 1:
+            raise ContractError('科学修订或灵感更新单独提交，不能与实验或读取混合批次')
         # 先检查整个批次，避免后一个草案被拒绝时留下前一个已入队的实验。
         for call in response["tool_calls"]:
             if call["name"] not in allowed or call["id"] in call_ids:
@@ -1732,11 +1819,13 @@ class RoleInteraction:
             validate_schema(call["arguments"], allowed[call["name"]], call["name"])
             if call["name"] == "request_experiment":
                 drafts[call["id"]] = self.broker.preflight(self.resolve_card_refs(task, call["arguments"]["experiment"]))
+                self.inspiration_request_binding(task, drafts[call["id"]])
         for call in response["tool_calls"]:
             key = task["key"] + f"/tools/a{task['attempt']}/" + fingerprint(call["id"])[:12]
             name, args = call["name"], call["arguments"]
             if name == "request_experiment":
                 identifier = self.queue.enqueue(key, "experiment_request", role="supervisor", inputs={
+                    **self.inspiration_request_binding(task, drafts[call["id"]]),
                     "draft": drafts[call["id"]], "original_request": deepcopy(args["experiment"]), "requester": task["role"], "refs": task["inputs"]["refs"],
                     **({'research_note': args['research_note']} if args.get('research_note') else {}),
                     "call_id": call["id"], "parent_task": task["task_id"]})
@@ -1859,7 +1948,9 @@ class RoleInteraction:
         if purpose in ("code",):
             experiment = self.journal.card(context["experiment_ref"])
             artifact = write_artifact(self.run_dir, experiment, content, task["role"])
-            self.queue.finish(task["task_id"], result={"artifact": artifact, "receipt": str(receipt_path)})
+            self.queue.finish(task["task_id"], result={"artifact": artifact, "receipt": str(receipt_path),
+                "parent_code_ids": list(dict.fromkeys(row['candidate']['id']
+                    for row in context.get('implementation_history', [])))})
             return
         if purpose == "supervise":
             self.queue.finish(task["task_id"], result=content)
@@ -1878,6 +1969,7 @@ class RoleInteraction:
             if 'candidate_binding' in content and content['candidate_binding'] != binding:
                 raise ContractError('L3执行绑定与预选确切版本冲突')
             content['candidate_binding'] = binding
+            self.inspiration_request_binding(task, content)
             original_request = deepcopy(content)
             content = self.broker.preflight(self.resolve_card_refs(task, content))
             self.broker.card_references(content)
@@ -1965,6 +2057,7 @@ class RoleInteraction:
             card = make_card(kind, self.journal.run_id, content, author=author or task["role"], parents=parents, refs=sorted(refs))
         cards.append(card)
         if kind == "HypothesisCard":
+            events.extend(self.inspirations.candidate_events(task, card))
             events.append(self.memory.live_update(round_number=context["round"], hypothesis_ref=card["id"]))
         if purpose == "select" or (purpose == "rank" and context["selection_stage"] == "final"):
             events.append(self.memory.live_update(round_number=context["round"], selection={"slot": content.get("selected_slot"), "review_ref": card["id"],

@@ -75,7 +75,10 @@ PAYLOAD_SCHEMAS = {
             "relation": TEXT, "target": TEXT, "explanation": TEXT,
         }, ["relation", "target", "explanation"])},
         "feedback_used": {"type": "array", "items": OBJECT}, "scope": OBJECT,
-        "evidence_refs": STRINGS,
+        "evidence_refs": STRINGS, "inspiration_id": TEXT,
+        "solution_derivation": object_schema({
+            "base_solution_id": TEXT, "changes": TEXT, "rollback": TEXT,
+        }, ["base_solution_id", "changes", "rollback"]),
     }, ["round", "slot", "hypothesis_type", "title", "research_question", "mechanism",
         "intervention", "predictions", "sources", "mechanism_relations", "feedback_used", "scope"]),
     "ReviewDecisionCard": object_schema({
@@ -86,7 +89,7 @@ PAYLOAD_SCHEMAS = {
     "ExperimentCard": object_schema({
         "stage": {"enum": ["request", "execution"]},
         "request_ref": TEXT, "request_sha256": TEXT,
-        "evidence_refs": STRINGS, "solution_refs": STRINGS,
+        "evidence_refs": STRINGS, "solution_refs": STRINGS, "inspiration_id": TEXT,
         "level": {"enum": ["L1", "L2", "L3"]}, "question": TEXT,
         "prediction": TEXT, "measurements": {"type": "array", "minItems": 1},
         "controls": OBJECT, "decision_impact": TEXT, "execution": OBJECT,

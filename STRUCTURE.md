@@ -16,6 +16,7 @@
 | QAViT/docs/ | 系统/执行合同、实验/代码接口、环境、资源生命周期与历史导航 |
 | QAViT/core/workflow.py、experiment_requests.py | G-only 自主研究/综合修订/多候选L3/轮次推进与实验请求；保留现有职责，不拆分大型文件 |
 | QAViT/core/cards.py、journal.py、memory.py、evidence.py | 合同、不可变事实、运行内知识修订、观测展示及检索 |
+| QAViT/core/inspirations.py | 独立灵感的 Journal 修订、活跃状态与代码/配置/结果恢复投影；不参与 Top-3 或实验调度 |
 | QAViT/core/solutions.py、static_w4a4.py | 协议专属完整方案库与必要数值边界 |
 | QAViT/core/debate.py、execution_contract.py、evidence_scope.py | Full 历史裁决表兼容、冻结执行约束及证据适用范围 |
 | QAViT/runtime/ | driver/队列/worker、订阅传输、预算/GPU/运行段、保护及源码身份 |
@@ -52,3 +53,5 @@ G-only 的当前伪代码与验证记录位于 [EXP/validation/gonly_20261110_r1
 七项科研 Skill 接入、最新伪代码及分层验证见 [本轮记录](EXP/validation/skill_system_integration_20261116_r1/REPORT.md)；历史运行、冻结合同及评分记录保持原件。
 
 当前统一可执行能力入口见 `QAViT/docs/CAPABILITIES.md`，薄适配位于 `QAViT/tools/frozen_helpers.py`。三候选 L3、GPU 候选优先分配及本次验证/最新伪代码见 [交付记录](EXP/validation/capabilities_multi_l3_20261117_r1/REPORT.md)；历史报告与原始实验不回写。
+
+独立灵感库与 H3 跨轮接续的当前伪代码、离线验证见 [本轮记录](EXP/validation/inspiration_continuity_20261117_r1/REPORT.md)。灵感存于各运行既有 Journal 的 inspiration_* 事件，复用 code/、cards/ 与源码快照；不新增跨运行自动合并目录。

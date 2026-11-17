@@ -231,3 +231,5 @@ knowledge_directory 提供有限的 L2 目录、知识状态和复盘时点，�
 G-only 停机和预算收尾会接收已持久化回执、尝试归档有效 L3 方案并保存未完成阶段，不在 finally 新增模型调用。Top-3 的实测资格、双任务完整性、静态 W4A4、同协议比较和稳定平分规则沿用原实现。
 
 冻结来源声明以 ExperimentCard 顶层 evidence_refs/solution_refs 为准，兼容 controls 中的同名明确列表，原始请求保留。runtime 的 RequestRevisionRequired 连同请求来源、可选绑定和子进程路径进入回执，返回原科研申请者修订请求，不消耗 Coding 修订。已选来源损坏/身份拒绝归宿主、资源异常归资源处理；实现异常沿原 Coding→Safeguard。工程未执行不能记作机制不获支持。
+
+独立灵感状态与 H3 连续演化接口见 [资源生命周期](RESOURCE_LIFECYCLE.md#独立灵感库与跨轮接续)：update_inspiration 只保存状态，不触发实验；同一灵感可跨轮调参、修复、组合或简化，未入 Top-3 不自动淘汰。H1/H2 弱保底、独立 B、三候选 L3 和既有预算/评测约束保持原规则。
