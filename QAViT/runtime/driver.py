@@ -13,11 +13,53 @@ from runtime.budget import BudgetExhausted, RequestBudgetInsufficient
 from runtime.subscription import structured_output_error
 from agents.roles import role_spec
 from tools.experiments import verify_assets
-from runtime.gpu_resources import ResourceBusy, placement
+from runtime.gpu_resources import ResourceBusy, ResourceUnavailable, placement
 
 
 
 class WorkflowDriver:
+    def note_resource_wait(self, task, error):
+        now = time.monotonic()
+        waits = self.__dict__.setdefault('_resource_waits', {})
+        entry = waits.setdefault(task['task_id'], {'idle_since': now})
+        entry.update(code=type(error).__name__, message=str(error),
+                     unavailable=isinstance(error, ResourceUnavailable),
+                     next_probe=now+self.config['runtime'].get('resource_poll_seconds', 2))
+        if not task.get('resource_wait') or task['resource_wait'].get('code') != entry['code']:
+            self.queue.change(task['task_id'], task['state'], patch={'resource_wait': {
+                'code': entry['code'], 'message': entry['message'], 'since_unix': time.time(),
+                'origin': 'resource', 'recovery': 'resume_after_resources_available'}})
+
+    def resource_blockage(self):
+        waits = self.__dict__.setdefault('_resource_waits', {})
+        active = self.queue.snapshot(states={'running'}, fields=('kind',))
+        now = time.monotonic()
+        if active:
+            # Live work is progress. Ordinary queueing behind siblings is not
+            # no-progress time and never becomes Agent time.
+            for entry in waits.values():
+                entry['idle_since'] = now
+            return None
+        limit = self.config['runtime'].get('resource_wait_timeout_seconds', 900)
+        blocked = []
+        for tid, entry in list(waits.items()):
+            if self.queue.get(tid)['state'] not in ('ready','retry','pending'):
+                waits.pop(tid)
+                continue
+            elapsed = now-entry['idle_since']
+            if entry['unavailable'] or elapsed >= limit:
+                blocked.append({'task_id':tid, 'code':entry['code'], 'message':entry['message'],
+                                'idle_seconds':elapsed})
+        return {'code':'resource_blocked', 'origin':'resource', 'tasks':blocked,
+                'recovery':'保存确切任务与预算；恢复已授权设备后 resume，不自动扩大 GPU 授权。'} if blocked else None
+
+    def persist_status(self, status):
+        now = time.monotonic()
+        if now-getattr(self, '_status_written_at', -float('inf')) >= 1:
+            atomic_json(self.run_dir / 'status.json', {'status':status, 'sequence':self.journal.sequence,
+                         'remaining_seconds':self.budget.snapshot()['remaining_seconds']})
+            self._status_written_at = now
+
     def dispatch_candidates(self):
         # 旧快照可保持任务身份/尝试和读取视图，只恢复其每场互斥资源。
         tasks = self.queue.snapshot(states={"pending", "ready", "retry", "waiting", "needs_clarification"},
@@ -85,6 +127,9 @@ class WorkflowDriver:
         count = 0
         for candidate in self.dispatch_candidates():
             task = self.queue.get(candidate["task_id"])
+            waiting = getattr(self, '_resource_waits', {}).get(task['task_id'])
+            if waiting and time.monotonic() < waiting['next_probe']:
+                continue
             if task['kind'] == 'experiment':
                 parent = self.queue.snapshot(fields=('experiment_ref',)).get(task['inputs'].get('parent_task'))
                 if (task['task_id'] in held_bindings or (parent and parent.get('experiment_ref')
@@ -158,11 +203,13 @@ class WorkflowDriver:
                                task_id=task["task_id"], added_refs=stale, memory_version=self.journal.memory_version)
             try:
                 self.runtime.launch(task, self.request_body(task), input_versions=versions)
-            except ResourceBusy:
+            except ResourceBusy as exc:
+                self.note_resource_wait(task, exc)
                 continue
             except RequestBudgetInsufficient as exc:
                 self.queue.claim(task["task_id"], input_versions=versions)
                 self.queue.fail(task["task_id"], {"code": type(exc).__name__, "message": str(exc)})
+            getattr(self, '_resource_waits', {}).pop(task['task_id'], None)
             count += 1
         return count
 
@@ -206,6 +253,8 @@ class WorkflowDriver:
                 # Reuse the same bounded contract-repair counter; no transport retry loop.
                 raise ContractError(error["message"])
             retry = code in ("worker_lost", "InterruptedError", "llm_timeout", "llm_transport_error", "llm_format_error")
+            if task['kind'] == 'experiment' and error.get('origin') in ('implementation','request'):
+                retry = False  # Return to the owner; never replay the same failing source/intent.
             audit = Path(path).parent / "llm_audit.json"
             before_call = task["kind"] == "llm" and audit.exists() and read_json(audit).get("model_call_started") is False
             # A transport/timeout failure is recoverable on either side of the
@@ -403,6 +452,9 @@ class WorkflowDriver:
                  "expected_rounds": expected_rounds, "validated_rounds": validated_rounds,
                  "tasks": counts, "budget": self.budget.snapshot(), "memory": self.memory.snapshot(),
                  "rounds": rounds,
+                 'pending_synthesis': [{k:e[k] for k in ('round','task_ref','candidate_refs','pending_stages','next_action')}
+                    for e in self.journal.events if e['type']=='synthesis_pending'
+                    and self.selection_card(e['round']) is None],
                  "research_topics": [{k:r[k] for k in ('id','ref','status','question','objective','next_step','reconsider_when')}
                                      for r in self.topics.snapshot().values()],
                  "clarifications": [{"task_id": t["task_id"], **t["clarification"]} for t in tasks.values() if t["state"] == "needs_clarification"],
@@ -429,7 +481,10 @@ class WorkflowDriver:
                 # 崩溃前已提交的工作结果优先接收；不消耗新的实验或模型调用。
                 self.poll()
                 while True:
-                    budget = self.budget.check(allow_numeric_drain=self.numeric_running())
+                    scan = time.monotonic()-getattr(self, '_disk_checked_at', -float('inf')) >= 5
+                    budget = self.budget.check(allow_numeric_drain=self.numeric_running(), check_disk=scan)
+                    if scan:
+                        self._disk_checked_at = time.monotonic()
                     self.poll()
                     self.update_numeric_wait()
                     self.release_scope_closeout_reserve()
@@ -480,12 +535,15 @@ class WorkflowDriver:
                         break
                     dispatched = self.dispatch()
                     self.update_numeric_wait()
+                    blockage = self.resource_blockage()
+                    if blockage:
+                        status, error = 'resource_blocked', blockage
+                        break
                     tasks = self.queue.snapshot(fields=("state",)).values()
                     if not dispatched and not any(t["state"] in ("running", "ready", "retry") for t in tasks):
                         status = "needs_clarification" if any(t["state"] == "needs_clarification" for t in tasks) else "blocked"
                         break
-                    atomic_json(self.run_dir / "status.json", {"status": status, "sequence": self.journal.sequence,
-                                                               "remaining_seconds": self.budget.snapshot()["remaining_seconds"]})
+                    self.persist_status(status)
                     time.sleep(.1)
             except BudgetExhausted as exc:
                 status, error = "budget_exhausted", str(exc)

@@ -27,3 +27,5 @@ context.knowledge_index 是可选的统一资源导航入口；需要了解资�
 可选预测、来源关系、反馈说明及附加分析栏目可以省略或为空，不为完成表格编造内容。问题附加条目由程序单独保留原稿和具体问题，不作为已核实支持；有效科研正文及其余有效条目继续提交。核心科学决定或显式事实冲突仍须准确处理。
 
 本任务声明 static W4A4 时按 context.static_w4a4_protocol 执行。量化边界与码本容量是数值要求，不以方法名、字符串或 [-8,7]/[-7,7] 表示习惯判定。局部诊断可用 FP 消融或部分覆盖，不能冒充最终完整合规方案。
+
+主题、灵感和方法目录按页提供；read_topic/read_inspiration/read_method 省略身份可按 query、offset、limit 查目录，指定确切身份读取原件与全部接续事项。目录不是完整正文。原宿主源码通过 read_asset 的 snapshot_field/member 精确读取：使用 source_snapshot 的 path/field，省略 member 先查看可恢复成员；完整 research_run/commit 快照仅归档，不直接开放。

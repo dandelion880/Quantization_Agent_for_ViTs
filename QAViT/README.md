@@ -13,7 +13,7 @@ QAViT 让 LLM 负责量化科研推理，程序负责数值执行、身份与来
 
 ## 主调用链
 
-core/workflow.py 的 advance/progress_preselection 组织 Generation 共同主题恢复/决定→H1/H2/H3 自主实验与修订→Generation 横向综合与科学修订→H1/H2/H3 各自绑定确切版本的 L3 规划与执行→Recorder→下一轮。不发布 Judger、Evolution 或 H4。L1/L2 不代替正式评价；有效 ImageNet + ADE20K L3 由程序按原协议更新 Top-3。局部失败保留已完成候选，综合失败保留已提交候选及独立 B；单候选执行失败不阻断其他候选，部分成功不算全轮完成；复盘失败保留原始证据并允许继续。
+core/workflow.py 的 advance/progress_preselection 组织 Generation 共同主题恢复/决定→H1/H2/H3 自主实验与修订→Generation 横向综合与科学修订→H1/H2/H3 各自绑定确切版本的 L3 规划与执行→Recorder→下一轮。不发布 Judger、Evolution 或 H4。L1/L2 不代替正式评价；有效 ImageNet + ADE20K L3 由程序按原协议更新 Top-3。局部失败保留已完成候选，综合失败保存确切候选和待做 L3，本轮保持未完成，允许原任务按原预算恢复；独立 B 保留；单候选执行失败不阻断其他候选，部分成功不算全轮完成；复盘失败保留原始证据并允许继续。
 
 core/experiment_requests.py 保存研究者原始实验需求，必要时交给 Coding 单实现，再绑定执行选择、Safeguard 审查并执行；证据返回原研究者继续判断。无需新增测量时可以直接提交。Skill、文档和方案种子仅辅助选择，不改变流程或限制 H3。
 
@@ -51,3 +51,5 @@ validate_code_service.py、validate_memory_service.py 会调用真实 LLM；vali
 H3 默认持续发展一条活跃灵感，按确切代码、配置、结果和未完成事项接续；低分或未入 Top-3 不自动结束方向。Generation 决定继续/暂停/切换，Recorder 更新进展与引用；H1/H2 保留各自完整父方案及可回退增量，独立 B 和三候选 L3 不变。接口与边界见 [资源生命周期](docs/RESOURCE_LIFECYCLE.md#独立灵感库与跨轮接续)。当前离线检查和伪代码见 [本轮报告](../EXP/validation/inspiration_continuity_20261117_r1/REPORT.md)。
 
 动态主题与方法谱系见 [资源生命周期](docs/RESOURCE_LIFECYCLE.md#动态研究主题与方法谱系)；每轮先恢复再由 Generation 共用选题，轮中改变追加版本，不限制原全局搜索、历史父方案或 B。最新伪代码和针对性状态/真实 Generation 行为回放见 [本轮记录](../EXP/validation/research_topics_20261117_r1/REPORT.md)。
+
+当前工程清洗、恢复边界、成本实测和回放验证见 [本轮交付](../EXP/validation/engineering_cleanup_20261117_r1/REPORT.md)；最新伪代码见 [当前流程](../EXP/validation/engineering_cleanup_20261117_r1/PSEUDOCODE.md)。规则仍在上述原维护入口，旧报告仅描述当时版本。

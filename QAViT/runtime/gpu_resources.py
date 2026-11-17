@@ -19,6 +19,10 @@ class ResourceBusy(Exception):
     pass
 
 
+class ResourceUnavailable(ResourceBusy):
+    """Frozen authorization/visibility cannot execute this task on this resume."""
+
+
 def inventory():
     """NVML indices, CUDA UUIDs and device minors differ in restricted containers."""
     result = subprocess.run(['nvidia-smi', '--query-gpu=index,uuid', '--format=csv,noheader'],

@@ -1,0 +1,56 @@
+diff --git a/QAViT/agents/prompts/common.md b/QAViT/agents/prompts/common.md
+index 9704583..0c98669 100644
+--- a/QAViT/agents/prompts/common.md
++++ b/QAViT/agents/prompts/common.md
+@@ -27,3 +27,5 @@ context.knowledge_index 是可选的统一资源导航入口；需要了解资
+ 可选预测、来源关系、反馈说明及附加分析栏目可以省略或为空，不为完成表格编造内容。问题附加条目由程序单独保留原稿和具体问题，不作为已核实支持；有效科研正文及其余有效条目继续提交。核心科学决定或显式事实冲突仍须准确处理。
+ 
+ 本任务声明 static W4A4 时按 context.static_w4a4_protocol 执行。量化边界与码本容量是数值要求，不以方法名、字符串或 [-8,7]/[-7,7] 表示习惯判定。局部诊断可用 FP 消融或部分覆盖，不能冒充最终完整合规方案。
++
++主题、灵感和方法目录按页提供；read_topic/read_inspiration/read_method 省略身份可按 query、offset、limit 查目录，指定确切身份读取原件与全部接续事项。目录不是完整正文。原宿主源码通过 read_asset 的 snapshot_field/member 精确读取：使用 source_snapshot 的 path/field，省略 member 先查看可恢复成员；完整 research_run/commit 快照仅归档，不直接开放。
+diff --git a/QAViT/agents/prompts/recorder.md b/QAViT/agents/prompts/recorder.md
+index 2eda2b2..1aa8772 100644
+--- a/QAViT/agents/prompts/recorder.md
++++ b/QAViT/agents/prompts/recorder.md
+@@ -21,3 +21,5 @@ Top-3 由程序据同协议有效 L3 双任务结果更新，不等待复盘成
+ 灵感进展独立于 Top-3：按需用 read_inspiration 核对代码/配置/结果引用，用 update_inspiration 沿原 inspiration_id 更新 progress、open_questions、next_step 建议及 source_refs；已有部分被 H1/H2 吸收时追加 absorbed_parts（part、target_ref）。不重复存完整方案，不因低分或未入库将灵感丢弃。继续、暂停、恢复、切换及机制定义由 Generation 决定，Recorder 不改 status；宿主自动关联实验与不可变代码，未实验的灵感保持未实验。
+ 
+ 主题复盘用可选 topic_notes 数组，每项 topic_ref（确切版本）、progress、可选 reconsideration 与 source_refs。整理未完成动作、条件化认识和复议建议；不要提交主题决策或替 Generation 改变范围/目标/继续状态。解释支持、排除替代解释、必要性检验和可比条件下的复杂度降低分别记录，不冒充正式性能提升。已测候选按自身 topic_ref / method_id 归属，主题后来暂停或切换也不改写旧结果。
++
++可选 topic_notes 逐条核验确切版本和引用；错误条目以 submission_issues 保留原文与原因，有效科学正文和其他注记正常发布。不能猜测 topic_ref 或补造来源来消除错误。
+diff --git a/QAViT/agents/prompts/tasks/focus.md b/QAViT/agents/prompts/tasks/focus.md
+index 49d5dc5..6ee342e 100644
+--- a/QAViT/agents/prompts/tasks/focus.md
++++ b/QAViT/agents/prompts/tasks/focus.md
+@@ -8,7 +8,7 @@
+ 
+ 提交 objective（例如提高指标、机制解释、必要性检验、参数共享或方法简化）、rationale、具体 next_step 和 reconsider_when。明确哪些新证据、测量/修复完成或条件变化会使判断改变；不写“以后再看”。继续须有可检验的下一步价值，不能仅因投入而延续；无提升不自动换题，有提升也可改为解释、消融或简化，不要求每轮新机制或指标上升。区分工程失败、未测、机制反证、正式性能下降；解释支持/复杂度降低和正式性能提升分别报告。
+ 
+-可选 unresolved_questions、source_refs、inspiration_ids、method_ids。actions 中的稳定 action ID 可通过 completed_action_ids / deferred_action_ids 更新，省略保留原动作。切换时旧成果和动作保存；若旧主题复议条件发生变化，用 previous_reconsider_when 补充。仅提交变化所需信息，不复制全部历史。Recorder 的 topic_notes 是有条件的建议，不是主题决定。
++可选 unresolved_questions、source_refs、inspiration_ids、method_ids。actions 中的稳定 action ID 可通过 completed_action_ids / deferred_action_ids / resumed_action_ids 更新；恢复暂存动作时沿用原 ID。next_action_id 指向当前要接续的 open 动作（可同次显式 resumed），仅更新其复议条件。next_step 是叙述，不据文本相同、相近或改写自动创建/合并动作；只有新主题首次建立或显式 new_action 才创建新动作。仅改状态时省略 new_action，省略动作字段保留原动作。切换时旧成果和动作保存；若旧主题复议条件发生变化，用 previous_reconsider_when 补充。仅提交变化所需信息，不复制全部历史。Recorder 的 topic_notes 是有条件的建议，不是主题决定。
+ 
+ 主题不等于灵感、方法或候选版本；切换主题不会结束灵感或改变算法身份。H3 仍沿一条 active 灵感投入；确需暂停或切换灵感时用 update_inspiration 明确决定，无须为选题重建同一机制。三候选共享本轮主题版本，H1/H2 仍分别改良完整父方案，结论和机制可以不同。全局 B 不受主题限制，三个最终候选仍进入既定 L3。
+ 
+diff --git a/QAViT/agents/prompts/tasks/plan_l3.md b/QAViT/agents/prompts/tasks/plan_l3.md
+index 0fcf7ba..99298bc 100644
+--- a/QAViT/agents/prompts/tasks/plan_l3.md
++++ b/QAViT/agents/prompts/tasks/plan_l3.md
+@@ -10,7 +10,7 @@ L3 不以某项 L2 性能达标为前提。根据当前实际预算、资源与
+ 
+ 按 payload_contract.schema_location 指向的同一实验草案 Schema 提交，level=L3。常规执行参数已经在 context.experiment_interface；明确研究问题、所需测量和科学约束；有明确预测及决策影响时再提供。宿主生成固定字段与执行镜像。已有方法直接给 plan，已有模型包用 evaluate_artifact；真正新增能力才经 Coding 交付单份实现，程序补齐执行记录并交 Safeguard 对照原始需求审查。无需提交内部变量名、固定输出树或测试夹具。
+ 
+-提交的是待执行计划，不是实验结果。L3 流程完成、协议范围内的有效验证、完整数据评测及 incumbent 资格分别判断；incumbent 仍须通过后续程序检查，Brief 禁止晋升时不得声称可晋升。最终方法要求 training-free 时，构造实验显式声明 resolved_choices.training=false；即使研究中获准 STE，也从参考优化前状态独立重建参数、组成员和选择规则。oracle 包或复制其答案的包不能通过仅 evaluate_artifact、移除 optimizer 或更名变成独立方法；已有包的复用须符合该来源定义。冻结迁移仍使用同一最终状态。
++提交的是待执行计划，不是实验结果。L3 流程完成、协议范围内的有效验证、完整数据评测及 incumbent 资格分别判断；incumbent 仍须通过后续程序检查，Brief 禁止晋升时不得声称可晋升。最终方法要求 training-free 时，模型可见的构造请求显式声明 execution.training=false（宿主规范化为 execution.resolved_choices.training）；即使研究中获准 STE，也从参考优化前状态独立重建参数、组成员和选择规则。oracle 包或复制其答案的包不能通过仅 evaluate_artifact、移除 optimizer 或更名变成独立方法；已有包的复用须符合该来源定义。冻结迁移仍使用同一最终状态。
+ 
+ 
+ 若 context.task.request_feedback 存在，这是原计划执行反馈后的新版本任务。依据所附原始需求、真实失败/拒绝或 Coding/Safeguard 问题修订草案，旧计划与结果保持不变。优先用已有证据解决科学澄清；实现失败、预算拒绝或缓存均不等于假说反驳，缓存不算独立重复。缺少只有用户才能决定的信息时才使用 clarify。若本轮现有条件确实无法完成规定协议，可提交 {"defer_reason":"具体原因及未完成项"}，保留未完成状态并进入正常复盘；不得虚构数据、缩减必需协议或重复相同失败。
+diff --git a/QAViT/agents/prompts/tasks/select.md b/QAViT/agents/prompts/tasks/select.md
+index 8f5bc51..2765505 100644
+--- a/QAViT/agents/prompts/tasks/select.md
++++ b/QAViT/agents/prompts/tasks/select.md
+@@ -13,3 +13,5 @@
+ H3 的修订沿同一 inspiration_id 延续，不要求换机制；暂停/切换只改变后续科研投入，不能取消本轮已提交最终候选的 L3。低分或未入库的成果仍供下一轮恢复。
+ 
+ 横向综合各候选实际 topic_ref 与 method_id；轮中修订的影响范围见 topic_scope_changes。共同初始主题不要求相同父方案或结论。必要主题修订先 revise_topic 明确受影响槽位；已提交版本不回写，若改变候选再 revise_candidate。暂停主题不淘汰其本轮最终候选。
++
++综合服务或输出修复额度耗尽时，宿主保存待综合的确切候选与待做 L3，不据失败发布科学结论；恢复仍沿同一任务、候选版本和原预算。

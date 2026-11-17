@@ -170,6 +170,22 @@ class EvalTest(unittest.TestCase):
         for name, entry in self.rules.provenance["files"].items():
             self.assertEqual(digest((self.rules.root / name).read_bytes()), entry["sha256"])
 
+    def test_new_focus_does_not_break_old_prepare_report_or_frozen_loading(self):
+        for purpose in ('focus','generate'):
+            task=self.history.task(purpose)
+            self.history.call(task);self.history.finish(task)
+        for version in ('v0_1','gonly_v0_2','gonly_v0_3'):
+            rules=Rules(QAVIT/'configs/evaluation'/version)
+            output=self.root/version;output.mkdir()
+            prepare(self.history.root,output,rules)
+            _,cases=load_evaluation(output,rules)
+            build_report(output,rules)
+            self.assertIn('generate',{c['purpose'] for c in cases})
+            if version=='gonly_v0_3':
+                self.assertIn('focus',{c['purpose'] for c in cases})
+            else:
+                self.assertEqual(read_json(output/'run.json')['excluded_tasks'][0]['reason'],'rubric_not_covered')
+
     def test_all_purpose_cases_and_generation_slots(self):
         for purpose in self.rules.selected:
             for slot in (["H1", "H2", "H3"] if purpose == "generate" else [None]):

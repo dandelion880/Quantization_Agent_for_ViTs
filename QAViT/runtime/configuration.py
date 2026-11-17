@@ -57,6 +57,10 @@ def config_check(config, *, resolve_resources=False, historical=False):
             raise ContractError("运行资源需要正整数: " + key)
     if runtime["task_timeout_seconds"] <= 0:
         raise ContractError("任务超时必须为正数")
+    # Optional operational bounds; do not mutate historical frozen configuration.
+    for key in ('resource_wait_timeout_seconds', 'resource_poll_seconds'):
+        if key in runtime and (type(runtime[key]) not in (int,float) or not math.isfinite(runtime[key]) or runtime[key] <= 0):
+            raise ContractError(key + ' 必须为有限正秒数')
     if any(type(gpu) is not int or gpu < 0 for gpu in runtime.get("allowed_gpus", [])):
         raise ContractError("GPU编号必须为非负整数")
     if type(runtime["llm_concurrency"]) is not int or not 1 <= runtime["llm_concurrency"] <= 4:

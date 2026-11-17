@@ -14,6 +14,7 @@ DECISION_SCHEMA = object_schema({
     'next_step': TEXT, 'reconsider_when': TEXT, 'previous_reconsider_when': TEXT,
     'unresolved_questions': STRINGS, 'inspiration_ids': STRINGS, 'method_ids': STRINGS,
     'source_refs': STRINGS, 'completed_action_ids': STRINGS, 'deferred_action_ids': STRINGS,
+    'resumed_action_ids': STRINGS, 'next_action_id': TEXT, 'new_action': TEXT,
 }, ['decision', 'question', 'mutable_dimensions', 'held_conditions', 'objective', 'rationale',
     'next_step', 'reconsider_when'])
 REVISION_SCHEMA = deepcopy(DECISION_SCHEMA)
@@ -101,18 +102,29 @@ class ResearchTopics:
             raise ContractError('关联方法须使用已有谱系身份')
         actions=deepcopy(old.get('actions',[]) if old else [])
         known={a['id']:a for a in actions}
-        if set(p.get('completed_action_ids',[])) & set(p.get('deferred_action_ids',[])):
-            raise ContractError('同一研究动作不能同时完成和暂存')
-        for field,status in (('completed_action_ids','completed'),('deferred_action_ids','deferred')):
+        updates = [p.get(f,[]) for f in ('completed_action_ids','deferred_action_ids','resumed_action_ids')]
+        if len(set(a for group in updates for a in group)) != sum(map(len, updates)):
+            raise ContractError('同一研究动作不能同时完成、暂存或恢复')
+        for field,status in (('completed_action_ids','completed'),('deferred_action_ids','deferred'),('resumed_action_ids','open')):
             for aid in p.get(field,[]):
                 if aid not in known:
                     raise ContractError('未完成动作 ID 不属于当前主题')
+                if field == 'resumed_action_ids' and known[aid]['status'] != 'deferred':
+                    raise ContractError('resumed_action_ids 只能恢复暂存动作；重复新行动使用 new_action')
                 known[aid].update(status=status, decision_ref=card['id'])
-        continuing=next((a for a in actions if a['description']==p['next_step'] and a['status']=='open'),None)
-        if continuing:
-            continuing.update(reconsider_when=p['reconsider_when'], decision_ref=card['id'])
-        else:
-            actions.append({'id':'action-'+fingerprint([identifier,card['id']])[:16], 'description':p['next_step'],
+        aid=p.get('next_action_id')
+        if aid and (aid not in known or known[aid]['status']!='open'):
+            raise ContractError('next_action_id 须指向当前主题 open 动作；暂存动作先显式恢复')
+        if aid and p.get('new_action'):
+            raise ContractError('next_action_id 与 new_action 不能同时指定')
+        if aid:
+            known[aid].update(reconsider_when=p['reconsider_when'], decision_ref=card['id'])
+        # next_step is a scientific narrative, not an action identity. Existing
+        # actions survive verbatim unless an explicit ID changes their status.
+        # The first decision retains compatibility by seeding its initial action.
+        description=p.get('new_action') or (p['next_step'] if not old and action!='pause' else None)
+        if description:
+            actions.append({'id':'action-'+fingerprint([identifier,card['id']])[:16], 'description':description,
                             'reconsider_when':p['reconsider_when'], 'status':'open', 'decision_ref':card['id']})
         row={**deepcopy(old or {}), **{k:deepcopy(p[k]) for k in
              ('question','mutable_dimensions','held_conditions','objective','rationale','next_step','reconsider_when')},
@@ -219,9 +231,13 @@ class ResearchTopics:
             yield self.method_recovery(identifier,sequence)
 
     def source_task_refs(self, sequence=None):
+        key = (self.journal.sequence, sequence)
+        if getattr(self, '_source_refs_key', None) == key:
+            return set(self._source_refs)
         refs=set()
         for recovery in self.retained_recoveries(sequence):
             refs.update(r['task_ref'] for r in recovery['requests'])
             for item in recovery['implementation_history']:
                 refs.update([item['source_task_ref'],*item['execution_task_refs']])
-        return refs
+        self._source_refs_key, self._source_refs = key, refs
+        return set(refs)

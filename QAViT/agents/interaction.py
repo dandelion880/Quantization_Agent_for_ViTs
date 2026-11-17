@@ -206,6 +206,8 @@ class RoleInteraction:
                             raise ContractError('预测 ID 重复')
                     validate_schema(row, schema.get('items', {}) if isinstance(value, list) and schema.get('type') == 'array' else schema, field)
                     if isinstance(row, dict):
+                        if field == 'topic_notes' and row['topic_ref'] not in self.topics.versions(self.read_view(task)['sequence']):
+                            raise ContractError('Recorder 主题注记须引用已存在的确切版本')
                         for ref in row.get('evidence_refs', []):
                             if self.journal.card(ref)['kind'] != 'EvidenceCard':
                                 raise ContractError('evidence_refs 只能指向 EvidenceCard')
@@ -1131,7 +1133,7 @@ class RoleInteraction:
             memory['research_history'] = {'previous_results': history,
                 'meaning': 'Earlier experiment facts remain available alongside the current research note; full specs and raw data are on demand.'}
         page = self.retriever.retrieve(task['role'], sequence=sequence, limit=4, visible=lambda c: self.can_read_card(task, c),
-                                       include_body=False)
+                                       include_body=False, visibility_card=self.visibility_card)
         # Explicit retrieval returns usable bodies; the automatic navigation directory
         # shares already bound bodies and does not inject unrelated card text.
         for entry in page.get('entries', []):
@@ -1146,7 +1148,7 @@ class RoleInteraction:
         if purpose in ('focus', 'generate', 'select', 'plan_l3', 'evolve', 'screen', 'position', 'arbitrate', 'rank', 'record', 'supervise'):
             memory['current_research_state'] = self.memory.current_research_state(
                 sequence, visible=lambda c: self.can_read_card(task, c), excluded_refs=delivered, compact=True,
-                finding_refs=delivered)
+                finding_refs=delivered, visibility_card=self.visibility_card)
             review = memory['current_research_state'].get('latest_review', {})
             for key in ('scientific_analysis', 'generation_guidance', 'blind_spots'):
                 source = {'ref': review.get('ref'), 'field': '/payload/' + key}
@@ -1179,10 +1181,10 @@ class RoleInteraction:
             context['candidate_research_bindings'] = {slot:{k:v for k,v in self.journal.card(ref)['payload'].items()
                 if k in ('topic_ref','method_id','inspiration_id')}
                 for slot,ref in inputs['context'].get('candidate_refs',{}).items()}
-            context['topic_catalog'] = [{k:r[k] for k in ('id','ref','status','question','objective','reconsider_when')}
-                                       for r in self.topics.snapshot(sequence).values()]
-            context['method_catalog_state'] = [{**r, 'candidate_refs':r['candidate_refs'][-3:],
-                'read_method':{'method_id':r['id']}} for r in self.topics.methods(sequence).values()]
+            for kind, field in (('topic','topic_catalog'), ('method','method_catalog_state'), ('inspiration','inspiration_library')):
+                directory = self.research_directory(kind, sequence)
+                context[field] = directory['entries']
+                context[field + '_directory'] = {k:v for k,v in directory.items() if k!='entries'}
             if purpose == 'focus':
                 context['prior_user_answers'] = [a for t in self.visible_task_snapshots(sequence).values()
                                                 for a in t.get('user_answers', [])][-5:]
@@ -1191,7 +1193,6 @@ class RoleInteraction:
                 for request in (context['research_topic'] or {}).get('requests', []):
                     for source in request['evidence_refs']:
                         deliver(source, expand_support=False)
-            context['inspiration_library'] = list(self.inspirations.snapshot(sequence).values())
             identifier = self.inspirations.bound_id(task, sequence)
             active = self.inspirations.active(sequence)
             if identifier or active:
@@ -1199,6 +1200,8 @@ class RoleInteraction:
                 context['inspiration_continuation'] = {**recovery,
                     'requests': recovery['requests'][-3:],
                     'implementation_history': recovery['implementation_history'][-3:],
+                    'hypothesis_refs': recovery['hypothesis_refs'][-3:],
+                    'hypothesis_count': len(recovery['hypothesis_refs']),
                     'request_count': len(recovery['requests']),
                     'read_inspiration': {'inspiration_id': recovery['id']}}
                 if purpose == 'generate' and task['inputs']['context'].get('slot') == 'H3':
@@ -1297,6 +1300,7 @@ class RoleInteraction:
                 'read_card': {'ref': child['task_card'], 'field': '/payload/inputs/research_note'},
                 'meaning': 'Researcher-authored working understanding; source evidence retains independent status.'}
         context['tool_results'] = self.compact_results(task, presented, memory.get('asset_locations', {}), memory.get('field_manifest', []), bodies)
+        self.coalesce_recovery_bodies(context)
         handle_refs = set(delivered)
         handle_refs.update(row['ref'] for row in memory.get('directory', {}).get('entries', []))
         handle_refs.update(row['read_card']['ref'] for row in memory.get('bound_feedback', []))
@@ -1315,6 +1319,52 @@ class RoleInteraction:
             '当前假说、裁决和实验请求明确采用的 Evidence 主动交付有界观测及真实实验条件；来源链不自动展开为全历史。'
             'recording_status 区分事实归档与待完成复盘，knowledge_directory 保留结论状态、复盘时点及新证据检索入口。')
         return context
+
+    def research_directory(self, kind, sequence, *, offset=0, limit=8, query=None):
+        library = {'topic':self.topics.snapshot, 'method':self.topics.methods,
+                   'inspiration':self.inspirations.snapshot}[kind](sequence)
+        key = {'topic':'topic_ref', 'method':'method_id', 'inspiration':'inspiration_id'}[kind]
+        fields = {'topic':('id','ref','status','question','objective','reconsider_when'),
+                  'method':('id','name','parent_method_ids'),
+                  'inspiration':('id','revision','status','title')}[kind]
+        rows = [r for r in reversed(list(library.values())) if not query or query.casefold() in canonical(r).casefold()]
+        rows.sort(key=lambda r:r.get('status')!='active')
+        entries=[]
+        for row in rows[offset:offset+limit]:
+            entry={k:(row[k][:240] if isinstance(row[k],str) else deepcopy(row[k])) for k in fields if k in row}
+            entry['read_'+kind]={key:row.get('ref',row['id'])}
+            if kind=='method':
+                entry.update(candidate_refs=row['candidate_refs'][-3:],candidate_count=len(row['candidate_refs']))
+            entries.append(entry)
+        return {'entries':entries,'total':len(rows),'offset':offset,
+                'read_'+kind:{'query':query} if query else {},
+                'next':{'offset':offset+limit,'limit':limit,**({'query':query} if query else {})}
+                       if offset+limit<len(rows) else None,
+                'meaning':'Bounded navigation only; read exact identity for full retained history and unresolved work.'}
+
+    @staticmethod
+    def coalesce_recovery_bodies(context):
+        """Share exact research-note bodies; preserve every asset/evidence handle."""
+        seen={}
+        def visit(value, location):
+            if isinstance(value,dict):
+                for key,child in value.items():
+                    if key == 'requests' and isinstance(child,list):
+                        for i,row in enumerate(child):
+                            if not isinstance(row,dict) or not isinstance(row.get('research_note'),str):
+                                continue
+                            signature=fingerprint(row)
+                            at=f'{location}.{key}[{i}]'
+                            if signature in seen:
+                                child[i]={**row,'research_note':{'body_location':seen[signature]+'.research_note'}}
+                            else:
+                                seen[signature]=at
+                    else:
+                        visit(child,location+'.'+key)
+            elif isinstance(value,list):
+                for i,row in enumerate(value): visit(row,f'{location}[{i}]')
+        for field in ('research_topic','inspiration_continuation','tool_results'):
+            visit(context.get(field), 'context.'+field)
 
     def deliver_asset(self, task, context, key, artifact):
         path = Path(artifact['path']).resolve()
@@ -1550,7 +1600,9 @@ class RoleInteraction:
 
     def authorized_assets(self, task):
         if 'assets' in self.read_view(task):
-            return self.read_view(task)['assets']
+            # Historical calls may have granted an entire run/commit archive.
+            # Preserve the receipt, but do not repeat that isolation defect.
+            return {p: h for p, h in self.read_view(task)['assets'].items() if not self.archive_path(p)}
         task = dict(task, _acl_allowed_refs=set())
         allowed = {}
         purpose, sequence = task['inputs']['purpose'], self.read_view(task)['sequence']
@@ -1564,16 +1616,6 @@ class RoleInteraction:
                       any(root in p.resolve().parents for root in (ROOT / 'reference', *self.knowledge_roots()))}
         solution_assets = self.solutions.assets(sequence)
         allowed.update(solution_assets)
-        for recovery in self.topics.retained_recoveries(sequence):
-            for request in recovery['requests']:
-                source = (request.get('host_source') or {}).get('source_snapshot')
-                if source:
-                    allowed[source['path']] = source['sha256']
-        for identifier in self.inspirations.snapshot(sequence):
-            for request in self.inspirations.recovery(identifier, sequence)['requests']:
-                source = (request.get('host_source') or {}).get('source_snapshot')
-                if source:
-                    allowed[source['path']] = source['sha256']
         allowed.update(static)
         allowed.update({path: file_sha256(path) for path in public})
         refs = [ref for ref, entry in self.journal.cards.items() if entry['sequence'] <= sequence]
@@ -1670,9 +1712,50 @@ class RoleInteraction:
                     and manifest.get('experiment_sha256') == spec['content_sha256']
                     and manifest.get('source_sha256') == file_sha256(source)):
                 allowed[path] = manifest['source_sha256']
-        return {path: digest or file_sha256(path) for path, digest in allowed.items() if Path(path).is_file()
+        return {path: digest or file_sha256(path) for path, digest in allowed.items() if Path(path).is_file() and not self.archive_path(path)
                 and (path in public or path in solution_assets or any(root in Path(path).parents
                                            for root in (self.run_dir, ROOT / 'reference', *self.knowledge_roots())))}
+
+    @staticmethod
+    def archive_path(path):
+        p = Path(path)
+        return p.name == 'research_run.json' or p.parent.name == 'commits'
+
+    def read_snapshot_asset(self, task, path, args):
+        """Grant exact members of a source era, never its containing run/commit."""
+        from tools.frozen import _source_files
+        import hashlib
+        sequence = self.read_view(task)['sequence']
+        bindings = list(self.solutions.available(sequence))
+        recoveries = list(self.topics.retained_recoveries(sequence))
+        recoveries += [self.inspirations.recovery(i, sequence) for i in self.inspirations.snapshot(sequence)]
+        for recovery in recoveries:
+            bindings += [r['host_source'] for r in recovery['requests'] if r.get('host_source')]
+        binding = next((b for b in bindings if b.get('source_snapshot', {}).get('path') == str(path)
+                        and b['source_snapshot']['field'] == args['snapshot_field']), None)
+        if binding is None:
+            raise ContractError('源码快照不属于本调用已提交的恢复来源')
+        files = _source_files(binding)  # Verify original archive and full member identity.
+        def permitted(name):
+            p = Path(name)
+            return (not p.is_absolute() and '..' not in p.parts
+                    and name.startswith(('core/','runtime/','tools/','configs/','docs/methods/','docs/solutions/'))
+                    and not name.startswith(('tools/evaluation/','configs/evaluation/')))
+        original = {k: binding[k] for k in ('source_version','source_archive_sha256','source_snapshot') if k in binding}
+        member = args.get('member')
+        if member is None:
+            value = [{'member': n, 'sha256': hashlib.sha256(v.encode()).hexdigest(),
+                      'read_asset': {'asset': str(path), 'snapshot_field': args['snapshot_field'], 'member': n}}
+                     for n,v in sorted(files.items()) if permitted(n)]
+            text = canonical(value)
+        else:
+            if member not in files or not permitted(member):
+                raise ContractError('快照成员未授权或不存在；评价规则及历史提示词不属于源码恢复视图')
+            text = files[member]
+        start, limit = args.get('offset',0), args.get('limit',self.PAGE_CHARACTERS)
+        return {**original, 'asset': str(path), 'snapshot_field': args['snapshot_field'], 'member': member,
+                'sha256': hashlib.sha256(text.encode()).hexdigest(), 'offset': start, 'text': text[start:start+limit],
+                'total_characters': len(text), 'next_offset': start+limit if start+limit<len(text) else None}
 
     def topic_context(self, ref, sequence):
         if not ref:
@@ -1814,14 +1897,20 @@ class RoleInteraction:
             raise ContractError('角色调用了未授权工具')
         validate_schema(args, schemas[name], name)
         if name == 'read_topic':
+            if 'topic_ref' not in args:
+                return self.research_directory('topic',self.read_view(parent)['sequence'],**args)
             return self.topics.recovery(args['topic_ref'], self.read_view(parent)['sequence'])
         if name == 'read_method':
+            if 'method_id' not in args:
+                return self.research_directory('method',self.read_view(parent)['sequence'],**args)
             return self.topics.method_recovery(args['method_id'], self.read_view(parent)['sequence'])
         if name == 'revise_topic':
             return self.revise_topic(task, parent, args)
         if name == 'update_inspiration':
             return self.update_inspiration(task, parent, args)
         if name == 'read_inspiration':
+            if 'inspiration_id' not in args:
+                return self.research_directory('inspiration',self.read_view(parent)['sequence'],**args)
             return self.inspirations.recovery(args['inspiration_id'], self.read_view(parent)['sequence'])
         if name == 'revise_candidate':
             return self.revise_candidate(task, parent, args)
@@ -1861,6 +1950,10 @@ class RoleInteraction:
                 visible=lambda c: self.can_read_card(parent, c))
         if name == 'read_asset':
             path = self.asset_path(args['asset'])
+            if 'snapshot_field' in args:
+                return self.read_snapshot_asset(parent, path, args)
+            if 'member' in args:
+                raise ContractError('member 需要明确 snapshot_field，不猜测快照位置')
             allowed = self.authorized_assets(parent)
             if str(path) not in allowed or not path.is_file():
                 raise ContractError('资产读取限本调用已提交授权来源；立场隔离禁止目录旁路')
@@ -2164,8 +2257,6 @@ class RoleInteraction:
             if any(e['type'] == 'recorder_batch_completed' and e['batch_id'] == batch['batch_id'] for e in self.journal.events):
                 raise ContractError('Recorder 批次已发布，不能重复整理或移动游标')
             for note in content.get('topic_notes', []):
-                if note['topic_ref'] not in self.topics.versions(self.read_view(task)['sequence']):
-                    raise ContractError('Recorder 主题注记须引用已存在的确切版本')
                 events.append({'type':'topic_note', 'note':note, 'metareview_ref':card['id']})
             events.append(self.memory.apply_metareview(card,
                 hypothesis_refs=[c["id"] for c in self.round_hypotheses(context["round"]).values()],

@@ -71,9 +71,9 @@ class TaskRuntime:
         fds = []
         try:
             if task['kind'] == 'experiment' and 'gpu_pool' in body:
-                from runtime.gpu_resources import ResourceBusy
+                from runtime.gpu_resources import ResourceBusy, ResourceUnavailable
                 if body.get('requires_gpu') and not body['gpu_pool']:
-                    raise ResourceBusy('No authorized GPU is available; task remains queued')
+                    raise ResourceUnavailable('No authorized GPU is available; preserve task for resource recovery')
                 # An exited worker can release its OS lease before its durable
                 # receipt is accepted. The queue claim must agree with placement.
                 held = self.queue.held_resources()
@@ -88,7 +88,7 @@ class TaskRuntime:
                 bindings = [by_index[g] for g in pool if g in by_index]
                 available = [row['index'] for row in bindings]
                 if pool and (not available or body['pinned_gpu'] is not None and body['pinned_gpu'] not in available):
-                    raise ResourceBusy('Authorized GPU is not currently visible; task remains queued')
+                    raise ResourceUnavailable('Authorized GPU is not currently visible; resume after resource recovery')
                 reserve = self.unserved_gpu_candidates(task) if body['gpu_count'] > 1 else 0
                 gpus, fds = acquire(available, body['gpu_count'], body['pinned_gpu'], bindings=bindings,
                                     reserve=reserve)
@@ -100,7 +100,8 @@ class TaskRuntime:
                         allocation_policy='candidate primary GPUs before intra-candidate parallelism')
                 keys = [k for k in task['resource_keys'] if not k.startswith(('gpu:', 'model:'))]
                 self.queue.change(task['task_id'], task['state'], patch={
-                    'resource_keys': keys + ['gpu:' + str(g) for g in gpus], 'allocated_gpus': gpus})
+                    'resource_keys': keys + ['gpu:' + str(g) for g in gpus], 'allocated_gpus': gpus,
+                    **({'resource_wait':None} if task.get('resource_wait') else {})})
                 task = self.queue.get(task['task_id'])
             return self._launch(task, body, input_versions=input_versions, lease_fds=fds)
         finally:

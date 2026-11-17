@@ -45,7 +45,10 @@ class SolutionLibrary:
                 index = next(i for i, item in enumerate(commit['events']) if item['type'] == 'implementation_intervention')
                 saved, field = event, f'events.{index}.source_snapshot'
         return {'source_version': saved['code_identity']['core_sha256'],
-                'source_snapshot': {'path': str(path), 'sha256': file_sha256(path), 'field': field}}
+                **({'source_archive_sha256': saved['code_identity']['archive_sha256']}
+                   if saved['code_identity'].get('archive_sha256') else {}),
+                'source_snapshot': {'path': str(path), 'sha256': file_sha256(path), 'field': field},
+                'source_read': {'asset': str(path), 'snapshot_field': field}}
 
     def initialize(self):
         if self.snapshot():
@@ -140,9 +143,6 @@ class SolutionLibrary:
     def assets(self, sequence=None):
         assets = {}
         for row in self.available(sequence):
-            source = row.get('source_snapshot', {})
-            if source and source['path'] not in assets and Path(source['path']).is_file() and file_sha256(source['path']) == source['sha256']:
-                assets[source['path']] = source['sha256']
             target = self.journal.root / 'solution_library' / (fingerprint(row['id']) + '.json')
             if target.is_file():
                 assets[str(target)] = file_sha256(target)

@@ -48,3 +48,5 @@ H1/H2 可引用 context.complete_solutions 的完整起点，局部改动不覆�
 校准的原生计划选项为 `execution.plan.execution.{calibration_unit,block_modules,layer_order,reestimate_passes,calibration_context}`，与已有 `order/within_stage` 一起实际调度，见 [校准顺序](methods/calibration_order.md)。完整冻结背景中的 block 输出/少样本整网选参可直接请求 `frozen_helper` 的 `search_frozen_scales`，或沿 custom 调用同一数值 API `ptq_agent.execution.calibration_search.search_frozen_scales`，见 [目标与样本合同](methods/scale_selection.md#完整冻结背景中的block整网目标)。不要把参数拟合分数当作外层search或最终双任务成绩。
 
 获准研究参考优化与最终 training-free 的已有字段、产物边界和真实工具限制见 [科研 Skill 兼容说明](SCIENTIFIC_SKILLS_COMPATIBILITY.md)。STE 需现有 custom 实现；全程禁训合同不会被研究用途或 Skill 覆盖。
+
+模型请求的训练声明使用 `execution.training`，Coding 使用 `execution_choices.training`；宿主在 `normalize_execution` 生成 `execution.resolved_choices.training`。旧内部写法仅兼容已有程序/历史接口；两者同时出现必须一致，不能用字段别名绕过冻结 Brief。

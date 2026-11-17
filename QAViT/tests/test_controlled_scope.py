@@ -421,12 +421,16 @@ class PreflightRecovery(TempCase):
         from agents.roles import role_spec
         from tests.support import validation_config
         spec = role_spec("generation", "generate", {}, validation_config()["llm"])
-        with patch("runtime.subscription.SubscriptionTransport.preflight", side_effect=[
+        # This transport-order fixture must not depend on a CLI being on PATH.
+        # cli.run is mocked below; actual CLI discovery has separate coverage.
+        with patch("runtime.subscription.cli.executable", return_value='/fixture/codex'), \
+             patch("runtime.subscription.SubscriptionTransport.preflight", side_effect=[
                 codex_cli.fail("timeout", "temporary fixture"), {"source": "test_double"}]) as preflight, \
              patch("runtime.model_router.cli.run", side_effect=codex_cli.fail("authentication", "post-preflight fixture")) as model:
             for i in range(2):
-                with self.assertRaises(Exception):
+                with self.assertRaises(codex_cli.PTQError) as error:
                     call_once(spec, self.root / str(i), time.time() + 10)
+                self.assertEqual(error.exception.code, 'llm_timeout' if i == 0 else 'llm_authentication')
                 self.assertEqual(model.call_count, i)
         self.assertEqual(preflight.call_count, 2)
         self.assertFalse(read_json(self.root / "0/llm_audit.json")["model_call_started"])

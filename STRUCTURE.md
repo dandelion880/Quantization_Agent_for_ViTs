@@ -5,7 +5,7 @@
 | 实际位置 | 职责 |
 |---|---|
 | QAViT/run.py | 科研运行 CLI：start/resume/status/report/answer/extend-budget |
-| QAViT/agents/prompts/ | common、五个活动角色及历史兼容 Prompt、任务目的片段；tasks.py/roles.py 映射和组装 |
+| QAViT/agents/prompts/ | common、当前角色/任务及历史兼容 Prompt 片段；tasks.py/roles.py 映射和组装 |
 | QAViT/agents/interaction.py | 任务上下文、读取权限、分页/去重、来源与提交绑定 |
 | QAViT/knowledge/INDEX.md | 统一静态科研知识导航与维护入口，正文按需读取 |
 | QAViT/docs/skills/ | 七项按需 Skill、16 份包内参考及保留的冻结传播 API 参考，INDEX 触发表由 frontmatter 生成 |
@@ -23,7 +23,7 @@
 | QAViT/runtime/ | driver/队列/worker、订阅传输、预算/GPU/运行段、保护及源码身份 |
 | QAViT/tools/ | 文献、实验服务、数值 worker、评测、代码审查与模型适配 |
 | QAViT/tools/evaluation/ | 独立 Eval-L0 离线 CLI；只读历史运行，计量/受限 Judge/评分校验/报告，不被科研主流程导入 |
-| QAViT/configs/evaluation/v0_1/ | 用户上传评分包的唯一原文及哈希来源；避开 docs/knowledge 的科研自动授权范围，详见 QAViT/docs/EVAL_L0.md |
+| QAViT/configs/evaluation/ | v0_1 为上传原件、gonly_v0_2 为冻结旧派生包、gonly_v0_3 为当前派生标准；均与科研自动授权隔离，版本与使用入口见 QAViT/docs/EVAL_L0.md |
 | QAViT/tests/evaluation/ | Eval-L0 CPU 接口、来源、时间边界、隔离与恢复测试；不生成科研代表性样本 |
 | QAViT/tools/ptq_agent/ | 纯数值实现、会话快照和工具注册；execution/baselines.py 与 recipes.py 保留实际构造器 |
 | QAViT/tools/model_sources/ | 固定模型构造源码与既有许可证 |
@@ -35,26 +35,12 @@
 | EXP/cache/ | 临时文件、依赖缓存和锁，不属于源码身份 |
 | reference/ | 当前 coscientist 两份原始 PDF；不自动注入角色 |
 
-`EXP/solutions/<protocol_hash>/` 是已实现的研究运行共享方案库路径，只有需要时创建；本轮整理开始时尚不存在此顶层目录。验证运行的 solutions/ 位于自己的目录。不能为美观预建空库或移动历史桶。完整树仅列实际存在的目录。
+`EXP/solutions/<protocol_hash>/` 是当前已有的跨运行共享方案库，按冻结协议分桶。独立验证可使用自己的 solutions/；完整方案、待测种子和独立 B 按原资格区分。不为目录美观预建空库或移动历史桶。
 
 物理知识路径保留以兼容已有 read_asset、数值会话文档快照、源码身份和历史来源；新增知识优先归入 knowledge/，合理依赖例外见 AGENTS.md。全部资源分类、权威位置、使用角色、发现和维护规则只在 [统一导航](QAViT/knowledge/INDEX.md) 集中说明；[生命周期](QAViT/docs/RESOURCE_LIFECYCLE.md) 解释实际调用与沉淀。
 
 Git 跟踪稳定源码、Prompt、知识、轻量配置、测试及许可证；EXP 仅按 .gitignore 的精确路径保存已检查的轻量交付，原始运行/快照/日志留本机。reference/、.runtime_pkgs/、完整 ImageNet 清单、数据、权重和凭据不入库。忽略不代表删除；环境与本地依赖见 [ENVIRONMENT](QAViT/docs/ENVIRONMENT.md)。历史导航集中在 [HISTORY](QAViT/docs/HISTORY.md)，不在这里追加每次实施日志。
 
-G-only 的当前伪代码与验证记录位于 [EXP/validation/gonly_20261110_r1](EXP/validation/gonly_20261110_r1/REPORT.md)；历史报告不覆盖。分支通过 Git worktree 独立开发，共用 Git 对象库。
+当前伪代码、工程清洗验证及成本实测统一见 [本轮交付](EXP/validation/engineering_cleanup_20261117_r1/REPORT.md)。实现继续使用原 workflow/experiment_requests、Journal、Memory、主题/灵感库和调度链；没有拆分架构或删除历史实现。源码执行身份与完整归档身份分别由 runtime/identity.py 维护；研究角色通过 interaction.read_snapshot_asset 读取确切成员。历史评分包保持原件，configs/evaluation/gonly_v0_3 是当前独立派生评价版本。
 
-本轮准备入口：`EXP/validation/gonly_readiness_20261115_r1/{REPORT,PSEUDOCODE}.md`。`QAViT/tools/dual_task_evaluation.py`负责同冻结包双任务进程并行，可使用分配的第二张卡；`configs/evaluation/gonly_v0_2/`为独立派生评价包，旧包保留。
-
-恢复与异常传递的公共实现位于 `QAViT/runtime/failures.py`；本轮边界验证与当前伪代码见 `EXP/validation/gonly_hardening_20261116_r1/`，正式三轮运行输入与监控见 `EXP/inputs/deitb_static_w4a4_gonly_20261115_r2/`。准备验证与正式运行分别记账。
-
-三轮正式完结后，当前Recorder的B时点交付及最新伪代码见 `EXP/validation/gonly_postrun_B_context_20261115_r1/`；该源码修复未用于已冻结的三轮结果，原运行快照不回写。
-
-当前科研能力修订与针对性验证入口：`EXP/validation/gonly_research_capability_20261116_r1/REPORT.md`；数值API `execution/calibration_search.py` 与 `execution/propagation.py` 通过既有custom实验使用，方法与Skill分别按需发现。本轮包含追加的历史知识更正，原正式结果不回写；没有启动新一轮正式实验。
-
-七项科研 Skill 接入、最新伪代码及分层验证见 [本轮记录](EXP/validation/skill_system_integration_20261116_r1/REPORT.md)；历史运行、冻结合同及评分记录保持原件。
-
-当前统一可执行能力入口见 `QAViT/docs/CAPABILITIES.md`，薄适配位于 `QAViT/tools/frozen_helpers.py`。三候选 L3、GPU 候选优先分配及本次验证/最新伪代码见 [交付记录](EXP/validation/capabilities_multi_l3_20261117_r1/REPORT.md)；历史报告与原始实验不回写。
-
-独立灵感库与 H3 跨轮接续的当前伪代码、离线验证见 [本轮记录](EXP/validation/inspiration_continuity_20261117_r1/REPORT.md)。灵感存于各运行既有 Journal 的 inspiration_* 事件，复用 code/、cards/ 与源码快照；不新增跨运行自动合并目录。
-
-动态研究主题的最新流程与验证见 [本轮记录](EXP/validation/research_topics_20261117_r1/REPORT.md)。新增 focus 任务属于 Generation，先于本轮候选启动；主题和方法沿革均保存在既有 Journal，不新增跨运行迁移。
+之前的三轮科研、能力、Skill、灵感和主题接入报告均保留原位置；适用版本与入口见 [历史导航](QAViT/docs/HISTORY.md)。EXP 的运行/快照仍为历史原件，当前实现不从旧 EXP 导入框架代码。

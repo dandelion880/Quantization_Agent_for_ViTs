@@ -334,6 +334,15 @@ class Workflow(RoleInteraction, ExperimentRequests, WorkflowDriver):
         selection_task = self.queue.get_by_key(self.selection_key(number))
         if selection_task and selection_task['state'] not in TERMINAL:
             return False
+        if hypotheses and not ranking:
+            # Keep this exact round open for resume --retry-failed. Exhausted
+            # bounded transport/contract retries never fabricate a review or
+            # consume these candidates' L3 opportunity by finishing the round.
+            self.event('synthesis_pending', prefix + '/synthesis_pending/' + selection_task['task_card'],
+                round=number, task_ref=selection_task['task_card'], candidate_refs=self.candidate_refs(number),
+                error=selection_task.get('error'), pending_stages=['generation_synthesis','candidate_l3'],
+                next_action='修复失败原因后 resume --retry-failed 沿原综合任务及预算继续；B 保留。')
+            return False
         selected = ranking['payload'].get('selected_slot') if ranking else None
         if self.config["enable_l3"] and ranking:
             # Visit every branch before waiting: a slow/failed candidate cannot

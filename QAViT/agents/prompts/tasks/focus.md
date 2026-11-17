@@ -8,7 +8,7 @@
 
 提交 objective（例如提高指标、机制解释、必要性检验、参数共享或方法简化）、rationale、具体 next_step 和 reconsider_when。明确哪些新证据、测量/修复完成或条件变化会使判断改变；不写“以后再看”。继续须有可检验的下一步价值，不能仅因投入而延续；无提升不自动换题，有提升也可改为解释、消融或简化，不要求每轮新机制或指标上升。区分工程失败、未测、机制反证、正式性能下降；解释支持/复杂度降低和正式性能提升分别报告。
 
-可选 unresolved_questions、source_refs、inspiration_ids、method_ids。actions 中的稳定 action ID 可通过 completed_action_ids / deferred_action_ids 更新，省略保留原动作。切换时旧成果和动作保存；若旧主题复议条件发生变化，用 previous_reconsider_when 补充。仅提交变化所需信息，不复制全部历史。Recorder 的 topic_notes 是有条件的建议，不是主题决定。
+可选 unresolved_questions、source_refs、inspiration_ids、method_ids。actions 中的稳定 action ID 可通过 completed_action_ids / deferred_action_ids / resumed_action_ids 更新；恢复暂存动作时沿用原 ID。next_action_id 指向当前要接续的 open 动作（可同次显式 resumed），仅更新其复议条件。next_step 是叙述，不据文本相同、相近或改写自动创建/合并动作；只有新主题首次建立或显式 new_action 才创建新动作。仅改状态时省略 new_action，省略动作字段保留原动作。切换时旧成果和动作保存；若旧主题复议条件发生变化，用 previous_reconsider_when 补充。仅提交变化所需信息，不复制全部历史。Recorder 的 topic_notes 是有条件的建议，不是主题决定。
 
 主题不等于灵感、方法或候选版本；切换主题不会结束灵感或改变算法身份。H3 仍沿一条 active 灵感投入；确需暂停或切换灵感时用 update_inspiration 明确决定，无须为选题重建同一机制。三候选共享本轮主题版本，H1/H2 仍分别改良完整父方案，结论和机制可以不同。全局 B 不受主题限制，三个最终候选仍进入既定 L3。
 

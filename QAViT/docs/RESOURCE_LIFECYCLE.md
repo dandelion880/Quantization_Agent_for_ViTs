@@ -89,7 +89,7 @@ H1/H2 对库内完整父方案用 solution_derivation 保存 base_solution_id、
 
 新轮次先排 `rNNN/focus`（Generation，原订阅串行锁与 BudgetLedger），在 H1/H2/H3 启动前恢复上次主题、依据、用户澄清、关联灵感/方法、关键证据、原代码配置和未完成动作。通常一次模型决定产生一个主题版本并绑定本轮三个槽位，不三路重复选题。若 Generation 仅暂停而未选择后续方向，则先回到共同选题，不自动启动暂停方向的候选；可一次 switch 同时保留旧方向并选择新方向。失败保留待重试状态，不由宿主填充“默认正确”选题。共同调用占用原 LLM/墙钟预算，不增加候选或数值预算。
 
-主题条目是 question、mutable_dimensions、held_conditions、objective、rationale、next_step、reconsider_when 和短引用；主题不是算法正确性声明或数值执行约束。问题可由增益转为解释、必要性检验、消融、共享或简化；相关进展与正式指标分开，方案晋升规则不变。Generation 决定 establish/continue/narrow/expand/pause/resume/switch。每项 next_step 有稳定 action ID，未完成动作在修订/暂停/恢复后保留；completed_action_ids / deferred_action_ids 只由 Generation 更新。原始版本和复议条件始终可读，省略不会清空旧动作或来源。
+主题条目是 question、mutable_dimensions、held_conditions、objective、rationale、next_step、reconsider_when 和短引用；主题不是算法正确性声明或数值执行约束。问题可由增益转为解释、必要性检验、消融、共享或简化；相关进展与正式指标分开，方案晋升规则不变。Generation 决定 establish/continue/narrow/expand/pause/resume/switch。next_step 是叙述；初次建立主题或显式 new_action 才创建稳定 action ID。completed_action_ids / deferred_action_ids / resumed_action_ids 由 Generation 精确更新状态，next_action_id 接续 open 动作并更新复议条件。暂停/恢复不按文本重复创建动作，完成后要做新的同文行动必须显式 new_action。原始版本和复议条件始终可读，省略不会清空旧动作或来源。
 
 Journal 的 topic_version 以 topic-id@version 为身份、decision_ref 指向真实 ReviewDecisionCard；topic_round_binding 固定共同初始版本，topic_scope_binding 记录轮中影响槽位和理由。Generation 用 revise_topic 明确 affected_slots / impact，仅影响后续投入和新提交；冻结调用继续按原读取快照归属。已发布候选的 L3 严格继承该候选 topic_ref/method_id，不随当前主题切换。科学修改仍需 revise_candidate，新版本才获得新归属。主题状态不改变 InspirationLibrary.active；灵感切换仍须明确 update_inspiration。
 
@@ -98,3 +98,7 @@ method_candidate 仅补充算法身份、父 method_id（或 solution:<完整方
 context.research_topic 默认交付摘要、最近三项请求/实现和最多八项未完成动作，完整版本由 read_topic 可达；method_catalog_state/read_method 给出沿革及准确实现入口。实际研究请求、最终计划、代码和 Evidence 经已有不可变引用链恢复；任何主题都可以读全局历史完整方案/B。主题不会新增实验的科学范围拒绝门禁，用户 Brief 的全局空间、硬约束、量化与评价协议仍是原执行链的权威。
 
 Recorder 通过可选 Metareview.topic_notes（topic_ref、progress、reconsideration、source_refs）整理有条件的认识、动作进展和复议建议，只追加 topic_note，不改主题状态。Generation 下次恢复这些建议后独立判断。历史无主题状态保持显式未知；已启动的旧轮不插入事后“共同决定”，下一新轮再选题。恢复仍要求原源码变更 intervention；没有跨运行自动合并、资产迁移、语言辩论或宿主科学打分。
+
+恢复读取以 source_snapshot 的 path、sha256、field 和 source_version 保留原件身份。`read_asset({asset: path, snapshot_field: field})` 返回授权成员目录；加 `member` 和 offset/limit 读取确切原文及成员 SHA256。验证完整归档哈希后仅开放执行实现、必要配置和方法/方案成员；评价规则、测试、角色 Prompt 不在恢复视图。原 research_run.json 和 intervention commit 保持完整归档，旧回执的过宽文件授权不继续生效。跨运行完整方案仍用原归档版本，不能以当前源码替代。
+
+自动 topic_catalog、inspiration_library、method_catalog_state 各给最多八项短目录和分页入口；对应 read 工具省略身份即可浏览/按 query 查询，指定身份可读完整历史。当前主题/活跃灵感的未完成事项与复议条件继续交付，同一请求或实现正文在 context 内只保留一份，其他位置给出准确 body_location。Recorder 错误 topic_notes 逐项进入 submission_issues，原条目和原因保留；其余有效正文正常发布，不放宽身份核验。

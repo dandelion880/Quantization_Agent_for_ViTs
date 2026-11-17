@@ -37,9 +37,11 @@ for field in ('resolved_choices', 'model_scope', 'backend', 'model_identity_sha2
 
 TOOLS = {t["name"]: t for t in [
     tool('read_topic', '按主题 ID 或确切 topic_ref 读取决定、范围、未完成动作、复议条件和原始代码/配置/证据入口；历史主题不限制全局读取。',
-         object_schema({'topic_ref': TEXT}, ['topic_ref'])),
+         object_schema({'topic_ref': TEXT, 'query': TEXT, 'offset': {'type':'integer','minimum':0},
+                        'limit':{'type':'integer','minimum':1,'maximum':30}}, [])),
     tool('read_method', '读取同一算法及派生谱系的候选版本与确切实现来源，不复制完整方案。',
-         object_schema({'method_id': TEXT}, ['method_id'])),
+         object_schema({'method_id': TEXT, 'query': TEXT, 'offset': {'type':'integer','minimum':0},
+                        'limit':{'type':'integer','minimum':1,'maximum':30}}, [])),
     tool('revise_topic', 'Generation 显式修订轮中问题/范围/目标。须说明 affected_slots 和 impact；只改变后续投入，旧候选与 L3 归属不回写，灵感和方法不会被清空。单独调用。', REVISION_SCHEMA),
     tool('update_inspiration', (
         '保存或更新独立灵感，不触发实验。新建省略 inspiration_id，提供 title/idea/basis/next_step；'
@@ -51,7 +53,8 @@ TOOLS = {t["name"]: t for t in [
         '本工具单独调用；返回稳定 ID 后再发实验。'
     ), UPDATE_SCHEMA),
     tool('read_inspiration', '读取灵感及准确的历史源码、配置、结果和失败入口；暂停成果也可恢复。',
-         object_schema({'inspiration_id': TEXT}, ['inspiration_id'])),
+         object_schema({'inspiration_id': TEXT, 'query': TEXT, 'offset': {'type':'integer','minimum':0},
+                        'limit':{'type':'integer','minimum':1,'maximum':30}}, [])),
     tool("revise_candidate", (
         "仅在候选综合中提交已有候选的完整科学修订。parent_ref 必须是当前确切版本；"
         "hypothesis 使用 generate 的科学正文（title/research_question/mechanism/intervention及可选字段）。"
@@ -77,7 +80,10 @@ TOOLS = {t["name"]: t for t in [
         "按已授权来源读取 UTF-8 文本；offset/limit 是字符数，单页最多12000。"
         "返回 text、sha256、total_characters、next_offset；按需继续分页核实具体论据。"
         "只允许本调用快照中卡片/工具/任务明确关联的资产及项目接口资料，不能遍历运行日志绕过权限。"
+        "恢复宿主原件时，asset 使用 source_snapshot.path 并提供 snapshot_field=source_snapshot.field；"
+        "省略 member 返回可读成员目录，指定 member 返回该成员的原始字节文本及归档身份。完整快照不直接授权。"
     ), object_schema({"asset": TEXT, "offset": {"type": "integer", "minimum": 0},
+                       'snapshot_field': TEXT, 'member': TEXT,
                        "limit": {"type": "integer", "minimum": 1, "maximum": 12000}}, ["asset"])),
     tool("literature_search", (
         "按 query 检索 Crossref 公开文献元数据，返回至多 5 条标题、DOI、URL 和可用链接。"

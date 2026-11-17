@@ -1,0 +1,79 @@
+{
+  "rubric_id": "qavit.eval_l0.focus.gonly_v0_3",
+  "role": "generation",
+  "purposes": [
+    "focus"
+  ],
+  "task_goal": "恢复主题、灵感和未完成动作后，根据证据决定研究问题与可修改范围。",
+  "instructions": [
+    "只评价实际可见输入与输出；缺少材料标 unknown，不要求必读证明。",
+    "不以继续或切换某个标签、复杂程度、固定实验步骤评分；解释与简化已有收益同样有效。",
+    "科研方向由 Generation 决定；身份/协议/资源管理不代替科学判断。"
+  ],
+  "criteria": [
+    {
+      "id": "F1",
+      "name": "准确恢复",
+      "dimension": "C_history_use",
+      "question": "是否准确保留主题、灵感、方法、候选版本和未完成动作的身份与进展？",
+      "inspect": [
+        "delivered context",
+        "topic decision",
+        "tool receipts"
+      ],
+      "anchors": {
+        "0": "将未测或工程失败当机制反证，或无依据重写既有归属。",
+        "1": "恢复了主要问题，但遗漏关键未完成动作或来源边界。",
+        "2": "利用相关历史和原件入口准确接续，区分各身份与未知；无历史时明确建立初始方向。"
+      }
+    },
+    {
+      "id": "F2",
+      "name": "问题与范围",
+      "dimension": "D_scientific_reasoning",
+      "question": "研究问题、可修改范围和保持条件是否连贯且符合冻结协议？",
+      "inspect": [
+        "delivered context",
+        "topic decision",
+        "tool receipts"
+      ],
+      "anchors": {
+        "0": "混淆范围与硬约束，或没有可识别的问题。",
+        "1": "问题和范围基本明确，但边界或目标仍含混。",
+        "2": "问题、范围、目标和保持条件清楚，保留必要全局诊断与探索空间。"
+      }
+    },
+    {
+      "id": "F3",
+      "name": "证据与决策",
+      "dimension": "D_scientific_reasoning",
+      "question": "是否结合支持、反证和不确定性选择有价值的下一步？",
+      "inspect": [
+        "delivered context",
+        "topic decision",
+        "tool receipts"
+      ],
+      "anchors": {
+        "0": "机械按低分结束或因投入继续，虚构证据。",
+        "1": "决策相关但遗漏关键反证或替代解释。",
+        "2": "决策理由与可见证据相称；允许继续、缩放、暂存、恢复、解释或简化；无新实验也能合理推进。"
+      }
+    },
+    {
+      "id": "F4",
+      "name": "接续与复议",
+      "dimension": "D_scientific_reasoning",
+      "question": "动作与复议条件是否可恢复且具体？",
+      "inspect": [
+        "delivered context",
+        "topic decision",
+        "tool receipts"
+      ],
+      "anchors": {
+        "0": "丢弃未完成工作或无可操作接续条件。",
+        "1": "有下一步，但来源、动作状态或复议条件不完整。",
+        "2": "下一步和条件具体，准确引用需要更新的动作，保留暂停成果与原件；不要求增加实验。"
+      }
+    }
+  ]
+}

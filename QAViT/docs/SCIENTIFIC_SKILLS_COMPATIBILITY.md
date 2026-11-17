@@ -1,10 +1,10 @@
 # 科研 Skill 与实际执行能力
 
-按 2026-11-16 当前源码核对。此页是按需接口说明，不是新流程或授权。包内研究建议可以超出现有实现；接口名相似不代表数学对象相同。来源与接入记录见 [Skill 说明](SCIENTIFIC_SKILLS.md)。
+按 2026-11-17 当前源码核对。此页是按需接口说明，不是新流程或授权。包内研究建议可以超出现有实现；接口名相似不代表数学对象相同。来源与接入记录见 [Skill 说明](SCIENTIFIC_SKILLS.md)。
 
 ## 研究参考与最终方法
 
-沿现有 ResearchBrief、实验 `question/controls`、`execution.resolved_choices.training` 和 Coding→Safeguard→执行→Evidence 链表达目的和自由度，不增加专用角色或必填研究阶段。
+沿现有 ResearchBrief、实验 `question/controls`、模型输入 `execution.training`（宿主规范化后为 `execution.resolved_choices.training`；后者仅为历史兼容输入与内部冻结字段） 和 Coding→Safeguard→执行→Evidence 链表达目的和自由度，不增加专用角色或必填研究阶段。
 
 - `hard_constraints.training=false` 或 `training_allowed=false` 禁止整个运行中的优化器更新，不能由 Skill、实验声明或“仅研究”文字豁免。只读梯度本身不被训练 guard 禁止；若 Brief 要求 forward-only，仍须遵守更严格语义。
 - 只有 Brief 已明确允许参考优化时，研究实验才可声明 `training=true`。例如新 Brief 的 `hard_constraints.training_allowed=true` 表示允许而非要求训练；最终 training-free 目标、允许更新的 scale-only 等范围在 Brief 的目标/搜索空间/评测协议正文写清。不能把 `hard_constraints.training=true` 当成“可选许可”，它表示每次执行都要求 true。**不修改已有冻结 Brief。**

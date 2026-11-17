@@ -465,18 +465,19 @@ class ResearchMemory:
         return {"type": "memory_projection", "value": state}
 
     def current_research_state(self, sequence=None, visible=None, *, question_offset=0, question_limit=8,
-                               excluded_refs=(), compact=False, finding_refs=None):
+                               excluded_refs=(), compact=False, finding_refs=None, visibility_card=None):
         """Small role-visible L1 view; source facts and researcher judgments stay distinct."""
         visible = visible or (lambda card: True)
+        visibility_card = visibility_card or self.journal.card
         state = self.snapshot(sequence)
         l1 = state['L1']
         groups = {}
         for key in ('recent_hypotheses', 'recent_experiments', 'recent_evidence'):
-            groups[key] = [ref for ref in l1.get(key, []) if visible(self.journal.card(ref))]
+            groups[key] = [ref for ref in l1.get(key, []) if visible(visibility_card(ref))]
         incumbent = deepcopy(l1.get('incumbent'))
         if incumbent:
             incumbent.pop('previous', None)
-            if any(not visible(self.journal.card(ref)) for ref in incumbent.get('evidence_refs', [])):
+            if any(not visible(visibility_card(ref)) for ref in incumbent.get('evidence_refs', [])):
                 incumbent = None
         reviews = [self.journal.card(ref) for ref in state['L3'] if visible(self.journal.card(ref))]
         latest = reviews[-1] if reviews else None
@@ -623,7 +624,7 @@ class MemoryRetriever:
                 'policy': 'direct documentation reading; no experiment request or measurement required'}
 
     def retrieve(self, role, *, explicit_refs=(), query=None, after_version=None, limit=12,
-                 offset=0, sequence=None, visible=None, include_body=True):
+                 offset=0, sequence=None, visible=None, include_body=True, visibility_card=None):
         """Permissions and exact conditions first; short usable bodies need no follow-up read."""
         if query is not None:
             validate_schema(query, MEMORY_QUERY_SCHEMA, "retrieve_memory.query")
@@ -651,26 +652,29 @@ class MemoryRetriever:
                 continue
             if explicit and ref not in explicit:
                 continue
-            card = self.journal.card(ref)
+            version = self.journal.card_versions.get(ref, 0)
+            if after_version is not None and version <= after_version:
+                continue
+            # An unfiltered directory only needs verified ACL fields to rank
+            # identities. Copy complete observations only for its selected page.
+            # Filtered/text retrieval still reads original scientific bodies.
+            card = (visibility_card or self.journal.card)(ref) if not filters else self.journal.card(ref)
             if (card['kind'] == 'TaskCard' and (card['payload']['kind'] != 'literature' or card['payload']['state'] != 'completed')
                     and not (query.get('kind') == 'TaskCard' or ref in explicit)):
                 continue
             if not visible(card):
                 continue
-            version = self.journal.card_versions.get(ref, 0)
-            if after_version is not None and version <= after_version:
-                continue
             if query.get("kind") and card["kind"] != query["kind"]:
                 continue
             if explicit and ref not in explicit:
                 continue
-            if not scope_matches(card_scope(card), filters):
+            if filters and not scope_matches(card_scope(card), filters):
                 continue
             score = len(tokens & lexical_tokens(str(card["payload"]))) / len(tokens) if tokens else 0
-            rows.append((score, version, card))
+            rows.append((score, version, ref))
         rows.sort(key=lambda row: (row[0], row[1]), reverse=True)
         total = len(rows)
-        selected = [self.entry(row[2], include_body=include_body) for row in rows[offset:offset + limit]]
+        selected = [self.entry(self.journal.card(row[2]), include_body=include_body) for row in rows[offset:offset + limit]]
         if query.get('layer') == 'L2':
             ranked_claims = []
             for claim in state['L2'].values():

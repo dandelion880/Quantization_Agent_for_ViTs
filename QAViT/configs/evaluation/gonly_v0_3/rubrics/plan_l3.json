@@ -1,0 +1,64 @@
+{
+  "rubric_id": "qavit.eval_l0.plan_l3.gonly_v0_3",
+  "role": "generation",
+  "purposes": {
+    "plan_l3": {
+      "task_goal": "按最终已选候选及 ResearchBrief 原协议制定可执行 L3 需求，或基于真实不可解缺口明确 defer_reason；不得编造完成测量。",
+      "criteria": [
+        {
+          "id": "JL1",
+          "name": "评测目标与原协议一致性",
+          "dimension": "D_scientific_reasoning",
+          "question": "是否按最终选择和要求的量化/任务/数据口径提交正式 L3，且没有隐性缩小验证范围？",
+          "inspect": [
+            "ResearchBrief.evaluation_protocol/quantization_contract",
+            "final selection",
+            "plan_l3 草案或 defer_reason"
+          ],
+          "anchors": {
+            "0": "错用 H* 作为最终选择、变更必须的数据集/数量/位宽或以局部结果冒充完整任务验证。",
+            "1": "核心目标正确，但关键评测范围、量化覆盖或数据身份存在遗漏。",
+            "2": "计划完整尊重当次评测协议、模型身份、数据范围和合法量化例外；正确解释 L3 计划与真实完成的差异。"
+          }
+        },
+        {
+          "id": "JL2",
+          "name": "执行定义与资源口径",
+          "dimension": "B_experiment_value",
+          "question": "已有服务/代码、评测指标、数据回执、时间预算与数值等待规则是否支持真实执行？",
+          "inspect": [
+            "data_receipt",
+            "budget_receipt",
+            "实验草案 execution/resources/measurements",
+            "可用执行合同"
+          ],
+          "anchors": {
+            "0": "编造数据路径/模型包/数值测量，或把排除数值等待的智能体预算错误套成数值超时。",
+            "1": "计划大体可执行，但存在关键执行选择或口径尚未说明。",
+            "2": "正确复用/声明所需能力，参数、指标、资源与可用数据匹配；执行结果身份/范围可以追溯。"
+          }
+        },
+        {
+          "id": "JL3",
+          "name": "延期或验证范围的诚实性",
+          "dimension": "B_experiment_value",
+          "question": "当无法执行原协议时，是否合理明确不可解决的缺失，而非用占位方案冒充完成？",
+          "inspect": [
+            "plan_l3 原始与修订任务",
+            "真实拒绝/错误回执",
+            "defer_reason 或 execution 草案"
+          ],
+          "anchors": {
+            "0": "无真实原因放弃可执行计划，或虚构成功/私自降低强制协议范围。",
+            "1": "说明部分限制，但未明确对协议完成性和下一步的影响。",
+            "2": "可执行时形成适当计划；确实受阻时具体说明尚缺信息、原协议不能完成的范围与可恢复路径，不伪造证据。"
+          }
+        }
+      ]
+    }
+  },
+  "instructions": [
+    "每个经综合的最终候选按确切版本规划原双任务 L3；不按偏好淘汰候选。",
+    "不要求新增 Skill 或额外局部实验；原 frozen 协议、来源和迁移约束有效。"
+  ]
+}

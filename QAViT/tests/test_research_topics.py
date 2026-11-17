@@ -181,7 +181,10 @@ class TopicTests(TempCase):
         self.assertEqual(recovered['implementation_history'][0]['candidate'],artifact)
         self.assertTrue(wf.can_read_card(focus,wf.journal.card(code['task_card'])))
         self.assertIn(artifact['path'],wf.authorized_assets(focus))
-        self.assertIn(recovered['requests'][0]['host_source']['source_snapshot']['path'],wf.authorized_assets(focus))
+        self.assertNotIn(recovered['requests'][0]['host_source']['source_snapshot']['path'],wf.authorized_assets(focus))
+        source = recovered['requests'][0]['host_source']['source_snapshot']
+        view = wf.read_snapshot_asset(focus,Path(source['path']),{'snapshot_field':source['field'], 'member':'tools/experiments.py'})
+        self.assertEqual(view['source_snapshot'],source)
         tid=wf.enqueue_role('method-next/generate','generate',context={
             'round':2,'slot':'H1','hypothesis_type':'existing_method'})
         future={'task_id':'future','inputs':{'parent_task':tid,'method_id':mid}}
@@ -205,7 +208,7 @@ class TopicTests(TempCase):
         self.assertEqual(wf.journal.sequence,before)
         tid=wf.enqueue_role('action/focus','focus',context={'round':2});wf.queue.ready();task=wf.queue.claim(tid)
         decision={**topic_decision(wf),'reconsider_when':'after the missing paired measurement is repaired',
-                  'unresolved_questions':[]}
+                  'unresolved_questions':[], 'next_action_id':first['actions'][0]['id']}
         wf.submit(task,decision,'fixture')
         latest=wf.topics.active()
         self.assertEqual(latest['actions'][0]['id'],first['actions'][0]['id'])

@@ -105,7 +105,7 @@ def bind_solutions(journal, refs, brief):
 def historical_source(row):
     """Backfill only from the original committed experiment's implementation era."""
     if row.get('source_snapshot') and row.get('source_version'):
-        return {key: deepcopy(row[key]) for key in ('source_snapshot', 'source_version')}
+        return {key: deepcopy(row[key]) for key in ('source_snapshot', 'source_version', 'source_archive_sha256') if key in row}
     from core.solutions import SolutionLibrary
     origin = Path(row['run_dir'])
     metadata = read_json(origin / 'research_run.json')
@@ -128,7 +128,7 @@ def _source_files(binding):
     for key in record['field'].split('.'):
         body = body[int(key)] if isinstance(body, list) else body[key]
     if not isinstance(body, dict) or fingerprint({k: hashlib.sha256(v.encode()).hexdigest()
-            for k, v in body.items()}) != binding['source_version']:
+            for k, v in body.items()}) != binding.get('source_archive_sha256', binding['source_version']):
         raise ContractError('historical source version mismatch')
     return body
 

@@ -1,5 +1,6 @@
 """持久墙钟预算；L1/L2 没有固定次数限制，恢复不重置已用时间。"""
 from pathlib import Path
+from copy import deepcopy
 import shutil
 import time
 import os
@@ -47,12 +48,14 @@ class BudgetLedger:
 
     def snapshot(self):
         self.journal.refresh()
-        value = None
-        reservations, settlements, rounds, extensions, segments = {}, {}, set(), [], {}
-        closeout_releases = []
-        wall_authorizations = []
-        waits = {}
-        for event in self.journal.events:
+        if not hasattr(self, '_projection'):
+            self._projection = [None, {}, {}, set(), [], {}, [], [], {}]
+            self._budget_event_index = 0
+        value, reservations, settlements, rounds, extensions, segments, closeout_releases, wall_authorizations, waits = self._projection
+        for raw in self.journal.events[self._budget_event_index:]:
+            if not raw['type'].startswith('budget_') and raw['type'] != 'round_started':
+                continue
+            event = deepcopy(raw)
             kind = event["type"]
             if kind == "budget_started":
                 value = {k: v for k, v in event.items() if k not in ("type", "commit_sequence")}
@@ -77,6 +80,10 @@ class BudgetLedger:
                 waits[event['wait_id']] = dict(event)
             elif kind in ('budget_numeric_wait_checkpoint', 'budget_numeric_wait_stopped'):
                 waits[event['wait_id']].update(event)
+        self._projection[0] = value
+        self._budget_event_index = len(self.journal.events)
+        # Deadlines/remaining time are live calculations, not cached balances.
+        value = dict(value)
         now = self.clock()
         elapsed = max(0, now - value["started_unix"])
         active = None
@@ -112,7 +119,7 @@ class BudgetLedger:
         configured_closeout = value["config"].get("closeout_reserve_seconds", 0)
         closeout = (0 if value["config"].get("clock_mode") == "active_segments" and closeout_releases
                     else configured_closeout)
-        return {**value, "as_of_unix": now, "elapsed_seconds": elapsed,
+        return deepcopy({**value, "as_of_unix": now, "elapsed_seconds": elapsed,
                 "configured_total_wall_seconds": configured_total, "total_wall_seconds": total,
                 "wall_budget_authorizations": wall_authorizations,
                 "remaining_seconds": remaining,
@@ -126,7 +133,7 @@ class BudgetLedger:
                 "segments": list(segments.values()), "active_segment": active,
                 "rounds_started": sorted(rounds), "reservations": reservations,
                 "settlements": settlements, "extensions": extensions,
-                "l1_l2_call_limit": None, "llm_call_limit": value["config"].get("llm_call_limit")}
+                "l1_l2_call_limit": None, "llm_call_limit": value["config"].get("llm_call_limit")})
 
     def numeric_wait(self, waiting):
         """Only the Supervisor marks pure numerical wait; reasoning overlap closes it.
@@ -252,7 +259,7 @@ class BudgetLedger:
         return state
 
     def start_round(self, number):
-        state = self.check()
+        state = self.check(check_disk=number not in self.snapshot()['rounds_started'])
         if number in state["rounds_started"]:
             return
         if not 1 <= number <= state["config"]["max_rounds"]:

@@ -1,0 +1,255 @@
+{
+  "status": "completed",
+  "finished_at": "2026-11-17T13:49:42.632971+00:00",
+  "workspace": "/root/data-fs/projects/Quantization_Agent_for_ViTs_gonly",
+  "git_base": "0217218",
+  "committed": false,
+  "source_identity": {
+    "identity_schema": "qavit.source/3",
+    "core_sha256": "9bee0d14f07ec860322de795ce1ad93bfd4551798491325812e53cc0ce0fefab",
+    "archive_sha256": "8f950db80649e75bebfeb45cd1b9b64ebbca9dc6258035f17726353bae9eef2b",
+    "numerical_library_sha256": "980be0711cf59e90783f388e8fcd929c49baab76db10ecf4de9e63f4da933713"
+  },
+  "environment": {
+    "python": "3.10.8",
+    "validation_device": "CPU",
+    "CUDA_VISIBLE_DEVICES": "",
+    "OMP_NUM_THREADS": 2,
+    "MKL_NUM_THREADS": 2
+  },
+  "tests": {
+    "final": {
+      "log": "full_regression_verified.log",
+      "completed": true,
+      "tests": 767,
+      "elapsed_seconds": 939.241,
+      "verdict": "OK (skipped=2)",
+      "failures": 0,
+      "errors": 0,
+      "skipped": 2,
+      "sha256": "79b0b0a797a48dc6c43f287ba01d997bc07b7f7ad20634e2e5b2bc06eddf67bb"
+    },
+    "first_completed_integration": {
+      "log": "full_regression_final.log",
+      "completed": true,
+      "tests": 766,
+      "elapsed_seconds": 1057.258,
+      "verdict": "FAILED (failures=2, errors=1, skipped=2)",
+      "failures": 2,
+      "errors": 1,
+      "skipped": 2,
+      "sha256": "e776e25b8e16b08d8014a2188581a23beb46634f6a620164762fcd07b1e4c9b5"
+    },
+    "targeted": [
+      {
+        "log": "batch1.log",
+        "completed": true,
+        "tests": 82,
+        "elapsed_seconds": 53.782,
+        "verdict": "OK",
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0,
+        "sha256": "745f3a8642c436aacdec46095920a9a10271652051bfb6fbd8a80cf050de0f0b"
+      },
+      {
+        "log": "batch2.log",
+        "completed": true,
+        "tests": 100,
+        "elapsed_seconds": 96.752,
+        "verdict": "OK",
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0,
+        "sha256": "37a91aa3aee1f0f3916907ea3f6e402f17a53198a1b10a0a7d1022b1aeb79172"
+      },
+      {
+        "log": "boundary_checks.log",
+        "completed": true,
+        "tests": 2,
+        "elapsed_seconds": 3.738,
+        "verdict": "OK",
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0,
+        "sha256": "22681c96e736c9be31959ddd4befd34d24f44d775f6193d6c92409eb2f2e8bf5"
+      },
+      {
+        "log": "integration_repair.log",
+        "completed": true,
+        "tests": 54,
+        "elapsed_seconds": 67.114,
+        "verdict": "OK",
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0,
+        "sha256": "403084c7a4890bc54ee9cc992ef07c5383ecc8ff73e35338981da1e3c4f7ef65"
+      }
+    ],
+    "interrupted_runs": [
+      "baseline_tests.log",
+      "full_regression.log"
+    ],
+    "baseline_reproduction": "baseline_eval.log: two historical-rules load errors before cleanup",
+    "count_note": "Targeted suites overlap the full discovery suite; do not add their counts.",
+    "gpu_skip_note": "Two existing AdaLog CUDA transport tests skipped because this round explicitly used CPU."
+  },
+  "structure_audit": {
+    "status": "passed",
+    "syntax_files": 209,
+    "snapshot_file_count": 378,
+    "artifact": "structure_audit_verified.json"
+  },
+  "knowledge_audit": {
+    "status": "passed",
+    "methods": 21,
+    "pages": 77,
+    "local_log": "knowledge_audit.log"
+  },
+  "historical_evaluation": {
+    "directories": 6,
+    "cases": 43,
+    "accepted_scores_preserved": 12,
+    "artifact": "historical_eval_verify.json",
+    "new_judge_calls": 0
+  },
+  "model_replays": {
+    "completed_cases": 3,
+    "calls_including_retained_failed_attempt": 13,
+    "usage": {
+      "input_tokens": 397997,
+      "cached_input_tokens": 2944,
+      "output_tokens": 12408,
+      "reasoning_output_tokens": 3007
+    },
+    "artifact": "behavior_review.json",
+    "requested_route": "gpt-6-astra/high",
+    "actual_model_and_effort": "not_reported_by_cli",
+    "new_numerical_tasks": 0,
+    "new_evidence_cards": 0,
+    "limits": "Scripted topic/idea/action state, actual historical code/results, real model decisions; not a full scientific run."
+  },
+  "costs": {
+    "baseline": "before_costs.json",
+    "verified": "verified_costs.json",
+    "same_final_execution_identity": true,
+    "history_context_seconds_before": 27.21434278972447,
+    "history_context_seconds_after": 17.050452997907996,
+    "synthetic_context_characters_before": 396566,
+    "synthetic_context_characters_after": 19776,
+    "limits": "3–10 samples (status write 20); concurrent CPU validation/cache effects; no causal throughput guarantee."
+  },
+  "preservation": {
+    "old_eval_packages_unchanged": true,
+    "model_routes_unchanged": true,
+    "numerical_algorithms_unchanged": true,
+    "historical_material_hashes_unchanged": true,
+    "historical_artifacts_deleted": false,
+    "full_imagenet_ade_evaluation_started": false
+  },
+  "remaining_limits": [
+    "Two CUDA transport tests were not run.",
+    "No formal long workflow or full ImageNet/ADE20K rerun.",
+    "v0.3 rubrics are repository-derived and not human-calibrated.",
+    "Long-history context still costs about 17 seconds.",
+    "Resource waits and synthesis-failure recovery use program fixtures; exact original H3 numerical loading still needs an authorized local verification.",
+    "Historical upgrade needs explicit implementation intervention and original remaining budget; resume does not expand GPU authorization."
+  ],
+  "artifacts": {
+    "REPORT.md": {
+      "path": "EXP/validation/engineering_cleanup_20261117_r1/REPORT.md",
+      "sha256": "bf1ecc14a3ac4c2adb3c3d38367ef91c95285912e9f49c7bd6400f384718470e",
+      "bytes": 14119
+    },
+    "PSEUDOCODE.md": {
+      "path": "EXP/validation/engineering_cleanup_20261117_r1/PSEUDOCODE.md",
+      "sha256": "0392f726af2c884c5eaf0749990482017e3f2f4b5615522b3b2d070535c33128",
+      "bytes": 4216
+    },
+    "behavior_review.json": {
+      "path": "EXP/validation/engineering_cleanup_20261117_r1/behavior_review.json",
+      "sha256": "8b633e69069322a3f37cc2c45e1852186254c4bf737e52beead5a1f4a13d4806",
+      "bytes": 51224
+    },
+    "historical_eval_verify.json": {
+      "path": "EXP/validation/engineering_cleanup_20261117_r1/historical_eval_verify.json",
+      "sha256": "49be717960b3c5409f6d662adc42b9a68d983f4701e67d57a67753c1fbb2874c",
+      "bytes": 1192
+    },
+    "benchmark.py": {
+      "path": "EXP/validation/engineering_cleanup_20261117_r1/benchmark.py",
+      "sha256": "57aa2eef35877fa638143242cffabcefbadc5467227fa4e92fd58b658ae0c434",
+      "bytes": 3887
+    },
+    "replay.py": {
+      "path": "EXP/validation/engineering_cleanup_20261117_r1/replay.py",
+      "sha256": "9a47585ffd804780ee04ee3d8e21dbf988d1bf149d109720b65e823afaa1c0ad",
+      "bytes": 10913
+    },
+    "before_costs.json": {
+      "path": "EXP/validation/engineering_cleanup_20261117_r1/before_costs.json",
+      "sha256": "7f9d3e246dc280875ea3ac139bc47f09425d5b9b5885c17bb8a0e6e5454de5c2",
+      "bytes": 5036
+    },
+    "after_costs.json": {
+      "path": "EXP/validation/engineering_cleanup_20261117_r1/after_costs.json",
+      "sha256": "4fe04d0a6ddac2e0d9d4196756b72537874e1b6a1925e1baee4d1e211440b5b7",
+      "bytes": 5344
+    },
+    "final_costs.json": {
+      "path": "EXP/validation/engineering_cleanup_20261117_r1/final_costs.json",
+      "sha256": "f2bd1992d66b1f09df733bc08b6668fecd91aa311a322537a707289233cf743b",
+      "bytes": 5349
+    },
+    "verified_costs.json": {
+      "path": "EXP/validation/engineering_cleanup_20261117_r1/verified_costs.json",
+      "sha256": "19bcb8e96da62dc8c6dbbc3b8da4880285e0dd26764dafeab5084527d1017bb0",
+      "bytes": 5486
+    },
+    "context_profile.txt": {
+      "path": "EXP/validation/engineering_cleanup_20261117_r1/context_profile.txt",
+      "sha256": "4eccfefeeea5ffd521b370685b23dc4e4992b7f67474a6da9137b86bf03719a2",
+      "bytes": 4055
+    },
+    "prompts.diff": {
+      "path": "EXP/validation/engineering_cleanup_20261117_r1/prompts.diff",
+      "sha256": "b4caba9e5eb37a251eac6f9a083ffc7e4e51c22e76c5816d26a5cfaebc8e901c",
+      "bytes": 9139
+    },
+    "structure_audit_verified.json": {
+      "path": "EXP/validation/engineering_cleanup_20261117_r1/structure_audit_verified.json",
+      "sha256": "98cfedf1f903625d53ecff5c4d9321c4ab94cb5501134ef228a69eb7c65ece89",
+      "bytes": 228790
+    },
+    "full_regression_verified.log": {
+      "path": "EXP/validation/engineering_cleanup_20261117_r1/full_regression_verified.log",
+      "sha256": "79b0b0a797a48dc6c43f287ba01d997bc07b7f7ad20634e2e5b2bc06eddf67bb",
+      "bytes": 107537
+    },
+    "full_regression_final.log": {
+      "path": "EXP/validation/engineering_cleanup_20261117_r1/full_regression_final.log",
+      "sha256": "e776e25b8e16b08d8014a2188581a23beb46634f6a620164762fcd07b1e4c9b5",
+      "bytes": 109398
+    },
+    "batch1.log": {
+      "path": "EXP/validation/engineering_cleanup_20261117_r1/batch1.log",
+      "sha256": "745f3a8642c436aacdec46095920a9a10271652051bfb6fbd8a80cf050de0f0b",
+      "bytes": 9240
+    },
+    "batch2.log": {
+      "path": "EXP/validation/engineering_cleanup_20261117_r1/batch2.log",
+      "sha256": "37a91aa3aee1f0f3916907ea3f6e402f17a53198a1b10a0a7d1022b1aeb79172",
+      "bytes": 11717
+    },
+    "boundary_checks.log": {
+      "path": "EXP/validation/engineering_cleanup_20261117_r1/boundary_checks.log",
+      "sha256": "22681c96e736c9be31959ddd4befd34d24f44d775f6193d6c92409eb2f2e8bf5",
+      "bytes": 371
+    },
+    "integration_repair.log": {
+      "path": "EXP/validation/engineering_cleanup_20261117_r1/integration_repair.log",
+      "sha256": "403084c7a4890bc54ee9cc992ef07c5383ecc8ff73e35338981da1e3c4f7ef65",
+      "bytes": 10217
+    }
+  }
+}

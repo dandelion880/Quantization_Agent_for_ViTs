@@ -68,7 +68,9 @@ def main():
                     stack.enter_context(file_lock(lock, timeout=max(0, request["deadline_unix"] - time.time())))
             data = work(request, directory)
         after = code_identity()
-        if before != after:
+        # Full archives also contain offline rules/tests. Only the execution
+        # identity binds this task; changed executable source still rejects it.
+        if before['core_sha256'] != after['core_sha256']:
             raise ContractError("任务执行期间核心或数值实现变化，结果不得进入科学证据")
         result = {"status": "completed", "data": data}
     except BaseException as exc:
@@ -76,7 +78,7 @@ def main():
         failed_usage = exc.usage if isinstance(exc, StructuredOutputError) else None
         if failed_usage is None and request["kind"] == "llm" and (directory / "llm_audit.json").exists():
             failed_usage = read_json(directory / "llm_audit.json").get("usage")
-        if isinstance(exc, StructuredOutputError) and before != code_identity():
+        if isinstance(exc, StructuredOutputError) and before['core_sha256'] != code_identity()['core_sha256']:
             exc = ContractError("任务执行期间核心或数值实现变化，格式错误不得进入修复流程")
         error = exc.to_dict() if hasattr(exc, "to_dict") else {"code": type(exc).__name__, "message": str(exc)}
         if request['kind'] == 'experiment':

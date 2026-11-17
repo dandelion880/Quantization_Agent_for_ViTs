@@ -1,0 +1,7 @@
+test_gpu_launch_without_authorization_does_not_claim_or_spend (QAViT.tests.test_engineering_cleanup.ResourceAndCostRecovery) ... ok
+test_model_training_input_normalizes_without_exposing_internal_choices (QAViT.tests.test_engineering_cleanup.ResourceAndCostRecovery) ... ok
+
+----------------------------------------------------------------------
+Ran 2 tests in 3.738s
+
+OK

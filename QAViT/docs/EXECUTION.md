@@ -29,7 +29,7 @@ ReviewDecisionCard 复用现有格式保存 Generation 候选综合（phase=rank
 
 G-only 每轮发布 H1/H2/H3 三个 generate 任务，允许自主进行“静态知识/Memory→实验→反馈分析→修订→候选提交”。随后 Generation 的 `rNNN/select` 横向综合证据、必要取证并修订候选，不再分配唯一 L3 名额。全部最终候选分别按既定完整双任务协议进入 L3；局部失败保留已有候选和失败来源，不按语言排名或 L1/L2 代理指标淘汰其余候选。
 
-综合卡绑定 candidate_refs、selected_slots、selected_hypothesis_refs（slot→完整版本 ID），selection_stage=gonly_synthesis、selection_source=generation、provisional=true。select 只需提交 rationale；旧 selected_slot 兼容读取但不限制名额。每个 plan_l3 与请求独立绑定 slot/hypothesis_ref/selection_ref；综合卡及证据交付各自计划、Recorder 与下一轮反馈。B 仅从既有 incumbent/方案库已验证结果保留，种子单独发现，不占 H1/H2/H3 槽位。综合失败保留候选与 B 及未完成状态，不自动用 H1 替代全部候选。已结束轮次的失败研究任务不会被通用 retry 重开；延期 Recorder 仍可显式重试。
+综合卡绑定 candidate_refs、selected_slots、selected_hypothesis_refs（slot→完整版本 ID），selection_stage=gonly_synthesis、selection_source=generation、provisional=true。select 只需提交 rationale；旧 selected_slot 兼容读取但不限制名额。每个 plan_l3 与请求独立绑定 slot/hypothesis_ref/selection_ref；综合卡及证据交付各自计划、Recorder 与下一轮反馈。B 仅从既有 incumbent/方案库已验证结果保留，种子单独发现，不占 H1/H2/H3 槽位。综合失败写入 synthesis_pending，保留确切候选、原任务和待做 L3，本轮保持未完成；原有有界传输/格式修复用尽后，修复原因并用 resume --retry-failed 继续原预算，不自动用 H1 替代科学综合。已结束轮次的失败研究任务不会被通用 retry 重开；延期 Recorder 仍可显式重试。
 
 综合期间可用 revise_candidate(parent_ref, hypothesis, reason, change_type="scientific") 发布完整科学修订。宿主事务发布同 logical_id 下一不可变版本并保存父版本、理由和依据；旧 Evidence 不改且不验证新版本。提交前中断的孤立卡仅在完整校验且正文、身份和来源逐字段一致时复用原字节；提交后恢复返回原版本，不重复发布。新候选快照重新综合，过期快照拒绝提交；L3 草案持久绑定 candidate_binding.selection_ref/hypothesis_ref，计划和数值请求沿引用链追溯确切版本。工程修复仍在对应请求的 Coding 链，不改变科学定义。
 
@@ -235,3 +235,14 @@ G-only 停机和预算收尾会接收已持久化回执、尝试归档有效 L3 
 独立灵感状态与 H3 连续演化接口见 [资源生命周期](RESOURCE_LIFECYCLE.md#独立灵感库与跨轮接续)：update_inspiration 只保存状态，不触发实验；同一灵感可跨轮调参、修复、组合或简化，未入 Top-3 不自动淘汰。H1/H2 弱保底、独立 B、三候选 L3 和既有预算/评测约束保持原规则。
 
 当前新轮先进行 Generation `focus` 共同恢复与方向决定，再启动共享主题版本的 H1/H2/H3。`revise_topic` 仅追加轮中范围/目标及影响槽位；候选身份与原 L3 不回写。实现与兼容边界见 [动态主题](RESOURCE_LIFECYCLE.md#动态研究主题与方法谱系)。
+
+
+## 工程清洗后的恢复与成本边界
+
+可信 worker `origin`（implementation/request/host/resource）优先于消息关键词和异常名称；包装后的可信原因继续保留。implementation 回 Coding，request 回 Generation；资源和宿主错误保留工程状态。同一失败实现不通过数值重试直接再跑，原 Coding 修订上限及重新 Safeguard 仍适用。
+
+GPU 暂时繁忙保留 ready，默认每 2 秒再探测；没有授权池或授权设备不可见标记无法执行。无运行中的任务且资源等待 900 秒无进展时保存 `resource_blocked` 后停止；可用 `runtime.resource_wait_timeout_seconds`、`resource_poll_seconds` 显式配置。兄弟任务仍在运行时不按资源死等处理。设备恢复后 resume 重探测，不新增授权、不增加尝试次数、不重置预算。正常纯数值排队仍按原 exclude_numeric_wait 排除；不可执行时也不会无限暂停 Agent 计时。
+
+Journal 在提交目录身份/时间戳未变且无下一提交时复用内存索引；改变、外部追加或删除重新检查目录，启动与 audit 仍完整验链。预算只增量折叠新事件，剩余时间每次实时计算，返回值不共享可变事实。主循环目录大小最多每 5 秒扫描，真实新轮/任务预留仍立即检查；低磁盘及真实 IO 错误不吞掉。status.json 运行中最多每秒写一次，停止/故障/恢复事实仍同步可靠提交；纯数值等待原有每秒检查点保持不变。
+
+源码身份 v3 将执行依赖 core_sha256 与完整 archive_sha256 分开：离线评价、一般测试、已退休角色 Prompt 和历史导航继续存于完整快照，但不改变当前运行/数值身份；实际验证工厂 tests/fixtures.py 仍纳入。新增数值/宿主实现、当前 Prompt、知识及执行配置仍被识别。旧身份、旧归档和旧评分不回写；跨 v2/v3 恢复仍须原显式 intervention，原件恢复校验 archive_sha256，历史未有该字段时按原 source_version 校验。

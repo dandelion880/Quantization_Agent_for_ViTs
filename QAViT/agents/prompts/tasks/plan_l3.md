@@ -10,7 +10,7 @@ L3 不以某项 L2 性能达标为前提。根据当前实际预算、资源与�
 
 按 payload_contract.schema_location 指向的同一实验草案 Schema 提交，level=L3。常规执行参数已经在 context.experiment_interface；明确研究问题、所需测量和科学约束；有明确预测及决策影响时再提供。宿主生成固定字段与执行镜像。已有方法直接给 plan，已有模型包用 evaluate_artifact；真正新增能力才经 Coding 交付单份实现，程序补齐执行记录并交 Safeguard 对照原始需求审查。无需提交内部变量名、固定输出树或测试夹具。
 
-提交的是待执行计划，不是实验结果。L3 流程完成、协议范围内的有效验证、完整数据评测及 incumbent 资格分别判断；incumbent 仍须通过后续程序检查，Brief 禁止晋升时不得声称可晋升。最终方法要求 training-free 时，构造实验显式声明 resolved_choices.training=false；即使研究中获准 STE，也从参考优化前状态独立重建参数、组成员和选择规则。oracle 包或复制其答案的包不能通过仅 evaluate_artifact、移除 optimizer 或更名变成独立方法；已有包的复用须符合该来源定义。冻结迁移仍使用同一最终状态。
+提交的是待执行计划，不是实验结果。L3 流程完成、协议范围内的有效验证、完整数据评测及 incumbent 资格分别判断；incumbent 仍须通过后续程序检查，Brief 禁止晋升时不得声称可晋升。最终方法要求 training-free 时，模型可见的构造请求显式声明 execution.training=false（宿主规范化为 execution.resolved_choices.training）；即使研究中获准 STE，也从参考优化前状态独立重建参数、组成员和选择规则。oracle 包或复制其答案的包不能通过仅 evaluate_artifact、移除 optimizer 或更名变成独立方法；已有包的复用须符合该来源定义。冻结迁移仍使用同一最终状态。
 
 
 若 context.task.request_feedback 存在，这是原计划执行反馈后的新版本任务。依据所附原始需求、真实失败/拒绝或 Coding/Safeguard 问题修订草案，旧计划与结果保持不变。优先用已有证据解决科学澄清；实现失败、预算拒绝或缓存均不等于假说反驳，缓存不算独立重复。缺少只有用户才能决定的信息时才使用 clarify。若本轮现有条件确实无法完成规定协议，可提交 {"defer_reason":"具体原因及未完成项"}，保留未完成状态并进入正常复盘；不得虚构数据、缩减必需协议或重复相同失败。

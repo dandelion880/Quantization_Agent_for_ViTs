@@ -737,18 +737,18 @@ class ExperimentRequests:
     @staticmethod
     def revisable_failure(task):
         error = task.get("error") or {}
-        if error.get("code") == "EngineeringBlocked":
-            return False
         if error.get("origin") in ("host", "resource", "request"):
+            return False
+        # Identity-checked provenance is stronger than exception wording/names.
+        if error.get('origin') == 'implementation':
+            return True
+        if error.get('code') == 'EngineeringBlocked':
             return False
         # Resource, storage, process and host-version failures remain engineering
         # failures. Do not burn a Coding revision or rerun the same failed source.
         if any(term in error.get("message", "").lower() for term in
                ("out of memory", "cuda error", "核心实现", "资产已变化", "运行时/主机", "批准")):
             return False
-        # 实现调用栈已确定归属时，不按少数异常名称截断修订路由。
-        if error.get("origin") == "implementation":
-            return error.get("code") not in {"KeyboardInterrupt", "InterruptedError", "SystemExit", "TimeoutError", "MemoryError"}
         return error.get("code") in {"TypeError", "AttributeError", "KeyError", "IndexError", "ValueError",
                                       "NameError", "UnboundLocalError", "ImportError", "ModuleNotFoundError",
                                       "RuntimeError", "AssertionError", "ArithmeticError", "ZeroDivisionError",

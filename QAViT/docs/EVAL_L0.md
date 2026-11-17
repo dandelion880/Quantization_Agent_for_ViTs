@@ -1,6 +1,6 @@
 # Eval-L0：独立历史科研评价
 
-此入口只读取已有运行，评分输出不进入科研 Journal、Memory、Top-3、任务队列、预算、实验合同或运行门禁。生产 `run.py` 不导入评价模块；评分不启动实验或 GPU。用户提供的 v0.1 评分包是唯一规则来源，人工抽样、代表性科研任务、Eval-L1 配对回放与额外数值验证不在本版范围。
+此入口只读取已有运行，评分输出不进入科研 Journal、Memory、Top-3、任务队列、预算、实验合同或运行门禁。生产 `run.py` 不导入评价模块；评分不启动实验或 GPU。评分规则由本次 manifest 冻结的版本决定：用户原 v0.1 与仓库派生版本分别保留，人工抽样、代表性科研任务、Eval-L1 配对回放与额外数值验证不在本版范围。
 
 ## 文件与来源
 
@@ -12,7 +12,7 @@
 | [tests/evaluation/](../tests/evaluation/test_eval_l0.py) | CPU 接口和故障注入测试；夹具没有科研金标准，不是科研样本生成器 |
 | `EXP/evaluations/<eval_id>/` | 本次冻结原件、案例、Judge 原始回执和报告；每次准备使用新目录 |
 
-评分规则选择 `configs/evaluation/` 是有意的技术例外：科研 `RoleInteraction.knowledge_roots()` 自动授权 `docs/` 和 `knowledge/` 文本。把 Rubric 放入它们会扩大被评价者可读的科研材料。此位置无需修改生产权限代码，也不把评分规则加入静态科研知识 INDEX 或角色 Prompt。接入文档只提供运维入口，不复制规则正文。
+评分规则选择 `configs/evaluation/` 是有意的技术例外：科研 `RoleInteraction.knowledge_roots()` 自动授权 `docs/` 和 `knowledge/` 文本。把 Rubric 放入它们会扩大被评价者可读的科研材料。完整源码归档包含评分包，但研究角色仅可读取精确授权的执行成员；评分规则不加入静态科研知识 INDEX 或角色 Prompt。接入文档只提供运维入口，不复制规则正文。
 
 ## 使用
 
@@ -91,7 +91,7 @@ PYTHONDONTWRITEBYTECODE=1 CUDA_VISIBLE_DEVICES='' OMP_NUM_THREADS=2 MKL_NUM_THRE
   python -B -m unittest discover -s QAViT/tests/evaluation -p 'test_*.py' -v
 ```
 
-标准 QAViT CPU 回归仍可用原 `unittest discover -s QAViT/tests` 命令。评价实现和资源与其他自有文件一样纳入既有递归源码身份；恢复历史科研运行仍遵守原有显式干预要求，本模块不排除文件、不改哈希语义、不自动续跑。
+标准 QAViT CPU 回归仍可用原 `unittest discover -s QAViT/tests` 命令。评价实现和资源保留在完整源码归档；当前执行身份 v3 排除这些离线依赖。历史科研运行的旧身份不改写，升级恢复仍遵守原有显式干预要求，不自动续跑。
 
 ## G-only 路由兼容
 
@@ -99,6 +99,8 @@ PYTHONDONTWRITEBYTECODE=1 CUDA_VISIBLE_DEVICES='' OMP_NUM_THREADS=2 MKL_NUM_THRE
 
 新准备的案例携带 `evidence_projection=exact_lists_and_repeated_bodies/1`：独立 Judge 只对已冻结、当时可见的来源做精确长样本列表折叠和重复正文共用，保留 hash/count/原 locator，并显式指向首次展示正文。不同处理臂、科学文字、失败与反证不会被摘要合并，不补入事后读取的历史资产。旧冻结案例未带该版本时保持原 rendering 和已接受评分绑定；既有评分包原件不改。此优化降低重复上下文，不保证每个大案例都能落入输入上限。
 
-## G-only v0.2
+## 当前 v0.3 与冻结旧版
 
-新prepare默认采用仓库派生gonly_v0_2；新增select标准与H1/H2/B、候选修订、配对证据/问题关闭标准。未经人工校准，不声称专家真值。`--rules-version v0_1`可明确选择旧包；judge/report/verify默认按已冻结manifest恢复版本。原v0_1与历史评分不变。新case标记精确重复正文和大型样本ID投影，仅减少重复传输，完整原件与引用位置保留。
+新 prepare/rules 默认采用仓库派生 gonly_v0_3：新增 focus 标准，区分 H3 首次提出与已有灵感的修复、调参、组合、解释和简化，plan_l3 对应 Generation。v0.2 保留当时 select/H1/H2/B 与三候选 L3 标准及原哈希。未经人工校准，不声称专家真值。`--rules-version v0_1`可明确选择旧包；judge/report/verify默认按已冻结manifest恢复版本。原v0_1与历史评分不变。新case标记精确重复正文和大型样本ID投影，仅减少重复传输，完整原件与引用位置保留。
+
+每个包按自身 Schema 的 purpose/role 与 Rubric 验证覆盖，不读取当前 TASKS 来判定历史包是否失效。`rules` 另列当前任务 covered/not_covered；prepare 对没有 Rubric 的任务记录明确未覆盖原因，仍处理其他任务。旧评分、逐任务回执和 rubric_id 不改写；若需要按 v0.3 重新评价，必须准备新的评价目录。
