@@ -1,6 +1,7 @@
 """Report scope and resumed planning; fixtures are never scientific results."""
 from copy import deepcopy
 from unittest.mock import patch
+from tests.support import advance_with_topic_fixture
 from tests.test_minimal_fixes import L3Regression
 from tests.test_infrastructure import TempCase
 from tests.support import validation_config
@@ -14,7 +15,7 @@ class RoundValidationScope(TempCase):
     def test_new_planning_revision_is_current_before_request_exists(self):
         wf, trial = self.planned('planning')
         wf.queue.fail(trial['task_id'], {'code': 'fixture_failure'})
-        wf.advance()
+        advance_with_topic_fixture(wf)
         plan = wf.tasks()['r001/plan_l3/revision1']
         for state in ('pending', 'ready', 'running', 'failed'):
             wf.queue.change(plan['task_id'], state)

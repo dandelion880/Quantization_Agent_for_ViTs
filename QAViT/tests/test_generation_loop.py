@@ -9,6 +9,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from core.cards import ContractError, canonical, fingerprint, make_card
 from core.journal import atomic_json
 from core.workflow import Workflow
+from tests.support import advance_with_topic_fixture
 from tests.support import experiment_payload, hypothesis
 from tests.test_infrastructure import TempCase
 from tests import test_infrastructure as infrastructure
@@ -25,7 +26,7 @@ class GenerationLoop(TempCase):
         wf = self.workflow(2)
         experimented = set()
         for tick in range(150):
-            if wf.advance():
+            if advance_with_topic_fixture(wf):
                 break
             for ready in wf.queue.ready():
                 self.assertEqual(ready['kind'], 'llm')

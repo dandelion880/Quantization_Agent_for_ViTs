@@ -370,6 +370,7 @@ class ExperimentRequests:
                 return True
             self.queue.enqueue(current_request, 'experiment_request', role='supervisor', inputs={
                 **self.inspiration_request_binding(plan, plan['result']['draft']),
+                **self.research_request_binding(plan, plan['result']['draft']),
                 'draft': plan['result']['draft'],
                 'original_request': plan['result'].get('original_request', plan['result']['draft']),
                 'requester': plan['role'], 'refs': plan['inputs']['refs'], 'origin_task': plan['task_id'],
@@ -493,6 +494,19 @@ class ExperimentRequests:
                 'numerical_validation_status': 'validated' if success else 'partial' if valid else 'not_validated',
                 'formal_validation_success': success}
 
+    def research_request_binding(self, author, draft=None):
+        binding = self.topics.binding(author, self.read_view(author)['sequence'])
+        for field in ('topic_ref','method_id'):
+            explicit = (draft or {}).get(field)
+            if explicit and field in binding and explicit != binding[field]:
+                raise ContractError('请求与确切候选/当前主题身份冲突: '+field)
+            if explicit: binding[field] = explicit
+        if binding.get('topic_ref') and binding['topic_ref'] not in self.topics.versions(self.read_view(author)['sequence']):
+            raise ContractError('请求引用未知主题版本')
+        if binding.get('method_id') and binding['method_id'] not in self.topics.methods(self.read_view(author)['sequence']):
+            raise ContractError('请求引用未知方法谱系')
+        return binding
+
     def inspiration_request_binding(self, author, draft=None):
         explicit = (draft or {}).get('inspiration_id')
         if explicit and explicit not in self.inspirations.snapshot(self.read_view(author)['sequence']):
@@ -547,6 +561,11 @@ class ExperimentRequests:
             # low-scoring attempts without requiring a complete solution entry.
             prior = self.inspirations.recovery(identifier)['implementation_history']
             own_ids = {row['candidate']['id'] for row in history}
+            history = [r for r in prior if r['candidate']['id'] not in own_ids] + history
+        method_id = task['inputs'].get('method_id')
+        if method_id:
+            prior = self.topics.method_recovery(method_id)['implementation_history']
+            own_ids = {r['candidate']['id'] for r in history}
             history = [r for r in prior if r['candidate']['id'] not in own_ids] + history
         return history[-3:]
 

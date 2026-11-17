@@ -6,6 +6,7 @@ import sys
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from core.cards import ContractError
 from core.workflow import Workflow
+from tests.support import advance_with_topic_fixture
 from tests.test_infrastructure import TempCase
 from tests import test_gonly as gonly
 from tests import test_memory_delivery as delivery
@@ -56,7 +57,7 @@ class CandidateRevision(TempCase):
         wf.queue.finish(child['task_id'], result=result)
         with self.assertRaisesRegex(ContractError, '过期'):
             wf.submit(task, {'selected_slot': 'H2', 'rationale': 'stale'}, None)
-        wf.advance()
+        advance_with_topic_fixture(wf)
         self.assertEqual(wf.queue.get(task['task_id'])['state'], 'cancelled')
         select = wf.queue.get_by_key(wf.selection_key(1))
         self.assertNotEqual(select['task_id'], task['task_id'])
@@ -67,12 +68,12 @@ class CandidateRevision(TempCase):
         self.assertEqual(revision['basis_evidence_refs'], [evidence['id']])
         self.assertEqual(revision['validation_status'], 'unvalidated_revision')
         count = len(wf.tasks())
-        wf.advance(); wf.advance()
+        advance_with_topic_fixture(wf); advance_with_topic_fixture(wf)
         self.assertEqual(len(wf.tasks()), count)
         wf.queue.ready(); select = wf.queue.claim(select['task_id'])
         wf.submit(select, {'selected_slot': 'H2', 'rationale': 'next measurement of revised candidate',
                            'evidence_refs': [evidence['id']]}, None)
-        wf.advance()
+        advance_with_topic_fixture(wf)
         plan = wf.tasks()[wf.l3_request_keys(1, 'H2', new['id'])[0]]
         self.assertEqual(plan['inputs']['context']['hypothesis_ref'], new['id'])
         self.assertFalse(wf.summary()['formal_validation_success'])

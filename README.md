@@ -19,6 +19,6 @@ python -B QAViT/run.py status EXP/runs/my_research
 python -B QAViT/run.py report EXP/runs/my_research
 ```
 
-进一步阅读：[实现与开发入口](QAViT/README.md) · [科研资源导航](QAViT/knowledge/INDEX.md) · [目录与模块说明](STRUCTURE.md) · [历史验证导航](QAViT/docs/HISTORY.md) · [当前伪代码](EXP/validation/inspiration_continuity_20261117_r1/PSEUDOCODE.md)。
+进一步阅读：[实现与开发入口](QAViT/README.md) · [科研资源导航](QAViT/knowledge/INDEX.md) · [目录与模块说明](STRUCTURE.md) · [历史验证导航](QAViT/docs/HISTORY.md) · [当前伪代码](EXP/validation/research_topics_20261117_r1/PSEUDOCODE.md)。
 
 [七项按需科研 Skill](QAViT/docs/SCIENTIFIC_SKILLS.md) 与 [本次接入验证](EXP/validation/skill_system_integration_20261116_r1/REPORT.md)：按问题组合，保留 H1/H2 完整方案改良、H3 开放创新、独立 B 和冻结迁移；本轮暂缓自主 Skill 沉淀。

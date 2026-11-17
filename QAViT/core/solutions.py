@@ -202,6 +202,8 @@ class SolutionLibrary:
                 'actual_quantization': deepcopy(p['observations'].get('coverage', {})),
                 'evidence_ref': evidence['id'], 'experiment_ref': experiment['id'], 'run_dir': str(self.journal.root),
                 'selection_ref': selection['id'], 'hypothesis_ref': hypothesis_ref, 'slot': slot,
+                **{k:v for k,v in (self.journal.card(hypothesis_ref)['payload'] if hypothesis_ref in self.journal.cards else {}).items()
+                   if k in ('topic_ref','method_id','inspiration_id')},
                 **self.source_record(self.journal.cards.get(experiment['id'], {}).get('sequence')),
                 'artifacts': p['artifacts']}
             # Preserve exact approved code as part of the complete reusable configuration.

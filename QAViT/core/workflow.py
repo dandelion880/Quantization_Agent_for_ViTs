@@ -87,6 +87,8 @@ class Workflow(RoleInteraction, ExperimentRequests, WorkflowDriver):
             self.solutions.initialize()
         from core.inspirations import InspirationLibrary
         self.inspirations = InspirationLibrary(self.journal, self.solutions)
+        from core.topics import ResearchTopics
+        self.topics = ResearchTopics(self.journal, self.inspirations, self.solutions)
         self.transport_blocked = None
 
 
@@ -294,9 +296,28 @@ class Workflow(RoleInteraction, ExperimentRequests, WorkflowDriver):
                               if self.journal.cards[r]['kind'] in ('HypothesisCard', 'EvidenceCard')
                               or (self.journal.cards[r]['kind'] == 'ReviewDecisionCard'
                                   and self.journal.card(r)['payload']['phase'] == 'ranking')]
+        # Old partially-started rounds keep their actual unscoped history. New
+        # rounds use one shared Generation decision before any candidate starts.
+        topic_ref = self.topics.round_ref(number)
+        legacy_started = any(self.queue.get_by_key(prefix + '/generate/' + slot) for slot in ('H1','H2','H3'))
+        if not topic_ref and not legacy_started:
+            focus_key = prefix + '/focus'
+            while True:
+                identifier = self.enqueue_role(focus_key, 'focus', refs=[self.brief['id'], *feedback_refs],
+                    context={'round': number, 'previous_review_pending': review_pending})
+                focus = self.queue.get(identifier)
+                if focus['state'] != 'completed':
+                    return False  # Original failure/retry/budget semantics; never invent a topic.
+                topic_ref = self.topics.round_ref(number)
+                if topic_ref:
+                    break
+                # Generation paused investment. A following common decision can
+                # select another direction; the host does not choose it for H1/H2/H3.
+                focus_key = prefix + '/focus/after/' + fingerprint(focus['outputs'])[:16]
         for slot, kind in (("H1", "existing_method"), ("H2", "engineering"), ("H3", "new_algorithm")):
             self.enqueue_role(prefix + "/generate/" + slot, "generate", refs=[self.brief["id"], *feedback_refs],
                               context={"round": number, "slot": slot, "hypothesis_type": kind,
+                                       **({"topic_ref": topic_ref} if topic_ref else {}),
                                        "previous_review_pending": review_pending})
         target = self.config.get("scope_target")
         if target and number == target["round"]:

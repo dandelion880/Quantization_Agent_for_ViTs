@@ -5,6 +5,7 @@ from unittest.mock import patch
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from core.cards import make_card
+from tests.support import advance_with_topic_fixture
 from tests.support import hypothesis
 from tests.test_infrastructure import TempCase
 
@@ -45,7 +46,7 @@ class RecorderSchedulingCost(TempCase):
         wf.event('round_finished', 'fixture/finished', round=1)
         self.terminal_engineering(wf)
         task_count = len(wf.tasks())
-        self.assertTrue(wf.advance())
+        self.assertTrue(advance_with_topic_fixture(wf))
         self.assertEqual(len(wf.tasks()), task_count)
         self.assertEqual(len(wf.journal.find_cards('MetareviewCard')), 1)
         self.assertTrue(wf.summary()['scientific_review_complete'])
@@ -74,7 +75,7 @@ class RecorderSchedulingCost(TempCase):
         self.terminal_engineering(wf)
         self.assertTrue(wf.recording_deferred(wf.memory.recording_batch()))
         task_count = len(wf.tasks())
-        self.assertTrue(wf.advance())
+        self.assertTrue(advance_with_topic_fixture(wf))
         self.assertEqual(len(wf.tasks()), task_count)
         self.assertFalse(wf.summary()['scientific_review_complete'])
         wf.retry_failed('Explicit CPU fixture retry')

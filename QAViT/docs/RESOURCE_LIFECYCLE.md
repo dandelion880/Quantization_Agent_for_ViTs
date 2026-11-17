@@ -83,3 +83,18 @@ H3 任务默认绑定当前 active ID；发布候选前已开展的研究请求�
 H1/H2 对库内完整父方案用 solution_derivation 保存 base_solution_id、changes、rollback；宿主绑定父记录的完整哈希和源码快照引用。该字段兼容旧卡片省略；库外父方案仍需在正文给出完整、可追溯定义。下一轮交付各槽位先前派生入口，原完整父方案和代码保留以供回退。可用灵感部分实际进入 H1/H2 后，以 absorbed_parts 的 part / target_ref 追加确切候选引用；部分吸收不暂停整个灵感，也不更换 H1/H2 的完整基础。弱保底不等于原样重交基线或每轮保证不降。
 
 低分、未入 Top-3、失败不会自动改动灵感状态。Generation 根据实际进展和具体下一步决策，Recorder 记录，宿主负责存取与调度。H1/H2/H3 最终候选仍全部进入原 L3；B 独立保留；正式方案仍按有效双任务 L3 的 ADE20K 主指标及既有规则更新。灵感库目前仅在本运行内跨轮/重启恢复，无跨运行自动合并或源码资产迁移。源码缺失/哈希不符沿既有错误处理返回，不从文字合成“恢复成功”；修改宿主后的历史恢复仍需要显式 intervention。
+
+
+## 动态研究主题与方法谱系
+
+新轮次先排 `rNNN/focus`（Generation，原订阅串行锁与 BudgetLedger），在 H1/H2/H3 启动前恢复上次主题、依据、用户澄清、关联灵感/方法、关键证据、原代码配置和未完成动作。通常一次模型决定产生一个主题版本并绑定本轮三个槽位，不三路重复选题。若 Generation 仅暂停而未选择后续方向，则先回到共同选题，不自动启动暂停方向的候选；可一次 switch 同时保留旧方向并选择新方向。失败保留待重试状态，不由宿主填充“默认正确”选题。共同调用占用原 LLM/墙钟预算，不增加候选或数值预算。
+
+主题条目是 question、mutable_dimensions、held_conditions、objective、rationale、next_step、reconsider_when 和短引用；主题不是算法正确性声明或数值执行约束。问题可由增益转为解释、必要性检验、消融、共享或简化；相关进展与正式指标分开，方案晋升规则不变。Generation 决定 establish/continue/narrow/expand/pause/resume/switch。每项 next_step 有稳定 action ID，未完成动作在修订/暂停/恢复后保留；completed_action_ids / deferred_action_ids 只由 Generation 更新。原始版本和复议条件始终可读，省略不会清空旧动作或来源。
+
+Journal 的 topic_version 以 topic-id@version 为身份、decision_ref 指向真实 ReviewDecisionCard；topic_round_binding 固定共同初始版本，topic_scope_binding 记录轮中影响槽位和理由。Generation 用 revise_topic 明确 affected_slots / impact，仅影响后续投入和新提交；冻结调用继续按原读取快照归属。已发布候选的 L3 严格继承该候选 topic_ref/method_id，不随当前主题切换。科学修改仍需 revise_candidate，新版本才获得新归属。主题状态不改变 InspirationLibrary.active；灵感切换仍须明确 update_inspiration。
+
+method_candidate 仅补充算法身份、父 method_id（或 solution:<完整方案ID>）、变化说明与候选引用。同算法跨主题继续时 Generation 显式沿用 method_id；新算法/派生省略 ID、声明 method_lineage，由宿主分配新身份并链接父候选。宿主不凭同名、槽位或灵感推断算法相同。旧候选不回填虚构谱系；已有完整方案、HypothesisCard 修订及源码父链继续可读。request_history 复用原请求、代码 manifest、源码快照、配置和 Evidence 投影，不复制完整方案。
+
+context.research_topic 默认交付摘要、最近三项请求/实现和最多八项未完成动作，完整版本由 read_topic 可达；method_catalog_state/read_method 给出沿革及准确实现入口。实际研究请求、最终计划、代码和 Evidence 经已有不可变引用链恢复；任何主题都可以读全局历史完整方案/B。主题不会新增实验的科学范围拒绝门禁，用户 Brief 的全局空间、硬约束、量化与评价协议仍是原执行链的权威。
+
+Recorder 通过可选 Metareview.topic_notes（topic_ref、progress、reconsideration、source_refs）整理有条件的认识、动作进展和复议建议，只追加 topic_note，不改主题状态。Generation 下次恢复这些建议后独立判断。历史无主题状态保持显式未知；已启动的旧轮不插入事后“共同决定”，下一新轮再选题。恢复仍要求原源码变更 intervention；没有跨运行自动合并、资产迁移、语言辩论或宿主科学打分。

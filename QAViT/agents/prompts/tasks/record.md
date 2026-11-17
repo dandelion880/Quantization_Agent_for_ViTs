@@ -19,3 +19,5 @@ selection_ref 绑定 Generation 的候选综合，l3_outcome 按候选给出确�
 无需提交 reviewed_refs、批次覆盖、哈希、游标或来源封套；旧 reviewed_refs 兼容忽略，既不代表已审事实，也不导致有效复盘被拒。程序自动绑定本批 source_refs，但不会把未逐项分析的来源标成已审。支撑已验证知识的来源必须 completed 且不是 test_double；科学分析和判断审计可以按实际身份讨论失败、模拟回执及计划。原始回执始终保留。附加审计或分析条目有问题时也逐条保留原稿和问题，不拒绝其余有效科学分析，不把问题条目发布为已核实支持。一条知识更新有问题时程序保留分析及其余有效更新，将该条与具体问题存为待核实；待核实条目不发布为已验证知识，不阻塞研究，也不会自动触发额外修正文书调用。需要修正已拒正文时可用 repair_patch 替换顶层科学字段，数组整体替换；不使用嵌套路径。required_reads 是按需深读入口，不是提交前必读清单。
 
 key_facts 在 Generation、Recorder、Memory 使用同一客观投影，优先核对其中 FP/Q、Q−FP 及单位、范围、身份与失败。historical_artifact_projection 只是已绑定原件的补充读取，不是新增测量；缺失 FP 保持未知。同次不同 arm/variant 分开解释，不把汇总均值当一个处理臂。大样本列表用有序 hash/count 与精确读取入口传递；不得据列表折叠声称范围缺失。
+
+可选 topic_notes：每项 topic_ref、progress、可选 reconsideration/source_refs，整理行动与复议建议；主题状态及范围由下一次 Generation 决定，Recorder 不改写。

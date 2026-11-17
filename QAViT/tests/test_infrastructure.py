@@ -20,6 +20,7 @@ from core.memory import ResearchMemory, MemoryRetriever
 from core.debate import INITIAL_PAIRS, ranking_table, validate_verdict
 from core.workflow import Workflow
 from tools.experiments import execution_fingerprint
+from tests.support import advance_with_topic_fixture
 from tests.support import validation_config, experiment_payload, hypothesis, review, meta
 
 
@@ -336,6 +337,9 @@ class DebateAndMemory(TempCase):
 class WorkflowSimulation(TempCase):
     def scripted(self, wf, task, *, ineligible=False, five=False):
         c, purpose = task["inputs"]["context"], task["inputs"]["purpose"]
+        if purpose == "focus":
+            from tests.support import topic_decision
+            return topic_decision(wf)
         if purpose in ("generate", "evolve"):
             value = hypothesis(c["round"], c["slot"])
             if wf.memory.snapshot()["L3"]:
@@ -366,7 +370,7 @@ class WorkflowSimulation(TempCase):
         wf = self.workflow(rounds)
         reloaded = False
         for tick in range(350):
-            if wf.advance():
+            if advance_with_topic_fixture(wf):
                 break
             ready = wf.queue.ready()
             self.assertTrue(ready, "scripted workflow stalled")
@@ -400,7 +404,7 @@ class WorkflowSimulation(TempCase):
             self.assertEqual(wf.selection_card(number)['author'], 'generation')
             self.assertEqual(wf.selection_card(number)['payload']['selected_slot'], 'H1')
         purposes = {t['inputs'].get('purpose') for t in wf.tasks().values()}
-        self.assertEqual(purposes, {'generate', 'select', 'record'})
+        self.assertEqual(purposes, {'focus', 'generate', 'select', 'record'})
 
 
 class PureSemantics(unittest.TestCase):

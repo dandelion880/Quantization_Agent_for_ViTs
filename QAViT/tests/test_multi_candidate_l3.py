@@ -8,6 +8,7 @@ from unittest.mock import patch
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from core.cards import ContractError
 from core.workflow import Workflow
+from tests.support import advance_with_topic_fixture
 from tests.support import validation_config, hypothesis, experiment_payload
 from tests.test_infrastructure import TempCase
 from tests import test_minimal_fixes as l3_fixtures
@@ -19,7 +20,7 @@ class MultiCandidateL3(TempCase):
         config.update(enable_l3=True, purpose='infrastructure_test')
         config['budget'].update(max_rounds=1, min_free_bytes=0)
         wf = Workflow(self.root / name, config)
-        wf.advance()
+        advance_with_topic_fixture(wf)
         for task in wf.queue.ready():
             task = wf.queue.claim(task['task_id'])
             slot = task['inputs']['context']['slot']
@@ -27,17 +28,17 @@ class MultiCandidateL3(TempCase):
                 wf.queue.fail(task['task_id'], {'code': 'scripted_generation_failure'})
             else:
                 wf.submit(task, hypothesis(1, slot), 'scripted')
-        wf.advance()
+        advance_with_topic_fixture(wf)
         task = wf.queue.claim(wf.queue.ready()[0]['task_id'])
         wf.submit(task, {'rationale': 'Compare all three; no language ranking excludes a candidate.'}, 'scripted')
-        wf.advance()
+        advance_with_topic_fixture(wf)
         for ready in wf.queue.ready():
             task = wf.queue.claim(ready['task_id'])
             draft = experiment_payload('L3')
             draft['execution'].update(service='evaluate_artifact', parameters={}, evaluations=[{
                 'kind': 'classification', 'split': 'final', 'count': 2}])
             wf.submit(task, draft, 'scripted')
-        wf.advance()
+        advance_with_topic_fixture(wf)
         requests = {t['inputs']['slot']: t for t in wf.queue.ready() if t['kind'] == 'experiment_request'}
         return wf, requests
 
@@ -65,9 +66,9 @@ class MultiCandidateL3(TempCase):
                     self.assertEqual(outcome['candidates'][observed]['valid_evidence_refs'], [evidence[observed]['id']])
                     self.assertEqual(outcome['candidates'][observed]['hypothesis_ref'], wf.candidate_refs(1)[observed])
                 if len(evidence) < 3:
-                    self.assertFalse(wf.advance())
+                    self.assertFalse(advance_with_topic_fixture(wf))
                     self.assertNotIn('r001/record', wf.tasks())
-            wf.advance()
+            advance_with_topic_fixture(wf)
             self.assertEqual(set(wf.tasks()['r001/record']['inputs']['context']['l3_outcome']['valid_evidence_refs']),
                              {e['id'] for e in evidence.values()})
             considered = [e for e in wf.journal.events if e['type'] == 'solution_considered']
@@ -84,15 +85,15 @@ class MultiCandidateL3(TempCase):
         wf.queue.fail(requests['H1']['task_id'], {'code': 'scripted_calibration_failure'})
         e3 = self.measured(wf, requests['H3'])
         wf = Workflow(wf.run_dir)
-        self.assertFalse(wf.advance())
+        self.assertFalse(advance_with_topic_fixture(wf))
         self.assertNotIn('r001/record', wf.tasks())
         e2 = self.measured(wf, requests['H2'])
         plan_root = wf.l3_request_keys(1, 'H1', wf.candidate_refs(1)['H1'])[0]
-        wf.advance()
+        advance_with_topic_fixture(wf)
         revision = wf.tasks()[plan_root + '/revision1']
         wf.queue.ready()
         wf.submit(wf.queue.claim(revision['task_id']), {'defer_reason': 'Numerical failure retained; needs follow-up.'}, 'scripted')
-        wf.advance()
+        advance_with_topic_fixture(wf)
         outcome = wf.l3_outcome(1)
         self.assertEqual(set(outcome['valid_evidence_refs']), {e2['id'], e3['id']})
         self.assertFalse(outcome['formal_validation_success'])

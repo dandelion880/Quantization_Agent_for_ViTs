@@ -8,6 +8,7 @@ from core.cards import ContractError, make_card
 from core.journal import atomic_json
 from core.workflow import Workflow
 from runtime.budget import BudgetLedger, BudgetExhausted
+from tests.support import advance_with_topic_fixture
 from tests.test_infrastructure import TempCase
 from tests.support import hypothesis, experiment_payload, meta, review
 
@@ -112,7 +113,7 @@ class ReadinessRegression(TempCase):
         cfg['budget'].update(wall_seconds=100, closeout_reserve_seconds=30,
                              shutdown_reserve_seconds=5, min_free_bytes=0)
         wf = Workflow(self.root / 'closeout', cfg)
-        wf.advance()  # 已排队H1/H2/H3，但尚未执行。
+        advance_with_topic_fixture(wf)  # 已排队H1/H2/H3，但尚未执行。
         deadline = wf.budget.snapshot()['deadline_unix']
         def submit_recorder():
             count = 0
@@ -130,9 +131,10 @@ class ReadinessRegression(TempCase):
         self.assertFalse(result['workflow_completed'])
         self.assertTrue(result['state_saved'])
         self.assertFalse(any(e['type']=='round_finished' for e in wf.journal.events))
-        self.assertEqual(len(wf.memory.snapshot()['L3']), 0)  # No science was produced before closeout.
+        # The common direction is research material even before any candidate/measurement.
+        self.assertEqual(len(wf.memory.snapshot()['L3']), 1)
         self.assertTrue(result['scientific_review_complete'])
-        self.assertFalse(any(t['inputs'].get('purpose') == 'record' for t in wf.tasks().values()))
+        self.assertEqual(sum(t['inputs'].get('purpose') == 'record' for t in wf.tasks().values()), 1)
         self.assertEqual(wf.budget.snapshot()['deadline_unix'], deadline)
         self.assertEqual(sum(t['state']=='cancelled' for t in wf.tasks().values()), 3)
 

@@ -131,19 +131,26 @@ class InspirationLibrary:
                 owners.add(event['task_id'])
             elif event['type'] == 'inspiration_candidate' and event['inspiration_id'] == identifier:
                 hypotheses.append(event['hypothesis_ref'])
+        request_ids = {t['task_id'] for t in tasks.values() if t['kind'] == 'experiment_request'
+            and (t['inputs'].get('inspiration_id') == identifier or
+                 (t['inputs'].get('inspiration_id') is None and t['inputs'].get('parent_task') in owners))}
+        requests, history = self.request_history(request_ids, sequence)
+        return {**rows[identifier], 'hypothesis_refs': list(dict.fromkeys(hypotheses)),
+                'requests': requests, 'implementation_history': history,
+                'policy': 'References restore original code/config/results; saving notes never schedules experiments.'}
+
+    def request_history(self, request_ids, sequence=None):
+        """Shared exact-asset projection for ideas, topics and method lineages."""
+        tasks = {e['task']['task_id']: e['task'] for e in self.events(sequence) if e['type'] == 'task_snapshot'}
         requests, history = [], []
         for request in tasks.values():
-            if request['kind'] != 'experiment_request':
-                continue
-            inputs = request['inputs']
-            bound = inputs.get('inspiration_id')
-            if bound != identifier and not (bound is None and inputs.get('parent_task') in owners):
+            if request['kind'] != 'experiment_request' or request['task_id'] not in request_ids:
                 continue
             ref = request.get('experiment_ref') or request.get('request_ref')
             requests.append({'task_ref': request['task_card'], 'state': request['state'],
                 'request_ref': request.get('request_ref'), 'experiment_ref': request.get('experiment_ref'),
                 'evidence_refs': [r for r in request['outputs'] if self.journal.cards[r]['kind'] == 'EvidenceCard'],
-                'error': request.get('error'), 'research_note': inputs.get('research_note'),
+                'error': request.get('error'), 'research_note': request['inputs'].get('research_note'),
                 'host_source': self.source_binding(self.journal.cards[ref]['sequence']) if ref else None,
                 'configuration': {'ref': ref, 'field': '/payload'} if ref else {
                     'ref': request['task_card'], 'field': '/payload/inputs/draft'}})
@@ -167,11 +174,9 @@ class InspirationLibrary:
                     'evidence_refs': list(dict.fromkeys(r for t in trials for r in t['outputs']
                                                        if self.journal.cards[r]['kind'] == 'EvidenceCard')),
                     'failures': [{'error': t['error']} for t in trials if t.get('error')],
-                    'inspiration_id': identifier,
+                    'inspiration_id': request['inputs'].get('inspiration_id'),
                     'meaning': 'Exact prior source; read and incrementally revise it. Scores do not terminate this idea.'})
-        return {**rows[identifier], 'hypothesis_refs': list(dict.fromkeys(hypotheses)),
-                'requests': requests, 'implementation_history': history,
-                'policy': 'References restore original code/config/results; saving notes never schedules experiments.'}
+        return requests, history
 
     def source_task_refs(self, sequence=None):
         key = (self.journal.sequence, sequence)

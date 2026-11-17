@@ -233,3 +233,5 @@ G-only 停机和预算收尾会接收已持久化回执、尝试归档有效 L3 
 冻结来源声明以 ExperimentCard 顶层 evidence_refs/solution_refs 为准，兼容 controls 中的同名明确列表，原始请求保留。runtime 的 RequestRevisionRequired 连同请求来源、可选绑定和子进程路径进入回执，返回原科研申请者修订请求，不消耗 Coding 修订。已选来源损坏/身份拒绝归宿主、资源异常归资源处理；实现异常沿原 Coding→Safeguard。工程未执行不能记作机制不获支持。
 
 独立灵感状态与 H3 连续演化接口见 [资源生命周期](RESOURCE_LIFECYCLE.md#独立灵感库与跨轮接续)：update_inspiration 只保存状态，不触发实验；同一灵感可跨轮调参、修复、组合或简化，未入 Top-3 不自动淘汰。H1/H2 弱保底、独立 B、三候选 L3 和既有预算/评测约束保持原规则。
+
+当前新轮先进行 Generation `focus` 共同恢复与方向决定，再启动共享主题版本的 H1/H2/H3。`revise_topic` 仅追加轮中范围/目标及影响槽位；候选身份与原 L3 不回写。实现与兼容边界见 [动态主题](RESOURCE_LIFECYCLE.md#动态研究主题与方法谱系)。

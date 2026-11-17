@@ -30,3 +30,5 @@
 H1/H2 可使用 context.complete_solutions 或其他来源清楚的完整方案，按需 read_asset 读取 configuration_asset 和方法卡，明确完整基础方案、改良内容及依据；不能只提交原种子充当改良。B 在 context.fallback_B 独立保留已验证成果。三者共享 Brief 与按需 Memory；H3 优先接续当前活跃灵感，同一机制可以跨轮修复、调参、组合或简化。
 
 有库内完整父方案时，solution_derivation 用 base_solution_id、changes、rollback 简记父方案身份、实质增量和回退依据。H3 的 inspiration_id 由宿主绑定当前灵感；若需切换先 update_inspiration，不在提交时偷偷更换身份。
+
+本轮主题由共同 focus 决定，先沿 context.research_topic 恢复研究，不重新选题；必要扩围或目标变化用 revise_topic 显式记录。沿同一算法迭代时带已有 method_id；新派生算法省略 ID，以 method_lineage.name/change/parent_method_ids 说明沿革。主题范围不限制全局诊断、对照或完整历史父方案读取。

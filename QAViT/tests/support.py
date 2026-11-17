@@ -52,6 +52,33 @@ def experiment_payload(level="L1"):
             "validation": {"baseline": "FP32 original", "scope": "controlled local QDQ, not full-model accuracy"}}
 
 
+def topic_decision(wf):
+    """Scripted direction for old lifecycle fixtures, never scientific evidence."""
+    current=wf.topics.active()
+    return {'decision':'continue' if current else 'establish',
+        **({'topic_id':current['id']} if current else {}),
+        'question':'fixture question', 'mutable_dimensions':['metric','grouping'],
+        'held_conditions':['original Brief and evaluation'], 'objective':'test continuation',
+        'rationale':'scripted state fixture, not research reasoning',
+        'next_step':'measure the paired downstream error',
+        'reconsider_when':'revisit if the paired measurement rules out this mechanism'}
+
+
+def advance_with_topic_fixture(wf):
+    """Exercise the new shared decision, then preserve legacy test entry points."""
+    done=wf.advance()
+    if not any(t['inputs'].get('purpose')=='focus' and t['state'] in ('pending','ready')
+               for t in wf.tasks().values()):
+        return done
+    for ready in wf.queue.ready():
+        if ready['inputs'].get('purpose')=='focus':
+            task=wf.queue.claim(ready['task_id'])
+            if task:
+                wf.submit(task,topic_decision(wf),'SCRIPTED_TOPIC_FIXTURE')
+                return wf.advance()
+    return done
+
+
 def hypothesis(number, slot):
     return {"round": number, "slot": slot, "hypothesis_type": {"H1": "existing_method", "H2": "engineering", "H3": "new_algorithm", "H4": "evolved"}[slot],
             "title": "CONTROL FLOW TEST " + slot, "research_question": "fixture only", "mechanism": "scripted fixture, not real reasoning",

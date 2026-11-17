@@ -5,6 +5,7 @@ from core.cards import OBJECT, TEXT, object_schema, PAYLOAD_SCHEMAS, MEMORY_QUER
 from core.journal import file_sha256
 from agents.tasks import TASKS
 from core.inspirations import UPDATE_SCHEMA
+from core.topics import DECISION_SCHEMA, REVISION_SCHEMA
 from tools.experiments import EXPERIMENT_DRAFT_SCHEMA
 
 PROMPTS = Path(__file__).with_name("prompts")
@@ -35,6 +36,11 @@ for field in ('resolved_choices', 'model_scope', 'backend', 'model_identity_sha2
 
 
 TOOLS = {t["name"]: t for t in [
+    tool('read_topic', '按主题 ID 或确切 topic_ref 读取决定、范围、未完成动作、复议条件和原始代码/配置/证据入口；历史主题不限制全局读取。',
+         object_schema({'topic_ref': TEXT}, ['topic_ref'])),
+    tool('read_method', '读取同一算法及派生谱系的候选版本与确切实现来源，不复制完整方案。',
+         object_schema({'method_id': TEXT}, ['method_id'])),
+    tool('revise_topic', 'Generation 显式修订轮中问题/范围/目标。须说明 affected_slots 和 impact；只改变后续投入，旧候选与 L3 归属不回写，灵感和方法不会被清空。单独调用。', REVISION_SCHEMA),
     tool('update_inspiration', (
         '保存或更新独立灵感，不触发实验。新建省略 inspiration_id，提供 title/idea/basis/next_step；'
         '默认 paused。Generation 用 status=active/paused 与具体 reason 决定继续、暂停、恢复或切换；'
@@ -110,6 +116,8 @@ def tools_for(purpose):
 
 def submission_schema(purpose):
     """LLM 提交科研正文；持久卡片继续使用完整 PAYLOAD_SCHEMAS。"""
+    if purpose == 'focus':
+        return deepcopy(DECISION_SCHEMA)
     if purpose == 'plan_l3':
         return {'anyOf': [deepcopy(EXPERIMENT_SUBMISSION_SCHEMA), object_schema({'defer_reason': TEXT}, ['defer_reason'])]}
     if purpose == 'code':

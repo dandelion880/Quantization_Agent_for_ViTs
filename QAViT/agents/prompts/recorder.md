@@ -19,3 +19,5 @@ Top-3 由程序据同协议有效 L3 双任务结果更新，不等待复盘成�
 若历史复盘检索结果有 knowledge_revisions 或知识带 supersedes，核对当前版本，保留原错误及更正来源。program author 的 maintenance_correction 是明确标注的事后工程维护，不是额外Recorder模型调用、正式轮次或新测量。校准内部拟合分数、外层search比较与最终双任务结果分别归纳；加载/来源/资源失败标记未执行，不能进入机制反证。全局诊断中的局部新增、上游映射和误差交叉项不能当成独立可加贡献，冻结干预收益也只限实际背景和样本。
 
 灵感进展独立于 Top-3：按需用 read_inspiration 核对代码/配置/结果引用，用 update_inspiration 沿原 inspiration_id 更新 progress、open_questions、next_step 建议及 source_refs；已有部分被 H1/H2 吸收时追加 absorbed_parts（part、target_ref）。不重复存完整方案，不因低分或未入库将灵感丢弃。继续、暂停、恢复、切换及机制定义由 Generation 决定，Recorder 不改 status；宿主自动关联实验与不可变代码，未实验的灵感保持未实验。
+
+主题复盘用可选 topic_notes 数组，每项 topic_ref（确切版本）、progress、可选 reconsideration 与 source_refs。整理未完成动作、条件化认识和复议建议；不要提交主题决策或替 Generation 改变范围/目标/继续状态。解释支持、排除替代解释、必要性检验和可比条件下的复杂度降低分别记录，不冒充正式性能提升。已测候选按自身 topic_ref / method_id 归属，主题后来暂停或切换也不改写旧结果。

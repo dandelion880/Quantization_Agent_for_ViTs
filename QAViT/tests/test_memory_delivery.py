@@ -10,6 +10,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from core.cards import ContractError, canonical, fingerprint, make_card
 from core.journal import atomic_json, file_sha256
 from core.workflow import Workflow
+from tests.support import advance_with_topic_fixture
 from tests.support import hypothesis, review, meta, experiment_payload
 from tests.test_infrastructure import TempCase
 from tests import test_serial_debate_memory as serial
@@ -258,13 +259,13 @@ class DeliveryRegression(TempCase):
         self.science(wf, 'before')
         task, _ = self.begin(wf, self.recorder(wf)); wf.submit(task, self.record_payload(task), 'SCRIPTED')
         wf.event('round_finished', 'fixture/round_finished', round=1)
-        self.assertTrue(wf.advance())
+        self.assertTrue(advance_with_topic_fixture(wf))
         cards = self.science(wf, 'late')
-        self.assertFalse(wf.advance())
+        self.assertFalse(advance_with_topic_fixture(wf))
         task = next(t for t in wf.tasks().values() if t['key'].startswith('closeout/record/'))
         self.assertEqual(set(task['inputs']['refs']), {c['id'] for c in cards})
         task, _ = self.begin(wf, task); wf.submit(task, self.record_payload(task), 'SCRIPTED')
-        self.assertTrue(wf.advance())
+        self.assertTrue(advance_with_topic_fixture(wf))
 
     def test_paged_scope_preserves_exact_matching_and_rejects_unverified_claims(self):
         wf = self.workflow(1)

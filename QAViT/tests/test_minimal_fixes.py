@@ -11,6 +11,7 @@ from core.cards import ContractError, make_card
 from core.debate import INITIAL_PAIRS, ranking_table
 from core.journal import atomic_json, read_json
 from core.workflow import Workflow
+from tests.support import advance_with_topic_fixture
 from tests.support import validation_config, experiment_payload, review, meta
 from tests import test_infrastructure as infrastructure
 from tests.test_infrastructure import TempCase
@@ -99,7 +100,7 @@ class L3Regression(TempCase):
         config["budget"].update(max_rounds=1, min_free_bytes=0)
         wf = Workflow(self.root / name, config)
         for _ in range(50):
-            self.assertFalse(wf.advance())
+            self.assertFalse(advance_with_topic_fixture(wf))
             for candidate in wf.queue.ready():
                 task = wf.queue.claim(candidate["task_id"])
                 if task["inputs"]["purpose"] == "plan_l3":
@@ -114,7 +115,7 @@ class L3Regression(TempCase):
                     if requires_code:
                         draft['execution'].update(service='custom_experiment', requires_code=True, interface='experiment_v1')
                     wf.submit(task, draft, "fixture")
-                    wf.advance()
+                    advance_with_topic_fixture(wf)
                     wf.queue.ready()
                     trial = (wf.queue.claim(wf.tasks()["r001/L3"]["task_id"]) if claim_request
                              else wf.tasks()['r001/L3'])
@@ -129,7 +130,7 @@ class L3Regression(TempCase):
                         refs=[selection['id'], candidate, wf.brief['id']], context={
                             'round': 1, 'selection': 'H1', 'selection_ref': selection['id'],
                             'hypothesis_ref': candidate})
-                    wf.advance()
+                    advance_with_topic_fixture(wf)
                     for sibling in wf.queue.ready():
                         if (sibling['inputs'].get('purpose') == 'plan_l3'
                                 and sibling['inputs']['context'].get('slot') in ('H2', 'H3')):
@@ -138,13 +139,13 @@ class L3Regression(TempCase):
         self.fail("did not reach L3")
 
     def recorder(self, wf):
-        self.assertFalse(wf.advance())
+        self.assertFalse(advance_with_topic_fixture(wf))
         continuation = wf.tasks().get('r001/plan_l3/revision1')
         if continuation and continuation['state'] in ('pending', 'ready'):
             wf.queue.ready()
             revision = wf.queue.claim(continuation['task_id'])
             wf.submit(revision, {'defer_reason': 'Scripted fixture: preserve uncompleted L3 and proceed to review'}, 'fixture')
-            self.assertFalse(wf.advance())
+            self.assertFalse(advance_with_topic_fixture(wf))
         task = wf.tasks()["r001/record"]
         self.assertIn(task["task_id"], {t["task_id"] for t in wf.queue.ready()})
         task = wf.queue.claim(task["task_id"])

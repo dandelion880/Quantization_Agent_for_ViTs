@@ -8,6 +8,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from core.cards import ContractError, make_card
 from core.journal import file_sha256
 from core.workflow import Workflow
+from tests.support import advance_with_topic_fixture
 from tests.test_infrastructure import TempCase
 from tests.support import hypothesis, experiment_payload, meta, validation_config
 from tests import test_multi_candidate_l3 as multi
@@ -90,7 +91,7 @@ class InspirationTests(TempCase):
         for i in range(1,4):
             fallback.FallbackTests.promote(self,wf,i,80,40+i)
         before_B = wf.solutions.fallback(); before_top = wf.solutions.snapshot()
-        wf.advance()
+        advance_with_topic_fixture(wf)
         for slot in ('H1','H2','H3'):
             wf.queue.ready(); task = wf.queue.claim(wf.tasks()['r001/generate/'+slot]['task_id'])
             if slot == 'H3':
@@ -102,15 +103,15 @@ class InspirationTests(TempCase):
                 body['solution_derivation'] = {'base_solution_id': wf.solutions.seeds()[0 if slot == 'H1' else 1]['id'],
                     'changes':'nontrivial calibration objective change','rollback':'reload immutable parent configuration'}
             wf.submit(task, body, 'scripted')
-        wf.advance(); wf.queue.ready()
+        advance_with_topic_fixture(wf); wf.queue.ready()
         select = wf.queue.claim(wf.tasks()['r001/select']['task_id'])
-        wf.submit(select, {'rationale':'all three enter L3'}, 'scripted'); wf.advance()
+        wf.submit(select, {'rationale':'all three enter L3'}, 'scripted'); advance_with_topic_fixture(wf)
         for task in wf.queue.ready():
             task = wf.queue.claim(task['task_id'])
             draft = experiment_payload('L3')
             draft['execution'].update(service='evaluate_artifact', parameters={}, evaluations=[{'kind':'classification','split':'final','count':2}])
             wf.submit(task, draft, 'scripted')
-        wf.advance()
+        advance_with_topic_fixture(wf)
         trials = {t['inputs']['slot']:t for t in wf.queue.ready() if t['kind']=='experiment_request'}
         self.assertEqual(set(trials), {'H1','H2','H3'})
         for slot, trial in trials.items():
@@ -126,14 +127,14 @@ class InspirationTests(TempCase):
                     observations={'evaluations':{'classification':{'full_dataset':True,'metrics':{'top1':1}},
                         'segmentation':{'full_dataset':True,'metrics':{'mIoU':1}}}})
                 wf.solutions.consider_round(1, shaped, exp, wf.selection_card(1), validator=lambda *a,**k:None)
-        wf.advance(); wf.queue.ready()
+        advance_with_topic_fixture(wf); wf.queue.ready()
         recorder = wf.queue.claim(wf.tasks()['r001/record']['task_id'])
         self.update(wf, recorder, {'inspiration_id':identifier, 'progress':'low result; clipping remains unresolved',
             'next_step':'repair clipping in EXACT_H3_V1', 'source_refs':[h3_ev['id']]})
-        wf.submit(recorder, meta(1), 'scripted'); wf.advance()
+        wf.submit(recorder, meta(1), 'scripted'); advance_with_topic_fixture(wf)
         self.assertEqual(wf.solutions.snapshot(), before_top)
         self.assertEqual(wf.solutions.fallback(), before_B)
-        wf = Workflow(wf.run_dir); wf.advance()
+        wf = Workflow(wf.run_dir); advance_with_topic_fixture(wf)
         next_task = wf.tasks()['r002/generate/H3']
         context = wf.context(next_task)
         resume = context['inspiration_continuation']

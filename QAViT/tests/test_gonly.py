@@ -12,6 +12,7 @@ from core.workflow import Workflow
 from runtime.configuration import config_check, model_defaults
 from runtime.model_router import client_for
 from agents.tasks import TASKS, RETIRED_PURPOSES
+from tests.support import advance_with_topic_fixture
 from tests.support import validation_config, hypothesis, review, meta
 from tests.test_infrastructure import TempCase
 
@@ -31,7 +32,7 @@ class GOnlyRegression(TempCase):
 
     def drive(self, wf, *, choice='H1', stop=None, reload=False):
         for _ in range(60):
-            if wf.advance():
+            if advance_with_topic_fixture(wf):
                 return wf, None
             ready = wf.queue.ready()
             self.assertTrue(ready, 'G-only stalled')
@@ -94,10 +95,10 @@ class GOnlyRegression(TempCase):
         with self.assertRaises(ContractError):
             wf.submit(task, {'selected_slot': 'H1', 'rationale': 'rewrite'}, None)
         wf = Workflow(wf.run_dir)
-        wf.advance()
+        advance_with_topic_fixture(wf)
         keys, sequence = set(wf.tasks()), wf.journal.sequence
         for _ in range(3):
-            self.assertFalse(wf.advance())
+            self.assertFalse(advance_with_topic_fixture(wf))
         self.assertEqual((keys, sequence), (set(wf.tasks()), wf.journal.sequence))
         self.assertEqual(wf.tasks()[wf.l3_request_keys(1, 'H2', original['id'])[0]]['inputs']['context']['hypothesis_ref'], original['id'])
 
@@ -105,13 +106,13 @@ class GOnlyRegression(TempCase):
         from itertools import permutations
         for order in permutations(('H1', 'H2', 'H3')):
             wf = self.workflow_case(''.join(order), l3=False)
-            wf.advance()
+            advance_with_topic_fixture(wf)
             for i, slot in enumerate(order):
                 wf.queue.ready()
                 task = wf.queue.claim(wf.tasks()['r001/generate/' + slot]['task_id'])
                 wf.submit(task, hypothesis(1, slot), None)
                 wf = Workflow(wf.run_dir)
-                wf.advance()
+                advance_with_topic_fixture(wf)
                 self.assertEqual('r001/select' in wf.tasks(), i == 2)
             self.assertEqual(set(wf.tasks()['r001/select']['inputs']['context']['candidate_refs']), set(order))
 
@@ -143,7 +144,7 @@ class GOnlyRegression(TempCase):
     def test_all_generation_failures_keep_library_and_finish_without_fake_hypotheses(self):
         wf = self.workflow_case()
         original = wf.solutions.snapshot()
-        wf.advance()
+        advance_with_topic_fixture(wf)
         for t in wf.queue.ready():
             wf.queue.claim(t['task_id'])
             wf.queue.fail(t['task_id'], {'code': 'fixture_failure'})
@@ -214,7 +215,7 @@ class GOnlyRegression(TempCase):
             self.assertIn('contrary result', context['memory']['research_continuity']['current_note'])
         wf.submit(task, {'selected_slot': 'H2', 'rationale': 'CPU fixture: revised choice after two observations',
                          'evidence_refs': [r['id'] for r in results]}, None)
-        wf.advance()
+        advance_with_topic_fixture(wf)
         plan = wf.tasks()[wf.l3_request_keys(1, 'H2', wf.candidate_refs(1)['H2'])[0]]
         context = wf.context(plan)
         from core.cards import canonical
@@ -235,7 +236,7 @@ class GOnlyRegression(TempCase):
                     with patch.object(wf.budget, 'check', side_effect=BudgetExhausted('CPU fixture stop')):
                         wf.run()
                 else:
-                    wf.advance()
+                    advance_with_topic_fixture(wf)
                     self.assertNotEqual(wf.tasks()['r001/record']['state'], 'completed')
                 self.assertTrue(considered.called)
                 self.assertEqual(considered.call_args.args[1]['id'], evidence['id'])

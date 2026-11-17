@@ -378,3 +378,14 @@ coverage.xml
 !/EXP/validation/inspiration_continuity_20261117_r1/REPORT.md
 !/EXP/validation/inspiration_continuity_20261117_r1/PSEUDOCODE.md
 !/EXP/validation/inspiration_continuity_20261117_r1/RESULTS.json
+
+# Reviewed dynamic-topic delivery; raw audits, account preflight and runs stay local.
+!/EXP/validation/research_topics_20261117_r1/
+!/EXP/validation/research_topics_20261117_r1/REPORT.md
+!/EXP/validation/research_topics_20261117_r1/PSEUDOCODE.md
+!/EXP/validation/research_topics_20261117_r1/RESULTS.json
+!/EXP/validation/research_topics_20261117_r1/replay.py
+!/EXP/validation/research_topics_20261117_r1/no_gain_r1_result.json
+!/EXP/validation/research_topics_20261117_r1/new_evidence_r1_result.json
+!/EXP/validation/research_topics_20261117_r1/explain_simplify_r1_result.json
+!/EXP/validation/research_topics_20261117_r1/no_gain_r2_result.json

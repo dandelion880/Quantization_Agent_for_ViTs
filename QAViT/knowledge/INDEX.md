@@ -29,3 +29,5 @@
 当前结构见 [STRUCTURE](../../STRUCTURE.md)，历史记录与产物入口见 [HISTORY](../docs/HISTORY.md)。
 
 运行内独立灵感由 `core/inspirations.py` 从 Journal 的 `inspiration_*` 事件派生，区别于完整方案与知识断言；Generation/Recorder 通过 `update_inspiration`、`read_inspiration` 更新/读取，实验和代码仍走原执行链。生命周期、恢复及父方案记录见 [资源生命周期](../docs/RESOURCE_LIFECYCLE.md#独立灵感库与跨轮接续)。
+
+动态主题（问题＋可修改范围）及方法谱系由 `core/topics.py` 从本运行 Journal 派生；共同 focus 和轮中 revise_topic 属于 Generation。Recorder 的 topic_notes 只记录进展与复议建议。read_topic/read_method 保持原件按需可达，完整方案/B 不受主题过滤。见 [生命周期](../docs/RESOURCE_LIFECYCLE.md#动态研究主题与方法谱系)。

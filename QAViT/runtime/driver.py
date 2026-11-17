@@ -403,6 +403,8 @@ class WorkflowDriver:
                  "expected_rounds": expected_rounds, "validated_rounds": validated_rounds,
                  "tasks": counts, "budget": self.budget.snapshot(), "memory": self.memory.snapshot(),
                  "rounds": rounds,
+                 "research_topics": [{k:r[k] for k in ('id','ref','status','question','objective','next_step','reconsider_when')}
+                                     for r in self.topics.snapshot().values()],
                  "clarifications": [{"task_id": t["task_id"], **t["clarification"]} for t in tasks.values() if t["state"] == "needs_clarification"],
                  "failures": [{"task_id": t["task_id"], "key": t["key"], "error": t.get("error")} for t in tasks.values() if t["state"] == "failed"],
                  "evidence": [{"id": c["id"], "source": c["payload"]["measurement_source"],

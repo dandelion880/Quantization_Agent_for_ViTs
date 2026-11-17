@@ -9,6 +9,7 @@ from core.cards import ContractError, canonical, make_card
 from core.workflow import Workflow
 from agents.roles import role_spec
 from tools.experiments import expand_plan
+from tests.support import advance_with_topic_fixture
 from tests.support import hypothesis, review, experiment_payload, validation_config
 from tests.test_infrastructure import TempCase
 from tests import test_memory_delivery as delivery, test_gonly as parent_evolution
@@ -121,7 +122,7 @@ class ResearchRefactor(TempCase):
                                 stop=lambda t: t['inputs']['purpose'] == 'record')
         old_sources = set(record['inputs']['context']['recording_batch']['source_refs'])
         wf.queue.fail(record['task_id'], {'code': 'scientific_synthesis_failed'})
-        self.assertFalse(wf.advance())
+        self.assertFalse(advance_with_topic_fixture(wf))
         self.assertFalse(wf.journal.find_cards('MetareviewCard'))
         self.assertEqual(wf.memory.recording_status()['scientific_review'], 'pending')
         self.assertTrue(old_sources <= set(wf.memory.recording_batch()['source_refs']))
@@ -136,7 +137,7 @@ class ResearchRefactor(TempCase):
         self.assertEqual(later['inputs']['context']['round'], 2)
         self.assertTrue(old_sources <= set(later['inputs']['context']['recording_batch']['source_refs']))
         wf.submit(later, self.synthesis(), 'test_double')
-        self.assertTrue(wf.advance())
+        self.assertTrue(advance_with_topic_fixture(wf))
         self.assertTrue(wf.summary('completed')['scientific_review_complete'])
         self.assertEqual(wf.memory.recording_status()['deferred_task_refs'], [])
 
@@ -144,9 +145,9 @@ class ResearchRefactor(TempCase):
         wf, record = self.drive(self.workflow_case(rounds=1, l3=False),
                                 stop=lambda t: t['inputs']['purpose'] == 'record')
         wf.queue.fail(record['task_id'], {'code': 'scientific_synthesis_failed'})
-        self.assertTrue(wf.advance())
+        self.assertTrue(advance_with_topic_fixture(wf))
         keys = set(wf.tasks()); count = len(wf.journal.events)
-        for _ in range(3): self.assertTrue(wf.advance())
+        for _ in range(3): self.assertTrue(advance_with_topic_fixture(wf))
         self.assertEqual(keys, set(wf.tasks())); self.assertEqual(count, len(wf.journal.events))
         summary = wf.summary('completed')
         self.assertTrue(summary['workflow_completed'])
@@ -154,11 +155,11 @@ class ResearchRefactor(TempCase):
         self.assertFalse(summary['formal_validation_success'])
         self.assertFalse(wf.memory.snapshot()['L3'])
         wf.retry_failed('Explicit fixture retry; same budget and batch')
-        self.assertFalse(wf.advance())
+        self.assertFalse(advance_with_topic_fixture(wf))
         self.assertEqual(keys, set(wf.tasks()))
         retry = wf.queue.claim(record['task_id'])
         wf.submit(retry, self.synthesis(), 'test_double')
-        self.assertTrue(wf.advance())
+        self.assertTrue(advance_with_topic_fixture(wf))
         self.assertTrue(wf.summary('completed')['scientific_review_complete'])
 
     def test_experiment_tool_resolves_short_source_before_preflight_and_private_queries_filter(self):
