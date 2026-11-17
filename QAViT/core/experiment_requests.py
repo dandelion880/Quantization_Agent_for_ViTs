@@ -184,8 +184,17 @@ class ExperimentRequests:
         tasks = self.queue.snapshot()
         parent = self.request_author(task, tasks)
         scoped = dict(parent, _read_view={'sequence': self.journal.sequence}, _acl_allowed_refs=set()) if parent else None
+        def visible(card):
+            if scoped and not self.can_read_card(scoped, card):
+                return False
+            binding = experiment['payload'].get('candidate_binding')
+            if experiment['payload']['level'] == 'L3' and binding:
+                source = self.journal.card(card['payload']['experiment_ref'])
+                if source['payload'].get('candidate_binding') != binding:
+                    return False
+            return True
         return self.broker.cached(experiment, code_artifact=approval['candidate'] if approval else None,
-                                  visible=(lambda card: self.can_read_card(scoped, card)) if scoped else None)
+                                  visible=visible)
 
     def return_code_clarifications(self):
         """冻结规格的问题返回原作者；已提交计划由新任务承接，绝不改写旧计划。"""
@@ -255,7 +264,7 @@ class ExperimentRequests:
             self.queue.claim(task["task_id"])
         self.queue.finish(task["task_id"], result=returned["result"])
 
-    def request_outcome(self, trial, tasks=None, *, required_level=None):
+    def request_outcome(self, trial, tasks=None, *, required_level=None, expected_hypothesis_ref=None):
         """Rebuild numerical facts independently of any interpretation task state."""
         lookup = tasks.get if tasks is not None else self.queue.get_by_key
         key, result = trial['key'], trial.get('result') or {}
@@ -287,6 +296,15 @@ class ExperimentRequests:
                 if required_level and experiment['payload']['level'] != required_level:
                     raise ContractError('非 ' + required_level + ' 证据不能作为该级实验验证')
                 self.broker.validate_evidence_for(experiment, evidence, code_artifact=artifact)
+                binding = experiment['payload'].get('candidate_binding')
+                if required_level == 'L3' and binding:
+                    if expected_hypothesis_ref and binding.get('hypothesis_ref') != expected_hypothesis_ref:
+                        raise ContractError('L3 执行候选与结果所属候选确切版本冲突')
+                    source = self.journal.card(evidence['payload']['experiment_ref'])
+                    if source['payload'].get('candidate_binding') != binding:
+                        raise ContractError('L3 Evidence 属于另一候选确切版本')
+                    if trial['inputs'].get('hypothesis_ref', binding['hypothesis_ref']) != binding['hypothesis_ref']:
+                        raise ContractError('L3 请求与执行候选版本冲突')
                 valid.append(ref)
             except (ContractError, OSError) as exc:
                 issues.append({'evidence_ref': ref, 'reason': str(exc)})
@@ -355,6 +373,7 @@ class ExperimentRequests:
                 'original_request': plan['result'].get('original_request', plan['result']['draft']),
                 'requester': plan['role'], 'refs': plan['inputs']['refs'], 'origin_task': plan['task_id'],
                 'plan_revision': revision, 'request_root': request_key,
+                **{k: context[k] for k in ('round', 'slot', 'hypothesis_ref', 'candidate_refs', 'selection_ref') if k in context},
                 **({'previous_request_task': previous[1]['task_id']} if previous else {})})
             trial = self.tasks()[current_request]
             if trial['state'] not in TERMINAL:
@@ -367,10 +386,23 @@ class ExperimentRequests:
                 return True
             previous, revision = (plan, trial), revision + 1
 
-    def l3_outcome(self, number):
-        """Separate workflow, numerical validation and scientific interpretation."""
-        tasks, prefix = self.tasks(), f'r{number:03d}'
-        key, plan_key = prefix + '/L3', prefix + '/plan_l3'
+    def l3_request_keys(self, number, slot, hypothesis_ref):
+        """Versioned identities, with in-place continuation of a historical L3."""
+        prefix = f'r{number:03d}'
+        legacy = self.queue.get_by_key(prefix + '/plan_l3')
+        if legacy and legacy['inputs'].get('context', {}).get('hypothesis_ref') == hypothesis_ref:
+            return prefix + '/plan_l3', prefix + '/L3'
+        trial = self.queue.get_by_key(prefix + '/L3')
+        binding = (trial['inputs'].get('draft') or {}).get('candidate_binding', {}) if trial else {}
+        if hypothesis_ref and binding.get('hypothesis_ref') == hypothesis_ref:
+            return prefix + '/plan_l3', prefix + '/L3'
+        suffix = '/' + slot + '/' + fingerprint(hypothesis_ref)[:16]
+        return prefix + '/plan_l3' + suffix, prefix + '/L3' + suffix
+
+    def l3_candidate_outcome(self, number, slot, hypothesis_ref):
+        """Rebuild one exact candidate's attempts without completion-order coupling."""
+        tasks = self.tasks()
+        plan_key, key = self.l3_request_keys(number, slot, hypothesis_ref)
         trials = [t for k, t in tasks.items() if t['kind'] == 'experiment_request'
                   and (k == key or t['inputs'].get('request_root') == key)]
         trials.sort(key=lambda t: t['inputs'].get('plan_revision', 0))
@@ -388,13 +420,15 @@ class ExperimentRequests:
         status = ('deferred' if result.get('defer_reason') else
                   result.get('status', current['state']) if current['state'] == 'completed' else current['state']) if current else (
                   'not_requested' if self.config['enable_l3'] else 'disabled')
-        outcomes = [self.request_outcome(t, tasks, required_level='L3') for t in trials]
+        outcomes = [self.request_outcome(t, tasks, required_level='L3',
+                                         expected_hypothesis_ref=hypothesis_ref) for t in trials]
         latest = outcomes[-1] if outcomes else {'request_state': 'not_started', 'execution_state': 'not_started',
                   'interpretation_state': 'not_separately_requested', 'experiment_ref': None, 'cache_reused': False}
         valid = list(dict.fromkeys(ref for outcome in outcomes for ref in outcome['valid_evidence_refs']))
         facts = [{'task_id': t['task_id'], 'key': t['key'], 'task_ref': t['task_card'],
                   'state': t['state'], 'result': t.get('result'), 'error': t.get('error')} for t in related]
-        return {**latest, 'status': status,
+        return {**latest, 'status': status, 'slot': slot, 'hypothesis_ref': hypothesis_ref,
+                'request_root': key,
                 'planning_state': plan['state'] if plan else 'not_started',
                 'plan_revision': plan['inputs'].get('context', {}).get('plan_revision', 0) if plan else None,
                 'tasks': facts, 'task_refs': [t['task_card'] for t in related],
@@ -402,6 +436,61 @@ class ExperimentRequests:
                 'evidence_issues': [issue for outcome in outcomes for issue in outcome['evidence_issues']],
                 'numerical_validation_status': 'validated' if valid else 'not_validated',
                 'formal_validation_success': bool(valid)}
+
+    def l3_outcome(self, number):
+        """All three slots must validate; partial completion is explicitly partial."""
+        selection = self.selection_card(number)
+        candidates = selection['payload'].get('candidate_refs', {}) if selection else self.candidate_refs(number)
+        expected = ['H1', 'H2', 'H3']
+        historical = bool(selection and selection['payload'].get('selection_stage') == 'gonly_preselection'
+                          and any(e['type'] == 'round_finished' and e['round'] == number
+                                  and 'candidate_refs' not in e for e in self.journal.events))
+        if historical:
+            selected = selection['payload'].get('selected_slot')
+            expected = [selected] if selected else []
+            candidates = {slot: ref for slot, ref in candidates.items() if slot in expected}
+        rows = {slot: self.l3_candidate_outcome(number, slot, ref) for slot, ref in sorted(candidates.items())}
+        # Read old isolated report fixtures/runs that have only a legacy plan.
+        if not rows:
+            legacy = self.queue.get_by_key(f'r{number:03d}/plan_l3')
+            if legacy:
+                c = legacy['inputs'].get('context', {})
+                slot = c.get('slot', c.get('selection', 'H1'))
+                rows[slot] = self.l3_candidate_outcome(number, slot, c.get('hypothesis_ref'))
+        legacy_key = f'r{number:03d}/L3'
+        unattributed = []
+        roots = {row['request_root'] for row in rows.values()}
+        if legacy_key not in roots:
+            # Old engineering receipts without a candidate binding remain readable,
+            # but cannot be guessed into one of the new candidate result slots.
+            unattributed = [{'task_id': t['task_id'], 'key': t['key'], 'task_ref': t['task_card'],
+                             'state': t['state'], 'result': t.get('result'), 'error': t.get('error')}
+                            for key, t in self.tasks().items()
+                            if (key == legacy_key or key.startswith(legacy_key + '/'))
+                            and not any(key == root or key.startswith(root + '/') for root in roots)]
+        valid = list(dict.fromkeys(ref for row in rows.values() for ref in row['valid_evidence_refs']))
+        success = bool(expected) and set(rows) == set(expected) and all(row['formal_validation_success'] for row in rows.values())
+        states = [row['status'] for row in rows.values()]
+        status = ('disabled' if not self.config['enable_l3'] else 'completed' if success else
+                  'partial' if valid else states[0] if states and len(set(states)) == 1 and states[0] != 'completed' else
+                  'in_progress' if any(s in ('pending', 'ready', 'running', 'waiting', 'retry') for s in states) else
+                  'incomplete' if states or unattributed else 'not_requested')
+        # Legacy top-level state fields remain useful to old readers; per-candidate
+        # rows are authoritative whenever more than one branch exists.
+        common = {k: (next(iter(rows.values()))[k] if len(rows) == 1 else 'per_candidate')
+                  for k in ('request_state', 'execution_state', 'interpretation_state', 'planning_state')}
+        return {**common, 'status': status,
+                'candidates': {slot: {k: v for k, v in row.items() if k != 'tasks'} for slot, row in rows.items()},
+                'expected_slots': expected, 'historical_single_candidate': historical,
+                'missing_slots': [slot for slot in expected if slot not in rows],
+                'validated_slots': [slot for slot, row in rows.items() if row['formal_validation_success']],
+                'tasks': [t for row in rows.values() for t in row['tasks']] + unattributed,
+                'task_refs': [ref for row in rows.values() for ref in row['task_refs']] + [t['task_ref'] for t in unattributed],
+                'unattributed_task_refs': [t['task_ref'] for t in unattributed],
+                'valid_evidence_refs': valid, 'valid_evidence_missing': not bool(valid),
+                'evidence_issues': [issue for row in rows.values() for issue in row['evidence_issues']],
+                'numerical_validation_status': 'validated' if success else 'partial' if valid else 'not_validated',
+                'formal_validation_success': success}
 
     def implementation_handoff(self, task):
         """Bind only same-researcher history or explicitly cited public Evidence producers."""

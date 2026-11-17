@@ -8,12 +8,13 @@
 | QAViT/agents/prompts/ | common、五个活动角色及历史兼容 Prompt、任务目的片段；tasks.py/roles.py 映射和组装 |
 | QAViT/agents/interaction.py | 任务上下文、读取权限、分页/去重、来源与提交绑定 |
 | QAViT/knowledge/INDEX.md | 统一静态科研知识导航与维护入口，正文按需读取 |
-| QAViT/docs/skills/ | 原位保留的四 Skill 与十份 references，INDEX 触发表由 frontmatter 生成 |
+| QAViT/docs/skills/ | 七项按需 Skill、16 份包内参考及保留的冻结传播 API 参考，INDEX 触发表由 frontmatter 生成 |
+| QAViT/knowledge/research-skills/ | 共同科研约定、六条完整研究路线及来源；按需 read_asset |
 | QAViT/docs/methods/ | 原位保留的组件手册及 index.json；read_asset 为常规阅读入口 |
 | QAViT/docs/solutions/ | 原位保留的完整方案种子及说明，不是实测排名文件 |
 | QAViT/docs/references/ | PTQ 方法来源、版本、许可与历史核验线索 |
 | QAViT/docs/ | 系统/执行合同、实验/代码接口、环境、资源生命周期与历史导航 |
-| QAViT/core/workflow.py、experiment_requests.py | G-only 自主研究/预选/L3/轮次推进与实验请求；保留现有职责，不拆分大型文件 |
+| QAViT/core/workflow.py、experiment_requests.py | G-only 自主研究/综合修订/多候选L3/轮次推进与实验请求；保留现有职责，不拆分大型文件 |
 | QAViT/core/cards.py、journal.py、memory.py、evidence.py | 合同、不可变事实、运行内知识修订、观测展示及检索 |
 | QAViT/core/solutions.py、static_w4a4.py | 协议专属完整方案库与必要数值边界 |
 | QAViT/core/debate.py、execution_contract.py、evidence_scope.py | Full 历史裁决表兼容、冻结执行约束及证据适用范围 |
@@ -40,10 +41,14 @@ Git 跟踪稳定源码、Prompt、知识、轻量配置、测试及许可证；E
 
 G-only 的当前伪代码与验证记录位于 [EXP/validation/gonly_20261110_r1](EXP/validation/gonly_20261110_r1/REPORT.md)；历史报告不覆盖。分支通过 Git worktree 独立开发，共用 Git 对象库。
 
-本轮准备入口：`EXP/validation/gonly_readiness_20261115_r1/{REPORT,PSEUDOCODE}.md`。`QAViT/tools/dual_task_evaluation.py`负责同冻结包双任务单卡进程并行；`configs/evaluation/gonly_v0_2/`为独立派生评价包，旧包保留。
+本轮准备入口：`EXP/validation/gonly_readiness_20261115_r1/{REPORT,PSEUDOCODE}.md`。`QAViT/tools/dual_task_evaluation.py`负责同冻结包双任务进程并行，可使用分配的第二张卡；`configs/evaluation/gonly_v0_2/`为独立派生评价包，旧包保留。
 
 恢复与异常传递的公共实现位于 `QAViT/runtime/failures.py`；本轮边界验证与当前伪代码见 `EXP/validation/gonly_hardening_20261116_r1/`，正式三轮运行输入与监控见 `EXP/inputs/deitb_static_w4a4_gonly_20261115_r2/`。准备验证与正式运行分别记账。
 
 三轮正式完结后，当前Recorder的B时点交付及最新伪代码见 `EXP/validation/gonly_postrun_B_context_20261115_r1/`；该源码修复未用于已冻结的三轮结果，原运行快照不回写。
 
 当前科研能力修订与针对性验证入口：`EXP/validation/gonly_research_capability_20261116_r1/REPORT.md`；数值API `execution/calibration_search.py` 与 `execution/propagation.py` 通过既有custom实验使用，方法与Skill分别按需发现。本轮包含追加的历史知识更正，原正式结果不回写；没有启动新一轮正式实验。
+
+七项科研 Skill 接入、最新伪代码及分层验证见 [本轮记录](EXP/validation/skill_system_integration_20261116_r1/REPORT.md)；历史运行、冻结合同及评分记录保持原件。
+
+当前统一可执行能力入口见 `QAViT/docs/CAPABILITIES.md`，薄适配位于 `QAViT/tools/frozen_helpers.py`。三候选 L3、GPU 候选优先分配及本次验证/最新伪代码见 [交付记录](EXP/validation/capabilities_multi_l3_20261117_r1/REPORT.md)；历史报告与原始实验不回写。

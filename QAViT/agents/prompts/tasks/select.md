@@ -1,9 +1,11 @@
-# 本次任务：综合证据，预选一项 L3 候选
+# 本次任务：综合候选证据并修订最终版本
 
-比较 context.task.candidate_refs 中已经完成的 H1/H2/H3，结合各自实测 Evidence、实际条件、修订、失败及 Memory，选择最值得投入本轮正式 L3 的方案。通常三条假设均已完成；incomplete_slots 表示因局部失败未提交的槽位，不能虚构其结果，也不妨碍分析已有候选。
+横向比较 context.task.candidate_refs 中已提交的 H1/H2/H3，结合各自 Evidence、条件、修订、失败及 Memory，明确各候选的机制、重要反证、混杂与未解问题。保留 H1/H2 完整方案改良、H3 开放创新及独立 B；槽位不是质量等级。incomplete_slots 表示未提交的槽位，不得虚构其结果。
 
-综合机制可信度、实验可比性、负结果、已知混杂、实现可行性和预算。L1/L2 是研究和预选依据，局部 NMSE、整网 KL 不代表 ImageNet Top-1 或 ADE20K mIoU。无需给出全序、语言辩论或让三条 H 全部做 L3；已有证据足够时直接选择。若缺一项能实质改变选择的测量，可自主 request_experiment，通过原 Coding→Safeguard→执行链取得 L1/L2 反馈后再决定。
+三条最终候选各自进入既定完整双任务 L3，不按语言排名、成熟度或 L1/L2 代理指标淘汰其中两条。局部 NMSE、整网 KL 不代表 ImageNet Top-1 或 ADE20K mIoU。保留科学综合与必要取证：缺少能实质改变机制定义或修订判断的测量时，可 request_experiment 经原 Coding→Safeguard→执行链获取反馈；已有证据足够时直接提交，不设最低实验次数。
 
-提交 selected_slot（H1/H2/H3 中一个已提交槽位，或无可行方案时 null）和 rationale；以自然语言说明比较依据、重要反证、未解问题以及为何将预算投向该候选。实际引用测量时用 evidence_refs 保留可追溯来源；selection_basis、uncertainties 可按需补充。没有槽位优先权。B 独立保存，不参加 H1/H2/H3 的成熟度竞赛；根据下一笔科研投入能消除的关键不确定性、预期收益与成本作出选择。选择不能伪称 L3 已完成或修改已有候选身份；工程适配交给后续 plan_l3/Coding；改变科学干预、适用位点或机制定义时，必须先用 revise_candidate 提交父版本、完整新正文、修订理由。程序发布不可变新版本并结束旧预选，再启动绑定所有当前版本的新预选。旧证据只作为修订依据，不能自动验证新版本；失败或未测探索保留。同一修订工具任务中断后由宿主恢复原请求和原版本，不要为了恢复另发科学改动；新的科学改动使用新的工具调用。
+提交 rationale，以自然语言说明横向比较、修订判断、重要反证及各候选剩余不确定性；引用测量时使用 evidence_refs，selection_basis、uncertainties 可按需补充。程序固定 selected_slots 与 selected_hypothesis_refs 为全部已提交候选及其确切版本；无需选择唯一 selected_slot。旧 selected_slot 只兼容历史偏好，不控制 L3 名额。B 独立保存，不占候选槽位或要求重复验证。
 
-程序绑定完整候选版本、选择来源和“预选”状态，生成 ReviewDecisionCard；不计算旧胜负表，不新增审核。L3 计划由后续 Generation 任务提交。
+改变科学干预、适用位点或机制定义时，先用 revise_candidate 提交 parent_ref、完整新正文及理由；程序发布不可变新版本并结束旧综合任务，再启动绑定所有当前版本的新综合。旧证据只作为修订依据，不能自动验证新版本。无需修订时保留原版本；工程适配交给对应 plan_l3/Coding。修订工具中断后宿主恢复原请求和原版本，不为恢复另发科学改动。
+
+程序生成 ReviewDecisionCard，绑定完整候选版本、综合来源和待验证状态；不新增审核。后续 Generation 为各候选分别提交 L3 计划。失败、延期或未提交候选按实际状态保留，个别失败不阻断其余候选，也不能将部分完成描述为全轮验证完成。

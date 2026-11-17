@@ -15,21 +15,21 @@
     "screen": "cb32fba7c7a97acdfbd8ba2496436f5fb27b5bdfbed0dfeb9f44e992d73c9242",
     "supervise": "df6e270ade1059a1c20b9c76f53b8ae4cdbce6acf4892ddb5869b22a839ee39d"
   },
-  "explicit_fix_source": "EXP/validation/parent_evolution_20261029_r1/prompts.diff; authorized parent/final workflow update, 2026-10-29; EXP/validation/serial_debate_memory_20261029_r1/prompts.diff; authorized serial debate/shared science/fixed verdict update, 2026-10-29; EXP/validation/experiment_inputs_20261029_r1/prompts.diff; authorized experiment input and Brief-scope alignment, 2026-10-29; EXP/validation/gonly_hardening_20261116_r1/revision: same-request candidate revision recovery, actual UTC 2026-11-15; EXP/validation/gonly_hardening_20261116_r1: structured dual-task execution failures for Coding and Safeguard, actual UTC 2026-11-15; EXP/validation/gonly_postrun_B_context_20261115_r1: post-formal read-only before/after retained B context, no formal-run intervention; EXP/validation/gonly_research_capability_20261116_r1: source recovery, calibration execution, propagation diagnosis and append-only knowledge corrections",
+  "explicit_fix_source": "EXP/validation/parent_evolution_20261029_r1/prompts.diff; authorized parent/final workflow update, 2026-10-29; EXP/validation/serial_debate_memory_20261029_r1/prompts.diff; authorized serial debate/shared science/fixed verdict update, 2026-10-29; EXP/validation/experiment_inputs_20261029_r1/prompts.diff; authorized experiment input and Brief-scope alignment, 2026-10-29; EXP/validation/gonly_hardening_20261116_r1/revision: same-request candidate revision recovery, actual UTC 2026-11-15; EXP/validation/gonly_hardening_20261116_r1: structured dual-task execution failures for Coding and Safeguard, actual UTC 2026-11-15; EXP/validation/gonly_postrun_B_context_20261115_r1: post-formal read-only before/after retained B context, no formal-run intervention; EXP/validation/gonly_research_capability_20261116_r1: source recovery, calibration execution, propagation diagnosis and append-only knowledge corrections; EXP/validation/skill_system_integration_20261116_r1: seven optional skills, reference optimization versus independently reconstructed training-free method, unchanged frozen Brief semantics; EXP/validation/capabilities_multi_l3_20261117_r1: unified executable capability discovery, scientific synthesis/revision and all final candidates independently enter L3; candidate-priority GPU scheduling and per-candidate Recorder outcomes",
   "explicit_prompt_fixes": {
-    "generate": "71149b1e8a40dd05a890cea40a416019e6c88d898b34f63f597d63d34052ea0e",
-    "select": "72d21d6a98756cb00569e88987a19c91c7e929dfa5d2e2211915b29e8a839e37",
-    "evolve": "92ed60c635e66bd01e4a05375347d305c7cec21cc62cf9ec5440cab5d03d91e2",
-    "screen": "bd9d0109f05b23ea913b27f8310334a4ee4399517185ea226452926a7bb80a2f",
-    "position": "d2aec2cef1fcfe7241c72b07f82283213895a7c2c9e631365ff8f5aff1a09bea",
-    "arbitrate": "73c263f50f110295e506c758d4843a7a8b19dfa903b355bf26d9fbb8a6c706e9",
-    "rank": "c3b253e5e95fc6a9805bba77ec285023bbddd722707d001feb5ca7400f957692",
-    "plan_l3": "2456141e278fb75a11e123434a53c12bcb5e1779d055676ddaf8a527988535ce",
-    "record": "bbff010cf21a208ee7c70db52efb2666c73668323998a8285f5dd7dc45107b87",
-    "code": "338c56d25ac67fdee2f12758ddecd3291ec233ddf33fda648d046475b028f8a8",
-    "safeguard": "5f3b430bfb952950231908cf1b4d5837c491a0778c04fd363359a5e32551478d",
-    "supervise": "8061905f30378ca126310c0f4696478ae65d74b69c01efaae9b45b25f18154ea",
-    "interpret": "35273d15546b2d63869a4c65a0c8ebef23bb6720a9e26e24517749b88e6863e0"
+    "generate": "ca81d9ed40233ea49e5eb114d5870f23e10b5b7256e812091faae90f126530bf",
+    "select": "5beeb3ba0b5a93a5ab0cfa52a3c943e010edfeca163e8a87bcc3f728f47191cc",
+    "evolve": "96cebd72b5d2b6e2d68e92c91b1453c4b6f9117d079ed343b3399f6d862da8bc",
+    "screen": "dfdc60f8b65e5ba48ad6a13eacefa16519c8bf21985411750b6657dfc0a860b8",
+    "position": "afe99dc82b54e3a791480f96a17078e1cbc9cfd05fd020070b1022059ebb62c0",
+    "arbitrate": "51cee38825e93f70a94d63402ca3b6ddc5f2530366312a777ffa1c3c7a88d0a0",
+    "rank": "c4b86717b85f9c1435f2163a74e19d7b56b57e0a785a1a5444d8fae15f891604",
+    "plan_l3": "e716ebc9a09b9a813c86741582427a9576539ada759759e28050975a9bf16496",
+    "record": "b180c6b587eb0a56df0f95758625b02ccb1f8542cb0d833613bae3e2fef78e9b",
+    "code": "922f94c099eaef1c5d4ab62af953bffed7b7a730182b2b1e863e176afe949620",
+    "safeguard": "c483ff6461335552246193924daf1f2f4b2efd619605574ba6e5d089fa0335dc",
+    "supervise": "1ad18579d74090e5e0a9d707bdfd1bc652cccb083b2931f2f24fbec4295afb2d",
+    "interpret": "ae8ff064ab471bd85b5a89b15a496bbb229ef3c3ab75c77addde22ae4bf98be6"
   },
   "prompt_sha256": "259b92b5df62985f14c642eb5c7a8646f2bfe026675b95ba0ee0722c8a77740a",
   "roles_sha256": "4626c8f2653c790e888d09cf55eb3e5e4a2340758c6cfa0ce56bbce79befc0a1",
@@ -43,7 +43,7 @@
   "research_refactor_note": "2026-11-03 authorized research simplification: 3-field scientific Recorder, host provenance/identity, minimal intent input and experimental reasoning. Full diff and validation in EXP/validation/research_refactor_20261103_r1/changes.patch.",
   "generation_loop_note": "2026-11-04: only Generation/Evolution autonomous pre-H experiments, selected support refs and removal of routine Judger approval/interpretation. See EXP/validation/generation_loop_20261104_r1/prompts.diff.",
   "single_implementation_note": "2026-11-05: remove Reference and dual implementation tasks; preserve immutable request, single Coding implementation and Safeguard semantic review; host fills deterministic fields; Recorder partial scope and per-item pending knowledge; local output repair across roles.",
-  "current_prompt_sha256": "c801f4e9aab7bd690f90c998b3d0f09d3ad7e533cd43c24357ab6eefaae5731f",
+  "current_prompt_sha256": "af143de135f901127f136373ea434222dc71d42812839e4909f9a08907ec5c2d",
   "research_gate_cleanup_note": "2026-11-05: remove historical-page completion gates and mandatory feedback/appendix forms; optional scientific rows have isolated issues, verdicts use rationale, host binds selection defaults, single Coding and intent review remain. See EXP/validation/research_gates_20261105_r1.",
   "end_to_end_repair_note": "2026-11-05 authorized consistent service continuation, L3 revision/defer, immediate valid evidence, optional historical interpretation and on-demand reads. See EXP/validation/end_to_end_repair_20261105_r1/changes.patch.",
   "parallel_debate_note": "2026-11-06 authorized independent initial matches and final join; only position/arbitrate scheduling sentences changed. See EXP/validation/parallel_debate_20261106_r1/prompts.diff.",
@@ -60,5 +60,6 @@
   "fix_notes": [
     "G-only: Generation generate/select/plan_l3; evidence-driven revision and optional discriminative-experiment skill; Recorder receives preselection without H4."
   ],
-  "gonly_readiness_change": "2026-11-15: independent B, scientific revision and exact selection versions, paired evidence and stable question closure. Original assembled baselines retained."
+  "gonly_readiness_change": "2026-11-15: independent B, scientific revision and exact selection versions, paired evidence and stable question closure. Original assembled baselines retained.",
+  "current_prompt_sha256_basis": "fingerprint of explicit_prompt_fixes purpose -> assembled prompt SHA256"
 }

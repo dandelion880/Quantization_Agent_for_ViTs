@@ -12,7 +12,7 @@ from core.journal import atomic_json, file_sha256, read_json
 from core.workflow import Workflow
 from runtime.budget import BudgetLedger, BudgetExhausted, RequestBudgetInsufficient
 from runtime.paths import ROOT, QAVIT
-from tests.support import validation_config, experiment_payload, review
+from tests.support import validation_config, experiment_payload, review, hypothesis
 from tests.test_infrastructure import TempCase
 from tools.data_receipt import data_receipt
 from tools.experiments import preflight_experiment
@@ -255,9 +255,18 @@ class BriefEvaluationRegression(InputCase):
         protocols.append({"evaluations": [cases[1][0], {"kind": "ade_frozen", "count": None}], "full_dataset": True})
         for index, protocol in enumerate(protocols):
             wf = Workflow(self.root / str(index), self.configuration(protocol))
-            task = wf.queue.get(wf.enqueue_role("fixture/plan", "plan_l3"))
+            candidate = make_card('HypothesisCard', wf.journal.run_id, hypothesis(1, 'H1'))
+            wf.journal.commit('fixture/candidate', cards=[candidate])
+            select_id = wf.enqueue_role('r001/select', 'select', refs=[candidate['id']],
+                context={'round': 1, 'candidate_refs': {'H1': candidate['id']}})
+            wf.queue.ready()
+            wf.submit(wf.queue.claim(select_id), {'rationale': 'Protocol fixture candidate'}, 'fixture')
+            selection = wf.selection_card(1)
+            task = wf.queue.get(wf.enqueue_role("fixture/plan", "plan_l3", context={
+                'round': 1, 'slot': 'H1', 'selection_ref': selection['id'], 'hypothesis_ref': candidate['id']}))
             wf.queue.ready(); task = wf.queue.claim(task["task_id"])
             draft = self.draft(list(reversed(protocol["evaluations"])))
+            draft['candidate_binding'] = {'selection_ref': selection['id'], 'hypothesis_ref': candidate['id']}
             original = deepcopy(draft)
             with patch.object(wf.broker, "freeze", side_effect=AssertionError("preflight cannot freeze")):
                 wf.submit(task, draft, "CPU_CONTRACT_FIXTURE")

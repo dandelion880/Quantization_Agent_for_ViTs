@@ -73,7 +73,7 @@ class CandidateRevision(TempCase):
         wf.submit(select, {'selected_slot': 'H2', 'rationale': 'next measurement of revised candidate',
                            'evidence_refs': [evidence['id']]}, None)
         wf.advance()
-        plan = wf.tasks()['r001/plan_l3']
+        plan = wf.tasks()[wf.l3_request_keys(1, 'H2', new['id'])[0]]
         self.assertEqual(plan['inputs']['context']['hypothesis_ref'], new['id'])
         self.assertFalse(wf.summary()['formal_validation_success'])
 

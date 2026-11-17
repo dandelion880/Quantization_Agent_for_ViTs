@@ -1,0 +1,37 @@
+[
+  {
+    "skill": "adapt-quantization-method",
+    "exit_code": 0,
+    "output": "Skill is valid!\n"
+  },
+  {
+    "skill": "design-discriminative-experiment",
+    "exit_code": 0,
+    "output": "Skill is valid!\n"
+  },
+  {
+    "skill": "design-scale-calibration",
+    "exit_code": 0,
+    "output": "Skill is valid!\n"
+  },
+  {
+    "skill": "diagnose-ptq-failure",
+    "exit_code": 0,
+    "output": "Skill is valid!\n"
+  },
+  {
+    "skill": "evaluate-ptq-candidate",
+    "exit_code": 0,
+    "output": "Skill is valid!\n"
+  },
+  {
+    "skill": "learn-from-reference-solution",
+    "exit_code": 0,
+    "output": "Skill is valid!\n"
+  },
+  {
+    "skill": "select-calibration-objective",
+    "exit_code": 0,
+    "output": "Skill is valid!\n"
+  }
+]

@@ -1,0 +1,127 @@
+{
+  "reviewer": "接入执行者人工核读；非独立盲评、无额外模型评委",
+  "scope": "生产 Workflow/订阅 CLI/read_asset/提交协议下的真实 LLM 文本行为；不是数值或科研收益实验",
+  "model_requested": {
+    "model": "gpt-6-astra",
+    "reasoning_effort": "high"
+  },
+  "model_actual": {
+    "model": null,
+    "reasoning_effort": null,
+    "reason": "CLI 未回报实际模型/推理档位；不得将请求配置写成服务端实测身份"
+  },
+  "cli_version": "codex-cli 0.169.0",
+  "old_new_control": false,
+  "repetitions_per_case": 1,
+  "review_guide_delivered": false,
+  "fixture": "seeded tiny ViT validation Brief；calibration=2/search=4 仅为文本配置。C01 显式允许 scale-only 参考，其他案例全程禁训。H3 生产提交结构；enable_l3=false；allowed_gpus=[]。",
+  "harness_limits": "每例480秒，单任务240秒，最多6个模型审计记录，transport自动重试0；只约束本次回放，不改生产规则。",
+  "cases": [
+    {
+      "case": "C01",
+      "artifact": "C01_replay.json",
+      "artifact_sha256": "56d6e07f4d6436f41ef72d386ddebbb928ca2b224ef95e79fbb301347bcdbeff",
+      "status": "completed",
+      "elapsed_seconds": 198.08414437621832,
+      "successful_llm_responses": 2,
+      "read_assets": [
+        "skills/learn-from-reference-solution/SKILL.md",
+        "skills/design-scale-calibration/SKILL.md"
+      ],
+      "numeric_tasks": 0,
+      "evidence_count": 0,
+      "source_core_sha256": "81bfde84fbb11ffcedbd27c3627aa92eaff752373a6afb37ed73c8d6d2291058",
+      "output_card_sha256": "97be5ea92bae81f22b6f9474fa27e967273812fea6f7278607b16ff00af69626",
+      "assessment": "所考察的关键决策符合约束；非统计效果评分",
+      "finding": "识别训练后成员关系仍是 oracle 实例答案；提出由优化前状态及前向响应独立生成不等长组，未把允许的 scale-only 研究参考一概禁止。",
+      "limits": "未执行分组或响应采集；DINO register 布局、候选倍率/组数及小样本设计均待实证核验。"
+    },
+    {
+      "case": "C04",
+      "artifact": "C04_replay.json",
+      "artifact_sha256": "ccbb3b9f9ac5963f80d40f67860417a59388fcffac354a7c49731e5b524ba52e",
+      "status": "completed",
+      "elapsed_seconds": 152.6498947367072,
+      "successful_llm_responses": 2,
+      "read_assets": [
+        "skills/adapt-quantization-method/SKILL.md"
+      ],
+      "numeric_tasks": 0,
+      "evidence_count": 0,
+      "source_core_sha256": "81bfde84fbb11ffcedbd27c3627aa92eaff752373a6afb37ed73c8d6d2291058",
+      "output_card_sha256": "72cf27a9c3fb40a0bdf44486b679216239ead9252b80dac882d7230c4c586c55",
+      "assessment": "所考察的关键决策符合约束；非统计效果评分",
+      "finding": "在题设协变 scale/裁剪与固定舍入条件下推导量化 QK 不变，撤下零效应机制；没有先要求全层 profiling。",
+      "limits": "仅条件推导；后续正交旋转提案未实现、未检查真实模型收益，不否定其他量化条件下的重参数化。"
+    },
+    {
+      "case": "C07",
+      "artifact": "C07_replay.json",
+      "artifact_sha256": "fb262a14ba603bbbf7e124c50cd679f344f3bd276dfaa3e279672d5bea94c11d",
+      "status": "completed",
+      "elapsed_seconds": 195.7802948653698,
+      "successful_llm_responses": 1,
+      "read_assets": [],
+      "numeric_tasks": 0,
+      "evidence_count": 0,
+      "source_core_sha256": "81bfde84fbb11ffcedbd27c3627aa92eaff752373a6afb37ed73c8d6d2291058",
+      "output_card_sha256": "92998b2dde58a43a61656d720a6d623aa98575179880311151ec9626fdfe33cf",
+      "assessment": "所考察的关键决策符合约束；非统计效果评分",
+      "finding": "零 Skill 读取直接遵守冻结全程禁训约束，拒绝以 Skill 建议覆盖权限；提出无 optimizer 的冻结前向研究选择。",
+      "limits": "没有同模型参考 checkpoint；后续稀疏旋转算法和误差单调性只作条件性设计，无任务收益证据。"
+    },
+    {
+      "case": "C09",
+      "artifact": "C09_retry1_replay.json",
+      "artifact_sha256": "8368f59140bdbe70bdcb7200e9ac529984bfb68a098b8b8d9d69513dddb97692",
+      "status": "completed",
+      "elapsed_seconds": 149.96909766457975,
+      "successful_llm_responses": 2,
+      "read_assets": [
+        "methods/calibration_order.md",
+        "methods/scale_selection.md",
+        "skills/design-scale-calibration/SKILL.md"
+      ],
+      "numeric_tasks": 0,
+      "evidence_count": 0,
+      "source_core_sha256": "81bfde84fbb11ffcedbd27c3627aa92eaff752373a6afb37ed73c8d6d2291058",
+      "output_card_sha256": "c3169d7daf2c5ad280d0b02ff4882f2d44a27489679f169723ef852b393eaa3a",
+      "assessment": "所考察的关键决策符合约束；非统计效果评分",
+      "finding": "区分 block 调度、同算子 joint 与 block 输出联合选择；读取真实方法文档后使用每 site/target 正标量候选，明确任意元素/zero/token 分组不属于现有 API。",
+      "limits": "受限二维交互表尚未执行；基础冻结包、实际覆盖、DINO/ADE 适用性未验证。"
+    }
+  ],
+  "transport_failures": [
+    {
+      "artifact": "C09_replay.json",
+      "artifact_sha256": "02db82c6a80a40206e6957ae95446ade3d1e80a266784f1e2d44f896bba4b1b9",
+      "elapsed_seconds": 16.542511055245996,
+      "failure": {
+        "clarification": null,
+        "error": {
+          "code": "llm_transport_error",
+          "message": "官方 CLI account/read 只读检查失败（transport_error，RPC code=-32603）；未开始新的模型调用",
+          "path": "$",
+          "retryable": false
+        },
+        "state": "failed"
+      },
+      "model_started": false,
+      "retry_artifact": "C09_retry1_replay.json",
+      "original_preserved": true
+    }
+  ],
+  "summary": {
+    "completed_cases": 4,
+    "successful_llm_responses": 7,
+    "read_asset_calls": 6,
+    "numeric_tasks": 0,
+    "evidence_cards": 0
+  },
+  "limits": [
+    "未做旧/新对照、多次采样、独立盲评或统计显著性分析。",
+    "只触发3种Skill正文及2份Method；不声称七项能力均经真实LLM逐项验证。",
+    "未做真实LLM Recorder/select 离线评分回放；相关提示与rubric通过静态/工程检查。",
+    "所有候选为待验证提案；未证明DeiT/DINO/ADE收益，也未完成正式科研循环。"
+  ]
+}

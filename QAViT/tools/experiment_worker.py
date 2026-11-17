@@ -538,6 +538,9 @@ def run_experiment(request, directory):
     try:
         if spec["service"] == "profile":
             result = profile_service(experiment, backend, cfg, data, directory)
+        elif spec["service"] == "frozen_helper":
+            from tools.frozen_helpers import frozen_helper_service
+            result = frozen_helper_service(experiment, backend, cfg, data, directory)
         elif spec["service"] == "tensor_probe":
             result = tensor_probe(experiment, backend, cfg, data, directory, approval)
         elif spec["service"] in ("evaluate_artifact", "quantize_evaluate"):

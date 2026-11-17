@@ -15,3 +15,11 @@ class GOnlyRules(unittest.TestCase):
         self.assertEqual([c['id'] for c in new.criteria('select')],['S1','S2','S3','S4'])
         self.assertIn('select',new.schema['properties']['purpose']['enum'])
         self.assertNotIn('select',old.schema['properties']['purpose']['enum'])
+
+    def test_distinct_criteria_and_recorder_identity_are_versioned(self):
+        old = Rules(QAVIT / 'configs/evaluation/v0_1')
+        new = Rules(QAVIT / 'configs/evaluation/gonly_v0_2')
+        self.assertNotEqual(old.selected['record']['rubric_id'], new.selected['record']['rubric_id'])
+        criteria = new.criteria('select')
+        self.assertEqual(len({tuple(c['anchors'].values()) for c in criteria}), len(criteria))
+        self.assertGreater(len({c['dimension'] for c in criteria}), 1)

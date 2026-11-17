@@ -35,10 +35,10 @@ for field in ('resolved_choices', 'model_scope', 'backend', 'model_identity_sha2
 
 TOOLS = {t["name"]: t for t in [
     tool("revise_candidate", (
-        "仅在预选中提交已有候选的完整科学修订。parent_ref 必须是当前确切版本；"
+        "仅在候选综合中提交已有候选的完整科学修订。parent_ref 必须是当前确切版本；"
         "hypothesis 使用 generate 的科学正文（title/research_question/mechanism/intervention及可选字段）。"
         "reason 说明真实证据或理论变化及未验证范围；工程修复应沿原 Coding 请求处理，不发布科学新版本。"
-        "旧卡片不变，程序生成下一版本并重新预选；引用旧证据仅为修订依据，不验证新版本。"
+        "旧卡片不变，程序生成下一版本并重新综合；引用旧证据仅为修订依据，不验证新版本。"
         "本工具单独调用，不与实验或其他工具同批。"
     ), object_schema({"parent_ref": TEXT, "hypothesis": OBJECT, "reason": TEXT,
                        "change_type": {"enum": ["scientific"]}},
@@ -107,7 +107,7 @@ def submission_schema(purpose):
         return None
     if purpose == 'select':
         contract['properties']['selected_slot'] = {'enum': ['H1', 'H2', 'H3', None]}
-        contract['required'].append('selected_slot')
+        # Legacy preference is accepted, but cannot restrict the L3 candidate set.
     omitted = set()
     if purpose in ('generate', 'evolve'):
         omitted = {'round', 'slot', 'hypothesis_type', 'feedback_used'}

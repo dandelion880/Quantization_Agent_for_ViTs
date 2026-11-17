@@ -214,7 +214,10 @@ def search_frozen_scales(backend, model, data, candidates, *, metric="mse", bloc
             if selected is None or history[-1]["score"] < selected[0]:
                 selected = history[-1]["score"], candidate
         install(selected[1], fitting=False)
-        installed = {s: {"params": qmap[s].params(), "weight": getattr(qmap[s], "weight_record", None)} for s in changed}
+        # Compare hashes over the same complete state as `before`. Hashing only
+        # intervention sites made even an identity candidate look different.
+        installed = {s: {"params": q.params(), "weight": getattr(q, "weight_record", None)}
+                     for s, q in qmap.items()}
         values = {s: {"activation": parameter_evidence(qmap[s].params()),
                       "weight": parameter_evidence(qmap[s].weight_record["params"]) if getattr(qmap[s], "weight_record", None) else None}
                   for s in changed}

@@ -103,8 +103,8 @@
       "source": "repository_derived"
     },
     "README.md": {
-      "sha256": "978bf701b4790b02bbc68b2598672937f44db43b55ab8147d99ab62f01d29b99",
-      "bytes": 297,
+      "sha256": "ff975cec54e2f22af5914b0f021588a754d50f441ca16621df96308b3e162185",
+      "bytes": 946,
       "source": "repository_derived"
     },
     "SOURCES.md": {
@@ -153,8 +153,8 @@
       "source": "repository_derived"
     },
     "rubrics/recorder.json": {
-      "sha256": "d88a019f161ffddf454eb4e1b63eb040d4c518c7a205c4125bdb473247e6c2fd",
-      "bytes": 5640,
+      "sha256": "290c2237faf0ab66e07ca373fd706259258b9ce4d7e2ad1f59aded2cd22a2f2c",
+      "bytes": 6057,
       "source": "repository_derived"
     },
     "rubrics/safeguard.json": {
@@ -163,9 +163,11 @@
       "source": "repository_derived"
     },
     "rubrics/select.json": {
-      "sha256": "cc4c800ab895ca5f95320ed0146216d6e048e9b9a3931c97c4bcd4a7faf7caad",
-      "bytes": 3593,
+      "sha256": "ad5f064d5bfa37224c1b3f866a3f70cfa161c1581a7be8d67941f4f4bae6972a",
+      "bytes": 4511,
       "source": "repository_derived"
     }
-  }
+  },
+  "content_revision": "r20261117",
+  "revision_reason": "All final candidates enter L3 after scientific synthesis/revision; per-candidate Recorder outcomes, no historical rescoring."
 }

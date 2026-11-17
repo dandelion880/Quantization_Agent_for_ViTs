@@ -1,0 +1,167 @@
+{
+  "status": "completed",
+  "date_utc": "2026-11-16T14:24:08.060320+00:00",
+  "source": {
+    "before_core_sha256": "13b263b30a72e2ca5d12fa04d6f50e1f26e3af8e91713f1be5fa77c6630c46a6",
+    "after_core_sha256": "81bfde84fbb11ffcedbd27c3627aa92eaff752373a6afb37ed73c8d6d2291058",
+    "snapshot_identity_consistent_across_replays": true,
+    "archive": {
+      "path": "/root/data-fs/projects/qavit_skill_system_20261116.zip",
+      "sha256": "e5d6871fd3025788c05bb124330c0ff01b840d4019b23cf151f0ec224cf17da1",
+      "size_bytes": 135583
+    },
+    "integration_map": "integration_map.json",
+    "source_delta": "source_delta.json"
+  },
+  "content": {
+    "status": "passed",
+    "errors": [],
+    "package_manifest_files_verified": 41,
+    "installed_markdown_snapshot_files": 36,
+    "local_links_and_anchors_checked": 96,
+    "external_originals_reverified": false,
+    "navigation": {
+      "status": "passed",
+      "errors": [],
+      "skill_count": 7,
+      "method_count": 21,
+      "checked_pages": 76
+    },
+    "source_core_sha256": "81bfde84fbb11ffcedbd27c3627aa92eaff752373a6afb37ed73c8d6d2291058"
+  },
+  "changes": {
+    "skills": 7,
+    "package_skill_references": 16,
+    "preserved_existing_references": 1,
+    "shared_paper_routes": 6,
+    "old_entry_replaced": "assess-evidence-transfer -> evaluate-ptq-candidate",
+    "production_python_changed": [
+      "QAViT/tools/ptq_agent/execution/calibration_search.py"
+    ],
+    "runtime_fix": "选中状态与基线状态哈希使用同一完整量化状态集合；数值候选/评分逻辑未改。",
+    "rubric_revision": "gonly_v0_2.r20261116",
+    "new_host_stages_or_gates": false,
+    "automatic_skill_distillation": false,
+    "scheduler_changed": false
+  },
+  "engineering": {
+    "unique_cases_finally_passed": 262,
+    "main_execution": {
+      "tests": 260,
+      "passed": 259,
+      "failed": 1,
+      "seconds": 232.068,
+      "failure": "订阅锁被同时运行的真实LLM占用，mock preflight未开始；单例两次复跑通过，未改生产调度"
+    },
+    "reference_chain_tests": {
+      "tests": 2,
+      "result": "passed",
+      "measurement_source": "synthetic_computation",
+      "coding_and_safeguard": "scripted test submissions",
+      "numerical_worker": "actual CPU execution"
+    },
+    "initial_fixture_failure": "39项初次集成测试中1项新测试未声明估计时长，默认10800秒超过7200秒预算；仅补测试fixture的estimated_seconds=30，原实现未放宽预算。",
+    "pre_fix_red_test": "state_hash_before_fix.log",
+    "logs": {
+      "baseline_tests.log": {
+        "tests": 14,
+        "seconds": 15.575,
+        "result": "OK"
+      },
+      "integration_tests.log": {
+        "tests": 39,
+        "seconds": 25.817,
+        "result": "FAILED (errors=1)"
+      },
+      "reference_optimization_tests.log": {
+        "tests": 2,
+        "seconds": 14.534,
+        "result": "OK"
+      },
+      "regression_tests.log": {
+        "tests": 260,
+        "seconds": 232.068,
+        "result": "FAILED (failures=1)"
+      },
+      "preflight_isolated_attempt.log": {
+        "tests": 1,
+        "seconds": 0.044,
+        "result": "OK"
+      },
+      "state_hash_before_fix.log": {
+        "tests": 1,
+        "seconds": 2.979,
+        "result": "FAILED (failures=1)"
+      },
+      "preflight_after_replays.log": {
+        "tests": 1,
+        "seconds": 0.061,
+        "result": "OK"
+      }
+    },
+    "lock_reproduction": "subscription_lock_reproduction.json",
+    "main_modules": [
+      "test_gonly",
+      "test_generation_loop",
+      "test_candidate_revision",
+      "test_fallback_solutions",
+      "test_source_recovery",
+      "test_recorder_B_context",
+      "test_research_maintenance",
+      "test_execution_contracts",
+      "test_exploration_contracts",
+      "test_single_implementation",
+      "test_runtime_gate_cleanup",
+      "test_evidence_delivery_v2",
+      "test_controlled_scope",
+      "test_scope_membership",
+      "test_dual_task_evaluation",
+      "test_read_delivery_boundaries",
+      "test_knowledge_resources",
+      "test_scientific_skills",
+      "test_structure",
+      "test_calibration_search",
+      "test_frozen_propagation",
+      "evaluation.test_eval_l0",
+      "evaluation.test_gonly_rules"
+    ],
+    "protected_tracked_paths_unchanged": [
+      "AGENTS.md",
+      "reference/",
+      "QAViT/configs/evaluation/v0_1/",
+      "EXP/runs/"
+    ],
+    "git_diff_check": "passed"
+  },
+  "real_llm": {
+    "completed_cases": 4,
+    "successful_responses": 7,
+    "pre_model_transport_failures": 1,
+    "review": "behavior_review.json",
+    "actual_model_identity_reported": false,
+    "formal_or_numeric_experiments": 0
+  },
+  "scientific_effect": {
+    "measured": false,
+    "claim": "无真实任务收益、Skill科研效果提升或显著性结论"
+  },
+  "remaining_gaps": [
+    "未做旧/新对照、多次采样、独立盲评或统计显著性分析。",
+    "只触发3种Skill正文及2份Method；不声称七项能力均经真实LLM逐项验证。",
+    "未做真实LLM Recorder/select 离线评分回放；相关提示与rubric通过静态/工程检查。",
+    "所有候选为待验证提案；未证明DeiT/DINO/ADE收益，也未完成正式科研循环。",
+    "任意逐元素组倍率、zero直接搜索、任意lookahead及独立DINO特殊token分组需通过现有Coding链明确实现；未伪装成内置API。",
+    "宿主没有通用oracle独立性语义证明器；零optimizer步数不能排除手工更新或隐藏继承，仍需来源及源码/执行审查。",
+    "未重新读取包作者引用的外部原始论文/Library文件；保留其来源账本与报告层级，不能当作本轮独立复现。"
+  ],
+  "archive_cleanup": {
+    "status": "deleted",
+    "path": "/root/data-fs/projects/qavit_skill_system_20261116.zip",
+    "verified_sha256_before_deletion": "e5d6871fd3025788c05bb124330c0ff01b840d4019b23cf151f0ec224cf17da1",
+    "size_bytes": 135583,
+    "deleted_at_utc": "2026-11-16T14:26:28.502250+00:00",
+    "absent_after_deletion": true,
+    "extracted_originals_retained": true,
+    "manifest_path": "source_package/qavit_skill_system_20261116/MANIFEST.json"
+  }
+}

@@ -23,15 +23,17 @@ Brief 的全网位宽、覆盖及最终评测要求属于最终候选，在既�
 
 HypothesisCard 科研核心是 title、research_question、mechanism、intervention。预测、来源、机制关系、实现说明、验证设计、scope 和 feedback_used 均可省略或按需表达，不要求为满足格式编造内容。H1/H2/H3 分别是 existing_method/engineering/new_algorithm；身份和轮次由程序绑定，本分支不生成 H4。前轮反馈由程序交付，是否采纳及如何改进由研究者判断，不强制填写 feedback_used。
 
-ReviewDecisionCard 复用现有格式保存 Generation 预选（phase=ranking，仅为历史卡片类型兼容）与 Safeguard 审查；rationale 表达依据，evidence_refs 引用真实测量。Full 的筛查、辩论、H4 及旧 rank 合同只供历史读取与离线回归，不参与 G-only 调度。
+ReviewDecisionCard 复用现有格式保存 Generation 候选综合（phase=ranking，仅为历史卡片类型兼容）与 Safeguard 审查；rationale 表达依据，evidence_refs 引用真实测量。Full 的筛查、辩论、H4 及旧 rank 合同只供历史读取与离线回归，不参与 G-only 调度。
 
 可选科研条目逐项处理：格式或引用有问题的条目连同具体问题保存在 submission_issues，不成为有效科学支持，其余有效科研产出可提交。顶层明确证据引用、固定身份或实质决定冲突仍返回准确错误。Recorder 核心只需 scientific_analysis；知识更新有问题时保存在 pending_knowledge_updates，不发布为已验证知识。
 
-G-only 每轮发布 H1/H2/H3 三个 generate 任务，允许自主进行“静态知识/Memory→实验→反馈分析→修订→候选提交”。三条任务完成后由 Generation 的 `rNNN/select` 综合证据预选一项 L3 候选；局部失败保留已完成候选和失败来源。无筛查、三场辩论、父子挑战或旧排名计算。
+G-only 每轮发布 H1/H2/H3 三个 generate 任务，允许自主进行“静态知识/Memory→实验→反馈分析→修订→候选提交”。随后 Generation 的 `rNNN/select` 横向综合证据、必要取证并修订候选，不再分配唯一 L3 名额。全部最终候选分别按既定完整双任务协议进入 L3；局部失败保留已有候选和失败来源，不按语言排名或 L1/L2 代理指标淘汰其余候选。
 
-预选绑定 candidate_refs、selected_hypothesis_ref 的完整版本 ID，selection_stage=gonly_preselection、selection_source=generation、provisional=true。selected_slot 可以为 null；不要求候选全部 L3，不按 L1/L2 代理指标晋升方案。选择卡及证据交付 Generation 的 plan_l3、Recorder 与下一轮反馈。预选失败保留候选与独立B进入复盘，不自动选择H1。B仅从既有incumbent/方案库已验证结果保留，种子单独保持可发现，不参与候选的成熟度竞争。已完成轮次的失败研究任务不会被通用 retry 重开；延期 Recorder 仍可显式重试。
+综合卡绑定 candidate_refs、selected_slots、selected_hypothesis_refs（slot→完整版本 ID），selection_stage=gonly_synthesis、selection_source=generation、provisional=true。select 只需提交 rationale；旧 selected_slot 兼容读取但不限制名额。每个 plan_l3 与请求独立绑定 slot/hypothesis_ref/selection_ref；综合卡及证据交付各自计划、Recorder 与下一轮反馈。B 仅从既有 incumbent/方案库已验证结果保留，种子单独发现，不占 H1/H2/H3 槽位。综合失败保留候选与 B 及未完成状态，不自动用 H1 替代全部候选。已结束轮次的失败研究任务不会被通用 retry 重开；延期 Recorder 仍可显式重试。
 
-预选可单独调用 revise_candidate(parent_ref, hypothesis, reason, change_type="scientific") 提交完整科学修订。宿主事务发布同logical_id的下一不可变版本，记录父版本、理由及依据，旧Evidence不改且不验证新版本。提交前中断遗留的孤立卡仅在完整校验且正文、身份和来源逐字段一致时复用原字节；不得覆盖不同或损坏的卡片。同一工具任务绑定持久请求；提交后恢复只返回原版本，不重复发布或推进 Memory。新候选快照重新预选，旧选择拒绝提交；L3草案持久绑定candidate_binding.selection_ref/hypothesis_ref，计划和数值请求沿引用链追溯确切版本。工程修复仍在原请求Coding链，不借此修改科学定义。
+综合期间可用 revise_candidate(parent_ref, hypothesis, reason, change_type="scientific") 发布完整科学修订。宿主事务发布同 logical_id 下一不可变版本并保存父版本、理由和依据；旧 Evidence 不改且不验证新版本。提交前中断的孤立卡仅在完整校验且正文、身份和来源逐字段一致时复用原字节；提交后恢复返回原版本，不重复发布。新候选快照重新综合，过期快照拒绝提交；L3 草案持久绑定 candidate_binding.selection_ref/hypothesis_ref，计划和数值请求沿引用链追溯确切版本。工程修复仍在对应请求的 Coding 链，不改变科学定义。
+
+每份有效 L3 结果独立归档和更新方案库/B，不以轮次已经处理为由忽略后到结果。完成顺序不改变候选归属；同协议排序沿用 mIoU、再 Top-1 及稳定平分规则。每候选独立报告计划、执行、Evidence、失败或延期；全轮 formal_validation_success 要求 H1/H2/H3 均通过协议，部分成功不会写成全部成功。明确旧 gonly_preselection 且已结束的历史单候选轮次按当时 expected_slots 报告，避免重写原有成功事实。暂停恢复沿各请求原键和版本继续，已接收结果不重测；个别失败不阻断其他候选。Recorder 在批次中综合各候选结果及未完成项。
 
 Generation 的 generate/select/plan_l3 均固定 gpt-6-astra/high，配置覆盖和直接调用不得降级；运行时逐次预检目录、档位和账户，服务端未回显身份时如实记为未知，回显冲突或降级拒绝接受。Coding、Safeguard、Recorder、Supervisor 沿用原角色配置。默认 llm_concurrency=4（可设1–4），现有非 Judger 订阅互斥继续使用；历史并发兼容代码不触发科研任务。
 
@@ -41,7 +43,7 @@ Generation 的 generate/select/plan_l3 均固定 gpt-6-astra/high，配置覆盖
 
 resources.gpu 的数字是本运行冻结的 NVML 编号标签；CUDA worker 通过 UUID 只暴露所租主卡，其模型设备统一为逻辑 cuda:0。容器 /dev/nvidia minor 另行按 UUID 对应，不能由编号拼猜。每个运行进程仅解析一次设备身份（恢复进程重新解析），避免反复 CUDA 初始化造成瞬时占用；排队只刷新占用和租约，不支持运行中热插拔扩池。ADE 与其它后端共用此路径，不再对旧物理编号另设限制。完整 result.json 写出后继续保留任务和资源占用，等待登记的 worker/子进程退出；默认30秒退出宽限后仅清理这些已完成进程，再接收原回执，恢复也沿用此状态。科学结果不因正常退出收尾变成失败，设备不会在进程仍存活时释放。
 
-resources.gpu 可选，指定时固定主卡；不指定时从 allowed_gpus 自动选择。默认每实验一卡；同冻结包ImageNet/ADE双任务默认尽力申请两卡；可选 gpu_count 是尽力使用的卡数，不能突破授权集合。原有分类分片仅在 server 后端、原生非训练 quantize_evaluate/evaluate_artifact 的纯 classification 评测中启用：单卡prepare/校准/导出一次，分片重载同一冻结包，复用逐图evaluate和aggregate，按整数correct counts与FP64误差累加器汇总，核对模型、请求身份及完整不重复样本。仅在必需指标可汇总时启用；latency_ms、measured_speedup、CUDA显存等必需指标及无法解释的组合 required_results schema 自动选择原单卡评测，保留全部要求。新增同一冻结包的 classification+ade_frozen 双任务路径，各任务仍单卡，独立重载且核对同包身份；custom executor 需显式 parallel_frozen_load=True，否则串行并记录原因。局部探针、profiling、factory/fixture及其它混合任务仍沿单卡；少卡时减卡或单卡，忙卡等待。配置 experiment_concurrency=1 可限制跨实验数值并发，gpu_count=1 可限制实验内部多卡，均不改变 LLM 并发。实际卡和回退原因写入回执；分片原始结果归档，不填造未采集的性能统计，不从QDQ耗时声称部署加速。
+resources.gpu 可选，指定时固定主卡；不指定时从 allowed_gpus 自动选择。优先为不同候选分别分配一张主卡，用于校准、冻结及双任务；为待规划、Coding 或待运行候选保留主卡需求后，余卡才用于同冻结包 ImageNet/ADE 双任务内部并行；可选 gpu_count 是尽力使用的卡数，不能突破授权集合。原有分类分片仅在 server 后端、原生非训练 quantize_evaluate/evaluate_artifact 的纯 classification 评测中启用：单卡prepare/校准/导出一次，分片重载同一冻结包，复用逐图evaluate和aggregate，按整数correct counts与FP64误差累加器汇总，核对模型、请求身份及完整不重复样本。仅在必需指标可汇总时启用；latency_ms、measured_speedup、CUDA显存等必需指标及无法解释的组合 required_results schema 自动选择原单卡评测，保留全部要求。新增同一冻结包的 classification+ade_frozen 双任务路径，各任务仍单卡，独立重载且核对同包身份；custom executor 需显式 parallel_frozen_load=True，否则串行并记录原因。局部探针、profiling、factory/fixture及其它混合任务仍沿单卡；少卡时减卡或单卡，忙卡等待。配置 experiment_concurrency=1 可限制跨实验数值并发，gpu_count=1 可限制实验内部多卡，均不改变 LLM 并发。实际卡和回退原因写入回执；分片原始结果归档，不填造未采集的性能统计，不从QDQ耗时声称部署加速。
 
 新模板明确启用 budget.clock_mode="active_segments"、budget.exclude_numeric_wait=true。累计智能体预算扣除纯数值执行/资源排队/结果等待的区间，并行推理、Coding、审核等期间仍扣时，重叠只计一次。数值 estimated_seconds 沿用单任务超时，不再与智能体剩余时长比较；已启动实验不会被总时长或收尾预留截断，余额不足时先接收它们，不再启动新工作。外层监控跟随同一余额，暂停只在所有自有进程退出后结算，恢复不重置消费；等待检查点之后的未知崩溃间隔保守计时。人工停止、磁盘限制及单任务超时保留。旧未启用的连续/活动段预算保持原语义。
 
@@ -52,8 +54,8 @@ resources.gpu 可选，指定时固定主卡；不指定时从 allowed_gpus 自�
 | 任务 | 必需交接材料 | 历史读取与限制 |
 |---|---|---|
 | generate | ResearchBrief、H1/H2/H3 分工、绑定前轮 Meta 的 generation_guidance/next_questions/recurring_failures/blind_spots；实验反馈和研究笔记 | 当前正文和支持证据有界直供，长正文入口在 required_reads；完整 Meta-review、L2 和非绑定正文按需读取 |
-| select | 三条已提交候选的固定版本、实测证据及条件、局部失败、Memory 与方案库 | 按需取证，预选不等于正式排名 |
-| plan_l3 | Generation 预选卡、最终候选完整 ID、选择依据及明确引用的支持 Evidence 观测与条件、Brief 协议、数据回执与预算回执 | 原件按需精读；保持候选版本，有效 L3 不因解释失败重复执行 |
+| select | 三条已提交候选的固定版本、实测证据及条件、局部失败、Memory 与方案库 | 按需取证，综合不等于正式排名 |
+| plan_l3 | Generation 综合卡、最终候选完整 ID、选择依据及明确引用的支持 Evidence 观测与条件、Brief 协议、数据回执与预算回执 | 原件按需精读；保持候选版本，有效 L3 不因解释失败重复执行 |
 | code / safeguard | 不可改写的原始需求、执行条件；code 获当前源码及失败反馈，safeguard 获当前唯一源码 | 按任务授权读取公共接口及相关来源 |
 | interpret / record | 实测 Evidence 与对应定义；record 交付未综合的假设、实测证据、裁决/选择/解释与工程失败摘要 | 旧知识按需读取；长正文可分页定位；结果解释不覆盖测量，知识更新不改比赛裁决 |
 
@@ -93,7 +95,7 @@ Generation 可在正式 H 之前执行零次或多次“问题/缺口→实验�
 
 单请求预算不足、执行失败、Coding/Safeguard 科学澄清和实现修订耗尽均返回原科研请求者，不等同全局耗尽或假说反证。等待中的 Generation 按现有任务续调；程序根据已提交 plan_l3 创建的最终 L3 则由新的同角色 plan_l3/revisionN 接收原需求、失败或澄清及来源，再产生新的 L3/revisionN。已完成计划和冻结请求保持不变；恢复运行沿已有版本继续。可恢复工程故障仍按现有分类有限重试，新实现重新绑定条件并经 Safeguard，不重复未修改的失败源码。无法在已有范围内继续时，Generation 可用可选 defer_reason 如实说明未验证，正常进入 Recorder；只有用户才能决定的信息才进入人工澄清。
 
-所有服务与请求来源的有效 Evidence 保存、规定数值协议核验完成后立即返回，不再为实验回执自动创建 interpret。原研究步骤或正常轮末 Recorder 承担解释；恢复时取消尚未启动且已无依赖必要的旧 interpret；已运行的 interpret 单独结算，均不撤销有效测量，也不触发重复执行。缓存保留原 execution_id 并标记 cache_reused，不冒充独立重复。报告与 CLI 分列 workflow_completed、formal_validation_success、numerical_validation_status、scientific_review_complete；每轮 l3_outcome 同时给出执行、解释和计划状态。completed 仅代表流程结束，不代表缺失或延期的 L3 已通过。三条候选形成后进入 Generation 预选；失败及预算边界保留有效阶段成果。
+所有服务与请求来源的有效 Evidence 保存、规定数值协议核验完成后立即返回，不再为实验回执自动创建 interpret。原研究步骤或正常轮末 Recorder 承担解释；恢复时取消尚未启动且已无依赖必要的旧 interpret；已运行的 interpret 单独结算，均不撤销有效测量，也不触发重复执行。缓存保留原 execution_id 并标记 cache_reused，不冒充独立重复。报告与 CLI 分列 workflow_completed、formal_validation_success、numerical_validation_status、scientific_review_complete；每轮 l3_outcome 同时给出执行、解释和计划状态。completed 仅代表流程结束，不代表缺失或延期的 L3 已通过。三条候选形成后进入 Generation 候选综合与修订；失败及预算边界保留有效阶段成果。
 
 新 Evidence.scope 使用 `qavit.evidence_scope/1`：由冻结模型身份及宿主 execution_facts 生成 model/model_identity_sha256、measurement_kind、measurement_source、实际 site/quantization/位宽、parameters 和 data。完整模型数据范围包含导出包实际校准 ID 和本次评测 ID；局部激活探针不因研究目标 W4A4 而获得 weight_bits=4。自定义统计仅记录实际读取和前向访问、冻结参数，不把无法独立核验的量化目标提升为已执行事实。申请 scope 与 resolved_choices 仅存 provenance.research_target。
 
@@ -116,7 +118,7 @@ Memory 的唯一事实来源仍为 Journal 和不可变卡片；目录、输入�
 | purpose | 默认必需材料 |
 |---|---|
 | generate | ResearchBrief、本轮类型/要求、简短目录、明确关联或分配的反馈；全局复盘及 L2 按需读 |
-| select、plan_l3 | 已提交候选、预选依据、明确引用的判断/测量、本任务新返回的实验与对应冻结定义；旧正文按需读 |
+| select、plan_l3 | 已提交候选、综合依据、明确引用的判断/测量、本任务新返回的实验与对应冻结定义；旧正文按需读 |
 | code、safeguard | 原始需求、已知执行条件及当前实现/修订反馈；Safeguard 另获绑定后的完整执行卡 |
 | record | 本批假设、Evidence/冻结定义、裁决/选择/解释；工程计数与失败原因；本批关键立场/争点直接交付，完整来源按需读 |
 | supervise | 当前任务、流程状态、预算和异常反馈，历史科研正文按需读 |
@@ -177,7 +179,7 @@ Recorder 复用轮末及预算收尾的轻量同步任务。批次输入集中�
 其内部注册还保留计划展开、任务程序和证据索引等支持能力。V2 调用白名单没有扩大；旧 read_memory/compare_trials 等 MVP 工具已移除。
 
 `tools/evaluating.py` 使用逐图 batch=1 的实际数据视图；subset 与完整数据评测明确分开。QDQ 延迟是参考实现开销，不等于低比特硬件加速。
-`tools/segmentation.py` 保留既有 DeiT 冻结 Neck/UPerHead、150 类和 ADE 预处理/滑窗协议；设备沿用当前运行冻结的授权 GPU 池与 UUID 映射，不再固定物理 GPU 1/2/3。ADE 及混合评测继续按上述兼容路径使用单卡。
+`tools/segmentation.py` 保留既有 DeiT 冻结 Neck/UPerHead、150 类和 ADE 预处理/滑窗协议；设备沿用当前运行冻结的授权 GPU 池与 UUID 映射，不再固定物理 GPU 1/2/3。ADE 单任务使用一张卡；同冻结包分类+ADE 可按上述能力分别用两张卡并行，少卡时沿兼容单卡路径。
 原 log2/log_sqrt2/AdaLog 参考网格可能包含额外下溢零；本次未改公式，不能仅凭方法名声称满足特定码本约束。
 
 worker 从 `runtime/guards.py` 安装 Landlock 和梯度审计，只向当前 job 与 EXP 临时目录写入。training-free 允许正常只读 autograd.grad/backward 诊断，调用如实记录，不按调用文件放行；optimizer.step 仍禁止，浮点基准的权重、buffer、模式和梯度状态仍受保护。
@@ -222,7 +224,7 @@ read_card(ref, select={site,token_type,metric,text,minimum,maximum}, field?, off
 knowledge_directory 提供有限的 L2 目录、知识状态和复盘时点，保留原条目与其支持证据，check_new_evidence 定位该判断之后的证据；出现新事实不自动推断旧知识失效。recording_status 显示待复盘缺口。source_refs 表示程序归档，evidence_refs/sources.ref 表示研究者实际采用的支持，二者不混同。
 
 
-当前对象的证据交付使用同一规则：从已绑定 Hypothesis、Review、Experiment 的明确支持引用追加 Evidence 观测和各自冻结条件，覆盖生成、预选、plan_l3 及 Coding/Safeguard。不递归展开普通历史 refs；Evidence 的条件卡不会再次触发旧 trial 链。按提交快照、角色可见性及同回合隔离过滤，同一来源只交付一次；大型结果保持既有统计投影、覆盖说明和精确 read_card 展开入口。Recorder 继续使用增量批次，不能借交接规则重新注入全历史。
+当前对象的证据交付使用同一规则：从已绑定 Hypothesis、Review、Experiment 的明确支持引用追加 Evidence 观测和各自冻结条件，覆盖生成、综合、plan_l3 及 Coding/Safeguard。不递归展开普通历史 refs；Evidence 的条件卡不会再次触发旧 trial 链。按提交快照、角色可见性及同回合隔离过滤，同一来源只交付一次；大型结果保持既有统计投影、覆盖说明和精确 read_card 展开入口。Recorder 继续使用增量批次，不能借交接规则重新注入全历史。
 
 当前 H1 为成熟完整方案驱动，H2 为完整方案上的真实瓶颈改进，H3 保持开放创新；旧 existing_method/engineering/new_algorithm 卡片枚举保留。H1/H2 自然说明起点和改动，不增固定措辞或审核门槛。Top-3 独立于 Memory，按协议分桶持久化在 EXP/solutions，有效 L3 双任务在 Recorder 之前即可按 (ADE20K mIoU, ImageNet Top-1) 降序更新；待测种子保留空成绩。完整源码、配置、协议和版本可按 configuration_asset 获取，失败与未入选发现仍由 Recorder/Memory 保存。统一 [W4A4协议](STATIC_W4A4.md) 只在最终完整方案检查全覆盖。
 

@@ -207,7 +207,8 @@ def placement(experiment, settings, brief=None, *, approval=None):
     if (supported or dual) and requested > 1 and pool:
         pool += [g for g in settings.get('allowed_gpus', []) if g not in pool]
     useful = max((r.get('count') or requested for r in spec.get('evaluations', [])), default=requested)
-    return {'gpu_pool': pool, 'gpu_count': min(requested, 2) if dual else (min(requested, useful) if supported else 1),
+    return {'gpu_pool': pool, 'requires_gpu': cuda,
+            'gpu_count': min(requested, 2) if dual else (min(requested, useful) if supported else 1),
             'pinned_gpu': resources.get('gpu') if cuda else None,
             'parallelism': {'requested_gpus': requested, 'classification_shards_supported': bool(supported),
                             'dual_task_supported': dual,
@@ -244,7 +245,7 @@ def externally_busy():
     return busy
 
 
-def acquire(pool, count=1, pinned=None, *, bindings=None):
+def acquire(pool, count=1, pinned=None, *, bindings=None, reserve=0):
     if not pool:
         return [], []
     busy = externally_busy()
@@ -266,11 +267,16 @@ def acquire(pool, count=1, pinned=None, *, bindings=None):
                     selected.append(gpu)
             if gpu == pinned and gpu not in selected:
                 break
-            if len(selected) >= count:
+            if len(selected) >= count + reserve:
                 break
         if not selected or (pinned is not None and pinned not in selected):
             raise ResourceBusy('GPU busy; task remains queued')
-        return selected, fds
+        # Probe leases as well as device occupancy before spending spare cards.
+        # Every unserved candidate gets priority over a second card for this one.
+        keep = min(count, max(1, len(selected) - reserve))
+        for fd in fds[keep:]:
+            os.close(fd)
+        return selected[:keep], fds[:keep]
     except BaseException:
         for fd in fds:
             os.close(fd)

@@ -339,3 +339,36 @@ coverage.xml
 !/EXP/validation/research_recovery_20261116_r1/contracts/load_audit_differences.json
 !/EXP/validation/research_recovery_20261116_r1/contracts/h3_replay_first_failure.json
 !/EXP/validation/research_recovery_20261116_r1/contracts/replay_implementation.py
+
+# Reviewed seven-skill integration; raw package, runs and large snapshots remain local.
+!/EXP/validation/skill_system_integration_20261116_r1/
+!/EXP/validation/skill_system_integration_20261116_r1/REPORT.md
+!/EXP/validation/skill_system_integration_20261116_r1/RESULTS.json
+!/EXP/validation/skill_system_integration_20261116_r1/PSEUDOCODE.md
+!/EXP/validation/skill_system_integration_20261116_r1/input_archive.json
+!/EXP/validation/skill_system_integration_20261116_r1/integration_map.json
+!/EXP/validation/skill_system_integration_20261116_r1/replay.py
+!/EXP/validation/skill_system_integration_20261116_r1/verify_assets.py
+!/EXP/validation/skill_system_integration_20261116_r1/asset_checks.json
+!/EXP/validation/skill_system_integration_20261116_r1/behavior_review.json
+!/EXP/validation/skill_system_integration_20261116_r1/test_summary.json
+!/EXP/validation/skill_system_integration_20261116_r1/skill_validation.json
+!/EXP/validation/skill_system_integration_20261116_r1/archive_cleanup.json
+
+# Reviewed capability/multi-candidate implementation evidence; raw jobs stay local.
+!/EXP/validation/capabilities_multi_l3_20261117_r1/
+!/EXP/validation/capabilities_multi_l3_20261117_r1/REPORT.md
+!/EXP/validation/capabilities_multi_l3_20261117_r1/PSEUDOCODE.md
+!/EXP/validation/capabilities_multi_l3_20261117_r1/RESULTS.json
+!/EXP/validation/capabilities_multi_l3_20261117_r1/validate_frozen_helpers_gpu.py
+!/EXP/validation/capabilities_multi_l3_20261117_r1/gpu_candidates_smoke.py
+!/EXP/validation/capabilities_multi_l3_20261117_r1/gpu_same_frozen_parallel.py
+!/EXP/validation/capabilities_multi_l3_20261117_r1/scheduler_validation_summary.json
+!/EXP/validation/capabilities_multi_l3_20261117_r1/frozen_helper_boundaries.json
+!/EXP/validation/capabilities_multi_l3_20261117_r1/helper_gradient_check.json
+!/EXP/validation/capabilities_multi_l3_20261117_r1/gpu_same_frozen_parallel_r1_report.json
+!/EXP/validation/capabilities_multi_l3_20261117_r1/frozen_helpers_gpu/
+!/EXP/validation/capabilities_multi_l3_20261117_r1/frozen_helpers_gpu/summary.json
+!/EXP/validation/capabilities_multi_l3_20261117_r1/SCHEDULER_REPORT.md
+!/EXP/validation/capabilities_multi_l3_20261117_r1/structure_audit.json
+!/EXP/validation/capabilities_multi_l3_20261117_r1/final_structure_audit.json

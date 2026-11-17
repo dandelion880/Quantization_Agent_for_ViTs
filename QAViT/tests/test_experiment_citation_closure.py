@@ -54,7 +54,7 @@ class ExperimentCitationClosure(TempCase):
             selection = wf.selection_card(1)
         context = {'round': 1}
         if selection:
-            context.update(selection_ref=selection['id'], hypothesis_ref=selection['payload']['selected_hypothesis_ref'])
+            context.update(slot='H1', selection_ref=selection['id'], hypothesis_ref=selection['payload']['candidate_refs']['H1'])
         tid = wf.enqueue_role('fixture/plan/' + name, 'plan_l3', refs=[wf.brief['id']],
                               context=context, parent_task=parent)
         wf.queue.ready()

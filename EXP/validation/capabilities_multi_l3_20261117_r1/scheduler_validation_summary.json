@@ -1,0 +1,60 @@
+{
+  "status": "completed",
+  "formal_research_round_started": false,
+  "scope": "real DeiT-B; RTN W8A8 only blocks.0.mlp.fc1/fc2; calibration=2, ImageNet search=3, ADE validation=1 per candidate; engineering subset only",
+  "hardware": "5 visible Tesla V100-SXM2-16GB; real scheduling run authorized GPUs 2,3,4",
+  "candidate_source_report": "gpu_candidates_r2_report.json",
+  "candidates": {
+    "H1": {
+      "hypothesis_ref": "HypothesisCard-8114e2b657ea4fd4b811bbd1dc706c7b@1",
+      "experiment_ref": "ExperimentCard-ba3fdbe5f13b425ca44246f3076fb99e@1",
+      "evidence_ref": "EvidenceCard-61eab2129e064ce28f43b96d51c0e27d@1",
+      "allocated_gpus": [
+        4
+      ]
+    },
+    "H2": {
+      "hypothesis_ref": "HypothesisCard-c86bd8076d264c58b3ab289e9f6297a4@1",
+      "experiment_ref": "ExperimentCard-2ab98498e82f46b0892bd46423c38a21@1",
+      "evidence_ref": "EvidenceCard-ccc1a869ac8143fcb94774c37e31c205@1",
+      "allocated_gpus": [
+        2
+      ]
+    },
+    "H3": {
+      "hypothesis_ref": "HypothesisCard-ed1d102b2b984b388dff778504e765cd@1",
+      "experiment_ref": "ExperimentCard-39c53359681b460bae7ef0bb3e33a963@1",
+      "evidence_ref": "EvidenceCard-cfe3e5e967bd45c4a4e1c1a34aa3b7b1@1",
+      "allocated_gpus": [
+        3
+      ]
+    }
+  },
+  "live_restore": true,
+  "three_candidate_overlap_seconds": 76.64784836769104,
+  "same_frozen_parallel_report": "gpu_same_frozen_parallel_r1_report.json",
+  "same_frozen_metrics_exactly_equal": true,
+  "same_frozen_parallel_overlap_seconds": 6.080300807952881,
+  "pause_resume_verified": true,
+  "retained_failures": [
+    {
+      "report": "gpu_candidates_r1_report.json",
+      "reason": "source identity changed in five test files during live restore; workers stopped, no numerical success claimed"
+    },
+    {
+      "report": "gpu_candidates_r2_report.json",
+      "reason": "all three candidates completed; extra comparison obtained only one GPU and correctly ran serial, but engineering harness required two and asserted; explicit idle two-card follow-up succeeded"
+    }
+  ],
+  "not_verified": [
+    "full ImageNet/ADE L3 protocol",
+    "new scientific hypotheses or formal research round",
+    "physical validation on 0/1/2/4/5/6-card candidate pools (0..6 placement covered by simulated identity + real leases tests)"
+  ],
+  "final_regression": {
+    "log": "scheduler_final_regression.log",
+    "tests": 34,
+    "status": "passed",
+    "covers": "candidate_gpu_priority, interface_simplification, numeric_parallel_budget; includes legacy origin_task and no-GPU numerical wait"
+  }
+}

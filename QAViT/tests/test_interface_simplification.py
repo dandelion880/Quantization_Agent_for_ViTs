@@ -140,8 +140,11 @@ class InterfaceSimplification(TempCase):
             self.assertNotIn('gpu', wf.broker.freeze(draft, requester='judger')['payload']['resources'])
             resolved['backend'].pop('config_asset')
             wf.broker.runtime['allowed_gpus'] = []
-            with self.assertRaisesRegex(ContractError, '授权 GPU'):
-                wf.broker.freeze(draft, requester='judger')
+            from runtime.gpu_resources import placement
+            queued = wf.broker.freeze(draft, requester='judger')
+            allocation = placement(queued, wf.broker.runtime)
+            self.assertTrue(allocation['requires_gpu'])
+            self.assertEqual(allocation['gpu_pool'], [])
             wf.broker.runtime['allowed_gpus'] = [0, 3]
             self.assertNotIn('gpu', wf.broker.freeze(draft, requester='judger')['payload']['resources'])
             explicit = deepcopy(draft); explicit['resources']['gpu'] = 0

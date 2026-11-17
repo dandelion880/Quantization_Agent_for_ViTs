@@ -63,7 +63,7 @@ class GOnlyRegression(TempCase):
         for choice in ('H1', 'H2', 'H3'):
             with self.subTest(choice=choice):
                 wf, plan = self.drive(self.workflow_case(choice), choice=choice,
-                                      stop=lambda t: t['inputs']['purpose'] == 'plan_l3')
+                                      stop=lambda t: t['inputs']['purpose'] == 'plan_l3' and t['inputs']['context'].get('slot') == choice)
                 selected = wf.selection_card(1)
                 self.assertEqual(plan['role'], 'generation')
                 self.assertEqual(selected['author'], 'generation')
@@ -99,7 +99,7 @@ class GOnlyRegression(TempCase):
         for _ in range(3):
             self.assertFalse(wf.advance())
         self.assertEqual((keys, sequence), (set(wf.tasks()), wf.journal.sequence))
-        self.assertEqual(wf.tasks()['r001/plan_l3']['inputs']['context']['hypothesis_ref'], original['id'])
+        self.assertEqual(wf.tasks()[wf.l3_request_keys(1, 'H2', original['id'])[0]]['inputs']['context']['hypothesis_ref'], original['id'])
 
     def test_generation_completion_orders_join_once_with_all_three_versions(self):
         from itertools import permutations
@@ -156,10 +156,11 @@ class GOnlyRegression(TempCase):
         self.assertEqual(recorder['state'], 'completed')
         self.assertEqual(len(recorder['inputs']['context']['recording_batch']['scientific_failure_refs']), 3)
 
-    def test_declining_all_candidates_retains_science_and_skips_l3(self):
+    def test_null_preference_preserves_all_three_l3_candidates(self):
         wf, _ = self.drive(self.workflow_case(), choice=None)
         self.assertIsNone(wf.selection_card(1)['payload']['selected_slot'])
-        self.assertNotIn('r001/plan_l3', wf.tasks())
+        self.assertEqual(set(wf.l3_outcome(1)['candidates']), {'H1', 'H2', 'H3'})
+        self.assertTrue(all(r['status'] == 'deferred' for r in wf.l3_outcome(1)['candidates'].values()))
         self.assertEqual(wf.tasks()['r001/record']['state'], 'completed')
 
     def test_two_rounds_and_restores_use_preselection_feedback_without_legacy_tasks(self):
@@ -214,7 +215,7 @@ class GOnlyRegression(TempCase):
         wf.submit(task, {'selected_slot': 'H2', 'rationale': 'CPU fixture: revised choice after two observations',
                          'evidence_refs': [r['id'] for r in results]}, None)
         wf.advance()
-        plan = wf.tasks()['r001/plan_l3']
+        plan = wf.tasks()[wf.l3_request_keys(1, 'H2', wf.candidate_refs(1)['H2'])[0]]
         context = wf.context(plan)
         from core.cards import canonical
         for result in results:

@@ -61,9 +61,11 @@ Coding 与 Safeguard 的 `public_interface_assets` 索引包含已发布的数�
 
 开放问题由 `question_records` 提供稳定 `question_id`。Recorder 用 `resolved_question_refs` / `abandoned_question_refs` 关闭指定问题，旧版原文数组仍兼容；摘要中的“已解决”不作模糊匹配，也不自动作科学判断。新字段必须指向历史已交付问题，重复关闭幂等，历史复盘不变。
 
-Recorder 的 `B_transition.before_l3` 从所引用预选任务的首次持久快照重建 B；兼容缺少该任务的历史数据时使用决定卡发布时点，无决定则使用已记录 round_started，无可核实锚点明确 unavailable。`after_l3` 固定在本批 recording_batch.through_sequence，逐份携带 snapshot_sequence、来源和方案库事件序号；恢复、延期及预算收尾不把后轮 B 混成本轮晋升后 B。`solution_considerations` 只列该批已记录的本轮更新结果，不推断晋升。原 `fallback_B` 保持当前读取快照的兼容含义。以上均为只读交付，不重写原 Memory、不改变排序/晋升、也不把历史成绩转为同期控制。
+Recorder 的 `B_transition.before_l3` 从所引用综合任务（兼容历史预选）的首次持久快照重建 B；兼容缺少该任务的历史数据时使用决定卡发布时点，无决定则使用已记录 round_started，无可核实锚点明确 unavailable。`after_l3` 固定在本批 recording_batch.through_sequence，逐份携带 snapshot_sequence、来源和方案库事件序号；恢复、延期及预算收尾不把后轮 B 混成本轮晋升后 B。`solution_considerations` 只列该批已记录的本轮更新结果，不推断晋升。原 `fallback_B` 保持当前读取快照的兼容含义。以上均为只读交付，不重写原 Memory、不改变排序/晋升、也不把历史成绩转为同期控制。
 
-完整冻结方案传播诊断可在现有 `experiment_v1` 中调用 `ptq_agent.execution.propagation.profile_frozen_propagation`：经 `context["load_frozen"](ref)` 读取明确引用的模型，再选择 block 边界和可选冻结干预。返回配对 FP/Q 输入与输出、同 Q 输入的 FP block 重放、局部新增/上游映射/总误差和交叉项、CLS/patch 与命名任务输出；记录样本和状态哈希，禁止 final 选点、不重校准。API、来源声明示例及覆盖限制见 [冻结传播参考](skills/diagnose-ptq-failure/references/frozen-propagation.md)。这是诊断 custom 路径，不新增正式实验配额或替代双任务评价。
+完整冻结方案传播诊断可直接请求 `execution.service="frozen_helper", tool="profile_frozen_propagation"`，也兼容在现有 `experiment_v1` 中调用 `ptq_agent.execution.propagation.profile_frozen_propagation`：经 `context["load_frozen"](ref)` 读取明确引用的模型，再选择 block 边界和可选冻结干预。返回配对 FP/Q 输入与输出、同 Q 输入的 FP block 重放、局部新增/上游映射/总误差和交叉项、CLS/patch 与命名任务输出；记录样本和状态哈希，禁止 final 选点、不重校准。API、来源声明示例及覆盖限制见 [冻结传播参考](skills/diagnose-ptq-failure/references/frozen-propagation.md)。直接适配与 custom 路径复用同一数值 helper，均经原来源绑定与 Evidence 返回链；不新增实验配额或替代双任务评价。参数和状态影响见 [能力目录](CAPABILITIES.md)。
 
 
-校准搜索的数值入口为 `ptq_agent.execution.calibration_search.search_frozen_scales`（已在Coding/Safeguard公共源码读取范围）。它接收`ctx['load_frozen']`已核验加载的模型，兼容历史源码隔离的同构量化器接口；以明确候选倍率在calibration数据上实际选参并返回完整分数/样本/选中参数。block输出参考、CLS/patch和整网指标的准确语义、导出时收集选中状态的示例见 [scale_selection](methods/scale_selection.md)。它不代替外层search或正式双任务L3。
+校准搜索可直接请求 `frozen_helper` 的 `search_frozen_scales`；其复用的数值入口为 `ptq_agent.execution.calibration_search.search_frozen_scales`（已在Coding/Safeguard公共源码读取范围）。它接收`ctx['load_frozen']`已核验加载的模型，兼容历史源码隔离的同构量化器接口；以明确候选倍率在calibration数据上实际选参并返回完整分数/样本/选中参数。block输出参考、CLS/patch和整网指标的准确语义、导出时收集选中状态的示例见 [scale_selection](methods/scale_selection.md)。它不代替外层search或正式双任务L3。
+
+获准研究参考优化与最终 training-free 的已有字段、产物边界和真实工具限制见 [科研 Skill 兼容说明](SCIENTIFIC_SKILLS_COMPATIBILITY.md)。STE 需现有 custom 实现；全程禁训合同不会被研究用途或 Skill 覆盖。

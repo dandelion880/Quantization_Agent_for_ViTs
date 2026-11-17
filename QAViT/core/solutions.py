@@ -162,8 +162,8 @@ class SolutionLibrary:
 
     def consider_round(self, number, evidence, experiment, selection, *, validator):
         """Use the existing evidence validator; no extra LLM or accuracy threshold."""
-        event_key = 'solutions/round/' + str(number)
-        if any(e.get('round') == number and e['type'] == 'solution_considered' for e in self.journal.events):
+        event_key = 'solutions/evidence/' + fingerprint(evidence['id'])
+        if any(e.get('evidence_ref') == evidence['id'] and e['type'] == 'solution_considered' for e in self.journal.events):
             return
         p = evidence['payload']
         try:
@@ -184,12 +184,24 @@ class SolutionLibrary:
             if self.brief.get('quantization_contract', {}).get('protocol'):
                 if not p['observations'].get('static_w4a4', {}).get('frozen'):
                     raise ContractError('final static W4A4 receipt pending')
-            candidate = {'id': p['provenance']['model_ref'], 'title': selection['payload']['selected_slot'] + ' round ' + str(number),
+            binding = experiment['payload'].get('candidate_binding', {})
+            hypothesis_ref = binding.get('hypothesis_ref', selection['payload'].get('selected_hypothesis_ref'))
+            candidates = selection['payload'].get('candidate_refs', {})
+            slot = next((slot for slot, ref in candidates.items() if ref == hypothesis_ref), None)
+            historical_unbound = (not binding and selection['payload'].get('selection_stage') == 'gonly_preselection'
+                                  and slot == selection['payload'].get('selected_slot')
+                                  and hypothesis_ref == selection['payload'].get('selected_hypothesis_ref'))
+            if candidates and not historical_unbound and (slot is None or binding.get('selection_ref') != selection['id']):
+                raise ContractError('L3 evidence does not bind an exact synthesized candidate')
+            slot = slot or selection['payload'].get('selected_slot')
+            if not slot or not hypothesis_ref:
+                raise ContractError('L3 candidate identity missing')
+            candidate = {'id': p['provenance']['model_ref'], 'title': slot + ' round ' + str(number),
                 'status': 'evaluated', 'metrics': metrics, 'protocol_hash': self.key,
                 'configuration': deepcopy(self.brief), 'execution': deepcopy(experiment['payload']['execution']),
                 'actual_quantization': deepcopy(p['observations'].get('coverage', {})),
                 'evidence_ref': evidence['id'], 'experiment_ref': experiment['id'], 'run_dir': str(self.journal.root),
-                'selection_ref': selection['id'], 'hypothesis_ref': selection['payload']['selected_hypothesis_ref'],
+                'selection_ref': selection['id'], 'hypothesis_ref': hypothesis_ref, 'slot': slot,
                 **self.source_record(self.journal.cards.get(experiment['id'], {}).get('sequence')),
                 'artifacts': p['artifacts']}
             # Preserve exact approved code as part of the complete reusable configuration.
@@ -203,7 +215,7 @@ class SolutionLibrary:
                 current = read_json(path)['entries'] if path.exists() else self.snapshot()
                 if candidate['id'] not in {r['id'] for r in current}:
                     current = rank([*current, candidate])
-                atomic_json(self.root / 'archive' / (fingerprint(candidate['id']) + '.json'), candidate)
+                atomic_json(self.root / 'archive' / (fingerprint(evidence['id']) + '.json'), candidate)
                 atomic_json(path, {'protocol_hash': self.key, 'entries': current})
             events = [{'type': 'solution_library', 'entries': current, 'protocol_hash': self.key},
                       {'type': 'solution_considered', 'round': number, 'evidence_ref': evidence['id'],

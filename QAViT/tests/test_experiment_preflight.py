@@ -373,7 +373,9 @@ class DraftRepairRegression(TempCase):
                 task = wf.queue.claim(task["task_id"])
         self.assertEqual(state["repair_count"], 2)
         self.assertEqual(wf.journal.find_cards("ExperimentCard"), [])
-        self.assertEqual(len([t for t in wf.tasks().values() if t['inputs'].get('purpose') == 'plan_l3']), 1)
+        self.assertEqual(len([t for t in wf.tasks().values() if t['inputs'].get('purpose') == 'plan_l3']), 3)
+        self.assertEqual(len([t for t in wf.tasks().values() if t['inputs'].get('purpose') == 'plan_l3'
+                              and t['inputs']['context']['hypothesis_ref'] == task['inputs']['context']['hypothesis_ref']]), 1)
 
     def test_ambiguous_draft_can_clarify_without_completion(self):
         wf, task, draft = self.plan()

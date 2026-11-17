@@ -6,7 +6,7 @@
 
 `profile_sensitivity` 使用简化 RTN/QDQ；`ActivationDiagnostics` 只看量化器输入误差。`profile_trial_diagnostics` / `profile_trial_ablation` 通过旧 trial 索引读取当前运行 search 测量，不能据名称推断它们已经覆盖历史完整方案、FP/Q block 边界或所有 task head。
 
-完整方案走现有 `custom_experiment / experiment_v1`。请求在顶层声明确切 `evidence_refs` 或 `solution_refs`；只提及路径、B、Top3 或 controls 中的自然语言名称不构成来源。历史方案即使退出 Top3，仍应以目录中的确切 solution id 发现并加载。`context['load_frozen'](ref)` 由宿主核验包、批准源码和协议身份，只 load、不 prepare。失败先修请求/执行，不能把缺测当反证。
+完整方案可直接使用 `frozen_helper/profile_frozen_propagation`，调用参数见 [统一能力目录](../../../CAPABILITIES.md)；需要扩展时仍可用原 `custom_experiment / experiment_v1`。请求在顶层声明确切 `evidence_refs` 或 `solution_refs`；只提及路径、B、Top3 或 controls 中的自然语言名称不构成来源。历史方案即使退出 Top3，仍应以目录中的确切 solution id 发现并加载。`context['load_frozen'](ref)` 由宿主核验包、批准源码和协议身份，只 load、不 prepare。失败先修请求/执行，不能把缺测当反证。
 
 可调用 `ptq_agent.execution.propagation.profile_frozen_propagation`，公开源码可由 Coding/Safeguard 的接口目录读取。示意代码（ref 来自请求参数且已在顶层引用，data 是宿主限定的数据视图）：
 

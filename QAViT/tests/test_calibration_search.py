@@ -61,6 +61,17 @@ class CalibrationSearchTests(unittest.TestCase):
             self.assertEqual(set(report["baseline_active_targets"]), set(quantizers(self.model)))
             self.assertTrue(report["baseline_configuration_sha256"])
 
+    def test_state_hashes_compare_the_same_full_frozen_state(self):
+        candidate = [{"id": "identity", "scales": {"blocks.0.attn.qkv": {"activation": 1.0}}}]
+        x, _ = next(self.data.batches("search"))
+        before = forward(self.backend, self.model_copy, x).clone()
+        report = search_frozen_scales(self.backend, self.model_copy, self.data, candidate)
+        self.assertTrue(torch.equal(before, forward(self.backend, self.model_copy, x)))
+        self.assertEqual(report["baseline_state_sha256"], report["selected_state_sha256"])
+        candidate[0]["scales"]["blocks.0.attn.qkv"]["activation"] = .8
+        changed = search_frozen_scales(self.backend, self.model_copy, self.data, candidate)
+        self.assertNotEqual(changed["baseline_state_sha256"], changed["selected_state_sha256"])
+
     def test_network_metrics_consume_logits_and_true_labels(self):
         labels = {sid: int(forward(self.backend, self.backend.model, x).argmax(-1).item()) for x, sid in self.data.batches("calibration")}
         # Explicit fixture labels for objective mechanics, not ImageNet accuracy.

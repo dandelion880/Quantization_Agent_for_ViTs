@@ -295,7 +295,18 @@ class RoleInteraction:
                             and str(path) in self.authorized_assets(task)):
                         value = {**value, 'document': str(path)}
                         del value['ref']
-                return {k: resolve(v, k) for k, v in value.items()}
+                result = {}
+                for k, v in value.items():
+                    if (key == 'execution' and value.get('service') == 'frozen_helper'
+                            and k == 'source_ref' and isinstance(v, str)
+                            and v not in self.journal.cards and not re.fullmatch(r'C[1-9][0-9]*', v)):
+                        # Package/solution selectors are not Journal card IDs.
+                        # They grant no access: freeze must match an explicitly
+                        # cited, verified source. Card IDs/handles retain ACL.
+                        result[k] = v
+                    else:
+                        result[k] = resolve(v, k)
+                return result
             if isinstance(value, list):
                 return [resolve(v, key[:-1] if key.endswith('_refs') else key) for v in value]
             if isinstance(value, str) and key in card_ref_keys:
@@ -1158,7 +1169,10 @@ class RoleInteraction:
                                                   for name in PUBLIC_INTERFACE_FILES]
         if 'request_experiment' in TASKS[purpose]['tools']:
             from tools.profiling import PROFILE_NAMES
-            context['services'] = {**SERVICES, 'profile': {**SERVICES['profile'], 'tools': list(PROFILE_NAMES)}}
+            from tools.frozen_helpers import HELPER_NAMES
+            context['services'] = {**SERVICES, 'profile': {**SERVICES['profile'], 'tools': list(PROFILE_NAMES)},
+                'frozen_helper': {**SERVICES['frozen_helper'], 'tools': list(HELPER_NAMES)}}
+            context['capability_catalog'] = (ROOT / 'QAViT/docs/CAPABILITIES.md').read_text().split('<!-- CALL_DETAILS -->', 1)[0]
             context['experiment_interface'] = (ROOT / 'QAViT/docs/EXPERIMENT_INPUTS.md').read_text()
             try:
                 context['method_catalog'] = [{**{k: row[k] for k in ('id', 'title', 'targets', 'document')},
@@ -1853,7 +1867,7 @@ class RoleInteraction:
         if purpose == "plan_l3":
             selection = self.selection_card(context['round'])
             if (not selection or selection['id'] != context['selection_ref']
-                    or selection['payload']['selected_hypothesis_ref'] != context['hypothesis_ref']):
+                    or selection['payload'].get('candidate_refs', {}).get(context.get('slot', context.get('selection'))) != context['hypothesis_ref']):
                 raise ContractError('L3计划引用了过期选择或错误候选版本')
             if 'defer_reason' in content:
                 if set(content) != {'defer_reason'} or not isinstance(content['defer_reason'], str) or not content['defer_reason'].strip():
@@ -1927,13 +1941,15 @@ class RoleInteraction:
                 raise ContractError('预选已过期：候选存在新版本，必须重新预选')
             if selected is not None and selected not in candidates:
                 raise ContractError('预选只能引用本任务已提交的 H1/H2/H3 候选')
-            bindings = {'selection_stage': 'gonly_preselection',
+            bindings = {'selection_stage': 'gonly_synthesis',
+                        'selected_slots': sorted(candidates), 'selected_hypothesis_refs': candidates,
                         'selected_hypothesis_ref': candidates.get(selected),
                         'candidate_refs': candidates, 'selection_source': 'generation', 'provisional': True}
             for key, value in bindings.items():
                 if key in content and content[key] != value:
                     raise ContractError('预选身份或证据阶段冲突: ' + key)
             content.update(bindings)
+            content.setdefault('selected_slot', None)
             content.setdefault('selection_basis', content['rationale'])
             refs.update(candidates.values())
         staged = None
@@ -1951,7 +1967,8 @@ class RoleInteraction:
         if kind == "HypothesisCard":
             events.append(self.memory.live_update(round_number=context["round"], hypothesis_ref=card["id"]))
         if purpose == "select" or (purpose == "rank" and context["selection_stage"] == "final"):
-            events.append(self.memory.live_update(round_number=context["round"], selection={"slot": content["selected_slot"], "review_ref": card["id"]}))
+            events.append(self.memory.live_update(round_number=context["round"], selection={"slot": content.get("selected_slot"), "review_ref": card["id"],
+                "candidate_refs": content.get("candidate_refs", {})}))
         if purpose == "record":
             if content["round"] != context["round"]:
                 raise ContractError("Meta-review 轮次错误")
@@ -1960,7 +1977,8 @@ class RoleInteraction:
                 raise ContractError('Recorder 批次已发布，不能重复整理或移动游标')
             events.append(self.memory.apply_metareview(card,
                 hypothesis_refs=[c["id"] for c in self.round_hypotheses(context["round"]).values()],
-                evidence_refs=content["evidence_refs"], selection={"slot": context["selection"], "review_ref": context["selection_ref"]}))
+                evidence_refs=content["evidence_refs"], selection={"slot": context["selection"], "review_ref": context["selection_ref"],
+                    "candidate_refs": context.get("candidate_refs", {})}))
             events.append({'type': 'recorder_batch_completed', **batch, 'metareview_ref': card['id'],
                            'analysis_scope': content['analysis_scope'],
                            'pending_knowledge_count': len(content.get('pending_knowledge_updates', [])),

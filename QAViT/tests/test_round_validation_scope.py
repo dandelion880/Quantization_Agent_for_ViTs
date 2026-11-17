@@ -18,13 +18,13 @@ class RoundValidationScope(TempCase):
         plan = wf.tasks()['r001/plan_l3/revision1']
         for state in ('pending', 'ready', 'running', 'failed'):
             wf.queue.change(plan['task_id'], state)
-            outcome = wf.l3_outcome(1)
+            outcome = wf.l3_outcome(1)['candidates']['H1']
             self.assertEqual(outcome['status'], state)
             self.assertEqual(outcome['planning_state'], state)
             self.assertEqual(outcome['plan_revision'], 1)
             self.assertEqual(outcome['request_state'], 'failed')
         wf = Workflow(wf.run_dir)
-        self.assertEqual(wf.l3_outcome(1)['status'], 'failed')
+        self.assertEqual(wf.l3_outcome(1)['candidates']['H1']['status'], 'failed')
 
     def test_aggregate_covers_all_requested_rounds_and_scope(self):
         config = validation_config()
@@ -50,9 +50,10 @@ class RoundValidationScope(TempCase):
         wf, trial = self.planned('measured')
         _, evidence = self.evidence(wf, trial)
         wf.queue.finish(trial['task_id'], outputs=[evidence['id']], result={'status': 'completed'})
-        self.assertTrue(wf.l3_outcome(1)['formal_validation_success'])
+        self.assertTrue(wf.l3_outcome(1)['candidates']['H1']['formal_validation_success'])
+        self.assertFalse(wf.l3_outcome(1)['formal_validation_success'])
         wf.config = deepcopy(wf.config)
         wf.config['budget']['max_rounds'] = 3
         report = wf.summary('completed')
         self.assertFalse(report['formal_validation_success'])
-        self.assertEqual(report['validated_rounds'], [1])
+        self.assertEqual(report['validated_rounds'], [])  # H2/H3 explicitly deferred.

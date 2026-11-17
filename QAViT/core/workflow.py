@@ -1,4 +1,4 @@
-"""G-only：H1/H2/H3 自主研究→Generation 证据预选→L3→复盘。
+"""G-only：H1/H2/H3 自主研究→Generation 候选综合与修订→三候选 L3→复盘。
 
 Workflow 拥有唯一状态；实验子流程、角色交互和运行驱动分别放在三个职责分区。
 Journal 是事实源，所有阶段依据已提交事件推进，重复 advance 不重复发布任务。
@@ -185,20 +185,20 @@ class Workflow(RoleInteraction, ExperimentRequests, WorkflowDriver):
         identifier = self.enqueue_role(self.selection_key(number), 'select',
             refs=[self.brief['id'], *self.round_refs(number), *candidates.values(),
                   *[t['task_card'] for t in failures]], context={
-                'round': number, 'selection_stage': 'gonly_preselection',
+                'round': number, 'selection_stage': 'gonly_synthesis',
                 'candidate_refs': candidates,
                 'revision_context': [{k: e[k] for k in ('parent_ref', 'candidate_ref', 'reason', 'change_type',
                     'validation_status', 'basis_evidence_refs')} for e in self.journal.events
                     if e['type'] == 'candidate_revised' and e['candidate_ref'] in candidates.values()],
                 'incomplete_slots': [t['inputs']['context']['slot'] for t in failures],
-                'meaning': 'Choose the value of the next research investment. B is retained independently; a new revision is unvalidated.'})
+                'meaning': 'Compare and revise all candidates; every final version enters L3. B is retained independently; a new revision is unvalidated.'})
         return self.result_card(self.queue.get(identifier))
 
     def consider_l3(self, number):
         """Persist valid L3 before Recorder/closeout; partial results never replace Top-3."""
         selection = self.selection_card(number)
-        if selection and selection['payload']['selected_slot']:
-            for ref in self.l3_outcome(number)['valid_evidence_refs'][-1:]:
+        if selection:
+            for ref in self.l3_outcome(number)['valid_evidence_refs']:
                 evidence = self.journal.card(ref)
                 experiment = self.journal.card(evidence['payload']['experiment_ref'])
                 self.solutions.consider_round(number, evidence, experiment, selection,
@@ -224,7 +224,8 @@ class Workflow(RoleInteraction, ExperimentRequests, WorkflowDriver):
         return self.enqueue_role(key or f"r{number:03d}/record", "record", refs=refs, context={
             "recording_batch": batch,
             "round": number, "selection_ref": ranking["id"] if ranking else None,
-            "selection": ranking["payload"]["selected_slot"] if ranking else None,
+            "selection": ranking["payload"].get("selected_slot") if ranking else None,
+            "candidate_refs": ranking["payload"].get("candidate_refs", {}) if ranking else {},
             "l3_outcome": outcome, "incomplete_round": incomplete,
             "requirements": "事实与来源已由程序完整归档。综合关键发现、矛盾证据、适用条件和下一轮问题；"
                             "按需深读原件，允许空 knowledge_updates；不要返回全量覆盖清单或逐条审计。"})
@@ -306,23 +307,34 @@ class Workflow(RoleInteraction, ExperimentRequests, WorkflowDriver):
         selection_task = self.queue.get_by_key(self.selection_key(number))
         if selection_task and selection_task['state'] not in TERMINAL:
             return False
-        selected = ranking['payload']['selected_slot'] if ranking else None
-        if self.config["enable_l3"] and selected:
-            if not self.progress_planned_request(prefix + '/plan_l3', prefix + '/L3',
-                    refs=[ranking['id'], ranking['payload']['selected_hypothesis_ref'], self.brief['id']],
-                    context={'round': number, 'selection': selected, 'selection_ref': ranking['id'],
-                             'hypothesis_ref': ranking['payload']['selected_hypothesis_ref'],
-                             'selection_stage': 'gonly_preselection', 'gate': 'remaining hard budget only'}):
+        selected = ranking['payload'].get('selected_slot') if ranking else None
+        if self.config["enable_l3"] and ranking:
+            # Visit every branch before waiting: a slow/failed candidate cannot
+            # prevent its siblings from planning, calibrating or returning results.
+            pending = False
+            for slot, hypothesis_ref in ranking['payload']['candidate_refs'].items():
+                plan_key, request_key = self.l3_request_keys(number, slot, hypothesis_ref)
+                done = self.progress_planned_request(plan_key, request_key,
+                    refs=[ranking['id'], hypothesis_ref, self.brief['id']],
+                    context={'round': number, 'slot': slot, 'selection': slot, 'selection_ref': ranking['id'],
+                             'hypothesis_ref': hypothesis_ref, 'candidate_refs': ranking['payload']['candidate_refs'],
+                             'selection_stage': 'gonly_synthesis', 'gate': 'remaining hard budget only'})
+                pending = pending or not done
+            self.consider_l3(number)
+            if pending:
                 return False
         self.consider_l3(number)
         if self.queue.get_by_key(prefix + "/record") is None:
-            self.enqueue_recorder(number, incomplete=bool(failures) or not ranking)
+            self.enqueue_recorder(number, incomplete=bool(failures) or not ranking or
+                                  (self.config["enable_l3"] and not self.l3_outcome(number)["formal_validation_success"]))
         recording_task = self.queue.get_by_key(prefix + '/record')
         recorder = self.result_card(recording_task)
         if recorder or self.defer_recorder(recording_task) or recording_task is None:
             self.event("round_finished", prefix + "/finished", round=number, metareview_ref=recorder['id'] if recorder else None,
                        scientific_review='completed' if recorder or recording_task is None else 'pending',
                        selection_ref=ranking["id"] if ranking else None, selected_slot=selected,
+                       candidate_refs=ranking["payload"].get("candidate_refs", {}) if ranking else {},
+                       l3_outcome=self.l3_outcome(number),
                        incomplete_slots=[t["inputs"]["context"]["slot"] for t in failures])
             # round_finished 是内部事件，必须继续推进后继轮或终态；否则队列空闲
             # 会被主循环误判为 blocked，完成的最后一轮也永远无法结束。

@@ -104,7 +104,7 @@ class RequestContinuation(TempCase):
                 wf.submit(wf.queue.claim(author['task_id']), {'defer_reason': 'Current budget cannot complete the required protocol'}, 'fixture')
                 wf.advance()
                 self.assertIn('r001/record', wf.tasks())
-                outcome = wf.l3_outcome(1)
+                outcome = wf.l3_outcome(1)['candidates']['H1']
                 self.assertEqual(outcome['status'], 'deferred')
                 self.assertFalse(outcome['formal_validation_success'])
                 self.assertFalse(wf.journal.find_cards('EvidenceCard'))
@@ -144,7 +144,8 @@ class RequestContinuation(TempCase):
         self.assertEqual(wf.queue.get(cached['task_id'])['outputs'], [evidence['id']])
         self.assertEqual(len([t for t in wf.tasks().values() if t['kind'] == 'experiment']), 1)
         self.assertFalse(any(t['inputs'].get('purpose') == 'interpret' for t in wf.tasks().values()))
-        self.assertTrue(wf.summary('running')['formal_validation_success'])
+        self.assertTrue(wf.l3_outcome(1)['candidates']['H1']['formal_validation_success'])
+        self.assertFalse(wf.summary('running')['formal_validation_success'])
         self.assertFalse(wf.summary('running')['workflow_completed'])
 
     def test_legacy_waiting_interpretation_recovers_without_rerun_or_wait(self):
@@ -160,8 +161,9 @@ class RequestContinuation(TempCase):
         wf.progress_request(request)
         self.assertEqual(wf.queue.get(trial['task_id'])['outputs'], [evidence['id']])
         wf.queue.fail(interpretation, {'code': 'fixture_interpretation_failed'})
-        self.assertTrue(wf.l3_outcome(1)['formal_validation_success'])
-        self.assertEqual(wf.l3_outcome(1)['interpretation_state'], 'failed')
+        self.assertTrue(wf.l3_outcome(1)['candidates']['H1']['formal_validation_success'])
+        self.assertFalse(wf.l3_outcome(1)['formal_validation_success'])
+        self.assertEqual(wf.l3_outcome(1)['candidates']['H1']['interpretation_state'], 'failed')
         self.assertNotIn('r001/plan_l3/revision1', wf.tasks())
         self.assertEqual(len([t for t in wf.tasks().values() if t['kind'] == 'experiment']), 1)
 
@@ -174,14 +176,15 @@ class RequestContinuation(TempCase):
         wf.release_measured_requests()
         self.assertEqual(wf.queue.get(interpretation)['state'], 'cancelled')
         wf.progress_request(wf.queue.claim(trial['task_id']))
-        self.assertTrue(wf.l3_outcome(1)['formal_validation_success'])
+        self.assertTrue(wf.l3_outcome(1)['candidates']['H1']['formal_validation_success'])
+        self.assertFalse(wf.l3_outcome(1)['formal_validation_success'])
         self.assertFalse(any(t['inputs'].get('purpose') == 'interpret' for t in wf.queue.ready()))
         wf.advance(); wf.queue.ready()
         recorder = wf.tasks()['r001/record']
         wf.queue.claim(recorder['task_id'])
         wf.queue.fail(recorder['task_id'], {'code': 'fixture_recorder_failed'})
         report = wf.summary('running')
-        self.assertTrue(report['formal_validation_success'])
+        self.assertFalse(report['formal_validation_success'])  # Only H1 measured; siblings deferred.
         self.assertFalse(report['scientific_review_complete'])
         # Recorder remains independently recoverable; settled experiment children do not reopen.
         wf.retry_failed('recover deferred scientific review')
@@ -194,13 +197,16 @@ class RequestContinuation(TempCase):
         config['budget'].update(max_rounds=2, min_free_bytes=0)
         wf = Workflow(self.root / 'two-rounds', config)
         revised, restored, measurements = False, False, []
+        failed_key = plan_key = None
         for _ in range(160):
             if wf.advance():
                 break
             for ready in wf.queue.ready():
                 task = wf.queue.claim(ready['task_id'])
                 if task['kind'] == 'experiment_request':
-                    if task['key'] == 'r001/L3' and not revised:
+                    if task['key'].startswith('r001/L3/H1/') and not revised:
+                        failed_key = task['key']
+                        plan_key = wf.queue.get(task['inputs']['origin_task'])['key']
                         wf.queue.fail(task['task_id'], {'code': 'RequestBudgetInsufficient',
                             'message': 'Scripted request refusal; a revised feasible estimate is needed'})
                         revised = True
@@ -219,15 +225,15 @@ class RequestContinuation(TempCase):
                 else:
                     self.assertEqual(task['kind'], 'llm')
                     wf.submit(task, infrastructure.WorkflowSimulation.scripted(self, wf, task), 'scripted fixture')
-            if revised and not restored and 'r001/plan_l3/revision1' in wf.tasks():
+            if revised and not restored and plan_key + '/revision1' in wf.tasks():
                 wf = Workflow(wf.run_dir)
                 wf.retry_failed('continue revised plan without reopening superseded failures')
-                self.assertEqual(wf.tasks()['r001/L3']['state'], 'failed')
+                self.assertEqual(wf.tasks()[failed_key]['state'], 'failed')
                 restored = True
         else:
             self.fail('two-round full structure did not finish')
         self.assertTrue(restored)
-        self.assertEqual(len(measurements), 2)
+        self.assertEqual(len(measurements), 6)
         for number in (1, 2):
             hypotheses = wf.round_hypotheses(number)
             self.assertEqual(set(hypotheses), {'H1', 'H2', 'H3'})
@@ -237,8 +243,8 @@ class RequestContinuation(TempCase):
         self.assertTrue(all(h['payload']['feedback_used'] for h in wf.round_hypotheses(2).values()))
         self.assertFalse(any(t['inputs'].get('purpose') == 'interpret' for t in wf.tasks().values()))
         self.assertTrue(wf.summary('completed')['scientific_review_complete'])
-        self.assertEqual(wf.tasks()['r001/L3']['state'], 'failed')
-        self.assertEqual(wf.tasks()['r001/L3/revision1']['state'], 'completed')
+        self.assertEqual(wf.tasks()[failed_key]['state'], 'failed')
+        self.assertEqual(wf.tasks()[failed_key + '/revision1']['state'], 'completed')
 
     def test_defer_is_visible_optional_and_never_mixed_with_a_fabricated_plan(self):
         spec = role_spec('generation', 'plan_l3', {}, {})

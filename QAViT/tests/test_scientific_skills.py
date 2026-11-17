@@ -9,7 +9,7 @@ from unittest.mock import patch
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from core.cards import ContractError, canonical, make_card
-from core.journal import file_sha256
+from core.journal import file_sha256, read_json
 from core.workflow import Workflow
 from runtime.identity import code_identity
 from runtime.paths import QAVIT
@@ -34,10 +34,10 @@ class ScientificSkills(TempCase):
         task, context = self.begin(wf, self.generation(wf))
         root = QAVIT / 'docs/skills'
         skills = sorted(root.glob('*/SKILL.md'))
-        self.assertEqual(len(skills), 4)
+        self.assertEqual(len(skills), 7)
         identity = code_identity()['core_files']
         catalog = context['skill_catalog']
-        self.assertLess(len(catalog), 2400)
+        self.assertLess(len(catalog), 4000)
         for path in skills:
             body = path.read_text()
             self.assertIn('name: ' + path.parent.name, body)
@@ -45,18 +45,31 @@ class ScientificSkills(TempCase):
             self.assertIn(path.parent.name + '/SKILL.md', catalog)
             # A body or reference is never injected by catalog discovery alone.
             self.assertNotIn(body, canonical(context))
-        for path in root.rglob('*.md'):
-            asset = 'skills/' + str(path.relative_to(root))
+        paths = [*root.rglob('*.md'), *(QAVIT / 'knowledge/research-skills').rglob('*.md'),
+                 QAVIT / 'docs/SCIENTIFIC_SKILLS_COMPATIBILITY.md']
+        snapshot = read_json(wf.run_dir / 'research_run.json')['source_snapshot']
+        for path in paths:
+            asset = str(path.relative_to(QAVIT))
             result = self.read(wf, task, 'read_asset', asset=asset)
             self.assertEqual(result['text'], path.read_text())
             self.assertEqual(result['sha256'], file_sha256(path))
             self.assertIsNone(result['next_offset'])
             self.assertIn(str(path.relative_to(QAVIT)), identity)
+            self.assertEqual(snapshot[str(path.relative_to(QAVIT))], path.read_text())
             # Code examples are not Markdown links (e.g. context['load_frozen'](ref)).
             prose = re.sub(r'```[\s\S]*?```|`[^`\n]*`', '', path.read_text())
             for target in re.findall(r'\]\(([^)]+)\)', prose):
-                if '://' not in target:
-                    self.assertTrue((path.parent / target).is_file(), (path, target))
+                if '://' not in target and not target.startswith('#'):
+                    self.assertTrue((path.parent / target.split('#')[0]).is_file(), (path, target))
+
+        # Replacement is discoverable once; offline answers cannot be read by a researcher.
+        self.assertNotIn('assess-evidence-transfer', catalog)
+        allowed = wf.authorized_assets(task)
+        self.assertFalse(any('/assess-evidence-transfer/' in p for p in allowed))
+        for path in (QAVIT / 'tests/skill_evals/seven_skills_20261116').glob('*.md'):
+            self.assertNotIn(str(path), allowed)
+            with self.assertRaises(ContractError):
+                self.read(wf, task, 'read_asset', asset=str(path))
 
     def test_discovery_is_for_research_roles_and_not_engineering_or_supervisor(self):
         wf = self.workflow(1)
@@ -80,13 +93,15 @@ class ScientificSkills(TempCase):
         task, context = self.tools(wf, task, [('read_asset', {'asset': x})
                                   for x in ('skills/INDEX.md', asset, asset)])
         self.assertEqual(canonical(context).count('# QAViT Scientific Skill Catalog'), 1)
-        self.assertEqual(canonical(context).count('# 定位量化失效'), 1)
-        reference = 'skills/diagnose-ptq-failure/references/quantization-error-map.md'
-        self.assertNotIn('# W / A / 交互误差定位', canonical(context))
+        title = '# 定位量化失效与可改善的瓶颈'
+        self.assertEqual(canonical(context).count(title), 1)
+        reference = 'skills/diagnose-ptq-failure/references/error-propagation-and-intervention.md'
+        ref_title = wf.asset_path(reference).read_text().splitlines()[0]
+        self.assertNotIn(ref_title, canonical(context))
         wf = Workflow(wf.run_dir)
         task, context = self.tools(wf, wf.queue.get(task['task_id']), [('read_asset', {'asset': reference})])
-        self.assertEqual(canonical(context).count('# 定位量化失效'), 1)
-        self.assertEqual(canonical(context).count('# W / A / 交互误差定位'), 1)
+        self.assertEqual(canonical(context).count(title), 1)
+        self.assertEqual(canonical(context).count(ref_title), 1)
         wf.submit(task, hypothesis(1, 'H3'), 'scripted CPU')
         self.assertEqual(wf.queue.get(task['task_id'])['state'], 'completed')
         self.assertFalse(wf.journal.find_cards('EvidenceCard'))
@@ -125,7 +140,7 @@ class ScientificSkills(TempCase):
     def test_existing_asset_hash_and_path_boundaries_still_apply(self):
         wf = self.workflow(1)
         task, _ = self.begin(wf, self.generation(wf))
-        asset = QAVIT / 'docs/skills/assess-evidence-transfer/SKILL.md'
+        asset = QAVIT / 'docs/skills/evaluate-ptq-candidate/SKILL.md'
         from core.journal import read_json, atomic_json
         path = Path(task['request_path'])
         body = read_json(path)

@@ -1,0 +1,25 @@
+{
+  "scope": "tiny synthetic CPU numerical guard check, no accuracy claim",
+  "results": [
+    {
+      "metric": "mse",
+      "gradient_audit": {
+        "optimizer_steps": 0,
+        "autograd_grad_calls": 0,
+        "backward_calls": 0
+      },
+      "source_unchanged": true,
+      "samples": 2
+    },
+    {
+      "metric": "hessian_diag_ce",
+      "gradient_audit": {
+        "optimizer_steps": 0,
+        "autograd_grad_calls": 2,
+        "backward_calls": 0
+      },
+      "source_unchanged": true,
+      "samples": 2
+    }
+  ]
+}

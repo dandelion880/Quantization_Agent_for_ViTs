@@ -21,6 +21,7 @@ from core.evidence_scope import canonical_scope
 SERVICE_VERSION = "qavit.experiments/2.1"
 SERVICES = {
     "profile": {"levels": ["L1"], "description": "已有15个真实 Profiling 接口；v2独立会话和全局预算，无measurement次数上限"},
+    "frozen_helper": {"levels": ["L1", "L2"], "description": "已绑定冻结来源的传播诊断/离散尺度搜索；直接调用原数值 helper，返回 Evidence，不需 Coding；搜索只修改作业内实例"},
     "tensor_probe": {"levels": ["L1", "L2"], "description": "真实ViT位点输入、局部输出及小样本整网回放；可挂载经批准的quantizer_v1实现"},
     "evaluate_artifact": {"levels": ["L2", "L3"], "description": "加载标准 plan v2/package v1 或 plan v3/package v2 冻结模型包，使用显式数据视图进行分类/分割；不继承历史指标。自定义包须由对应批准的 executor_v1 加载"},
     "quantize_evaluate": {"levels": ["L2", "L3"], "description": "已有数值算法直接提供 execution.plan；新增算法才经批准 executor_v1 生成计划/执行器。两路共用冻结合同、覆盖审计、导出重载及评测"},
@@ -154,7 +155,7 @@ def prepare_request(payload, brief, runtime=None):
         # Check the mirror without rewriting the original request.
         merge(deepcopy(choices), {'training': execution['training']}, 'resolved_choices')
     training = execution.get('training', choices.get('training'))
-    if training is True and (service in ('profile', 'tensor_probe', 'evaluate_artifact')
+    if training is True and (service in ('profile', 'frozen_helper', 'tensor_probe', 'evaluate_artifact')
                             or brief.get('hard_constraints', {}).get('training_allowed') is False
                             or brief.get('hard_constraints', {}).get('training') is False):
         raise ContractError('execution.training 与此次执行不训练的约束冲突')
@@ -307,7 +308,7 @@ def normalize_execution(execution, brief, *, level=None):
     fixed_training = brief.get('hard_constraints', {}).get('training')
     if 'training' not in choices and type(fixed_training) is bool:
         choices['training'] = fixed_training
-    if service in ('profile', 'tensor_probe', 'evaluate_artifact'):
+    if service in ('profile', 'frozen_helper', 'tensor_probe', 'evaluate_artifact'):
         merge(choices, {'training': False}, 'resolved_choices')
     if type(choices.get("training")) is not bool:
         raise ContractError("execution.resolved_choices.training 必须明确此次执行是否训练；Agent依据用户输入与搜索空间选择")
@@ -339,12 +340,15 @@ def normalize_execution(execution, brief, *, level=None):
         value.setdefault('interface', interface[service])
     if value.get("requires_code") and value.get("interface") != interface.get(service):
         raise ContractError("execution.interface 与 execution.service 不匹配")
-    if service in ('profile', 'evaluate_artifact') and value['requires_code']:
+    if service in ('profile', 'frozen_helper', 'evaluate_artifact') and value['requires_code']:
         raise ContractError('已有服务不接收新插件；新增算法须明确使用 custom_experiment 或相应扩展接口')
     if service == 'profile':
         from tools.profiling import PROFILE_NAMES
         if value.get('tool') not in PROFILE_NAMES or not isinstance(value.get('arguments'), dict):
             raise ContractError('profile 需要已注册 tool 及 arguments 对象；可用工具: ' + ', '.join(PROFILE_NAMES))
+    if service == 'frozen_helper':
+        from tools.frozen_helpers import normalize_helper
+        normalize_helper(value)
     from ptq_agent.execution.pipeline import plan_uses_calibration
     consumes_calibration = (service == "tensor_probe" or "calibration" in value
         or service == "quantize_evaluate" and not value['requires_code']
@@ -602,14 +606,9 @@ class ExperimentBroker:
         brief = self.journal.card(self.brief_ref)["payload"]
         payload["execution"] = resolve_execution(payload["execution"], brief, level=payload["level"])
         execution = payload["execution"]
-        # GPU 是宿主资源选择；CUDA 后端不能因草案省略编号而在隐藏全部 GPU 后启动。
-        if self.runtime is not None:
-            from tools.experiment_worker import backend_device
-            device = backend_device(execution)
-            if str(device).startswith('cuda') and not self.runtime.get('allowed_gpus', []):
-                raise ContractError('CUDA 后端没有已授权 GPU；在研究输入 runtime.allowed_gpus 集中配置')
-            # All adapters (including factories) use the same host placement.
-            # Physical ordinals never select a worker-local CUDA device.
+        # CUDA placement is operational: an empty/busy authorized pool leaves
+        # work queued in TaskRuntime, never starts a hidden-GPU worker or rejects
+        # an otherwise valid scientific request. Physical ordinals stay host-only.
         # 跨作业读取权限只由本次 Journal 派生，不能接受 Agent 自填的文件绑定。
         from tools.frozen import bind_sources, bind_solutions
         execution.pop('frozen_sources', None)
@@ -621,6 +620,9 @@ class ExperimentBroker:
         except (ContractError, OSError) as exc:
             from runtime.failures import FrozenSourceError
             raise FrozenSourceError(str(exc)) from exc
+        if execution['service'] == 'frozen_helper':
+            from tools.runtime_interface import select_frozen_source
+            select_frozen_source(execution.get('frozen_sources', []), execution.get('source_ref'))
         execution.pop("profile_evidence_bindings", None)
         profile_refs = []
         if execution["service"] == "profile" and execution.get("tool") == "read_profile_evidence":
