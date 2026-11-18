@@ -179,7 +179,7 @@ Recorder 复用轮末及预算收尾的轻量同步任务。批次输入集中�
 其内部注册还保留计划展开、任务程序和证据索引等支持能力。V2 调用白名单没有扩大；旧 read_memory/compare_trials 等 MVP 工具已移除。
 
 `tools/evaluating.py` 使用逐图 batch=1 的实际数据视图；subset 与完整数据评测明确分开。QDQ 延迟是参考实现开销，不等于低比特硬件加速。
-`tools/segmentation.py` 保留既有 DeiT 冻结 Neck/UPerHead、150 类和 ADE 预处理/滑窗协议；设备沿用当前运行冻结的授权 GPU 池与 UUID 映射，不再固定物理 GPU 1/2/3。ADE 单任务使用一张卡；同冻结包分类+ADE 可按上述能力分别用两张卡并行，少卡时沿兼容单卡路径。
+`tools/segmentation.py` 从所选任务配置恢复特征层、冻结 Neck/UPerHead、类数与预处理/滑窗协议；设备沿用当前运行冻结的授权 GPU 池与 UUID 映射，不再固定物理 GPU 1/2/3。ADE 单任务使用一张卡；同冻结包分类+ADE 可按上述能力分别用两张卡并行，少卡时沿兼容单卡路径。
 原 log2/log_sqrt2/AdaLog 参考网格可能包含额外下溢零；本次未改公式，不能仅凭方法名声称满足特定码本约束。
 
 worker 从 `runtime/guards.py` 安装 Landlock 和梯度审计，只向当前 job 与 EXP 临时目录写入。training-free 允许正常只读 autograd.grad/backward 诊断，调用如实记录，不按调用文件放行；optimizer.step 仍禁止，浮点基准的权重、buffer、模式和梯度状态仍受保护。

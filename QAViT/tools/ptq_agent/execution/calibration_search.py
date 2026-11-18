@@ -13,6 +13,7 @@ import torch
 from torch.nn import functional as F
 
 from ..schemas import require, fingerprint
+from ..profiling.adapters import ProfileAdapter, boundary_tensor
 from .model import forward, tensor_digest
 from .calibration import parameter_evidence
 from .methods import get_target_method
@@ -76,7 +77,7 @@ def search_frozen_scales(backend, model, data, candidates, *, metric="mse", bloc
     """
     require(metric in METRIC_DEFINITIONS, "unsupported calibration selection metric")
     require(context in ("quantized", "float") and reference in ("fp_model", "local_fp"), "unknown calibration context/reference")
-    require(token_scope in ("all", "cls", "patch"), "unknown token scope")
+    require(token_scope in ("all", "cls", "special", "patch"), "unknown token scope")
     require(block is not None or (reference == "fp_model" and token_scope == "all"),
             "local_fp and CLS/patch selection require an explicit block")
     require(block is None or metric in ("mse", "cosine"), "logit/task metrics require whole-model outputs")
@@ -143,11 +144,15 @@ def search_frozen_scales(backend, model, data, candidates, *, metric="mse", bloc
                     validate_weight(record, q.layer["weight"], list(q.reference_weight.shape))
                     q.weight_record, q.decoded_weight = record, decode_weight(record, q.reference_weight.device)
 
-    def selected_tensor(t):
+    def selected_tensor(t, x):
+        if block:
+            t = boundary_tensor(t)
         require(torch.is_tensor(t) and t.numel() and bool(torch.isfinite(t).all()), "objective requires finite tensor output")
         if token_scope != "all":
-            require(t.ndim == 3 and t.shape[1] > 1, "CLS/patch requires [batch,tokens,channels] boundary")
-            t = t[:, :1] if token_scope == "cls" else t[:, 1:]
+            layout = ProfileAdapter().token_layout(backend, block, t.shape, x.shape)
+            start, stop = layout[token_scope + "_slice"]
+            require(stop > start, "requested token group is empty: " + token_scope)
+            t = t.narrow(layout["token_axis"], start, stop - start)
         return t.detach().float().cpu().clone()
 
     def batches():
@@ -160,10 +165,10 @@ def search_frozen_scales(backend, model, data, candidates, *, metric="mse", bloc
         return current["q"] if block else out
 
     if block:
-        def q_hook(_m, args, out):
+        def q_hook(_m, args, kwargs, out):
             current["q"] = out
-            current["input"] = args
-        handles.append(model.get_submodule(block).register_forward_hook(q_hook))
+            current["input"] = args, kwargs
+        handles.append(model.get_submodule(block).register_forward_hook(q_hook, with_kwargs=True))
         handles.append(backend.model.get_submodule(block).register_forward_hook(lambda _m, _a, out: current.update(fp=out)))
     try:
         # Warmup establishes actual shapes even after a package reload.
@@ -174,15 +179,16 @@ def search_frozen_scales(backend, model, data, candidates, *, metric="mse", bloc
             base_output = measured(x)
             if reference == "local_fp":
                 with torch.inference_mode():
-                    teacher = backend.model.get_submodule(block)(*current["input"])
+                    args, kwargs = current["input"]
+                    teacher = backend.model.get_submodule(block)(*args, **kwargs)
             else:
                 teacher = forward(backend, backend.model, x)
                 if block:
                     teacher = current["fp"]
-            references[sid] = selected_tensor(teacher)
+            references[sid] = selected_tensor(teacher, x)
             used += references[sid].numel() * references[sid].element_size()
             if metric == "hessian_diag_ce":
-                logits = selected_tensor(base_output).requires_grad_(True)
+                logits = selected_tensor(base_output, x).requires_grad_(True)
                 require(logits.ndim == 2 and logits.shape[0] == 1 and sid in data.labels,
                         "CE proxy requires batch=1 classifier logits and actual calibration labels")
                 gradient = torch.autograd.grad(F.cross_entropy(logits, torch.tensor([data.labels[sid]])), logits)[0]
@@ -194,7 +200,7 @@ def search_frozen_scales(backend, model, data, candidates, *, metric="mse", bloc
             install(candidate)
             total, observed = 0., []
             for x, sid in batches():
-                output, teacher = selected_tensor(measured(x)), references[sid]
+                output, teacher = selected_tensor(measured(x), x), references[sid]
                 require(output.shape == teacher.shape, "candidate/reference output shape differs")
                 if metric in ("mse", "cosine", "hessian_diag_ce"):
                     value = score(teacher, output, "hessian" if metric == "hessian_diag_ce" else metric, gradients.get(sid))

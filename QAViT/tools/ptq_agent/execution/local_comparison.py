@@ -174,7 +174,7 @@ def measure_candidate(backend, model, data):
         for x, sample_id in data.batches("calibration"):
             a, b = errors.add(forward(backend, backend.model, x), forward(backend, model, x))
             if data.labels:
-                require(list(a) == ["output"] and a["output"].shape == (1, 1000), "需要真实分类 logits")
+                require(list(a) == ["output"] and a["output"].shape == (1, backend.model.head.out_features), "需要真实分类 logits")
                 ref, value = a["output"].double(), b["output"].double()
                 correct += value.argmax(-1).item() == data.labels[sample_id]
                 teacher_correct += ref.argmax(-1).item() == data.labels[sample_id]

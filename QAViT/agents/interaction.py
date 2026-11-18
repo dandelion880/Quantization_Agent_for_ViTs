@@ -1221,6 +1221,9 @@ class RoleInteraction:
         from core.static_w4a4 import DESCRIPTION
         context["static_w4a4_protocol"] = DESCRIPTION
         context.update(available_seconds=budget['remaining_seconds'], budget_receipt=budget)
+        if self.model_metadata:
+            context['model_metadata'] = {**self.model_metadata['summary'],
+                'read_asset': {'asset': self.model_metadata['asset']['path']}}
         if (ROOT / 'QAViT/knowledge/INDEX.md').is_file():
             context['knowledge_index'] = {'read_asset': {'asset': 'QAViT/knowledge/INDEX.md'}}
         if 'literature_fetch' in TASKS[purpose]['tools']:
@@ -1617,6 +1620,9 @@ class RoleInteraction:
         solution_assets = self.solutions.assets(sequence)
         allowed.update(solution_assets)
         allowed.update(static)
+        if self.model_metadata:
+            source = self.model_metadata['asset']
+            allowed[source['path']] = source['sha256']
         allowed.update({path: file_sha256(path) for path in public})
         refs = [ref for ref, entry in self.journal.cards.items() if entry['sequence'] <= sequence]
         cards = []

@@ -310,6 +310,11 @@ def normalize_execution(execution, brief, *, level=None):
         choices['training'] = fixed_training
     if service in ('profile', 'frozen_helper', 'tensor_probe', 'evaluate_artifact'):
         merge(choices, {'training': False}, 'resolved_choices')
+    final_training = brief.get("evaluation_protocol", {}).get("final_training")
+    if level == "L3" and final_training is not None:
+        if type(final_training) is not bool:
+            raise ContractError("evaluation_protocol.final_training 必须是布尔值")
+        merge(choices, {"training": final_training}, "final protocol")
     if type(choices.get("training")) is not bool:
         raise ContractError("execution.resolved_choices.training 必须明确此次执行是否训练；Agent依据用户输入与搜索空间选择")
     value.setdefault("seed", brief.get("execution_guidance", {}).get("seed", 0))
@@ -470,36 +475,70 @@ def preflight_experiment(payload, brief, runtime=None, *, executable=False):
     return value
 
 
-def resolve_execution(execution, brief, *, level=None):
-    value = normalize_execution(execution, brief, level=level)
-    adapter = value["backend"]
+def bind_backend(adapter, *, segmentation=False):
+    """Bind the effective config and its assets once; use the same resolution for all consumers."""
+    from ptq_agent.configuration import resolve_backend_paths, load_config
+    adapter = deepcopy(adapter)
+    base = ROOT
     if adapter.get("config_path"):
-        path = Path(adapter["config_path"])
-        if not path.is_absolute():
-            path = ROOT / path
+        path = (ROOT / adapter["config_path"]).resolve()
         adapter["config_asset"] = asset(path)
-        from ptq_agent.configuration import load_config
         cfg = load_config(path)
-        backend = cfg.get("backend", cfg)
-        overrides = adapter.get("backend_overrides", {})
-        for key in ("model_path", "data_path", "asset_manifest"):
-            if overrides.get(key):
-                selected = Path(overrides[key])
-                overrides[key] = str((selected if selected.is_absolute() else path.parent / selected).resolve())
-        backend.update(deepcopy(overrides))
-        adapter["checkpoint_assets"] = []
-        keys = () if adapter.get("kind") == "fixture" else ("model_path", "data_path", "asset_manifest")
-        for key in keys:
-            selected = backend.get(key)
-            if selected and Path(selected).is_file():
-                adapter["checkpoint_assets"].append(asset(selected))
-        if adapter.get("kind") != "fixture" and backend.get("task_head"):
+        base = path.parent
+    else:
+        cfg = deepcopy(adapter.get("config", {}))
+    backend = cfg.get("backend", cfg)
+    overrides = resolve_backend_paths(adapter.get("backend_overrides", {}), base)
+    backend.update(deepcopy(overrides))
+    if adapter.get("kind") != "fixture" and backend:
+        adapter["checkpoint_assets"] = [asset(backend[k]) for k in ("model_path", "data_path", "asset_manifest")
+                                        if backend.get(k)]
+        if backend.get("task_head"):
             adapter["checkpoint_assets"].append(asset(backend["task_head"]["path"]))
+        if segmentation or backend.get("segmentation_config"):
+            from tools.vision_models import segmentation_assets
+            path, _, receipt_path, receipt = segmentation_assets(backend)
+            checkpoint = (receipt_path.parent / receipt["checkpoint"]).resolve()
+            files = [asset(p) for p in (path, receipt_path, checkpoint)]
+            if files[-1]["sha256"] != receipt["checkpoint_sha256"]:
+                raise ContractError("冻结分割 head 校验失败")
+            adapter["segmentation_assets"] = files
     if adapter.get("factory"):
         filename, _, function = adapter["factory"].partition(":")
-        path = Path(filename) if Path(filename).is_absolute() else ROOT / filename
-        adapter["factory_asset"] = asset(path)
+        adapter["factory_asset"] = asset(ROOT / filename)
         adapter["factory_function"] = function
+    return adapter
+
+
+def model_task_identity(backend, config):
+    """Compare alternative execution providers on scientific inputs, independent of device."""
+    identity = backend.identity()
+    head = identity.get('task_head')
+    return {'model_id': identity.get('model_id'), 'checkpoint_sha256': identity.get('checkpoint_sha256'),
+            'head_sha256': head.get('sha256') if isinstance(head, dict) else None,
+            'manifest_sha256': identity.get('data', {}).get('manifest_sha256'),
+            'data_protocol': {k: config.get(k) for k in ('data_protocol', 'data_seeds',
+                'calibration_samples', 'search_samples', 'final_samples')}}
+
+
+def resolve_execution(execution, brief, *, level=None):
+    value = normalize_execution(execution, brief, level=level)
+    input_adapter = value["backend"]
+    selected = input_adapter == brief["model"].get("adapter")
+    segmentation = any(e.get('kind') == 'ade_frozen' for e in value.get('evaluations', []))
+    bound = brief["model"].get("binding")
+    adapter = bind_backend(input_adapter, segmentation=segmentation or bool(selected and bound and bound['segmentation']))
+    value.pop('expected_model_identity', None)
+    if bound:
+        if selected and fingerprint(adapter) != bound["sha256"]:
+            raise ContractError("运行已绑定的模型、任务或数据资产发生变化")
+        if not selected and bound.get('alternate_source'):
+            value['expected_model_identity'] = deepcopy(bound['alternate_source'])
+            if segmentation and [a['sha256'] for a in adapter.get('segmentation_assets', [])] != bound['task_assets']:
+                raise ContractError('备选执行适配器的分割头或任务配置与研究协议不同')
+        from core.solutions import protocol_key
+        value["research_protocol_sha256"] = protocol_key(brief)
+    value["backend"] = adapter
     if value.get("model_dir"):
         model = Path(value["model_dir"]).resolve()
         value["model_assets"] = [asset(model / n) for n in ("manifest.json", "weights.pt")]

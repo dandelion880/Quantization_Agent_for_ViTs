@@ -58,13 +58,17 @@ def backend_configuration(execution):
     from ptq_agent.execution.contracts import FORMATS
     cfg["constraints"].update(precision_mode="mixed", allowed_formats=list(FORMATS),
                               fixed_weight_format=None, fixed_activation_format=None, fixed_layers={})
-    cfg["backend"].update(deepcopy(adapter.get("backend_overrides", {})))
+    from ptq_agent.configuration import resolve_backend_paths
+    base = (ROOT / adapter["config_path"]).resolve().parent if adapter.get("config_path") else ROOT
+    cfg["backend"].update(resolve_backend_paths(deepcopy(adapter.get("backend_overrides", {})), base))
+    if execution.get("research_protocol_sha256"):
+        cfg["backend"]["research_protocol_sha256"] = execution["research_protocol_sha256"]
     if os.environ.get('QAVIT_RESOURCE_ASSIGNED') == '1' and str(cfg['backend'].get('device')).startswith('cuda'):
         cfg['backend']['device'] = 'cuda:0'  # physical placement is in the task receipt
     return cfg
 
 
-def backend_and_data(execution):
+def backend_and_data(execution, *, inspect_without_data=False):
     from ptq_agent.backends.server import ServerBackend
     from ptq_agent.execution.evaluation import VerifiedManifestData
     adapter = execution["backend"]
@@ -86,6 +90,13 @@ def backend_and_data(execution):
         backend = getattr(module, function)(cfg["backend"])
     else:
         backend = ServerBackend(cfg["backend"])
+    if execution.get('expected_model_identity'):
+        from tools.experiments import model_task_identity
+        actual = model_task_identity(backend, cfg['backend'])
+        if not actual['checkpoint_sha256'] or actual != execution['expected_model_identity']:
+            raise ContractError('备选执行适配器加载的模型、分类头或数据协议与冻结研究输入不同')
+    if inspect_without_data and not getattr(backend, 'data_adapter', None) and not getattr(backend, 'rows', ()):
+        return backend, cfg, None
     return backend, cfg, VerifiedManifestData(backend, cfg)
 
 
@@ -182,10 +193,9 @@ def profile_service(experiment, backend, cfg, data, directory):
 
 def tensor_probe(experiment, backend, cfg, data, directory, approval):
     import torch
-    import torch.nn.functional as F
     from ptq_agent.execution.calibration import capture, combined_input
-    from ptq_agent.execution.sites import site_catalog
-    from ptq_agent.execution.plugin_contracts import WEIGHT_KINDS
+    from ptq_agent.execution.sites import site_catalog, install_attention, observation_module
+    from ptq_agent.execution.plugin_contracts import WEIGHT_KINDS, ATTENTION_KINDS
     from ptq_agent.execution.model import forward
     from ptq_agent.execution.evaluation import OutputErrors
     spec = experiment["payload"]["execution"]
@@ -196,7 +206,15 @@ def tensor_probe(experiment, backend, cfg, data, directory, approval):
     info = catalog[sid]
     layer = {"module": info["name"], "kind": info["kind"]}
     selected = data_view(data, spec["calibration"], "calibration")
-    records, capture_report = capture(backend, backend.model, layer, selected,
+    probe = backend.model
+    if layer["kind"] in ATTENTION_KINDS:
+        from ptq_agent.execution.pipeline import equivalence
+        probe = deepcopy(backend.model)
+        install_attention(probe, [layer["module"]])
+        equivalence(backend, probe, selected)
+    elif layer["kind"] not in WEIGHT_KINDS:
+        raise ContractError("该边需要专用统计；tensor_probe 支持 Linear/Conv 输入与显式 attention 操作数")
+    records, capture_report = capture(backend, probe, layer, selected,
                                       spec.get("cache_mib", 256))
     x = combined_input(records).float()
     params = deepcopy(spec["parameters"])
@@ -237,7 +255,7 @@ def tensor_probe(experiment, backend, cfg, data, directory, approval):
         state = fit_activation(x, qs, method, options)
         apply = lambda value: activation_qdq(value, qs, method, state, options)
     state_before = fingerprint(tensor_state(state))
-    module = backend.model.get_submodule(info["name"])
+    module = observation_module(probe, layer)
     input_error, output_error = OutputErrors(), OutputErrors()
     zeros, total = 0, 0
     with torch.no_grad():
@@ -249,11 +267,8 @@ def tensor_probe(experiment, backend, cfg, data, directory, approval):
             input_error.add(a, qa)
             zeros += int(((a != 0) & (qa == 0)).sum())
             total += a.numel()
-            if layer["kind"] == "linear":
-                local = F.linear(qa, module.weight.detach().cpu().float(), None if module.bias is None else module.bias.detach().cpu().float())
-            elif layer["kind"] == "conv2d":
-                local = F.conv2d(qa, module.weight.detach().cpu().float(), None if module.bias is None else module.bias.detach().cpu().float(),
-                                 module.stride, module.padding, module.dilation, module.groups)
+            if layer["kind"] in WEIGHT_KINDS:
+                local = module(qa.to(module.weight)).cpu().float()
             elif layer["kind"] in ("post_softmax", "attention_query"):
                 local = qa @ row["rhs"].float()
             elif layer["kind"] in ("attention_key", "attention_value"):
@@ -270,19 +285,19 @@ def tensor_probe(experiment, backend, cfg, data, directory, approval):
                     "elements": total, "calibration_samples": len(selected.ids("calibration")),
                     "scope": "controlled local intervention with FP reference; not full-model quantized accuracy"}
     if experiment["payload"]["level"] == "L2":
-        if layer["kind"] not in ("linear", "conv2d"):
-            raise ContractError("整网单边回放当前仅验证Linear/Conv2d输入；其它位点需专用适配器")
         pilot = data_view(data, spec["evaluation"])
         errors = OutputErrors()
         counts = {"baseline_top1": 0, "candidate_top1": 0, "samples": 0}
         for inputs, sample_id in pilot.batches(spec["evaluation"]["split"]):
             baseline = forward(backend, backend.model, inputs)
             def replace(_module, args):
-                value = apply(args[0].detach().cpu().float()).to(args[0])
-                return (value, *args[1:])
+                index = int(layer["kind"] in ("attention_key", "attention_value"))
+                values = list(args)
+                values[index] = apply(args[index].detach().cpu().float()).to(args[index])
+                return tuple(values)
             handle = module.register_forward_pre_hook(replace)
             try:
-                candidate = forward(backend, backend.model, inputs)
+                candidate = forward(backend, probe, inputs)
             finally:
                 handle.remove()
             reference_outputs, candidate_outputs = errors.add(baseline, candidate)
@@ -324,7 +339,7 @@ def evaluate_task(backend, cfg, data, model, plan, requested, directory, native,
                         **({'native': False, 'sites': coverage['declared_sites']} if not native else {}))
     if requested['kind'] == 'ade_frozen':
         from tools.segmentation import evaluate
-        return evaluate(model, backend.model, directory, requested.get('count'))
+        return evaluate(model, backend, directory, requested.get('count'))
     raise ContractError('尚未注册评测适配器: ' + requested['kind'])
 
 
@@ -413,6 +428,8 @@ def evaluate_services(experiment, backend, cfg, data, directory, approval, gpus=
         if native:
             exported_manifest = read_json(model_dir / 'manifest.json')
             exported_manifest['calibration_ids'] = calibration_ids
+            if spec.get('research_protocol_sha256'):
+                exported_manifest['preparation_training'] = choices['training']
             exported_manifest.pop('content_sha256', None)
             exported_manifest['content_sha256'] = fingerprint(exported_manifest)
             atomic_json(model_dir / 'manifest.json', exported_manifest)
@@ -441,6 +458,8 @@ def evaluate_services(experiment, backend, cfg, data, directory, approval, gpus=
         executor = RTNExecutor(backend, cfg, data)
         model_dir = Path(spec["model_dir"])
         model, manifest = executor.load(model_dir)
+        if spec.get('result_protocol', {}).get('final_training') is False and manifest.get('preparation_training') is not False:
+            raise ContractError('当前终评要求独立 training-free 冻结包；来源未记录或使用了训练式参考')
         plan = manifest["plan"]
         coverage = plan_constraints(plan, choices, backend, cfg, spec.get("quantization_contract"))
         calibration_ids = manifest["calibration_ids"]

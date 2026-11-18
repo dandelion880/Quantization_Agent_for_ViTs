@@ -7,7 +7,7 @@ from torch import nn
 from ..schemas import fingerprint, require
 
 
-VERIFIED_HEAD = "verified frozen normalized-CLS ImageNet-1k linear head"
+VERIFIED_HEAD = "verified frozen normalized-CLS linear head"
 
 
 def attach_head(model, spec, options, checkpoint_hash):
@@ -16,19 +16,20 @@ def attach_head(model, spec, options, checkpoint_hash):
     path = Path(options["path"])
     require(file_sha256(path) == options["sha256"], "分类头SHA256不匹配", code="asset_mismatch")
     require(options["backbone_sha256"] == checkpoint_hash, "分类头绑定的backbone不匹配", code="asset_mismatch")
-    require(spec["family"].startswith(("DINOv2", "DINOv3")), "normalized CLS head需要已验证DINO特征接口")
+    require(spec["task_forward"] == "forward_features", "normalized CLS head需要已验证DINO特征接口")
     previous = getattr(model, "head", None)
     require(previous is None or isinstance(previous, nn.Identity), "不能覆盖模型已有分类头")
-    payload = torch.load(path, map_location="cpu")
-    require(payload.get("input_dim") == spec["hidden_dim"] and payload.get("num_classes") == 1000,
+    payload = torch.load(path, map_location="cpu", weights_only=True)
+    classes = payload["num_classes"]
+    require(payload.get("input_dim") == spec["hidden_dim"] and isinstance(classes, int) and classes > 1,
             "分类头维度与backbone不符", code="asset_mismatch")
     mapping = payload.get("class_to_idx")
-    require(isinstance(mapping, dict) and len(mapping) == 1000
-            and sorted(mapping.values()) == list(range(1000)), "分类头缺少有效标签映射")
+    require(isinstance(mapping, dict) and len(mapping) == classes
+            and sorted(mapping.values()) == list(range(classes)), "分类头缺少有效标签映射")
     state = payload["classifier_state_dict"]
     require(set(state) == {"classifier.weight", "classifier.bias"}, "不支持的分类头结构")
     # 复用原helper的Linear(features.float())，仅去除外层classifier名称前缀。
-    head = nn.Linear(payload["input_dim"], 1000)
+    head = nn.Linear(payload["input_dim"], classes)
     head.load_state_dict({k.removeprefix("classifier."): v for k, v in state.items()}, strict=True)
     head = head.to(next(model.parameters()).device).eval().requires_grad_(False)
     require(all(torch.equal(head.state_dict()[k].cpu(), state["classifier." + k])

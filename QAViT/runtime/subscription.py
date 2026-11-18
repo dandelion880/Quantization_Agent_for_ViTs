@@ -16,6 +16,7 @@ REVIEWED_CLI = {
     "codex-cli 0.166.0": "EXP/validation/cli166_resume_20261031_r1",
     "codex-cli 0.167.0": "EXP/inputs/deitb_training_free_static_w4a4_20261106_r1/cli167_compatibility.json",
     "codex-cli 0.169.0": "EXP/validation/gonly_hardening_20261116_r1/llm/cli169_compatibility.json",
+    "codex-cli 0.170.0": "EXP/validation/cli170_sync_20261118_r1/cli170_compatibility.json",
 }
 
 

@@ -24,8 +24,9 @@ def data_receipt(brief, execution=None, *, evidence=()):
     if execution.get("service") == "profile":
         result["selected_data"]["profile_arguments"] = {
             k: execution.get("arguments", {}).get(k) for k in ("count", "offset", "seed")}
+    backend = {}
     try:
-        from ptq_agent.configuration import load_config
+        from ptq_agent.configuration import load_config, resolve_backend_paths
         from ptq_agent.schemas import PTQError
         config_path = adapter.get("config_asset", {}).get("path") or adapter.get("config_path")
         base = ROOT
@@ -43,7 +44,7 @@ def data_receipt(brief, execution=None, *, evidence=()):
         else:
             cfg = deepcopy(adapter.get("config", {}))
         backend = deepcopy(cfg.get("backend", {}))
-        backend.update(deepcopy(adapter.get("backend_overrides", {})))
+        backend.update(resolve_backend_paths(deepcopy(adapter.get("backend_overrides", {})), base))
         counts = {s: backend.get(s + "_samples") for s in ("calibration", "search", "final")}
         result["configured_pool_counts"] = counts
         result["ordering_seeds"] = deepcopy(backend.get("data_seeds"))
@@ -78,7 +79,7 @@ def data_receipt(brief, execution=None, *, evidence=()):
                 available = total if (consistent and matched and result["checks"]["schema_matches_config"]
                                       and result["checks"].get("frozen_config_matches") is not False) else None
                 sources = sorted({r["dataset_split"] for r in rows if r.get("dataset_split")}) if isinstance(rows, list) else []
-                result["available_data"].append({"dataset": "ImageNet-1k" if known else None, "split": split,
+                result["available_data"].append({"dataset": manifest.get("dataset", "ImageFolder") if known else None, "split": split,
                     "source_splits": sources, "configured_samples": configured, "manifest_samples": total,
                     "available_samples": available, "index_range": [0, available] if available is not None else None,
                     "range_convention": "zero-based, end exclusive; runtime ordering_seeds apply",
@@ -104,16 +105,16 @@ def data_receipt(brief, execution=None, *, evidence=()):
         result["unknowns"].append("evaluations 不是结构化评测列表；不据此推断额外数据来源。")
         evaluations = []
     if any(row.get("kind") == "ade_frozen" for row in evaluations or []):
-        # 使用评测器现有 SETTINGS，不建立第二份 ADE 配置或把适配器预期数量当成实际容量。
+        # 读取同一冻结任务配置并枚举可用图像。
         try:
-            from tools.segmentation import SETTINGS
-            settings = read_json(SETTINGS)
+            from tools.vision_models import segmentation_settings
+            path, settings = segmentation_settings(backend)
             root = Path(settings["data_root"])
             images = sorted((root / "images/validation").glob("*.jpg"))
             paired = bool(images) and all((root / "annotations/validation" / (p.stem + ".png")).is_file() for p in images)
             result["available_data"].append({"dataset": "ADE20K", "split": "ade_validation",
                 "available_samples": len(images) if paired else None, "index_range": [0, len(images)] if paired else None,
-                "source": {"path": str(SETTINGS), "sha256": file_sha256(SETTINGS), "data_root": str(root)},
+                "source": {"path": str(path), "sha256": file_sha256(path), "data_root": str(root)},
                 "identity_summary": {"ordered_paths_sha256": fingerprint([str(p) for p in images]),
                                      "pipeline_sha256": fingerprint(settings["pipeline"])},
                 "checks": "仅列举图像路径及对应标注是否存在；未读取内容、核验 head 或执行数值验证。"})

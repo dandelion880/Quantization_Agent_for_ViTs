@@ -46,6 +46,17 @@ class ReferenceOptimization(TempCase):
     approve = gates.CustomWorkerTests.approve
     execute = gates.CustomWorkerTests.execute
 
+    def test_final_training_free_and_permitted_reference_are_stage_specific(self):
+        from tools.experiments import normalize_execution
+        brief = validation_config()['research_brief']
+        brief['hard_constraints'] = {'training_allowed': True}
+        brief['evaluation_protocol']['final_training'] = False
+        execution = draft(True)['execution']
+        self.assertTrue(normalize_execution(execution, brief, level='L2')['resolved_choices']['training'])
+        with self.assertRaises(ContractError):
+            normalize_execution(execution, brief, level='L3')
+        self.assertFalse(normalize_execution(draft(False)['execution'], brief, level='L3')['resolved_choices']['training'])
+
     def test_frozen_prohibition_cannot_be_overridden_by_reference_label(self):
         for constraints in ({'training': False}, {'training_allowed': False}):
             brief = validation_config()['research_brief']

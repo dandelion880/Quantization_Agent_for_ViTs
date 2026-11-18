@@ -13,7 +13,7 @@ from .plugin_contracts import ATTENTION_KINDS, WEIGHT_KINDS
 def differentiable_forward(backend, model, x):
     if hasattr(backend, "forward_model"):
         return backend.forward_model(model, x)
-    return model.forward_features(x) if backend.spec["family"].startswith(("DINOv2", "DINOv3")) else model(x)
+    return model(x)
 
 
 def capture(backend, model, layer, data, limit_mib, gradient_loss=None, *, observer_batch_size=None):
@@ -61,8 +61,8 @@ def capture(backend, model, layer, data, limit_mib, gradient_loss=None, *, obser
             if gradient_loss:
                 with torch.enable_grad():
                     pred = differentiable_forward(backend, model, x.detach().requires_grad_(True))
-                    require(torch.is_tensor(pred) and pred.ndim == 2 and pred.shape[1] == 1000,
-                            "Hessian-guided 当前需要已验证 ImageNet 分类 head")
+                    require(torch.is_tensor(pred) and pred.ndim == 2 and pred.shape[1] > 1,
+                            "Hessian-guided 当前需要分类 logits")
                     if gradient_loss == "classification_ce":
                         require(sample_id in data.labels, "缺少校准样本真实标签")
                         loss = F.cross_entropy(pred, torch.tensor([data.labels[sample_id]], device=pred.device))

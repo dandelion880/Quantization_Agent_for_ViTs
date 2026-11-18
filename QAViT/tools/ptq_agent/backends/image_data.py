@@ -15,6 +15,18 @@ PREPROCESS = {"resize_shorter": 256, "crop_size": 224, "interpolation": "bicubic
               "antialias": True, "mean": [.485, .456, .406], "std": [.229, .224, .225]}
 
 
+def image_transform(spec):
+    from torchvision import transforms as T
+    require(set(spec) == {"resize_shorter", "crop_size", "interpolation", "antialias", "mean", "std"},
+            "unknown image transform; supply a matching data adapter")
+    require(type(spec["resize_shorter"]) is int and spec["resize_shorter"] > 0 and
+            len(spec["mean"]) == len(spec["std"]) == 3 and all(s > 0 for s in spec["std"]),
+            "invalid RGB resize/normalization")
+    return T.Compose([T.Resize(spec["resize_shorter"], interpolation=T.InterpolationMode(spec["interpolation"]),
+                               antialias=spec["antialias"]), T.CenterCrop(spec["crop_size"]),
+                      T.ToTensor(), T.Normalize(spec["mean"], spec["std"])])
+
+
 class ImageManifest:
     def __init__(self, path, expected_sha256):
         require(expected_sha256 and file_sha256(path) == expected_sha256,
@@ -22,11 +34,10 @@ class ImageManifest:
         payload = json.loads(path.read_text())
         schema = payload.get("schema")
         require(schema in ("imagefolder_manifest_v1", "imagefolder_manifest_v2"), "未知图像协议")
-        require(payload["preprocessing"] == PREPROCESS, "尚未核对该预处理；不能静默替换")
         self.PREPROCESS = payload["preprocessing"]
         self.class_to_idx = payload["class_to_idx"]
-        require(len(self.class_to_idx) == 1000 and list(self.class_to_idx.values()) == list(range(1000)),
-                "分类标签必须为已排序的 ImageNet 1000 类")
+        require(bool(self.class_to_idx) and list(self.class_to_idx.values()) == list(range(len(self.class_to_idx))),
+                "分类标签必须为连续的已排序 ImageFolder 类")
         require(list(self.class_to_idx) == sorted(self.class_to_idx), "ImageFolder 类顺序无效")
         self.splits = payload["splits"]
         require(set(self.splits) == {"calibration", "search", "final"}, "缺少数据分区")
@@ -35,15 +46,16 @@ class ImageManifest:
             require(len({r[key] for r in rows}) == len(rows), f"分区存在重复图像 {key}")
         if schema == "imagefolder_manifest_v1":
             require(len({r["file_sha256"] for r in rows}) == len(rows), "分区存在重复图像 file_sha256")
-            sources = {"calibration": "train", "search": "val", "final": "val"}
+            sources = payload.get("split_sources", {"calibration": "train", "search": "val", "final": "val"})
         else:
             sources = payload["split_sources"]
-            require(sources == {"calibration": "train", "search": "train", "final": "val"},
-                    "v2 必须为 train 校准/搜索、完整 val 终评")
             # 原数据集内可能有重复内容；仍保留全部原图，但禁止跨分区内容泄漏。
             hashes = {s: {r["file_sha256"] for r in items} for s, items in self.splits.items()}
             require(not (hashes["calibration"] & hashes["search"] or hashes["calibration"] & hashes["final"]
                          or hashes["search"] & hashes["final"]), "校准/搜索/终评存在相同图像内容")
+        require(set(sources) == set(self.splits) and all(isinstance(s, str) and s for s in sources.values()),
+                "缺少每个分区的实际图像来源")
+        self.split_sources = dict(sources)
         for split, items in self.splits.items():
             require(items, "数据分区为空")
             for r in items:
@@ -55,10 +67,12 @@ class ImageManifest:
         if self.full_validation:
             root = Path(payload["selection"]["validation_root"])
             expected = {str(p.resolve()) for name in self.class_to_idx for p in image_files(root / name)}
-            require(len(expected) == 50000 and {r["path"] for r in self.splits["final"]} == expected,
-                    "终评必须恰好覆盖原始 ImageNet validation 50k，不能只声明数量")
-            require(Counter(r["label"] for r in self.splits["final"]) == {i: 50 for i in range(1000)},
-                    "validation 必须每类50张")
+            require(len(expected) == payload["selection"]["source_validation_count"] and {r["path"] for r in self.splits["final"]} == expected,
+                    "终评必须恰好覆盖绑定的 validation 目录，不能只声明数量")
+            per_class = payload["selection"].get("final_per_class")
+            if per_class is not None:
+                require(Counter(r["label"] for r in self.splits["final"]) == dict.fromkeys(self.class_to_idx.values(), per_class),
+                        "validation 类计数与清单不符")
         self._transform = None
 
     def records(self):
@@ -67,12 +81,9 @@ class ImageManifest:
 
     def load_image(self, row):
         from PIL import Image
-        from torchvision import transforms as T
         require(file_sha256(Path(row["path"])) == row["file_sha256"], "图像内容 hash 变化")
         if self._transform is None:
-            self._transform = T.Compose([
-                T.Resize(256, interpolation=T.InterpolationMode.BICUBIC, antialias=True),
-                T.CenterCrop(224), T.ToTensor(), T.Normalize(PREPROCESS["mean"], PREPROCESS["std"])])
+            self._transform = image_transform(self.PREPROCESS)
         with Image.open(row["path"]) as im:
             x = self._transform(im.convert("RGB")).unsqueeze(0)
         require(hashlib.sha256(x.numpy().tobytes()).hexdigest() == row["input_sha256"],
@@ -106,9 +117,7 @@ def prepare(argv=None):
     mapping = {n: i for i, n in enumerate(classes)}
     require(len(classes) == 1000 and mapping == source["class_to_idx"], "train/val 类映射不一致")
     from PIL import Image
-    from torchvision import transforms as T
-    transform = T.Compose([T.Resize(256, interpolation=T.InterpolationMode.BICUBIC, antialias=True),
-                           T.CenterCrop(224), T.ToTensor(), T.Normalize(PREPROCESS["mean"], PREPROCESS["std"])])
+    transform = image_transform(PREPROCESS)
     def row(path, label, split, expected=None):
         path = Path(path).resolve()
         digest = file_sha256(path)

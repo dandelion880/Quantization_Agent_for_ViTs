@@ -1,5 +1,7 @@
 # 科研实验接口速查
 
+新运行的 `context.model_metadata` 摘要来自当前模型、实际模块/位点目录、任务资产及 FP 结构 profile。通过其中的 read_asset 入口读取完整目录。形状示例保留采样 ID 和 block 的实际参数结构。校准池、实验所选视图和正式评测条件分别以数据收据、请求和冻结 Brief 为准。显式 `evaluation_protocol.final_training` 只约束 L3；全程训练限制仍以 hard_constraints 为准。
+
 Generation/Evolution 可在 H 正式提交前直接 request_experiment，多次实验后继续分析，也可不实验直接形成 H。程序检查后执行，结果回原任务，无常规 Judger 审批/解释。可选 research_note 保存当前认识、缺口和下一步判据；失败/预算拒绝不等于测量。需要新代码时使用 Coding 单实现与 Safeguard 科学审查。
 
 使用唯一 request_experiment(experiment)，或 plan_l3 直接提交同一草案。所有研究角色均直接接收有效 Evidence 或失败反馈；已提交的最终 L3 计划需要修订时，程序创建同角色新计划任务并保留旧版本。无法继续完成规定协议时可仅提交 defer_reason，不伪称验证完成。

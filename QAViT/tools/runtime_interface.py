@@ -224,6 +224,8 @@ def interface_fixture(execution, case):
                                   num_heads=3, mlp_ratio=2, num_classes=1000)
         if any(name not in dict(model.named_modules()) for name in sites):
             raise ContractError('ViT CPU 接口夹具不含声明的位点，不能替换为 Linear 链')
+        from ptq_agent.profiling.adapters import inspect_vit
+        backend.spec = {**backend.spec, **inspect_vit(model, {})}
         backend.model = model.eval().requires_grad_(False)
     else:
         backend.model = Model().eval().requires_grad_(False)

@@ -27,6 +27,18 @@ class FallbackTests(TempCase):
         self.assertEqual(wf.solutions.fallback()['status'], 'pending_no_verified_result')
         self.assertTrue(all(r['measurement_origin']=='unmeasured_seed' for r in wf.solutions.catalog()))
 
+    def test_misfiled_top3_does_not_supply_a_foreign_model_or_protocol_B(self):
+        wf = self.workflow(1)
+        library = wf.solutions
+        path = self.root / 'misfiled_top3.json'
+        for hash_in_bucket, hash_in_row in [('another-model', library.key),
+                                              (library.key, 'another-protocol')]:
+            atomic_json(path, {'protocol_hash': hash_in_bucket,
+                               'entries': [{'protocol_hash': hash_in_row}]})
+            with self.assertRaises(ContractError):
+                library._bound_entries(path)
+        self.assertEqual(library.fallback()['status'], 'pending_no_verified_result')
+
     def test_B_survives_failure_lower_result_and_restart(self):
         wf=self.workflow(1)
         self.promote(wf,1,80,40)

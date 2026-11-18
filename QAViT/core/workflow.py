@@ -39,16 +39,26 @@ class Workflow(RoleInteraction, ExperimentRequests, WorkflowDriver):
             if config["architecture"] != "gonly":
                 raise ContractError("此分支只启动 G-only；Full 使用 main 或基线 tag")
             config = config_check(config, resolve_resources=True)
+            from tools.profiling import inspect_run_model
+            metadata = inspect_run_model(config["research_brief"], config["runtime"]["cpu_threads"])
             self.run_dir.mkdir(parents=True)
+            model_info = {}
+            if metadata:
+                from tools.experiments import asset
+                path = self.run_dir / "model_metadata.json"
+                atomic_json(path, metadata)
+                config["research_brief"]["model"]["binding"] = metadata["binding"]
+                model_info = {"model_metadata": {"asset": asset(path), "summary": metadata["summary"]}}
             identity = code_identity()
             atomic_json(manifest, {"schema_version": "qavit.run/2", "run_id": self.run_dir.name,
                                    "config": config, "config_sha256": fingerprint(config),
                                    "code_identity": identity, "source_snapshot": code_snapshot(identity),
                                    "created_at": datetime.now(timezone.utc).isoformat(),
-                                   "legacy_memory_imported": False, "legacy_incumbent_imported": False})
+                                   "legacy_memory_imported": False, "legacy_incumbent_imported": False, **model_info})
         saved = read_json(manifest)
         if not read_only and saved["config"].get("architecture") != "gonly":
             raise ContractError("不能将 Full 历史运行静默恢复为 G-only；请使用 main 或基线 tag")
+        self.model_metadata = saved.get("model_metadata")
         self.config = config_check(saved["config"], historical=read_only)
         if fingerprint(self.config) != saved["config_sha256"]:
             raise ContractError("运行配置被改写")

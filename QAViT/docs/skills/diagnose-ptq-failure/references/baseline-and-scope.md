@@ -51,4 +51,4 @@
 - GPTAQ 关于完整 FP 参考与累计输入失配的动机：[ICML 2025 原文入口](https://proceedings.mlr.press/v267/li25dn.html)。
 - ERQ 关于 W/A 相互依赖与阶段补偿的动机：[ICML 2024 原文入口](https://proceedings.mlr.press/v235/zhong24a.html)。
 
-历史 DINOv3 与当前 DeiT 的结构、任务及协议不同。只迁移诊断思路，不迁移未经核实的固定层号、最佳参数或因果结论。
+历史 DINOv3 与 DeiT 案例各有其骨干、任务头和评测协议。只迁移诊断思路，不迁移未经核实的固定层号、最佳参数或因果结论。

@@ -143,7 +143,6 @@ class DataReceiptRegression(InputCase):
                 self.assertIn("不是结构化评测列表", " ".join(data_receipt(brief)["unknowns"]))
 
     def test_ade_receipt_uses_existing_settings_and_marks_content_validation_unknown(self):
-        from tools import segmentation
         root = self.root / "ade"
         for kind, suffix in (("images", ".jpg"), ("annotations", ".png")):
             folder = root / kind / "validation"
@@ -153,14 +152,14 @@ class DataReceiptRegression(InputCase):
         atomic_json(settings, {"data_root": str(root), "pipeline": [{"fixture": True}]})
         brief = validation_config()["research_brief"]
         brief["evaluation_protocol"] = {"evaluations": [{"kind": "ade_frozen", "count": None}]}
-        with patch.object(segmentation, "SETTINGS", settings):
-            receipt = data_receipt(brief)
-            row, = receipt["available_data"]
-            self.assertEqual(row["available_samples"], 3)
-            self.assertEqual(row["source"]["path"], str(settings))
-            self.assertIn("未读取内容", row["checks"])
-            (root / "annotations/validation/2.png").unlink()
-            self.assertIsNone(data_receipt(brief)["available_data"][0]["available_samples"])
+        brief['model']['adapter']['backend_overrides']['segmentation_config'] = str(settings)
+        receipt = data_receipt(brief)
+        row, = receipt["available_data"]
+        self.assertEqual(row["available_samples"], 3)
+        self.assertEqual(row["source"]["path"], str(settings))
+        self.assertIn("未读取内容", row["checks"])
+        (root / "annotations/validation/2.png").unlink()
+        self.assertIsNone(data_receipt(brief)["available_data"][0]["available_samples"])
 
     def test_task_inputs_keep_role_boundaries_and_do_not_copy_debate_memory(self):
         wf = self.workflow(1)

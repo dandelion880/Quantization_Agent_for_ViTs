@@ -1,5 +1,7 @@
 # 科研资源导航与维护规则
 
+模型事实从本次运行的 `context.model_metadata` 及其可分页原件获取；分布与敏感度按问题调用已有 profile。DeiT 与 PTQ4DINO 路线保留原资产、任务与方法条件。
+
 这是静态科研知识的统一入口。当前资料保留原路径以兼容已保存的引用与快照；本目录不复制正文、不保存运行记忆。导航本身也按需读取，已知资源可直接打开。`read_asset` 支持项目相对路径、`knowledge/…` 及原有 `skills/…`、`methods/…`、`solutions/…` 别名；外部论文只开放 ResearchBrief 明确授权的 source_documents。
 
 ## 选择与维护入口

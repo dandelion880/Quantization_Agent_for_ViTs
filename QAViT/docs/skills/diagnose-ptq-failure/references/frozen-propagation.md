@@ -19,14 +19,13 @@ def execute(request, context):
     result = profile_frozen_propagation(
         context['backend'], model, context['data'],
         blocks=p['blocks'], split=p.get('split', 'calibration'),
-        token_layout={'axis': 1, 'cls_index': 0, 'patch_start': 1},
         interventions=p.get('interventions', []),
         classification_output='output',
         source={k: receipt.get(k) for k in ('evidence_ref', 'solution_id', 'model_ref')})
     return {'observations': {'propagation': result}}
 ```
 
-这里的 token layout 只适合确认有首位 CLS、随后全为 patch 的模型；register/distillation token 必须据模型改写，未知时省略布局，只报 all。`blocks` 例如 `['blocks.0','blocks.5','blocks.11']`，是明确 tensor→tensor 残差边界，前向须各访问一次；所有块可用于低样本全局轮廓，但不是默认配额。当前 API 不重放多参数/结构化 block，遇到这种模型应通过 custom 适配，不能错配张量。
+所选 block 路径来自本次模型目录。已绑定 block 的分组使用 profile 的 CLS、special 和 patch 范围，显式布局需与实测相符。工具保存各次位置参数、关键字参数和嵌套 RoPE，在相同的单流边界重放。多流输出或不同残差坐标需要相应适配。任务输出按其原有字段比较。
 
 干预可选 `{'id':'b5_fp','kind':'fp_block','block':'blocks.5'}`，或 `{'id':'q0_bypass','kind':'bypass','site':确切ptq_site_id,'target':'activation'}`（target 也支持 weight）。旁路精确量化边或把当前 Q 输入交给 FP 块，其余模型数值状态冻结，不重校准；每臂结束恢复开关和 hook。模块级前处理若改变边界坐标，先确认 FP/Q 残差边界仍可比。
 

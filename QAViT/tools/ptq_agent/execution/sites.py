@@ -5,6 +5,7 @@ from contextlib import contextmanager
 import torch
 from torch import nn
 
+from ..backends.base import native_classifier
 from ..schemas import require
 from ..profiling.contracts import linear_forward_supported
 from .plugin_contracts import site_id, ATTENTION_KINDS, WEIGHT_KINDS
@@ -121,7 +122,7 @@ def site_catalog(backend, config=None):
                         semantic, edge = "post_layernorm", norm + ":output"
             rows[name] = {**info, "kind": "linear", "semantic": semantic, "edge": edge}
             if (config and config["loop"].get("quantize_classifier", False) and name == "head"
-                    and backend.spec.get("classification_head") == "official pretrained ImageNet-1k head retained"):
+                    and native_classifier(backend)):
                 # 仅用户显式选择的原生分类器；neck/下游 head 与用户保护名单仍不可放行。
                 rows[name]["protected"] = False
         elif type(m) is nn.Conv2d and m.padding_mode == "zeros":

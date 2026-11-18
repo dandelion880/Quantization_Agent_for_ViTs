@@ -188,11 +188,17 @@ def _historical_runtime(binding, backend, cfg):
     expected['config']['device'] = host['config']['device']
     # Only the numerical implementation differs: all model, data and protocol identity
     # fields must still match the current task before opening the historical runtime.
+    # Loader and data adapter are implementation bytes too. Verify them against
+    # the precise archived files before comparing scientific identity across eras.
+    historical = importlib.import_module(namespace + '.backends.server').ServerBackend(old_config)
+    if historical.identity() != expected:
+        raise ContractError('historical loader did not reconstruct the original model/data identity')
     for identity in (expected, host):
         identity.pop('agent_code_sha256', None)
-    if expected != host:
+        identity.pop('loader_sha256', None)
+        identity.get('data', {}).pop('adapter_sha256', None)
+    if expected != host or historical.original_state != backend.original_state:
         raise ContractError('historical package model/data identity does not match current task')
-    historical = importlib.import_module(namespace + '.backends.server').ServerBackend(old_config)
     config = deepcopy(manifest.get('runtime_config', cfg))
     config['backend'] = old_config
     factory = importlib.import_module(namespace + '.execution.model').RTNExecutor

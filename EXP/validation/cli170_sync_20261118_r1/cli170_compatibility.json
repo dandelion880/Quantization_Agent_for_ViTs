@@ -1,0 +1,371 @@
+{
+  "checked_at_utc": "2026-11-18T06:42:10.285803+00:00",
+  "cli_version": "codex-cli 0.170.0",
+  "release": "https://github.com/openai/codex/releases/tag/rust-v0.170.0",
+  "cli_sha256": "880819aab735adcf16f36cd628940b9f1e652a36c01d10a5d32f83cc84902971",
+  "provider": "codex_subscription",
+  "scope": "CLI compatibility: live catalog and account preflight, plus one structured decision probe per configured model/effort pair",
+  "policy_review": {
+    "exec_help_unchanged_from_0.169.0": true,
+    "existing_policy_flags_retained": true,
+    "unified_exec_listed_enabled_in_0.169.0_and_0.170.0": true,
+    "shell_tool_disabled": true,
+    "code_mode_host_disabled": true,
+    "required_tool_mode": "code_mode_only",
+    "incremental_tools_legacy": "Enabled by default in 0.170.0; applies to legacy Bedrock providers, outside the openai provider used here.",
+    "multi_environment_mcp": "New and disabled by default in 0.170.0; QAViT configures no MCP servers."
+  },
+  "worktrees": {
+    "full": {
+      "base_commit": "8800006b687c56205ad624bae2ad7156c326d873",
+      "models_config_sha256": "0198213e60b61d2b117380470de46065f98096b14204b9ebcac5f6faf97905b6",
+      "auth_type": "chatgpt",
+      "catalog_verified_routes": [
+        {
+          "model": "gpt-6-luna",
+          "effort": "high",
+          "roles": [
+            "recorder"
+          ],
+          "tool_mode": "code_mode_only",
+          "context_window": 272000,
+          "supported_efforts": [
+            "low",
+            "medium",
+            "high",
+            "xhigh",
+            "max"
+          ],
+          "visibility": "list",
+          "ok": true
+        },
+        {
+          "model": "gpt-6-luna",
+          "effort": "low",
+          "roles": [
+            "supervisor"
+          ],
+          "tool_mode": "code_mode_only",
+          "context_window": 272000,
+          "supported_efforts": [
+            "low",
+            "medium",
+            "high",
+            "xhigh",
+            "max"
+          ],
+          "visibility": "list",
+          "ok": true
+        },
+        {
+          "model": "gpt-6.1-sol",
+          "effort": "high",
+          "roles": [
+            "generation",
+            "evolution"
+          ],
+          "tool_mode": "code_mode_only",
+          "context_window": 500000,
+          "supported_efforts": [
+            "low",
+            "medium",
+            "high",
+            "xhigh",
+            "max",
+            "ultra"
+          ],
+          "visibility": "list",
+          "ok": true
+        },
+        {
+          "model": "gpt-6.1-sol",
+          "effort": "medium",
+          "roles": [
+            "judger",
+            "coding",
+            "safeguard",
+            "independent_judge"
+          ],
+          "tool_mode": "code_mode_only",
+          "context_window": 500000,
+          "supported_efforts": [
+            "low",
+            "medium",
+            "high",
+            "xhigh",
+            "max",
+            "ultra"
+          ],
+          "visibility": "list",
+          "ok": true
+        }
+      ]
+    },
+    "gonly": {
+      "base_commit": "10b12fbd7897c73f391ea0a5a4bda47c31d8cc21",
+      "models_config_sha256": "28a789fce92f278ffae3a52ae5c98d164235f0002678afb4d98e55d2315df87d",
+      "auth_type": "chatgpt",
+      "catalog_verified_routes": [
+        {
+          "model": "gpt-6-astra",
+          "effort": "high",
+          "roles": [
+            "generation"
+          ],
+          "tool_mode": "code_mode_only",
+          "context_window": 272000,
+          "supported_efforts": [
+            "low",
+            "medium",
+            "high",
+            "xhigh",
+            "max",
+            "ultra"
+          ],
+          "visibility": "list",
+          "ok": true
+        },
+        {
+          "model": "gpt-6-luna",
+          "effort": "high",
+          "roles": [
+            "recorder"
+          ],
+          "tool_mode": "code_mode_only",
+          "context_window": 272000,
+          "supported_efforts": [
+            "low",
+            "medium",
+            "high",
+            "xhigh",
+            "max"
+          ],
+          "visibility": "list",
+          "ok": true
+        },
+        {
+          "model": "gpt-6-luna",
+          "effort": "low",
+          "roles": [
+            "supervisor"
+          ],
+          "tool_mode": "code_mode_only",
+          "context_window": 272000,
+          "supported_efforts": [
+            "low",
+            "medium",
+            "high",
+            "xhigh",
+            "max"
+          ],
+          "visibility": "list",
+          "ok": true
+        },
+        {
+          "model": "gpt-6.1-sol",
+          "effort": "medium",
+          "roles": [
+            "coding",
+            "safeguard",
+            "independent_judge"
+          ],
+          "tool_mode": "code_mode_only",
+          "context_window": 500000,
+          "supported_efforts": [
+            "low",
+            "medium",
+            "high",
+            "xhigh",
+            "max",
+            "ultra"
+          ],
+          "visibility": "list",
+          "ok": true
+        },
+        {
+          "model": "gpt-6.1-sol",
+          "effort": "ultra",
+          "roles": [
+            "operator_monitor"
+          ],
+          "tool_mode": "code_mode_only",
+          "context_window": 500000,
+          "supported_efforts": [
+            "low",
+            "medium",
+            "high",
+            "xhigh",
+            "max",
+            "ultra"
+          ],
+          "visibility": "list",
+          "ok": true
+        }
+      ]
+    }
+  },
+  "probes": [
+    {
+      "branch": "full",
+      "role": "recorder",
+      "requested": {
+        "model": "gpt-6-luna",
+        "reasoning_effort": "high"
+      },
+      "actual": {
+        "model": null,
+        "reasoning_effort": null,
+        "source": "not_reported_by_cli"
+      },
+      "usage": {
+        "input_tokens": 4457,
+        "cached_input_tokens": 0,
+        "cache_write_input_tokens": 0,
+        "output_tokens": 74,
+        "reasoning_output_tokens": 44
+      },
+      "decision": {
+        "ok": true
+      },
+      "tool_calls": [],
+      "tool_host_disabled_verified": true,
+      "request_sha256": "6366a22bed73a70634ba16903424fc4af755f346e63dc880776bf5b775546b35",
+      "exit_code": 0
+    },
+    {
+      "branch": "full",
+      "role": "supervisor",
+      "requested": {
+        "model": "gpt-6-luna",
+        "reasoning_effort": "low"
+      },
+      "actual": {
+        "model": null,
+        "reasoning_effort": null,
+        "source": "not_reported_by_cli"
+      },
+      "usage": {
+        "input_tokens": 4457,
+        "cached_input_tokens": 0,
+        "cache_write_input_tokens": 0,
+        "output_tokens": 28,
+        "reasoning_output_tokens": 0
+      },
+      "decision": {
+        "ok": true
+      },
+      "tool_calls": [],
+      "tool_host_disabled_verified": true,
+      "request_sha256": "9fcd36d0cedea3a2fbac448c7bcba7ee0f828a880ed74c885ba0e477aff0c284",
+      "exit_code": 0
+    },
+    {
+      "branch": "full",
+      "role": "generation",
+      "requested": {
+        "model": "gpt-6.1-sol",
+        "reasoning_effort": "high"
+      },
+      "actual": {
+        "model": null,
+        "reasoning_effort": null,
+        "source": "not_reported_by_cli"
+      },
+      "usage": {
+        "input_tokens": 4458,
+        "cached_input_tokens": 0,
+        "cache_write_input_tokens": 0,
+        "output_tokens": 28,
+        "reasoning_output_tokens": 0
+      },
+      "decision": {
+        "ok": true
+      },
+      "tool_calls": [],
+      "tool_host_disabled_verified": true,
+      "request_sha256": "b31f9d8764f2bec29ecfe2e8c3f150965dd01c9cf5b161d338adb35edf621997",
+      "exit_code": 0
+    },
+    {
+      "branch": "full",
+      "role": "judger",
+      "requested": {
+        "model": "gpt-6.1-sol",
+        "reasoning_effort": "medium"
+      },
+      "actual": {
+        "model": null,
+        "reasoning_effort": null,
+        "source": "not_reported_by_cli"
+      },
+      "usage": {
+        "input_tokens": 4459,
+        "cached_input_tokens": 0,
+        "cache_write_input_tokens": 0,
+        "output_tokens": 28,
+        "reasoning_output_tokens": 0
+      },
+      "decision": {
+        "ok": true
+      },
+      "tool_calls": [],
+      "tool_host_disabled_verified": true,
+      "request_sha256": "d821bdae7389dbe460936b57e9295e2d2c9f9463978987f0d4ee3b4e51c9f3cf",
+      "exit_code": 0
+    },
+    {
+      "branch": "gonly",
+      "role": "generation",
+      "requested": {
+        "model": "gpt-6-astra",
+        "reasoning_effort": "high"
+      },
+      "actual": {
+        "model": null,
+        "reasoning_effort": null,
+        "source": "not_reported_by_cli"
+      },
+      "usage": {
+        "input_tokens": 4458,
+        "cached_input_tokens": 0,
+        "cache_write_input_tokens": 0,
+        "output_tokens": 28,
+        "reasoning_output_tokens": 0
+      },
+      "decision": {
+        "ok": true
+      },
+      "tool_calls": [],
+      "tool_host_disabled_verified": true,
+      "request_sha256": "b31f9d8764f2bec29ecfe2e8c3f150965dd01c9cf5b161d338adb35edf621997",
+      "exit_code": 0
+    },
+    {
+      "branch": "gonly",
+      "role": "operator_monitor",
+      "requested": {
+        "model": "gpt-6.1-sol",
+        "reasoning_effort": "ultra"
+      },
+      "actual": {
+        "model": null,
+        "reasoning_effort": null,
+        "source": "not_reported_by_cli"
+      },
+      "usage": {
+        "input_tokens": 4510,
+        "cached_input_tokens": 0,
+        "cache_write_input_tokens": 0,
+        "output_tokens": 73,
+        "reasoning_output_tokens": 43
+      },
+      "decision": {
+        "ok": true
+      },
+      "tool_calls": [],
+      "tool_host_disabled_verified": true,
+      "request_sha256": "a2550741ec11b58131a56df1a26d23c114f1324e3d7c9a759c8381c9fecf2106",
+      "exit_code": 0
+    }
+  ]
+}

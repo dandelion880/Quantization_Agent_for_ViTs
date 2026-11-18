@@ -6,6 +6,7 @@
 
 from copy import deepcopy
 
+from ..backends.base import native_classifier
 from ..schemas import require
 from .sites import site_catalog, attention_kind
 from .operators import legacy_vit
@@ -42,7 +43,7 @@ def build_recipe(backend, name, bits, evidence):
         layers.append(row)
 
     require(any(info["kind"] == "conv2d" for info in catalog.values()), "原配方需要 patch projection Conv2d")
-    require("head" in catalog and backend.spec.get("classification_head") == "official pretrained ImageNet-1k head retained",
+    require("head" in catalog and native_classifier(backend),
             "原分类配方需要官方分类 head；不能冒充 backbone-only 方案")
     # 配方只处理已核对结构；未知分支需显式扩展配方数据，不能静默遗漏。
     for module_name, module in backend.model.named_modules():
@@ -57,7 +58,7 @@ def build_recipe(backend, name, bits, evidence):
             module, kind = info["name"], info["kind"]
             if kind not in ("linear", "conv2d"):
                 continue
-            use_input = module == "head" or module.endswith((".attn.proj", ".mlp.fc2")) or (kind == "conv2d" and backend.spec["family"].startswith("DeiT"))
+            use_input = module == "head" or module.endswith((".attn.proj", ".mlp.fc2")) or (kind == "conv2d" and module == "patch_embed.proj")
             add(module, kind, spec(bits, True, "per_channel", 0), spec(bits, False) if use_input else None,
                 "uniform_minmax", "uniform_minmax" if use_input else None)
             if module == "head" or module.endswith((".attn.qkv", ".attn.proj", ".mlp.fc2")):

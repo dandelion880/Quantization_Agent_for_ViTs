@@ -27,6 +27,8 @@
 !/EXP/implementation/v2_structure_20261027/
 !/EXP/implementation/v2_structure_20261027/REPORT.md
 !/EXP/validation/
+!/EXP/validation/cli170_sync_20261118_r1/
+!/EXP/validation/cli170_sync_20261118_r1/cli170_compatibility.json
 !/EXP/validation/research_refactor_20261103_r1/
 !/EXP/validation/research_refactor_20261103_r1/REPORT.md
 !/EXP/validation/research_refactor_20261103_r1/PSEUDOCODE.md
@@ -414,3 +416,17 @@ coverage.xml
 !/EXP/validation/engineering_cleanup_20261117_r1/full_regression_verified.log
 !/EXP/validation/engineering_cleanup_20261117_r1/structure_audit_verified.json
 !/EXP/validation/engineering_cleanup_20261117_r1/verified_costs.json
+
+# Multi-ViT binding and paired subset acceptance. Binary models and full runs stay local.
+!/EXP/inputs/dinov3b_static_w4a4/
+!/EXP/inputs/dinov3b_static_w4a4/input.json
+!/EXP/validation/multi_vit_20261118_r1/
+!/EXP/validation/multi_vit_20261118_r1/REPORT.md
+!/EXP/validation/multi_vit_20261118_r1/PSEUDOCODE.md
+!/EXP/validation/multi_vit_20261118_r1/RESULTS.json
+!/EXP/validation/multi_vit_20261118_r1/verify_numeric.py
+!/EXP/validation/multi_vit_20261118_r1/verify_identity.py
+!/EXP/validation/multi_vit_20261118_r1/verify_candidate.py
+!/EXP/validation/multi_vit_20261118_r1/live_roles.py
+!/EXP/validation/multi_vit_20261118_r1/verify_context.py
+!/EXP/validation/multi_vit_20261118_r1/approved_candidate.py

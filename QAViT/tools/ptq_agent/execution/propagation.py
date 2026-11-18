@@ -8,6 +8,7 @@ from contextlib import contextmanager
 import torch
 
 from ..schemas import require
+from ..profiling.adapters import ProfileAdapter, boundary_tensor
 from .evaluation import model_digest
 from .metrics import OutputErrors, tensors
 from .model import forward
@@ -23,6 +24,9 @@ def _groups(value, token_layout):
         if cls is not None:
             require(0 <= cls < start, "CLS must precede the declared patch range")
             result["cls"] = value.narrow(axis, cls, 1)
+        special_start = 0 if cls is None else cls + 1
+        if start > special_start:
+            result["special"] = value.narrow(axis, special_start, start - special_start)
         result["patch"] = value.narrow(axis, start, value.shape[axis] - start)
     return result
 
@@ -32,26 +36,16 @@ def _add(errors, key, reference, candidate, token_layout):
                                              _groups(candidate, token_layout))
 
 
-def _output_groups(output, token_layout):
-    if torch.is_tensor(output):
-        return _groups(output, token_layout) if token_layout is not None and output.ndim == 3 else output
-    if isinstance(output, dict):
-        return {key: _output_groups(value, token_layout) for key, value in output.items()}
-    if isinstance(output, (list, tuple)):
-        return [_output_groups(value, token_layout) for value in output]
-    return output
-
-
 def _capture(model, inputs, names, run):
     captured, handles = {}, []
 
     def hook(name):
         def save(module, args, kwargs, output):
             require(name not in captured, "boundary executed more than once: " + name)
-            require(len(args) == 1 and not kwargs and torch.is_tensor(args[0])
-                    and torch.is_tensor(output),
-                    "boundary replay requires one tensor input/output: " + name)
-            captured[name] = (args[0].detach().clone(), output.detach().clone())
+            from torch.utils._pytree import tree_map
+            require(bool(args), "block input is missing: " + name)
+            call = tree_map(lambda t: t.detach().clone() if torch.is_tensor(t) else t, (args, kwargs))
+            captured[name] = (boundary_tensor(call[0][0]), boundary_tensor(output).detach().clone(), call)
         return save
 
     try:
@@ -105,8 +99,8 @@ def profile_frozen_propagation(backend, model, data, *, blocks, split="calibrati
     `data` is the host restricted view; no final data are accepted. `forward_fn`
     optionally runs an explicitly frozen task head, returning tensors/dictionaries.
     classification_output names a rank-2 logits tensor (usually 'output'); omission
-    avoids treating arbitrary embeddings as logits. token_layout=None makes no
-    assumption about CLS/register/patch positions.
+    avoids treating arbitrary embeddings as logits. Known block layouts come from the model adapter.
+    Other boundaries use an explicit layout or only the complete tensor.
     """
     require(split in ("calibration", "search"), "propagation diagnostics cannot consume final data")
     require(blocks and len(set(blocks)) == len(blocks), "provide unique block boundaries")
@@ -127,11 +121,11 @@ def profile_frozen_propagation(backend, model, data, *, blocks, split="calibrati
                   for m in root.modules() for key in ("enabled", "weight_enabled", "gradient_probe")
                   if hasattr(m, key)]
     rows, cross, endpoint = {}, {}, {}
+    layouts = {}
     arm_boundaries, task, seen = {}, {}, []
 
     def output_error(arm, fp, q):
-        endpoint.setdefault(arm, OutputErrors()).add(_output_groups(fp, token_layout),
-                                                    _output_groups(q, token_layout))
+        endpoint.setdefault(arm, OutputErrors()).add(fp, q)
 
     def classification(arm, fp, q, sid):
         if classification_output is None:
@@ -160,21 +154,31 @@ def profile_frozen_propagation(backend, model, data, *, blocks, split="calibrati
                 output_error("baseline", fp_out, q_out)
                 classification("baseline", fp_out, q_out, sid)
                 for name in blocks:
-                    fx, fy = fp[name]
-                    qx, qy = q[name]
+                    fx, fy, _ = fp[name]
+                    qx, qy, (args, kwargs) = q[name]
+                    layout = token_layout
+                    if name in getattr(backend, "spec", {}).get("block_paths", ()):
+                        actual = ProfileAdapter().token_layout(backend, name, qx.shape, inputs.shape)
+                        expected = {"axis": actual["token_axis"],
+                                    "cls_index": 0 if actual["cls_slice"][1] else None,
+                                    "patch_start": actual["patch_slice"][0]}
+                        require(layout is None or layout == expected, "declared token layout conflicts with bound model")
+                        layout = expected
+                    layouts[name] = layout
                     # F on the exact Q input isolates the block from its prefix.
-                    conditional = backend.model.get_submodule(name)(qx)
+                    conditional = backend.model.get_submodule(name)(*args, **kwargs)
+                    conditional = boundary_tensor(conditional)
                     require(conditional.shape == fy.shape == qy.shape,
                             "FP/Q boundaries are not in aligned coordinates: " + name)
                     errors = rows.setdefault(name, {})
                     for key, a, b in (("input_total", fx, qx), ("output_total", fy, qy),
                                       ("local_added", conditional, qy), ("upstream_mapped", fy, conditional)):
-                        _add(errors, key, a, b, token_layout)
+                        _add(errors, key, a, b, layout)
                     # total SSE = local SSE + mapped upstream SSE + signed cross term.
                     local, upstream = qy.double() - conditional.double(), conditional.double() - fy.double()
-                    for group, value in _groups(local, token_layout).items():
+                    for group, value in _groups(local, layout).items():
                         row = cross.setdefault(name, {}).setdefault(group, {"twice_dot": 0.0, "elements": 0})
-                        row["twice_dot"] += 2 * (value * _groups(upstream, token_layout)[group]).sum().item()
+                        row["twice_dot"] += 2 * (value * _groups(upstream, layout)[group]).sum().item()
                         row["elements"] += value.numel()
                 for item in interventions:
                     arm = item["id"]
@@ -184,8 +188,8 @@ def profile_frozen_propagation(backend, model, data, *, blocks, split="calibrati
                     classification(arm, fp_out, out, sid)
                     for name in blocks:
                         errors = arm_boundaries.setdefault(arm, {}).setdefault(name, {})
-                        _add(errors, "error_to_fp", fp[name][1], captured[name][1], token_layout)
-                        _add(errors, "change_from_frozen", q[name][1], captured[name][1], token_layout)
+                        _add(errors, "error_to_fp", fp[name][1], captured[name][1], layouts[name])
+                        _add(errors, "change_from_frozen", q[name][1], captured[name][1], layouts[name])
         require(seen == list(data.ids(split)) and seen, "diagnostic data view was not fully consumed")
     finally:
         require(all(getattr(m, key) == value for m, key, value in flag_state),
@@ -214,7 +218,7 @@ def profile_frozen_propagation(backend, model, data, *, blocks, split="calibrati
                                     "task_loss": row["task_loss_sum"] / row["samples"]}
                               for arm, row in task.items()}
     return {"schema_version": 1, "source": source, "split": split, "sample_ids": seen,
-            "sample_count": len(seen), "token_layout": token_layout, "boundaries": boundaries,
+            "sample_count": len(seen), "token_layout": token_layout, "block_token_layouts": layouts, "boundaries": boundaries,
             "decomposition_cross_term": cross, "baseline_output_error": base, "interventions": arms,
             "classification_diagnostic": classification_results,
             "numeric_state_sha256": {"reference": before[0], "candidate": before[1]},

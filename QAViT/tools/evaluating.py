@@ -96,7 +96,7 @@ def aggregate(results):
                        "full_dataset_evaluation": full, "used_for_search": True,
                        "health": {k: all(e["health"][k] for e in evaluations) for k in evaluations[0]["health"]},
                        "coverage": {k: sum(e["coverage"][k] for e in evaluations) for k in evaluations[0]["coverage"]},
-                       "protocol": first["data_protocol"], "scope": "complete ImageNet validation 50000" if full else "subset",
+                       "protocol": first["data_protocol"], "scope": "complete validation manifest" if full else "subset",
                        "shard_timings": [e["timing"] for e in evaluations], "native_low_precision_kernel": False,
                        "latency_interpretation": "per-worker reference QDQ overhead, no native speedup claim"}},
         "cpu_seconds": (sum(r["cpu_seconds"] for r in results)

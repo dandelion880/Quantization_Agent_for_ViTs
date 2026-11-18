@@ -50,6 +50,12 @@ class SolutionLibrary:
                 'source_snapshot': {'path': str(path), 'sha256': file_sha256(path), 'field': field},
                 'source_read': {'asset': str(path), 'snapshot_field': field}}
 
+    def _bound_entries(self, path):
+        saved = read_json(path)
+        if saved.get('protocol_hash') != self.key or any(r.get('protocol_hash') != self.key for r in saved['entries']):
+            raise ContractError('Top-3 与当前冻结模型或评测协议不同')
+        return saved['entries']
+
     def initialize(self):
         if self.snapshot():
             self.materialize()
@@ -64,7 +70,7 @@ class SolutionLibrary:
             archived = [r for r in archived if r.get('protocol_hash') == self.key]
             path = self.root / 'top3.json'
             if path.exists():
-                entries = read_json(path)['entries']
+                entries = self._bound_entries(path)
             else:
                 atomic_json(path, {'protocol_hash': self.key, 'entries': entries})
         self.journal.commit('solutions/initialize', events=[{'type': 'solution_library', 'entries': entries,
@@ -214,7 +220,7 @@ class SolutionLibrary:
                         candidate['code'] = deepcopy(approval['candidate'])
             with file_lock(self.root / 'library.lock', timeout=10):
                 path = self.root / 'top3.json'
-                current = read_json(path)['entries'] if path.exists() else self.snapshot()
+                current = self._bound_entries(path) if path.exists() else self.snapshot()
                 if candidate['id'] not in {r['id'] for r in current}:
                     current = rank([*current, candidate])
                 atomic_json(self.root / 'archive' / (fingerprint(evidence['id']) + '.json'), candidate)
