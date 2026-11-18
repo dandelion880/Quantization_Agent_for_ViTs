@@ -145,8 +145,9 @@ import sys, time
 from pathlib import Path
 sys.path.insert(0, sys.argv[1])
 from core.journal import atomic_json
-from runtime.model_router import subscription_slot
-with subscription_slot(sys.argv[2], time.time() + 15) as slot:
+from runtime import model_router
+model_router.ROOT = Path(sys.argv[3]).parent
+with model_router.subscription_slot(sys.argv[2], time.time() + 15) as slot:
     start = time.time()
     time.sleep(.7)
     atomic_json(Path(sys.argv[3]), {'role':sys.argv[2], 'slot':slot, 'start':start, 'end':time.time()})

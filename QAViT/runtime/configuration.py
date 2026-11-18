@@ -25,7 +25,7 @@ def config_check(config, *, resolve_resources=False, historical=False):
     validate_payload("ResearchBrief", config["research_brief"])
     if config["research_brief"].get("unresolved_inputs"):
         raise ContractError("研究模板仍有待填写输入: " + str(config["research_brief"]["unresolved_inputs"]))
-    if config.get("purpose") not in ("research", "validation", "infrastructure_test"):
+    if config.get("purpose") not in ("research", "validation", "infrastructure_test", "baseline_measurement"):
         raise ContractError("必须明确本次运行用途")
     settings = config.setdefault("llm", {})
     settings.setdefault("provider", "codex_subscription")

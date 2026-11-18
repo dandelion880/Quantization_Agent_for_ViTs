@@ -199,6 +199,11 @@ def _inspect_run_model(brief):
         from tools.experiments import model_task_identity
         binding['alternate_source'] = model_task_identity(backend, cfg['backend'])
         binding['task_assets'] = [a['sha256'] for a in bound.get('segmentation_assets', [])]
-    return {'summary': summary, 'asset_binding': bound, 'module_inventory': backend.modules(),
+    # Preview the existing evaluator order without loading extra images. Profiles
+    # with their own seed report their actual IDs in their Evidence.
+    previews = {s: data.ids(s)[:32] for s in ('calibration', 'search')} if data is not None else {}
+    summary['sample_selection'] = {'detail_field': 'sample_views', 'ordering_seeds': data_identity.get('ordering_seeds'),
+        'meaning': 'evaluation/fit use the fixed per-split order; seeded profiling reports its own actual IDs'}
+    return {'summary': summary, 'sample_views': previews, 'asset_binding': bound, 'module_inventory': backend.modules(),
             'site_catalog': catalog, 'structure_profile': profile,
             'binding': binding}

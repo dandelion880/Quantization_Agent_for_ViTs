@@ -1,0 +1,96 @@
+{
+  "schema_version": "qavit.research/2",
+  "name": "dinov3b_static_w4a4_gonly_next4",
+  "purpose": "research",
+  "enable_l3": true,
+  "research_brief": {
+    "scientific_question": "如何在实际绑定的 DINOv3-B/16 上获得显著、可信、可复现的静态 W4A4 量化精度提升？",
+    "goals": {
+      "research": "以同一源模型和协议上的成对证据评价改进，保留完整可回退实现；近期以 DINOv3-B 为主，DeiT-B 在独立运行中回归和对照。"
+    },
+    "model": {
+      "model_id": "dinov3_vitb16",
+      "adapter": {
+        "kind": "server",
+        "config_path": "QAViT/configs/dinov3b_backend.json"
+      },
+      "scope": {
+        "model": "dinov3_vitb16"
+      }
+    },
+    "hard_constraints": {
+      "activation_calibration": "static",
+      "compute_dtype": "FP32",
+      "notes": "保护源模型与任务头。校准只用已绑定的 calibration 分区，冻结同一量化骨干后评价两个任务。",
+      "training_allowed": false
+    },
+    "search_space": {
+      "methods": "Generation 决定问题、位点、自由度、路线和所需证据。训练式参考仅在运行输入明确授权其范围时使用；本配置未授权此类参考，已有研究可按来源阅读。"
+    },
+    "quantization_contract": {
+      "protocol": "static_w4a4/1"
+    },
+    "evaluation_protocol": {
+      "kind": "imagenet_validation_and_ade_frozen_transfer",
+      "final_training": false,
+      "calibration_samples": 32,
+      "batch_size": 1,
+      "full_dataset": true,
+      "reload_before_evaluation": true,
+      "evaluations": [
+        {
+          "kind": "classification",
+          "split": "final",
+          "count": 50000,
+          "metrics": [
+            "top1",
+            "top5"
+          ],
+          "full_dataset": true
+        },
+        {
+          "kind": "ade_frozen",
+          "count": 2000,
+          "metrics": [
+            "mIoU",
+            "mAcc",
+            "aAcc"
+          ],
+          "full_dataset": true
+        }
+      ],
+      "notes": "沿用所绑定清单的 ImageNet calibration 及冻结 head 的原始任务协议；最终方法 training-free，可独立重建。"
+    },
+    "execution_guidance": {
+      "seed": 42
+    },
+    "unresolved_inputs": []
+  },
+  "budget": {
+    "max_rounds": 4,
+    "wall_seconds": 43200,
+    "clock_mode": "active_segments",
+    "exclude_numeric_wait": true
+  },
+  "runtime": {
+    "cpu_threads": 4,
+    "allowed_gpus": "auto",
+    "llm_concurrency": 4,
+    "experiment_concurrency": "auto",
+    "task_timeout_seconds": 600,
+    "numeric_task_timeout_seconds": {
+      "L1": 3600,
+      "L2": 10800,
+      "L3": 86400
+    }
+  },
+  "llm": {
+    "provider": "codex_subscription",
+    "max_transport_retries": 2
+  },
+  "architecture": "gonly",
+  "prepared_baseline": {
+    "evidence_ref": "EvidenceCard-05ba26ee5f474c0d8fe109239209e505@1",
+    "run_dir": "EXP/validation/dinov3b_preparation_20261118_r1/baseline_partition"
+  }
+}

@@ -57,6 +57,12 @@ class InspirationLibrary:
             raise ContractError('未知或不可见的灵感 ID')
         if old != current.get(identifier):
             raise ContractError('灵感已有新修订，请读取当前进展后更新')
+        context = task['inputs'].get('context', {})
+        parent_branch = task['inputs'].get('purpose') == 'generate' and context.get('slot') in ('H1', 'H2')
+        if parent_branch and (args.get('status') == 'active' or
+                (old and old['status'] == 'active' and set(args) - {
+                    'inspiration_id', 'source_refs', 'absorbed_parts'})):
+            raise ContractError('H1/H2 在完整父方案上记录改良，可引用灵感或登记吸收部分。活跃灵感的研究决定由 H3 或共同 Generation 决策任务更新。')
         recorder = task['role'] == 'recorder'
         if recorder and (not old or set(args) - {'inspiration_id', 'progress', 'open_questions', 'next_step',
                                                  'source_refs', 'absorbed_parts'}):

@@ -74,6 +74,10 @@ def aggregate(results):
     expected = expected if selection is None else expected[:selection]
     if set(ids) != set(expected):
         raise ValueError("分片未覆盖指定全部样本")
+    predictions = {sid: row for evaluation in evaluations
+                   for sid, row in zip(evaluation["sample_ids"], evaluation.get("per_sample_predictions", []))}
+    if predictions and set(predictions) != set(expected):
+        raise ValueError("分片的逐图分类结果不完整")
     errors = OutputErrors()
     for evaluation in evaluations:
         for key, sums in evaluation["metrics"]["raw_error_sums"].items():
@@ -93,6 +97,7 @@ def aggregate(results):
     return {"status": "completed", "data": {k: v for k, v in first.items() if k != "evaluation"} | {
         "evaluation": {"status": "completed", "split": split, "sample_count": len(ids), "sample_ids": expected,
                        "classification_counts": counts, "metrics": metrics,
+                       **({"per_sample_predictions": [predictions[s] for s in expected]} if predictions else {}),
                        "full_dataset_evaluation": full, "used_for_search": True,
                        "health": {k: all(e["health"][k] for e in evaluations) for k in evaluations[0]["health"]},
                        "coverage": {k: sum(e["coverage"][k] for e in evaluations) for k in evaluations[0]["coverage"]},

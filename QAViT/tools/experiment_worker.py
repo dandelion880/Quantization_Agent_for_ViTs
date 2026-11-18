@@ -73,6 +73,8 @@ def backend_and_data(execution, *, inspect_without_data=False):
     from ptq_agent.execution.evaluation import VerifiedManifestData
     adapter = execution["backend"]
     cfg = backend_configuration(execution)
+    if execution.get('ade_fp_reference'):
+        cfg['_ade_fp_reference'] = deepcopy(execution['ade_fp_reference'])
     if adapter.get("kind") in ("fixture", "factory"):
         factory = adapter.get("factory_asset", {}).get("path")
         if not factory:
@@ -137,7 +139,10 @@ def data_view(data, selection, split=None):
                 wanted = set(self.ids(split))
                 for x, sid in data.batches(split):
                     if sid in wanted:
+                        wanted.remove(sid)
                         yield x, sid
+                        if not wanted:
+                            break
         return Selection()
     return DataView(data, name, count=count)
 
@@ -339,7 +344,8 @@ def evaluate_task(backend, cfg, data, model, plan, requested, directory, native,
                         **({'native': False, 'sites': coverage['declared_sites']} if not native else {}))
     if requested['kind'] == 'ade_frozen':
         from tools.segmentation import evaluate
-        return evaluate(model, backend, directory, requested.get('count'))
+        return evaluate(model, backend, directory, requested.get('count'),
+                        **({'fp_reference': cfg['_ade_fp_reference']} if cfg.get('_ade_fp_reference') else {}))
     raise ContractError('尚未注册评测适配器: ' + requested['kind'])
 
 
@@ -391,6 +397,8 @@ def evaluate_services(experiment, backend, cfg, data, directory, approval, gpus=
     native = True
     model_files = []
     preparation_reads = {}
+    refinement = None
+    from tools.frozen import FrozenData
     if spec["service"] == "quantize_evaluate":
         from tools.runtime_interface import ObservedData
         plugin = module_from_approval(approval, experiment) if spec.get('requires_code') else None
@@ -414,7 +422,15 @@ def evaluate_services(experiment, backend, cfg, data, directory, approval, gpus=
             if plan_uses_calibration(plan) and not spec.get('calibration'):
                 raise ContractError("原生量化执行器需要明确 calibration 数据视图")
         model, weights, activations, audit = executor.prepare(plan, {})
-        verifier = factory(backend, deepcopy(cfg), observed)
+        if plugin and hasattr(plugin, 'refine_frozen'):
+            if not native or plan['schema_version'] != 3 or not spec.get('calibration'):
+                raise ContractError('refine_frozen requires a native v3 plan and explicit calibration view; custom executors refine during prepare')
+            refinement = plugin.refine_frozen(backend, model, observed, deepcopy(spec.get('parameters', {})))
+            if not isinstance(refinement, dict):
+                raise ContractError('refine_frozen must return a JSON object describing the applied selection')
+            if any(split != 'calibration' for split in observed.reads):
+                raise ContractError('frozen refinement must fit only on its selected calibration view')
+        verifier = factory(backend, deepcopy(cfg), FrozenData(selection))
         if native:
             verifier.input_shapes = executor.input_shapes
             verifier.audit(model, plan)
@@ -428,6 +444,8 @@ def evaluate_services(experiment, backend, cfg, data, directory, approval, gpus=
         if native:
             exported_manifest = read_json(model_dir / 'manifest.json')
             exported_manifest['calibration_ids'] = calibration_ids
+            if refinement is not None:
+                exported_manifest['refinement'] = refinement
             if spec.get('research_protocol_sha256'):
                 exported_manifest['preparation_training'] = choices['training']
             exported_manifest.pop('content_sha256', None)
@@ -447,6 +465,8 @@ def evaluate_services(experiment, backend, cfg, data, directory, approval, gpus=
                             for p in model_dir.rglob('*') if p.is_file()}:
             raise ContractError("执行器重载改写了已导出的模型资产")
         reload_check = Evaluator(backend, cfg, data).reload_check(model, loaded, split="search")
+        if native and model_digest(loaded) != model_digest(model):
+            raise ContractError('导出前后的冻结参数或缓冲区不同')
         model = loaded
         if native:
             plan = manifest["plan"]
@@ -455,7 +475,7 @@ def evaluate_services(experiment, backend, cfg, data, directory, approval, gpus=
         else:
             reload_check['loader'] = 'approved_custom_executor'
     else:
-        executor = RTNExecutor(backend, cfg, data)
+        executor = RTNExecutor(backend, cfg, FrozenData(data))
         model_dir = Path(spec["model_dir"])
         model, manifest = executor.load(model_dir)
         if spec.get('result_protocol', {}).get('final_training') is False and manifest.get('preparation_training') is not False:
@@ -511,7 +531,7 @@ def evaluate_services(experiment, backend, cfg, data, directory, approval, gpus=
     files.extend(asset(p) for p in sorted((directory / 'dual_tasks').glob('*/*.json')))
     if model_dir.parent == directory:
         files.extend(asset(p) for p in model_files or sorted(p for p in model_dir.rglob('*') if p.is_file()))
-    return {"observations": {"static_w4a4": static_receipt, "evaluations": evaluations, "coverage": coverage, "reload": reload_check,
+    return {"observations": {**({"refinement": refinement} if refinement is not None else {}), "static_w4a4": static_receipt, "evaluations": evaluations, "coverage": coverage, "reload": reload_check,
                               "representation": (plan["execution"]["mode"] if native else "approved_custom_executor") + "; native_low_precision_kernel_not_verified"},
             "artifacts": files, "model_ref": fingerprint({str(p.relative_to(model_dir)): file_sha256(p)
                                                           for p in model_dir.rglob('*') if p.is_file()}),

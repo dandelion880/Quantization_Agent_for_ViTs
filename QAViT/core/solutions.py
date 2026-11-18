@@ -117,7 +117,7 @@ class SolutionLibrary:
         candidates = [{ 'solution_id': r['id'], 'model_ref': r['id'], 'metrics': r['metrics'],
                         'evidence_refs': [r['evidence_ref']], 'run_dir': r.get('run_dir'),
                         'configuration_asset': str(self.journal.root / 'solution_library' / (fingerprint(r['id']) + '.json')),
-                        'measurement_origin': 'current_run' if r.get('run_dir') == str(self.journal.root) else 'historical',
+                        'measurement_origin': r.get('baseline_origin') or ('current_run' if r.get('run_dir') == str(self.journal.root) else 'historical'),
                         'new_measurement': False} for r in rows]
         if incumbent:
             candidates.append({**deepcopy(incumbent), 'metrics': {'top1': incumbent['top1'], 'mIoU': incumbent['mIoU']},
@@ -159,12 +159,86 @@ class SolutionLibrary:
 
     def catalog(self, sequence=None):
         active = {r['id'] for r in self.snapshot(sequence)}
-        return [{**{k: v for k, v in row.items() if k in ('id', 'title', 'status', 'metrics', 'evidence_ref', 'hypothesis_ref')},
+        return [{**{k: v for k, v in row.items() if k in ('id', 'title', 'status', 'metrics', 'reference_metrics', 'evidence_ref', 'hypothesis_ref')},
                  'retention': 'top3' if row['id'] in active else ('archive' if row.get('status') == 'evaluated' else 'seed'),
                  'configuration_asset': str(self.journal.root / 'solution_library' / (fingerprint(row['id']) + '.json')),
-                 'measurement_origin': ('current_run' if row.get('run_dir') == str(self.journal.root) else 'historical') if row.get('status') == 'evaluated' else 'unmeasured_seed',
+                 'measurement_origin': (row.get('baseline_origin') or ('current_run' if row.get('run_dir') == str(self.journal.root) else 'historical')) if row.get('status') == 'evaluated' else 'unmeasured_seed',
                  'new_measurement': False}
                 for row in self.available(sequence)]
+
+    def _complete_metrics(self, p):
+        ev = p['observations'].get('evaluations', {})
+        metrics = {}
+        for task, metric in (('classification', 'top1'), ('segmentation', 'mIoU')):
+            row = ev.get(task, {})
+            value = row.get('metrics', {}).get(metric)
+            if row.get('full_dataset') is not True or type(value) not in (int, float) or not math.isfinite(value):
+                raise ContractError('dual full-task metrics pending')
+            metrics[metric] = value
+        if not p['provenance'].get('model_ref'):
+            raise ContractError('missing frozen model identity')
+        if self.brief.get('quantization_contract', {}).get('protocol'):
+            if not p['observations'].get('static_w4a4', {}).get('frozen'):
+                raise ContractError('final static W4A4 receipt pending')
+        return metrics
+
+    def _retain(self, candidate):
+        with file_lock(self.root / 'library.lock', timeout=10):
+            path = self.root / 'top3.json'
+            current = self._bound_entries(path) if path.exists() else self.snapshot()
+            if candidate['id'] not in {r['id'] for r in current}:
+                current = rank([*current, candidate])
+            atomic_json(self.root / 'archive' / (fingerprint(candidate['evidence_ref']) + '.json'), candidate)
+            atomic_json(path, {'protocol_hash': self.key, 'entries': current})
+        return current
+
+    def import_prepared(self, reference):
+        """Accept a measured native baseline from an explicit, round-free preparation run."""
+        from core.workflow import Workflow
+        if not isinstance(reference, dict) or set(reference) != {'run_dir', 'evidence_ref'}:
+            raise ContractError('prepared_baseline requires run_dir and evidence_ref')
+        key = 'solutions/prepared/' + fingerprint(reference)
+        if any(e['type'] == 'prepared_baseline_imported' and e['reference'] == reference for e in self.journal.events):
+            return
+        origin = Workflow((ROOT / reference['run_dir']).resolve(), read_only=True)
+        if (origin.config['purpose'] != 'baseline_measurement' or origin.solutions.key != self.key
+                or self.brief['evaluation_protocol'].get('formal_incumbent_allowed') is False):
+            raise ContractError('baseline preparation source or frozen protocol mismatch')
+        evidence = origin.journal.card(reference['evidence_ref'])
+        p = evidence['payload']
+        experiment = origin.journal.card(p['experiment_ref'])
+        execution = experiment['payload']['execution']
+        if (experiment['payload']['level'] != 'L3' or experiment['author'] != 'program'
+                or experiment['payload'].get('candidate_binding') or p['measurement_source'] != 'real'
+                or execution['service'] != 'quantize_evaluate' or execution.get('requires_code') or not execution.get('plan')
+                or execution['resolved_choices']['training'] is not False
+                or execution.get('research_protocol_sha256') != self.key):
+            raise ContractError('prepared baseline needs a complete independently rebuildable native measurement')
+        origin.broker.validate_evidence_for(experiment, evidence)
+        reload = p['observations'].get('reload', {})
+        if not (reload.get('passed') and reload.get('host_verified') and reload.get('evaluated_instance') == 'reloaded'):
+            raise ContractError('prepared baseline lacks an independent reload')
+        package = {Path(a['path']).name: a['sha256'] for a in p['artifacts'] if Path(a['path']).parent.name == 'model'}
+        if set(package) != {'manifest.json', 'weights.pt'} or fingerprint(package) != p['provenance']['model_ref']:
+            raise ContractError('prepared baseline evidence does not bind a complete native package')
+        manifest = read_json(next(a['path'] for a in p['artifacts'] if Path(a['path']).name == 'manifest.json'
+                                  and Path(a['path']).parent.name == 'model'))
+        if manifest.get('preparation_training') is not False or p['provenance'].get('training_declared') is not False:
+            raise ContractError('prepared baseline has no verified training-free reconstruction')
+        results = p['observations']['evaluations']
+        entry = {'id': p['provenance']['model_ref'], 'title': origin.config['name'], 'status': 'evaluated',
+            'baseline_origin': 'preparation', 'protocol_hash': self.key, 'metrics': self._complete_metrics(p),
+            'reference_metrics': {k[9:]: v for row in results.values() for k, v in row['metrics'].items()
+                                  if k in ('baseline_top1','baseline_top5','baseline_mIoU','baseline_mAcc','baseline_aAcc')},
+            'configuration': deepcopy(origin.brief['payload']), 'execution': execution,
+            'actual_quantization': p['observations']['coverage'], 'artifacts': p['artifacts'],
+            'evidence_ref': evidence['id'], 'experiment_ref': experiment['id'], 'run_dir': str(origin.run_dir),
+            **origin.solutions.source_record(origin.journal.cards[experiment['id']]['sequence'])}
+        current = self._retain(entry)
+        self.journal.commit(key, events=[{'type': 'prepared_baseline_imported', 'reference': reference},
+            {'type': 'solution_archive', 'entries': [entry], 'protocol_hash': self.key},
+            {'type': 'solution_library', 'entries': current, 'protocol_hash': self.key}])
+        self.materialize()
 
     def consider_round(self, number, evidence, experiment, selection, *, validator):
         """Use the existing evidence validator; no extra LLM or accuracy threshold."""
@@ -177,19 +251,7 @@ class SolutionLibrary:
             if (p['measurement_source'] != 'real' or p['status'] != 'completed' or experiment['payload']['level'] != 'L3'
                     or self.brief['evaluation_protocol'].get('formal_incumbent_allowed') is False):
                 raise ContractError('not a valid real final evaluation')
-            ev = p['observations'].get('evaluations', {})
-            metrics = {}
-            for task, metric in (('classification', 'top1'), ('segmentation', 'mIoU')):
-                row = ev.get(task, {})
-                value = row.get('metrics', {}).get(metric)
-                if row.get('full_dataset') is not True or type(value) not in (int, float) or not math.isfinite(value):
-                    raise ContractError('dual full-task metrics pending')
-                metrics[metric] = value
-            if not p['provenance'].get('model_ref'):
-                raise ContractError('missing frozen model identity')
-            if self.brief.get('quantization_contract', {}).get('protocol'):
-                if not p['observations'].get('static_w4a4', {}).get('frozen'):
-                    raise ContractError('final static W4A4 receipt pending')
+            metrics = self._complete_metrics(p)
             binding = experiment['payload'].get('candidate_binding', {})
             hypothesis_ref = binding.get('hypothesis_ref', selection['payload'].get('selected_hypothesis_ref'))
             candidates = selection['payload'].get('candidate_refs', {})
@@ -218,13 +280,7 @@ class SolutionLibrary:
                     approval = task['task']['inputs'].get('approval')
                     if approval:
                         candidate['code'] = deepcopy(approval['candidate'])
-            with file_lock(self.root / 'library.lock', timeout=10):
-                path = self.root / 'top3.json'
-                current = self._bound_entries(path) if path.exists() else self.snapshot()
-                if candidate['id'] not in {r['id'] for r in current}:
-                    current = rank([*current, candidate])
-                atomic_json(self.root / 'archive' / (fingerprint(evidence['id']) + '.json'), candidate)
-                atomic_json(path, {'protocol_hash': self.key, 'entries': current})
+            current = self._retain(candidate)
             events = [{'type': 'solution_library', 'entries': current, 'protocol_hash': self.key},
                       {'type': 'solution_considered', 'round': number, 'evidence_ref': evidence['id'],
                        'selected': candidate['id'] in {r['id'] for r in current}, 'entry': candidate}]

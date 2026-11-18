@@ -198,7 +198,7 @@ def search_frozen_scales(backend, model, data, candidates, *, metric="mse", bloc
         require(list(references) == ids, "actual calibration sample order differs from declared view")
         for candidate in candidates:
             install(candidate)
-            total, observed = 0., []
+            total, observed, per_sample_scores = 0., [], []
             for x, sid in batches():
                 output, teacher = selected_tensor(measured(x), x), references[sid]
                 require(output.shape == teacher.shape, "candidate/reference output shape differs")
@@ -215,8 +215,10 @@ def search_frozen_scales(backend, model, data, candidates, *, metric="mse", bloc
                 require(math.isfinite(value), "nonfinite candidate objective")
                 total += value
                 observed.append(sid)
+                per_sample_scores.append(value)
             require(observed == ids, "candidate did not consume identical calibration view")
-            history.append({"id": candidate["id"], "scales": deepcopy(candidate["scales"]), "score": total / len(ids), "sample_count": len(ids)})
+            history.append({"id": candidate["id"], "scales": deepcopy(candidate["scales"]), "score": total / len(ids), "sample_count": len(ids),
+                            "per_sample_scores": per_sample_scores})
             if selected is None or history[-1]["score"] < selected[0]:
                 selected = history[-1]["score"], candidate
         install(selected[1], fitting=False)

@@ -112,7 +112,8 @@ def run(request, path):
     if request['model_assets'] != {str(p.relative_to(model_dir)): file_sha256(p) for p in model_dir.rglob('*') if p.is_file()}:
         raise ContractError('frozen shard model package changed')
     backend, cfg, data = backend_and_data(experiment['payload']['execution'])
-    model, manifest = RTNExecutor(backend, cfg, data).load(model_dir)
+    from tools.frozen import FrozenData
+    model, manifest = RTNExecutor(backend, cfg, FrozenData(data)).load(model_dir)
     digest, baseline = model_digest(model), model_digest(backend.model)
     if digest != request['model_digest'] or baseline != request['baseline_digest']:
         raise ContractError('loaded shard model identity differs')

@@ -23,7 +23,7 @@
 | 冻结搜索背景 | `context=quantized/float`；float 关闭干预位点集合外的量化，集合内保留已启用 W/A；选定后恢复完整背景 | 不等于原生 `calibration_context`，也不把同位点未调整的另一目标变成 FP |
 | 目标 | mse/cosine；分类 logits 的 teacher_kl、task_loss、top1_error；初始冻结 logits CE 梯度平方 `hessian_diag_ce` | 不是完整 Hessian；原生位点梯度又是另一对象；同起点 teacher KL 梯度可能近零 |
 | token | 绑定 block 的 profile、冻结搜索和传播共用 CLS/special/patch 切片，核对实际网格 | 按绑定布局区分额外 token；空组不能用于拟合，任意多流或重排布局需适配 |
-| 传播 | 配对 FP/Q 边界、同 Q 输入 FP block 重放、交叉项、冻结替换与 W/A 旁路 | 仅覆盖坐标对齐和实际 forward；FP 替换收益不是合法 W4A4 可达保证，真实 ADE head 路径仍待验证 |
+| 传播 | 配对 FP/Q 边界、同 Q 输入 FP block 重放、交叉项、冻结替换与 W/A 旁路 | 仅覆盖坐标对齐和实际 forward；FP 替换收益不是合法 W4A4 可达保证，helper 默认观测绑定的分类前向；ADE 冻结评价使用独立任务适配层，自定义 dense 输出需验证其前向 |
 
 参数与状态细节见 [尺度选择](methods/scale_selection.md)、[校准顺序](methods/calibration_order.md)、[冻结传播 API](skills/diagnose-ptq-failure/references/frozen-propagation.md) 和 [代码接口](CODE_INTERFACES.md)。无接口的设计沿原 Coding 扩展，不能把上述建议直接塞入标量倍率参数。相同整数 code 不保证相同解码输出；当前 frozen search 枚举全部显式候选，没有按 code 去重优化。
 

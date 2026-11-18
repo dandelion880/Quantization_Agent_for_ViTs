@@ -366,7 +366,10 @@ class QuantizationExecutor:
         if target == "activation" and getattr(self, "repq_activation_params", {}).get(layer["module"]) is not None:
             params = {k: v.clone() for k, v in self.repq_activation_params[layer["module"]].items()}
         trials = []
-        if c["strategy"] == "percentile":
+        if target == 'activation' and options.get('token_partition') and c['strategy'] == 'percentile':
+            from .grids_partition import fit
+            params = fit(x, spec, options['token_partition'], c['percentiles'])
+        elif c["strategy"] == "percentile":
             params = (grids.fit(x, spec, method, percentiles=c["percentiles"]) if method == "uniform_affine" else
                       grids.percentile_log(x, spec, lambda value, shape, params: get_target_method("activation", method).apply(
                           value, shape, params=params, options=options), c["percentiles"]))
@@ -687,9 +690,17 @@ class QuantizationExecutor:
         path = Path(directory)
         require(not path.exists(), "产物目录已存在，拒绝覆盖", code="run_exists")
         path.mkdir(parents=True)
+        # Selection can replace a grid or weight record after prepare. Serialize the
+        # audited live model, including affine transforms, even with old-style callers.
+        qmap = quantizers(model)
+        records = {row["module"]: qmap[site_id(row)].weight_record for row in plan["layers"] if row["weight"]}
+        params = {site_id(row): qmap[site_id(row)].params() for row in plan["layers"] if row["activation"]
+                  and row["activation"]["format"] not in RAW_FLOATS and plan["execution"]["activation_calibration"] == "static"}
+        preprocess = {p["module"]: {"scale": qmap[p["module"]].input_scale.detach().cpu(),
+                                     "shift": qmap[p["module"]].input_shift.detach().cpu()} for p in plan["preprocess"]}
         removed = {name + ".weight" for name in records}
         state = {k: v.detach().cpu().clone() for k, v in self.backend.model.state_dict().items() if k not in removed}
-        payload = {"state": state, "weights": records, "activations": params, "preprocess": self.preprocess_state}
+        payload = {"state": state, "weights": records, "activations": params, "preprocess": preprocess}
         handle, tmp = tempfile.mkstemp(dir=path, suffix=".tmp")
         os.close(handle)
         try:

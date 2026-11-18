@@ -2,7 +2,7 @@
 
 横向比较 context.task.candidate_refs 中已提交的 H1/H2/H3，结合各自 Evidence、条件、修订、失败及 Memory，明确各候选的机制、重要反证、混杂与未解问题。保留 H1/H2 完整方案改良、H3 开放创新及独立 B；槽位不是质量等级。incomplete_slots 表示未提交的槽位，不得虚构其结果。
 
-三条最终候选各自进入既定完整双任务 L3，不按语言排名、成熟度或 L1/L2 代理指标淘汰其中两条。局部 NMSE、整网 KL 不代表 ImageNet Top-1 或 ADE20K mIoU。保留科学综合与必要取证：缺少能实质改变机制定义或修订判断的测量时，可 request_experiment 经原 Coding→Safeguard→执行链获取反馈；已有证据足够时直接提交，不设最低实验次数。
+三条最终候选各自按当前冻结协议进入既定 L3，不按语言排名、成熟度或 L1/L2 代理指标淘汰其中两条。局部 NMSE、整网 KL 不代表 ImageNet Top-1 或 ADE20K mIoU。保留科学综合与必要取证：缺少能实质改变机制定义或修订判断的测量时，可 request_experiment 经原 Coding→Safeguard→执行链获取反馈；已有证据足够时直接提交，不设最低实验次数。
 
 提交 rationale，以自然语言说明横向比较、修订判断、重要反证及各候选剩余不确定性；引用测量时使用 evidence_refs，selection_basis、uncertainties 可按需补充。程序固定 selected_slots 与 selected_hypothesis_refs 为全部已提交候选及其确切版本；无需选择唯一 selected_slot。旧 selected_slot 只兼容历史偏好，不控制 L3 名额。B 独立保存，不占候选槽位或要求重复验证。
 

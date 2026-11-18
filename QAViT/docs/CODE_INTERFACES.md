@@ -8,7 +8,7 @@ Coding 无须等待完整执行规格冻结。原始请求与最终执行 Experi
 
 Coding 必须返回完整 source；interface 可由已知执行条件绑定，explanation 和 execution_choices 按需提供。当前接口为：
 - quantizer_v1：fit(x, parameters)、apply(x, state, parameters)。fit 使用声明的校准数据，apply 不修改输入或冻结状态。
-- executor_v1：build_plan(backend, cfg, experiment_payload, parameters)，需要时提供 make_executor(backend, cfg, data)。
+- executor_v1：build_plan(backend, cfg, experiment_payload, parameters)，原生 v3 可选 refine_frozen(backend, model, data, parameters)，在 prepare 后对已经安装的 W/A 做本次校准视图内的选择，返回 JSON 选择记录。宿主审计并导出实际选中状态，核对重载模型全部参数、buffer 和同图输出。独立加载和迁移只使用 load。其他表示可提供 make_executor(backend, cfg, data)，自行实现配套 prepare/audit/export/load。
 - experiment_v1：execute(experiment_payload, context)。context 提供 candidate_model、reference_model、data、backend、configuration、parameters、directory；reference_model 是受保护的浮点基准模型。返回 observations 及需要的 artifacts；artifacts 可省略，空 `{}` 兼容归一为 `[]`，非空使用 `[{"path":"文件路径","sha256":"64位小写十六进制SHA256","bytes":非负整数字节数}]`。sample_selection 由宿主按真实读取生成，实现可省略，显式提供时须与实际一致。
 
 实施错误携带当前源码与具体反馈返回 Coding，就地修订同一实验；每版重新绑定执行条件及审批。不得重跑未修改的失败代码。NameError、UnboundLocalError 等实际发生在提交实现中的异常同样进入修订；预算、资产与宿主接口问题单独保留工程原因；原始科学定义有实质歧义时才回到原研究者。修订共享现有有界额度，错误和旧版本保持可追溯。
@@ -24,7 +24,7 @@ Coding 必须返回完整 source；interface 可由已知执行条件绑定，ex
 
 `context.public_interface_assets` 提供当前代码版本下的公共 `model.py`（v2/v3 适配入口）、`pipeline.py`、`contracts.py`、`plugin_contracts.py`、`calibration.py`、`plugin_math.py`，code/safeguard 均可用 read_asset 分页读取，权限按每次请求保存哈希。其他源码与候选资产不因此开放。默认 `RTNExecutor(backend, config, data)` 适配 v2/v3；v3 数值实现仍为 QuantizationExecutor。公共交接为 `prepare(plan, shapes) -> (model, weights, activations, audit)`、`audit(model, plan)`、`export(model, plan, weights, activations, directory, audit) -> manifest`、`load(directory) -> (loaded_model, manifest)`。使用内置执行器时，prepare 拟合并保存冻结量化状态，export 导出，宿主独立 loader/audit 核验并使用重载实例评测。提供 make_executor 的自定义算法可用自己的计划、方法名、observer 和参数表示，仍须实现既有 prepare/export/load 接口；宿主实际调用批准的加载实现，检查导出资产和重载前后真实输出。自报 load 成功不作为核验。独立 evaluate_artifact 支持 plan v2/package v1 和 plan v3/package v2 的标准模型包，自定义包须通过对应批准实现加载，不能伪装为原生包。
 
-evaluations 支持 `{"kind":"classification","split":"search","count":16}`；该示例不规定全局评测任务。L3 按 ResearchBrief.evaluation_protocol 的任务、范围和完成条件执行；结构化 evaluations 中的 kind/split/count 由预检与证据检查共同核对，未声明项不猜测、不自动增加分类或分割。协议要求 full_dataset=true 时，内置评测的实测结果须确为完整数据。缩减评测仅支持其声明范围；L3 层级或流程完成不代表完整数据评测。已有 ade_frozen 是明确兼容 DeiT 的冻结 head 适配器，不能宣称自动适用所有 ViT。其它模型可使用用户声明且绑定源码的 factory backend；新下游任务需经审查的实验适配。L3 不设置 L2 精度阈值，保留原预算与完整实验检查。
+evaluations 支持 `{"kind":"classification","split":"search","count":16}`；该示例不规定全局评测任务。L3 按 ResearchBrief.evaluation_protocol 的任务、范围和完成条件执行；结构化 evaluations 中的 kind/split/count 由预检与证据检查共同核对，未声明项不猜测、不自动增加分类或分割。协议要求 full_dataset=true 时，内置评测的实测结果须确为完整数据。缩减评测仅支持其声明范围；L3 层级或流程完成不代表完整数据评测。ade_frozen 已在绑定的 DeiT-B 和 DINOv3-B/16 骨干与各自冻结分割头上实测。其他骨干、特征接口及头须按其绑定单独验证。其它模型可使用用户声明且绑定源码的 factory backend；新下游任务需经审查的实验适配。L3 不设置 L2 精度阈值，保留原预算与完整实验检查。
 
 所有 L3 服务共用实际结果门禁。execution.evaluations 的每项必须给出 kind、split（ade_frozen 固定为 ade_validation）及显式 count；可列 metrics 和 full_dataset。结果逐项检查指标、唯一样本 ID、顺序/数量和完整范围；重复 kind 或不支持的 offset/字段明确拒绝。没有标准评测的自定义 L3，须在 Brief.evaluation_protocol.required_results 列出 `{path,schema}`（路径相对于 observations），不能仅填写“completed”。有 batch_size、calibration_samples、search_samples、data_protocol、manifest_sha256 等结构化协议字段时，也核验实际身份/范围。结果缺失不能发布为完成 Evidence、命中缓存或被报告为验证成功。
 
@@ -69,3 +69,5 @@ Recorder 的 `B_transition.before_l3` 从所引用综合任务（兼容历史预
 校准搜索可直接请求 `frozen_helper` 的 `search_frozen_scales`；其复用的数值入口为 `ptq_agent.execution.calibration_search.search_frozen_scales`（已在Coding/Safeguard公共源码读取范围）。它接收`ctx['load_frozen']`已核验加载的模型，兼容历史源码隔离的同构量化器接口；以明确候选倍率在calibration数据上实际选参并返回完整分数/样本/选中参数。block输出参考、CLS/patch和整网指标的准确语义、导出时收集选中状态的示例见 [scale_selection](methods/scale_selection.md)。它不代替外层search或正式双任务L3。
 
 获准研究参考优化与最终 training-free 的已有字段、产物边界和真实工具限制见 [科研 Skill 兼容说明](SCIENTIFIC_SKILLS_COMPATIBILITY.md)。STE 需现有 custom 实现；全程禁训合同不会被研究用途或 Skill 覆盖。
+
+在完整分割评测中，宿主可绑定已验证方案的 FP 混淆矩阵。数据字节及顺序、模型和头、推理实现、运行环境和协议均一致时可复用 FP；源文件及其校验和写入测量，第一张图的特征核验与量化模型的全量运行照常执行。

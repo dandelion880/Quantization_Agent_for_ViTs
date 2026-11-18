@@ -95,6 +95,8 @@ class Workflow(RoleInteraction, ExperimentRequests, WorkflowDriver):
         self.solutions = SolutionLibrary(self.journal, self.brief["payload"], shared=self.config.get("purpose") == "research")
         if not read_only:
             self.solutions.initialize()
+            if self.config.get('prepared_baseline') is not None:
+                self.solutions.import_prepared(self.config['prepared_baseline'])
         from core.inspirations import InspirationLibrary
         self.inspirations = InspirationLibrary(self.journal, self.solutions)
         from core.topics import ResearchTopics
@@ -276,6 +278,8 @@ class Workflow(RoleInteraction, ExperimentRequests, WorkflowDriver):
 
     def advance(self):
         """依已提交状态推进 G-only；恢复不改写候选或重复预选。"""
+        if self.config['purpose'] == 'baseline_measurement':
+            raise ContractError('基线测量使用程序实验入口，不能启动科研轮次')
         if self.scope_target_reached():
             return True
         self.release_scope_closeout_reserve()

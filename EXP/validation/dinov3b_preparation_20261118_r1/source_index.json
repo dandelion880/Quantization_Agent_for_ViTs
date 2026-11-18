@@ -1,0 +1,2368 @@
+{
+  "role_manifest": {
+    "path": "EXP/validation/dinov3b_preparation_20261118_r1/roles_direct/research_run.json",
+    "sha256": "1098944cc753499f7a94b697995e707d3bda6c1e264e290dcc0ae01e0f98ed43"
+  },
+  "baseline_manifest": {
+    "path": "EXP/validation/dinov3b_preparation_20261118_r1/baseline_partition/research_run.json",
+    "sha256": "388a4980c2df9fc00f728c9397a3f29f177e006ac7497bbfcbb7dbe01455e607"
+  },
+  "interventions": [
+    {
+      "reason": "保留已完成的研究证据，同步经真实小样本检查的冻结网格、分割 FP 复用及源码接续工程修订；研究方法由原 Generation 接续。",
+      "previous": "a0797852eec76617c65768bff123255afa559ea5f38b9efe40616147b35ccef3",
+      "current": "617b41b3442d3cf4e69469b7fa9a40fc92d082c896bafb87d43ebe141f2e360f"
+    }
+  ],
+  "llm_attempts": [
+    {
+      "task": "task-f1d11382e6429ff7af1ff364",
+      "role": "generation",
+      "requested": {
+        "model": "gpt-6-astra",
+        "reasoning_effort": "high"
+      },
+      "actual": {
+        "model": null,
+        "reasoning_effort": null,
+        "source": "not_reported_by_cli"
+      },
+      "model_call_started": true,
+      "error": null,
+      "files": [
+        {
+          "path": "EXP/validation/dinov3b_preparation_20261118_r1/roles_direct/jobs/task-f1d11382e6429ff7af1ff364-a0001/request.json",
+          "sha256": "22bf0cb8becdc5811a6c63d1145d62bfffb4dcf7aeedb164e1562666c156e893"
+        },
+        {
+          "path": "EXP/validation/dinov3b_preparation_20261118_r1/roles_direct/jobs/task-f1d11382e6429ff7af1ff364-a0001/llm_audit.json",
+          "sha256": "ce93c334c0949a6175368aefdf2a0897d9269ada5b5e6d8e0e185c07c2f7f85e"
+        },
+        {
+          "path": "EXP/validation/dinov3b_preparation_20261118_r1/roles_direct/jobs/task-f1d11382e6429ff7af1ff364-a0001/cli/instructions.txt",
+          "sha256": "82cbe1b0d73335b38ea64b2cd97ccdd01e8daad45badd4bcb6ff1cf0f5dcd4b4"
+        },
+        {
+          "path": "EXP/validation/dinov3b_preparation_20261118_r1/roles_direct/jobs/task-f1d11382e6429ff7af1ff364-a0001/cli/answer.json",
+          "sha256": "915121c86e400084c50442476395a414fbdbed58ea56f0e01668572d1a3fb008"
+        },
+        {
+          "path": "EXP/validation/dinov3b_preparation_20261118_r1/roles_direct/jobs/task-f1d11382e6429ff7af1ff364-a0001/result.json",
+          "sha256": "116c312d81450e1a969d54864385f0e8ea642cbf42c2f9a5ad454c18a3c34ce9"
+        }
+      ]
+    },
+    {
+      "task": "task-d12343b78bed34d179e80a7b",
+      "role": "generation",
+      "requested": {
+        "model": "gpt-6-astra",
+        "reasoning_effort": "high"
+      },
+      "actual": {
+        "model": null,
+        "reasoning_effort": null,
+        "source": "not_reported_by_cli"
+      },
+      "model_call_started": true,
+      "error": null,
+      "files": [
+        {
+          "path": "EXP/validation/dinov3b_preparation_20261118_r1/roles_direct/jobs/task-d12343b78bed34d179e80a7b-a0001/request.json",
+          "sha256": "56d593c3c2f78e66079e59c244a22cd3dfad6084300fac8317267121bed69dc5"
+        },
+        {
+          "path": "EXP/validation/dinov3b_preparation_20261118_r1/roles_direct/jobs/task-d12343b78bed34d179e80a7b-a0001/llm_audit.json",
+          "sha256": "c571c63d6732380711f9cd53c16ef433b0a27ab8246e71254c25e6c49674f8a2"
+        },
+        {
+          "path": "EXP/validation/dinov3b_preparation_20261118_r1/roles_direct/jobs/task-d12343b78bed34d179e80a7b-a0001/cli/instructions.txt",
+          "sha256": "f8f24cdec0a802e7337ba668e1fd7bdb0103541f902f67b5846e2a4301e2350e"
+        },
+        {
+          "path": "EXP/validation/dinov3b_preparation_20261118_r1/roles_direct/jobs/task-d12343b78bed34d179e80a7b-a0001/cli/answer.json",
+          "sha256": "b4bdf5e4262ddd012edc02a7fff2cc7f26ac121b179961864d6a5284b894927b"
+        },
+        {
+          "path": "EXP/validation/dinov3b_preparation_20261118_r1/roles_direct/jobs/task-d12343b78bed34d179e80a7b-a0001/result.json",
+          "sha256": "9c8d10d8c3728d51d04781d1c30222c5bb698641c525db4d8a49f99c00beb330"
+        }
+      ]
+    },
+    {
+      "task": "task-d12343b78bed34d179e80a7b",
+      "role": "generation",
+      "requested": {
+        "model": "gpt-6-astra",
+        "reasoning_effort": "high"
+      },
+      "actual": {
+        "model": null,
+        "reasoning_effort": null,
+        "source": "not_reported_by_cli"
+      },
+      "model_call_started": true,
+      "error": null,
+      "files": [
+        {
+          "path": "EXP/validation/dinov3b_preparation_20261118_r1/roles_direct/jobs/task-d12343b78bed34d179e80a7b-a0002/request.json",
+          "sha256": "5f094933725b666bc14ab4f4fc524eb16b48438391b65555589095da5616f7fe"
+        },
+        {
+          "path": "EXP/validation/dinov3b_preparation_20261118_r1/roles_direct/jobs/task-d12343b78bed34d179e80a7b-a0002/llm_audit.json",
+          "sha256": "9f91ad6436402b5f5396f2bb8607d1a50b99b46e1cc37d2ba8551f4fb780bbb7"
+        },
+        {
+          "path": "EXP/validation/dinov3b_preparation_20261118_r1/roles_direct/jobs/task-d12343b78bed34d179e80a7b-a0002/cli/instructions.txt",
+          "sha256": "f8f24cdec0a802e7337ba668e1fd7bdb0103541f902f67b5846e2a4301e2350e"
+        },
+        {
+          "path": "EXP/validation/dinov3b_preparation_20261118_r1/roles_direct/jobs/task-d12343b78bed34d179e80a7b-a0002/cli/answer.json",
+          "sha256": "6be3ee8ba2d905e02121cf45dbab76bac6235429e102f6f37c7ae9836a5237b0"
+        },
+        {
+          "path": "EXP/validation/dinov3b_preparation_20261118_r1/roles_direct/jobs/task-d12343b78bed34d179e80a7b-a0002/result.json",
+          "sha256": "c857b81102388daa4c05120981df97269e01b41a4e40a0b5c8817f9cc0a55c2e"
+        }
+      ]
+    },
+    {
+      "task": "task-d12343b78bed34d179e80a7b",
+      "role": "generation",
+      "requested": {
+        "model": "gpt-6-astra",
+        "reasoning_effort": "high"
+      },
+      "actual": {
+        "model": null,
+        "reasoning_effort": null,
+        "source": "not_reported_by_cli"
+      },
+      "model_call_started": true,
+      "error": null,
+      "files": [
+        {
+          "path": "EXP/validation/dinov3b_preparation_20261118_r1/roles_direct/jobs/task-d12343b78bed34d179e80a7b-a0003/request.json",
+          "sha256": "582620a830ecc316df3b39317511bcbeca92dcd29c476ec7c6d2070fcdc7b1b9"
+        },
+        {
+          "path": "EXP/validation/dinov3b_preparation_20261118_r1/roles_direct/jobs/task-d12343b78bed34d179e80a7b-a0003/llm_audit.json",
+          "sha256": "0b517f5fe05fdd55328a193772cbcfee1039438b99c2f79e85f982b02517ec51"
+        },
+        {
+          "path": "EXP/validation/dinov3b_preparation_20261118_r1/roles_direct/jobs/task-d12343b78bed34d179e80a7b-a0003/cli/instructions.txt",
+          "sha256": "f8f24cdec0a802e7337ba668e1fd7bdb0103541f902f67b5846e2a4301e2350e"
+        },
+        {
+          "path": "EXP/validation/dinov3b_preparation_20261118_r1/roles_direct/jobs/task-d12343b78bed34d179e80a7b-a0003/cli/answer.json",
+          "sha256": "8d59749a971f8e9a45451f94ffe215bd99f6e1e09f8988446267bd1dd9e46fb0"
+        },
+        {
+          "path": "EXP/validation/dinov3b_preparation_20261118_r1/roles_direct/jobs/task-d12343b78bed34d179e80a7b-a0003/result.json",
+          "sha256": "177536a8379bada07b42299dec282386766b613d80bdd6848946278b6c4d37c8"
+        }
+      ]
+    },
+    {
+      "task": "task-d12343b78bed34d179e80a7b",
+      "role": "generation",
+      "requested": {
+        "model": "gpt-6-astra",
+        "reasoning_effort": "high"
+      },
+      "actual": {
+        "model": null,
+        "reasoning_effort": null,
+        "source": "not_reported_by_cli"
+      },
+      "model_call_started": true,
+      "error": null,
+      "files": [
+        {
+          "path": "EXP/validation/dinov3b_preparation_20261118_r1/roles_direct/jobs/task-d12343b78bed34d179e80a7b-a0004/request.json",
+          "sha256": "b19f1e3fbf44c9acb6beb29bf3da829bd44e92a38474af3a1e2129a8143dfe54"
+        },
+        {
+          "path": "EXP/validation/dinov3b_preparation_20261118_r1/roles_direct/jobs/task-d12343b78bed34d179e80a7b-a0004/llm_audit.json",
+          "sha256": "ccbc7ac856d9884257d6be01f8c3f6c1e2f730ff69dc55e869a2aee87f2e6426"
+        },
+        {
+          "path": "EXP/validation/dinov3b_preparation_20261118_r1/roles_direct/jobs/task-d12343b78bed34d179e80a7b-a0004/cli/instructions.txt",
+          "sha256": "f8f24cdec0a802e7337ba668e1fd7bdb0103541f902f67b5846e2a4301e2350e"
+        },
+        {
+          "path": "EXP/validation/dinov3b_preparation_20261118_r1/roles_direct/jobs/task-d12343b78bed34d179e80a7b-a0004/cli/answer.json",
+          "sha256": "5ab9991b39592c7d8ffb6ec849724b7d6475d426d57c75cdfa975e7849735ac7"
+        },
+        {
+          "path": "EXP/validation/dinov3b_preparation_20261118_r1/roles_direct/jobs/task-d12343b78bed34d179e80a7b-a0004/result.json",
+          "sha256": "c09d3567725f095b046d2f30dd6c1ca61b9bcf0cb69cc68e97e5acef8fd15efd"
+        }
+      ]
+    },
+    {
+      "task": "task-691c709a44d69fbc51237c23",
+      "role": "coding",
+      "requested": {
+        "model": "gpt-6.1-sol",
+        "reasoning_effort": "medium"
+      },
+      "actual": {
+        "model": null,
+        "reasoning_effort": null,
+        "source": "not_reported_by_cli"
+      },
+      "model_call_started": true,
+      "error": null,
+      "files": [
+        {
+          "path": "EXP/validation/dinov3b_preparation_20261118_r1/roles_direct/jobs/task-691c709a44d69fbc51237c23-a0001/request.json",
+          "sha256": "76407ea2d39bacee7a7be4a830a913112ac2e7b7decee43c7727cf29a0abc2c2"
+        },
+        {
+          "path": "EXP/validation/dinov3b_preparation_20261118_r1/roles_direct/jobs/task-691c709a44d69fbc51237c23-a0001/llm_audit.json",
+          "sha256": "f8b1da13a473c655a00dd86ecd2444cfa5ac135ad58bc4f0783a7b82132781df"
+        },
+        {
+          "path": "EXP/validation/dinov3b_preparation_20261118_r1/roles_direct/jobs/task-691c709a44d69fbc51237c23-a0001/cli/instructions.txt",
+          "sha256": "aa7ea5a11d0b1159f5c61d1d283e83721a0d8e40cd35a55fe68501aecdcb1c73"
+        },
+        {
+          "path": "EXP/validation/dinov3b_preparation_20261118_r1/roles_direct/jobs/task-691c709a44d69fbc51237c23-a0001/cli/answer.json",
+          "sha256": "3fc6aa7754ddfd6b380782f2bb2a4209b1e0e1ff334f206444d722ec175cebfc"
+        },
+        {
+          "path": "EXP/validation/dinov3b_preparation_20261118_r1/roles_direct/jobs/task-691c709a44d69fbc51237c23-a0001/result.json",
+          "sha256": "0fd5826f98a01a0334bed1718b01b4ef4aa512a8510d4e02822d82a5bba639ac"
+        }
+      ]
+    },
+    {
+      "task": "task-691c709a44d69fbc51237c23",
+      "role": "coding",
+      "requested": {
+        "model": "gpt-6.1-sol",
+        "reasoning_effort": "medium"
+      },
+      "actual": {
+        "model": null,
+        "reasoning_effort": null,
+        "source": "not_reported_by_cli"
+      },
+      "model_call_started": true,
+      "error": null,
+      "files": [
+        {
+          "path": "EXP/validation/dinov3b_preparation_20261118_r1/roles_direct/jobs/task-691c709a44d69fbc51237c23-a0002/request.json",
+          "sha256": "2cdd239dd1851eb093310672159bc2424231655c115eba83f9939fb23a39d6f8"
+        },
+        {
+          "path": "EXP/validation/dinov3b_preparation_20261118_r1/roles_direct/jobs/task-691c709a44d69fbc51237c23-a0002/llm_audit.json",
+          "sha256": "dbcc87f69d778a8a57481f5ccc926ae052ac2200f71b6bac4c00582baab6b489"
+        },
+        {
+          "path": "EXP/validation/dinov3b_preparation_20261118_r1/roles_direct/jobs/task-691c709a44d69fbc51237c23-a0002/cli/instructions.txt",
+          "sha256": "aa7ea5a11d0b1159f5c61d1d283e83721a0d8e40cd35a55fe68501aecdcb1c73"
+        },
+        {
+          "path": "EXP/validation/dinov3b_preparation_20261118_r1/roles_direct/jobs/task-691c709a44d69fbc51237c23-a0002/cli/answer.json",
+          "sha256": "3ef56fe293f5d967c23cae4571383bf39ae71d417016ae649f0805c61d69ec8a"
+        },
+        {
+          "path": "EXP/validation/dinov3b_preparation_20261118_r1/roles_direct/jobs/task-691c709a44d69fbc51237c23-a0002/result.json",
+          "sha256": "56199d420a5ebfe8cec7d20d7b38eefbf6ad770abe1226814b34c79a77f15e2a"
+        }
+      ]
+    },
+    {
+      "task": "task-6e8fa6e237578df3ef977941",
+      "role": "safeguard",
+      "requested": {
+        "model": "gpt-6.1-sol",
+        "reasoning_effort": "medium"
+      },
+      "actual": {
+        "model": null,
+        "reasoning_effort": null,
+        "source": "not_reported_by_cli"
+      },
+      "model_call_started": true,
+      "error": null,
+      "files": [
+        {
+          "path": "EXP/validation/dinov3b_preparation_20261118_r1/roles_direct/jobs/task-6e8fa6e237578df3ef977941-a0001/request.json",
+          "sha256": "13312d3b2f85f62b9717f9f06cd68e8c7372c786cc80f7976b4b98a704467c59"
+        },
+        {
+          "path": "EXP/validation/dinov3b_preparation_20261118_r1/roles_direct/jobs/task-6e8fa6e237578df3ef977941-a0001/llm_audit.json",
+          "sha256": "85cdb3132394e409c968fc5481e7205a2e27451ba35e5a5e4f00db042d4e7051"
+        },
+        {
+          "path": "EXP/validation/dinov3b_preparation_20261118_r1/roles_direct/jobs/task-6e8fa6e237578df3ef977941-a0001/cli/instructions.txt",
+          "sha256": "5f55083a5a13300d80b6ce5e709107c01328a49b82cde8fcbfd12ad76d1dca8b"
+        },
+        {
+          "path": "EXP/validation/dinov3b_preparation_20261118_r1/roles_direct/jobs/task-6e8fa6e237578df3ef977941-a0001/cli/answer.json",
+          "sha256": "fe04084c74f11f7b26a9dfe20fc38bd400198136ca4d9ccbbe260292cc1ba823"
+        },
+        {
+          "path": "EXP/validation/dinov3b_preparation_20261118_r1/roles_direct/jobs/task-6e8fa6e237578df3ef977941-a0001/result.json",
+          "sha256": "5e2e8fa8a9e8c17bc8c13f037284bbb21e6371ceba1be03f31d8de4ac7288499"
+        }
+      ]
+    },
+    {
+      "task": "task-6e8fa6e237578df3ef977941",
+      "role": "safeguard",
+      "requested": {
+        "model": "gpt-6.1-sol",
+        "reasoning_effort": "medium"
+      },
+      "actual": {
+        "model": null,
+        "reasoning_effort": null,
+        "source": "not_reported_by_cli"
+      },
+      "model_call_started": true,
+      "error": null,
+      "files": [
+        {
+          "path": "EXP/validation/dinov3b_preparation_20261118_r1/roles_direct/jobs/task-6e8fa6e237578df3ef977941-a0002/request.json",
+          "sha256": "14b9f89bd70ddc0378393f8455fa4bacaf5a2e3a2a7247dff1f2e15067fb6225"
+        },
+        {
+          "path": "EXP/validation/dinov3b_preparation_20261118_r1/roles_direct/jobs/task-6e8fa6e237578df3ef977941-a0002/llm_audit.json",
+          "sha256": "da3466ca49afba152a96f487a883945bb222cc4366f5f6baa4e3a815bc4889e5"
+        },
+        {
+          "path": "EXP/validation/dinov3b_preparation_20261118_r1/roles_direct/jobs/task-6e8fa6e237578df3ef977941-a0002/cli/instructions.txt",
+          "sha256": "5f55083a5a13300d80b6ce5e709107c01328a49b82cde8fcbfd12ad76d1dca8b"
+        },
+        {
+          "path": "EXP/validation/dinov3b_preparation_20261118_r1/roles_direct/jobs/task-6e8fa6e237578df3ef977941-a0002/cli/answer.json",
+          "sha256": "fc365ef8dae5ebaf94007b3ea22178a9c17632fcdff7d7835e72d0cfad9b1ded"
+        },
+        {
+          "path": "EXP/validation/dinov3b_preparation_20261118_r1/roles_direct/jobs/task-6e8fa6e237578df3ef977941-a0002/result.json",
+          "sha256": "e608b38ca3602bd32959b09e09994a36c7bfcc3ba3082f36ab8ccb3ffb84e3b0"
+        }
+      ]
+    },
+    {
+      "task": "task-d74148dff813ab9eafed81ee",
+      "role": "coding",
+      "requested": {
+        "model": "gpt-6.1-sol",
+        "reasoning_effort": "medium"
+      },
+      "actual": {
+        "model": null,
+        "reasoning_effort": null,
+        "source": "not_reported_by_cli"
+      },
+      "model_call_started": true,
+      "error": null,
+      "files": [
+        {
+          "path": "EXP/validation/dinov3b_preparation_20261118_r1/roles_direct/jobs/task-d74148dff813ab9eafed81ee-a0001/request.json",
+          "sha256": "a72ee3db55b6abc3998e9e577b075883bb04f5619d36e6a5870debb4c2af456e"
+        },
+        {
+          "path": "EXP/validation/dinov3b_preparation_20261118_r1/roles_direct/jobs/task-d74148dff813ab9eafed81ee-a0001/llm_audit.json",
+          "sha256": "d4ccce50d9a03de60ca0892c68479bf63f10bd8acef612fcbeb680af05c28fff"
+        },
+        {
+          "path": "EXP/validation/dinov3b_preparation_20261118_r1/roles_direct/jobs/task-d74148dff813ab9eafed81ee-a0001/cli/instructions.txt",
+          "sha256": "aa7ea5a11d0b1159f5c61d1d283e83721a0d8e40cd35a55fe68501aecdcb1c73"
+        },
+        {
+          "path": "EXP/validation/dinov3b_preparation_20261118_r1/roles_direct/jobs/task-d74148dff813ab9eafed81ee-a0001/cli/answer.json",
+          "sha256": "578866a9eb95daddf38cb6e15f1cc6b263dde4f24ca75710e96878ca9d661276"
+        },
+        {
+          "path": "EXP/validation/dinov3b_preparation_20261118_r1/roles_direct/jobs/task-d74148dff813ab9eafed81ee-a0001/result.json",
+          "sha256": "c254fb94b3445300fb0e92a027b9a3a313232abbfdcb7f8c83effc50ed2a696b"
+        }
+      ]
+    },
+    {
+      "task": "task-4e5eab5cd302589ea2bc390d",
+      "role": "safeguard",
+      "requested": {
+        "model": "gpt-6.1-sol",
+        "reasoning_effort": "medium"
+      },
+      "actual": {
+        "model": null,
+        "reasoning_effort": null,
+        "source": "not_reported_by_cli"
+      },
+      "model_call_started": true,
+      "error": null,
+      "files": [
+        {
+          "path": "EXP/validation/dinov3b_preparation_20261118_r1/roles_direct/jobs/task-4e5eab5cd302589ea2bc390d-a0001/request.json",
+          "sha256": "5a3c413c272b119b24cbaba47593dc84c7c53607f4996a66897e10a2289a47d6"
+        },
+        {
+          "path": "EXP/validation/dinov3b_preparation_20261118_r1/roles_direct/jobs/task-4e5eab5cd302589ea2bc390d-a0001/llm_audit.json",
+          "sha256": "c98855467911bc34793b44841b540b0119cfc120998d50d1ef59901d45a6cef9"
+        },
+        {
+          "path": "EXP/validation/dinov3b_preparation_20261118_r1/roles_direct/jobs/task-4e5eab5cd302589ea2bc390d-a0001/cli/instructions.txt",
+          "sha256": "5f55083a5a13300d80b6ce5e709107c01328a49b82cde8fcbfd12ad76d1dca8b"
+        },
+        {
+          "path": "EXP/validation/dinov3b_preparation_20261118_r1/roles_direct/jobs/task-4e5eab5cd302589ea2bc390d-a0001/cli/answer.json",
+          "sha256": "ce9c33dd38ebf4da42dd2c47b123a5582e45b1dc9f35f056166d0e1c8d3e955e"
+        },
+        {
+          "path": "EXP/validation/dinov3b_preparation_20261118_r1/roles_direct/jobs/task-4e5eab5cd302589ea2bc390d-a0001/result.json",
+          "sha256": "22992e2215ce28033be74d14fe24c0b0745a315698e9e5ba805fd1e7c0480521"
+        }
+      ]
+    },
+    {
+      "task": "task-4e5eab5cd302589ea2bc390d",
+      "role": "safeguard",
+      "requested": {
+        "model": "gpt-6.1-sol",
+        "reasoning_effort": "medium"
+      },
+      "actual": {
+        "model": null,
+        "reasoning_effort": null,
+        "source": "not_reported_by_cli"
+      },
+      "model_call_started": true,
+      "error": null,
+      "files": [
+        {
+          "path": "EXP/validation/dinov3b_preparation_20261118_r1/roles_direct/jobs/task-4e5eab5cd302589ea2bc390d-a0002/request.json",
+          "sha256": "eb5050de3e13776f94984fe4ced7ef38f2a4c3fe3895d8cb7713844f83efdc16"
+        },
+        {
+          "path": "EXP/validation/dinov3b_preparation_20261118_r1/roles_direct/jobs/task-4e5eab5cd302589ea2bc390d-a0002/llm_audit.json",
+          "sha256": "4f834ed8833e1fcdd39ced9c8adb27080f2e4f99298f46af4cc9f24d2ad7b327"
+        },
+        {
+          "path": "EXP/validation/dinov3b_preparation_20261118_r1/roles_direct/jobs/task-4e5eab5cd302589ea2bc390d-a0002/cli/instructions.txt",
+          "sha256": "5f55083a5a13300d80b6ce5e709107c01328a49b82cde8fcbfd12ad76d1dca8b"
+        },
+        {
+          "path": "EXP/validation/dinov3b_preparation_20261118_r1/roles_direct/jobs/task-4e5eab5cd302589ea2bc390d-a0002/cli/answer.json",
+          "sha256": "f713293324e1a138e896da93f36041e4b5c34ff660911ecbf8507f0fa4ff530a"
+        },
+        {
+          "path": "EXP/validation/dinov3b_preparation_20261118_r1/roles_direct/jobs/task-4e5eab5cd302589ea2bc390d-a0002/result.json",
+          "sha256": "971abe27d40802ee24c0a38f746a2db9a00ac52a5c351efb94169a0a46257579"
+        }
+      ]
+    },
+    {
+      "task": "task-d12343b78bed34d179e80a7b",
+      "role": "generation",
+      "requested": {
+        "model": "gpt-6-astra",
+        "reasoning_effort": "high"
+      },
+      "actual": {
+        "model": null,
+        "reasoning_effort": null,
+        "source": "not_reported_by_cli"
+      },
+      "model_call_started": true,
+      "error": null,
+      "files": [
+        {
+          "path": "EXP/validation/dinov3b_preparation_20261118_r1/roles_direct/jobs/task-d12343b78bed34d179e80a7b-a0005/request.json",
+          "sha256": "5c306e5e0f98c2968fbe83d335bb4a8e0f3f87efccfe3d09fc1d828b16dbe402"
+        },
+        {
+          "path": "EXP/validation/dinov3b_preparation_20261118_r1/roles_direct/jobs/task-d12343b78bed34d179e80a7b-a0005/llm_audit.json",
+          "sha256": "8929416e90eb644d43274f2d17604dba22677fb446f4d250c9930628d0353c81"
+        },
+        {
+          "path": "EXP/validation/dinov3b_preparation_20261118_r1/roles_direct/jobs/task-d12343b78bed34d179e80a7b-a0005/cli/instructions.txt",
+          "sha256": "f8f24cdec0a802e7337ba668e1fd7bdb0103541f902f67b5846e2a4301e2350e"
+        },
+        {
+          "path": "EXP/validation/dinov3b_preparation_20261118_r1/roles_direct/jobs/task-d12343b78bed34d179e80a7b-a0005/cli/answer.json",
+          "sha256": "f34e9e1f54141c37150bd718319c2e9591ae0005390ee6e5ddfb68bc594af955"
+        },
+        {
+          "path": "EXP/validation/dinov3b_preparation_20261118_r1/roles_direct/jobs/task-d12343b78bed34d179e80a7b-a0005/result.json",
+          "sha256": "9b4140053768bc9a6369f9f0122b061a232962bef6ef9c260b6b3501027e5640"
+        }
+      ]
+    },
+    {
+      "task": "task-d12343b78bed34d179e80a7b",
+      "role": "generation",
+      "requested": {
+        "model": "gpt-6-astra",
+        "reasoning_effort": "high"
+      },
+      "actual": {
+        "model": null,
+        "reasoning_effort": null,
+        "source": "not_reported_by_cli"
+      },
+      "model_call_started": true,
+      "error": null,
+      "files": [
+        {
+          "path": "EXP/validation/dinov3b_preparation_20261118_r1/roles_direct/jobs/task-d12343b78bed34d179e80a7b-a0006/request.json",
+          "sha256": "17dd301cb9859e5b772361c66d67742688bcbe623ce1b647ec715f01d309c4fd"
+        },
+        {
+          "path": "EXP/validation/dinov3b_preparation_20261118_r1/roles_direct/jobs/task-d12343b78bed34d179e80a7b-a0006/llm_audit.json",
+          "sha256": "bb4617c2fb715477d0745cce94b2d2b8608ef35a8bc1cd22353210e11621a63c"
+        },
+        {
+          "path": "EXP/validation/dinov3b_preparation_20261118_r1/roles_direct/jobs/task-d12343b78bed34d179e80a7b-a0006/cli/instructions.txt",
+          "sha256": "f8f24cdec0a802e7337ba668e1fd7bdb0103541f902f67b5846e2a4301e2350e"
+        },
+        {
+          "path": "EXP/validation/dinov3b_preparation_20261118_r1/roles_direct/jobs/task-d12343b78bed34d179e80a7b-a0006/cli/answer.json",
+          "sha256": "6ba8d950b1f507c7fb77156b8c900c7820ec2511ebd7e602299fbdae68ae0f58"
+        },
+        {
+          "path": "EXP/validation/dinov3b_preparation_20261118_r1/roles_direct/jobs/task-d12343b78bed34d179e80a7b-a0006/result.json",
+          "sha256": "bd71b428034fb58c6283d1cc9859f47510fa9474832b03beaddf85759f6e7113"
+        }
+      ]
+    },
+    {
+      "task": "task-d12343b78bed34d179e80a7b",
+      "role": "generation",
+      "requested": {
+        "model": "gpt-6-astra",
+        "reasoning_effort": "high"
+      },
+      "actual": {
+        "model": null,
+        "reasoning_effort": null,
+        "source": "not_reported_by_cli"
+      },
+      "model_call_started": true,
+      "error": null,
+      "files": [
+        {
+          "path": "EXP/validation/dinov3b_preparation_20261118_r1/roles_direct/jobs/task-d12343b78bed34d179e80a7b-a0007/request.json",
+          "sha256": "bfd33fc41c43ae8219d7021a58886296acf80b5be7d7b58f12489157a48c9757"
+        },
+        {
+          "path": "EXP/validation/dinov3b_preparation_20261118_r1/roles_direct/jobs/task-d12343b78bed34d179e80a7b-a0007/llm_audit.json",
+          "sha256": "dce34b8ac2e4b17c59aabdbb5f6bd80aac0a365e3b631d6c80f82a38f0fed5f5"
+        },
+        {
+          "path": "EXP/validation/dinov3b_preparation_20261118_r1/roles_direct/jobs/task-d12343b78bed34d179e80a7b-a0007/cli/instructions.txt",
+          "sha256": "f8f24cdec0a802e7337ba668e1fd7bdb0103541f902f67b5846e2a4301e2350e"
+        },
+        {
+          "path": "EXP/validation/dinov3b_preparation_20261118_r1/roles_direct/jobs/task-d12343b78bed34d179e80a7b-a0007/cli/answer.json",
+          "sha256": "2f2b54907e4716e914ced2e15eaf4ec1a5bd923ddd5057489815d223a9d9bbf8"
+        },
+        {
+          "path": "EXP/validation/dinov3b_preparation_20261118_r1/roles_direct/jobs/task-d12343b78bed34d179e80a7b-a0007/result.json",
+          "sha256": "0c984dde576126fe67276cc43fbae99a0d5e4aa3fd85e13c8564946632a01b81"
+        }
+      ]
+    },
+    {
+      "task": "task-d12343b78bed34d179e80a7b",
+      "role": "generation",
+      "requested": {
+        "model": "gpt-6-astra",
+        "reasoning_effort": "high"
+      },
+      "actual": {
+        "model": null,
+        "reasoning_effort": null,
+        "source": "not_reported_by_cli"
+      },
+      "model_call_started": true,
+      "error": null,
+      "files": [
+        {
+          "path": "EXP/validation/dinov3b_preparation_20261118_r1/roles_direct/jobs/task-d12343b78bed34d179e80a7b-a0008/request.json",
+          "sha256": "9bcbdde779c7e6f2839eda292802c13ff2f188d898f2cd0572ad6dfc8f07b21a"
+        },
+        {
+          "path": "EXP/validation/dinov3b_preparation_20261118_r1/roles_direct/jobs/task-d12343b78bed34d179e80a7b-a0008/llm_audit.json",
+          "sha256": "fb3521ec2c54cead4fc3c0bfa2c497ad21d4bfa279021a28834bb6e28ff50713"
+        },
+        {
+          "path": "EXP/validation/dinov3b_preparation_20261118_r1/roles_direct/jobs/task-d12343b78bed34d179e80a7b-a0008/cli/instructions.txt",
+          "sha256": "f8f24cdec0a802e7337ba668e1fd7bdb0103541f902f67b5846e2a4301e2350e"
+        },
+        {
+          "path": "EXP/validation/dinov3b_preparation_20261118_r1/roles_direct/jobs/task-d12343b78bed34d179e80a7b-a0008/cli/answer.json",
+          "sha256": "b7d1a204a550539bbadf21e16350dffc3d2ccc058b05175065a37782dcd4b805"
+        },
+        {
+          "path": "EXP/validation/dinov3b_preparation_20261118_r1/roles_direct/jobs/task-d12343b78bed34d179e80a7b-a0008/result.json",
+          "sha256": "c9b1265e25a3deaeb540234d26bf7f7039306da66eb9fdf37c57f739f436f155"
+        }
+      ]
+    },
+    {
+      "task": "task-d12343b78bed34d179e80a7b",
+      "role": "generation",
+      "requested": {
+        "model": "gpt-6-astra",
+        "reasoning_effort": "high"
+      },
+      "actual": {
+        "model": null,
+        "reasoning_effort": null,
+        "source": "not_reported_by_cli"
+      },
+      "model_call_started": true,
+      "error": null,
+      "files": [
+        {
+          "path": "EXP/validation/dinov3b_preparation_20261118_r1/roles_direct/jobs/task-d12343b78bed34d179e80a7b-a0009/request.json",
+          "sha256": "e29cf2b175ba1bb0335a6c7870252d7480bed911ea40c48dc20ae0312bcc8ae0"
+        },
+        {
+          "path": "EXP/validation/dinov3b_preparation_20261118_r1/roles_direct/jobs/task-d12343b78bed34d179e80a7b-a0009/llm_audit.json",
+          "sha256": "d702ae43dc5a42db78b6d4ab24e005959c3fa2cd399f9d05f9fbdfaf50ad81d3"
+        },
+        {
+          "path": "EXP/validation/dinov3b_preparation_20261118_r1/roles_direct/jobs/task-d12343b78bed34d179e80a7b-a0009/cli/instructions.txt",
+          "sha256": "f8f24cdec0a802e7337ba668e1fd7bdb0103541f902f67b5846e2a4301e2350e"
+        },
+        {
+          "path": "EXP/validation/dinov3b_preparation_20261118_r1/roles_direct/jobs/task-d12343b78bed34d179e80a7b-a0009/cli/answer.json",
+          "sha256": "ef9c1e97ff19e32edbd022f9f797fb1c78a1bca48884fa3f4ad9f2ee056f7ff3"
+        },
+        {
+          "path": "EXP/validation/dinov3b_preparation_20261118_r1/roles_direct/jobs/task-d12343b78bed34d179e80a7b-a0009/result.json",
+          "sha256": "6197c2a689c77065c466fc3981d3e323459ee65f43871b2045f1812e658573dc"
+        }
+      ]
+    },
+    {
+      "task": "task-90b38ddc6f83a72ec5c6f6f9",
+      "role": "coding",
+      "requested": {
+        "model": "gpt-6.1-sol",
+        "reasoning_effort": "medium"
+      },
+      "actual": {
+        "model": null,
+        "reasoning_effort": null,
+        "source": "not_reported_by_cli"
+      },
+      "model_call_started": true,
+      "error": null,
+      "files": [
+        {
+          "path": "EXP/validation/dinov3b_preparation_20261118_r1/roles_direct/jobs/task-90b38ddc6f83a72ec5c6f6f9-a0001/request.json",
+          "sha256": "a32366519ce9e87afd6190f14f1553b9a8882c2d243d501a34bd41870e682549"
+        },
+        {
+          "path": "EXP/validation/dinov3b_preparation_20261118_r1/roles_direct/jobs/task-90b38ddc6f83a72ec5c6f6f9-a0001/llm_audit.json",
+          "sha256": "e9208420c4dd3643f98cddbc7c3be3e9e6f97888534f6850a2407882ebf3aa53"
+        },
+        {
+          "path": "EXP/validation/dinov3b_preparation_20261118_r1/roles_direct/jobs/task-90b38ddc6f83a72ec5c6f6f9-a0001/cli/instructions.txt",
+          "sha256": "aa7ea5a11d0b1159f5c61d1d283e83721a0d8e40cd35a55fe68501aecdcb1c73"
+        },
+        {
+          "path": "EXP/validation/dinov3b_preparation_20261118_r1/roles_direct/jobs/task-90b38ddc6f83a72ec5c6f6f9-a0001/cli/answer.json",
+          "sha256": "9d25bf1d3b46cd8e22e49d4a14d23d89e53acc94f8f28116866377ed3ccf2f35"
+        },
+        {
+          "path": "EXP/validation/dinov3b_preparation_20261118_r1/roles_direct/jobs/task-90b38ddc6f83a72ec5c6f6f9-a0001/result.json",
+          "sha256": "ab0d590542e370771775003433a03e9a6a12390423f88e8f5f0fe0e9b44ff184"
+        }
+      ]
+    },
+    {
+      "task": "task-90b38ddc6f83a72ec5c6f6f9",
+      "role": "coding",
+      "requested": {
+        "model": "gpt-6.1-sol",
+        "reasoning_effort": "medium"
+      },
+      "actual": {
+        "model": null,
+        "reasoning_effort": null,
+        "source": "not_reported_by_cli"
+      },
+      "model_call_started": true,
+      "error": null,
+      "files": [
+        {
+          "path": "EXP/validation/dinov3b_preparation_20261118_r1/roles_direct/jobs/task-90b38ddc6f83a72ec5c6f6f9-a0002/request.json",
+          "sha256": "c3b9f2441866ec93672b9756ab64e11c3ab7322a06bd5eebd8082493dd8f0bd8"
+        },
+        {
+          "path": "EXP/validation/dinov3b_preparation_20261118_r1/roles_direct/jobs/task-90b38ddc6f83a72ec5c6f6f9-a0002/llm_audit.json",
+          "sha256": "9979dd58217878f559d75c450d73e7f322cc1ef67653cefa823d5bd746d91f6d"
+        },
+        {
+          "path": "EXP/validation/dinov3b_preparation_20261118_r1/roles_direct/jobs/task-90b38ddc6f83a72ec5c6f6f9-a0002/cli/instructions.txt",
+          "sha256": "aa7ea5a11d0b1159f5c61d1d283e83721a0d8e40cd35a55fe68501aecdcb1c73"
+        },
+        {
+          "path": "EXP/validation/dinov3b_preparation_20261118_r1/roles_direct/jobs/task-90b38ddc6f83a72ec5c6f6f9-a0002/cli/answer.json",
+          "sha256": "8ee6dac2516c6b358773faba700dd5acde944ccdfc2202e7c027e9a822108bbb"
+        },
+        {
+          "path": "EXP/validation/dinov3b_preparation_20261118_r1/roles_direct/jobs/task-90b38ddc6f83a72ec5c6f6f9-a0002/result.json",
+          "sha256": "90c83c774a93dd050c91e0e1c7677d0b6014914992a2c5a9739239055e4c286a"
+        }
+      ]
+    },
+    {
+      "task": "task-464f7185c173fc75511c2db1",
+      "role": "safeguard",
+      "requested": {
+        "model": "gpt-6.1-sol",
+        "reasoning_effort": "medium"
+      },
+      "actual": {
+        "model": null,
+        "reasoning_effort": null,
+        "source": "not_reported_by_cli"
+      },
+      "model_call_started": true,
+      "error": null,
+      "files": [
+        {
+          "path": "EXP/validation/dinov3b_preparation_20261118_r1/roles_direct/jobs/task-464f7185c173fc75511c2db1-a0001/request.json",
+          "sha256": "bedcacf57fff44e1e49c181550132b984601a6c2a49ac50c9d523c3c55b17ab3"
+        },
+        {
+          "path": "EXP/validation/dinov3b_preparation_20261118_r1/roles_direct/jobs/task-464f7185c173fc75511c2db1-a0001/llm_audit.json",
+          "sha256": "860da7ff03db669b6f2e5f78f092d1632a37c12f7551589a409df0d83ec1d13b"
+        },
+        {
+          "path": "EXP/validation/dinov3b_preparation_20261118_r1/roles_direct/jobs/task-464f7185c173fc75511c2db1-a0001/cli/instructions.txt",
+          "sha256": "5f55083a5a13300d80b6ce5e709107c01328a49b82cde8fcbfd12ad76d1dca8b"
+        },
+        {
+          "path": "EXP/validation/dinov3b_preparation_20261118_r1/roles_direct/jobs/task-464f7185c173fc75511c2db1-a0001/cli/answer.json",
+          "sha256": "541afbdd1f114d2a3065bc92ebf65bfa8ebb41687727705fde73eefd12bbef95"
+        },
+        {
+          "path": "EXP/validation/dinov3b_preparation_20261118_r1/roles_direct/jobs/task-464f7185c173fc75511c2db1-a0001/result.json",
+          "sha256": "9c7d8cd3577c277d25b2a2c24ed617a18878a7d0ddfabfc1bf6eb95485a18ef7"
+        }
+      ]
+    },
+    {
+      "task": "task-d12343b78bed34d179e80a7b",
+      "role": "generation",
+      "requested": {
+        "model": "gpt-6-astra",
+        "reasoning_effort": "high"
+      },
+      "actual": {
+        "model": null,
+        "reasoning_effort": null,
+        "source": "not_reported_by_cli"
+      },
+      "model_call_started": true,
+      "error": {
+        "code": "InterruptedError",
+        "message": "task stopped by signal 15"
+      },
+      "files": [
+        {
+          "path": "EXP/validation/dinov3b_preparation_20261118_r1/roles_direct/jobs/task-d12343b78bed34d179e80a7b-a0010/request.json",
+          "sha256": "80af2fe8d92ba85a1f43f213ba64d26ab3ceb0cf0ecf6ff47c5ecab9ebebc4c2"
+        },
+        {
+          "path": "EXP/validation/dinov3b_preparation_20261118_r1/roles_direct/jobs/task-d12343b78bed34d179e80a7b-a0010/llm_audit.json",
+          "sha256": "d5bde9cb0aa97a112c520f1419400f3e91fda5654a428b21e9aff55e1b1e536b"
+        },
+        {
+          "path": "EXP/validation/dinov3b_preparation_20261118_r1/roles_direct/jobs/task-d12343b78bed34d179e80a7b-a0010/cli/instructions.txt",
+          "sha256": "f8f24cdec0a802e7337ba668e1fd7bdb0103541f902f67b5846e2a4301e2350e"
+        },
+        {
+          "path": "EXP/validation/dinov3b_preparation_20261118_r1/roles_direct/jobs/task-d12343b78bed34d179e80a7b-a0010/cli/answer.json",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+          "path": "EXP/validation/dinov3b_preparation_20261118_r1/roles_direct/jobs/task-d12343b78bed34d179e80a7b-a0010/result.json",
+          "sha256": "e499ba7c58911c406371b16ce9133b9f8097e5b0f0261466149117a6bacde2de"
+        }
+      ]
+    },
+    {
+      "task": "task-d12343b78bed34d179e80a7b",
+      "role": "generation",
+      "requested": {
+        "model": "gpt-6-astra",
+        "reasoning_effort": "high"
+      },
+      "actual": {
+        "model": null,
+        "reasoning_effort": null,
+        "source": "not_reported_by_cli"
+      },
+      "model_call_started": true,
+      "error": null,
+      "files": [
+        {
+          "path": "EXP/validation/dinov3b_preparation_20261118_r1/roles_direct/jobs/task-d12343b78bed34d179e80a7b-a0011/request.json",
+          "sha256": "afb8ebad5fe3e4926354aaa1eaa8320d2d02ecebcd71c2c76038ba80241dfd3b"
+        },
+        {
+          "path": "EXP/validation/dinov3b_preparation_20261118_r1/roles_direct/jobs/task-d12343b78bed34d179e80a7b-a0011/llm_audit.json",
+          "sha256": "722ed9084d1c80160e8a3e54c90725b0ad0bda333b19dfb075ddea1c36a4c5f0"
+        },
+        {
+          "path": "EXP/validation/dinov3b_preparation_20261118_r1/roles_direct/jobs/task-d12343b78bed34d179e80a7b-a0011/cli/instructions.txt",
+          "sha256": "f8f24cdec0a802e7337ba668e1fd7bdb0103541f902f67b5846e2a4301e2350e"
+        },
+        {
+          "path": "EXP/validation/dinov3b_preparation_20261118_r1/roles_direct/jobs/task-d12343b78bed34d179e80a7b-a0011/cli/answer.json",
+          "sha256": "06f499b6be1e293f54f6e9f0bd671ebf294f718e3e43dc432174ff1606c67eef"
+        },
+        {
+          "path": "EXP/validation/dinov3b_preparation_20261118_r1/roles_direct/jobs/task-d12343b78bed34d179e80a7b-a0011/result.json",
+          "sha256": "6ff7b82844b6f2ee5856bbcdd884f20d624f97c0574e852f81e2eadc53e77bbe"
+        }
+      ]
+    },
+    {
+      "task": "task-d12343b78bed34d179e80a7b",
+      "role": "generation",
+      "requested": {
+        "model": "gpt-6-astra",
+        "reasoning_effort": "high"
+      },
+      "actual": {
+        "model": null,
+        "reasoning_effort": null,
+        "source": "not_reported_by_cli"
+      },
+      "model_call_started": true,
+      "error": null,
+      "files": [
+        {
+          "path": "EXP/validation/dinov3b_preparation_20261118_r1/roles_direct/jobs/task-d12343b78bed34d179e80a7b-a0012/request.json",
+          "sha256": "6eb3809ace48d3ffb8340b0c54dd7b1a1a3808f95d18d32cf0a08b2730c4c6a0"
+        },
+        {
+          "path": "EXP/validation/dinov3b_preparation_20261118_r1/roles_direct/jobs/task-d12343b78bed34d179e80a7b-a0012/llm_audit.json",
+          "sha256": "270ee6d019b9d53ab4b919aaa2ef46504ef61bee836ee62413a217adfe5ffdd5"
+        },
+        {
+          "path": "EXP/validation/dinov3b_preparation_20261118_r1/roles_direct/jobs/task-d12343b78bed34d179e80a7b-a0012/cli/instructions.txt",
+          "sha256": "f8f24cdec0a802e7337ba668e1fd7bdb0103541f902f67b5846e2a4301e2350e"
+        },
+        {
+          "path": "EXP/validation/dinov3b_preparation_20261118_r1/roles_direct/jobs/task-d12343b78bed34d179e80a7b-a0012/cli/answer.json",
+          "sha256": "831ad2fa32897e3519dabf60cb6ac5e2175b3b00bf64c7cac1389c5ba3648f5e"
+        },
+        {
+          "path": "EXP/validation/dinov3b_preparation_20261118_r1/roles_direct/jobs/task-d12343b78bed34d179e80a7b-a0012/result.json",
+          "sha256": "d11a6b1d31c0b2341105ee5bd6caadc9021f0e203c4d0b76249ef7ca6431f52d"
+        }
+      ]
+    },
+    {
+      "task": "task-d12343b78bed34d179e80a7b",
+      "role": "generation",
+      "requested": {
+        "model": "gpt-6-astra",
+        "reasoning_effort": "high"
+      },
+      "actual": {
+        "model": null,
+        "reasoning_effort": null,
+        "source": "not_reported_by_cli"
+      },
+      "model_call_started": true,
+      "error": null,
+      "files": [
+        {
+          "path": "EXP/validation/dinov3b_preparation_20261118_r1/roles_direct/jobs/task-d12343b78bed34d179e80a7b-a0013/request.json",
+          "sha256": "171d862fb9c716e047bf75c862ddb627df305ef03604ee060769bd8e440196d6"
+        },
+        {
+          "path": "EXP/validation/dinov3b_preparation_20261118_r1/roles_direct/jobs/task-d12343b78bed34d179e80a7b-a0013/llm_audit.json",
+          "sha256": "47ea7889bf2addeb20c03bbe271ae5ca6c679c63e863163361d70be687202b03"
+        },
+        {
+          "path": "EXP/validation/dinov3b_preparation_20261118_r1/roles_direct/jobs/task-d12343b78bed34d179e80a7b-a0013/cli/instructions.txt",
+          "sha256": "f8f24cdec0a802e7337ba668e1fd7bdb0103541f902f67b5846e2a4301e2350e"
+        },
+        {
+          "path": "EXP/validation/dinov3b_preparation_20261118_r1/roles_direct/jobs/task-d12343b78bed34d179e80a7b-a0013/cli/answer.json",
+          "sha256": "9bcb3fd221ac6db97952942b8d0c959fe3d435bc41d830734e885b8646da4c05"
+        },
+        {
+          "path": "EXP/validation/dinov3b_preparation_20261118_r1/roles_direct/jobs/task-d12343b78bed34d179e80a7b-a0013/result.json",
+          "sha256": "fb006ce1ff329e10cc89e8b8ae460654eb498d8a0e81df4973345729ee959367"
+        }
+      ]
+    },
+    {
+      "task": "task-d12343b78bed34d179e80a7b",
+      "role": "generation",
+      "requested": {
+        "model": "gpt-6-astra",
+        "reasoning_effort": "high"
+      },
+      "actual": {
+        "model": null,
+        "reasoning_effort": null,
+        "source": "not_reported_by_cli"
+      },
+      "model_call_started": true,
+      "error": null,
+      "files": [
+        {
+          "path": "EXP/validation/dinov3b_preparation_20261118_r1/roles_direct/jobs/task-d12343b78bed34d179e80a7b-a0014/request.json",
+          "sha256": "3e682b8a936e451bedb374b4adf6cb8927a9ea401970dc1bc425892cfc8cf30b"
+        },
+        {
+          "path": "EXP/validation/dinov3b_preparation_20261118_r1/roles_direct/jobs/task-d12343b78bed34d179e80a7b-a0014/llm_audit.json",
+          "sha256": "105f78a2a340d8ca3974b0732c4792c61ffac6dab3d59cda04de1b3da6b55352"
+        },
+        {
+          "path": "EXP/validation/dinov3b_preparation_20261118_r1/roles_direct/jobs/task-d12343b78bed34d179e80a7b-a0014/cli/instructions.txt",
+          "sha256": "f8f24cdec0a802e7337ba668e1fd7bdb0103541f902f67b5846e2a4301e2350e"
+        },
+        {
+          "path": "EXP/validation/dinov3b_preparation_20261118_r1/roles_direct/jobs/task-d12343b78bed34d179e80a7b-a0014/cli/answer.json",
+          "sha256": "3b6a0b93df4eedc7beb95f57927a0408663724e728baddc1372721fd7845ec35"
+        },
+        {
+          "path": "EXP/validation/dinov3b_preparation_20261118_r1/roles_direct/jobs/task-d12343b78bed34d179e80a7b-a0014/result.json",
+          "sha256": "f2bc344735de46bc624956cd9252b4a8802b4d2cee12dddaf3a777da970002bd"
+        }
+      ]
+    },
+    {
+      "task": "task-d12343b78bed34d179e80a7b",
+      "role": "generation",
+      "requested": {
+        "model": "gpt-6-astra",
+        "reasoning_effort": "high"
+      },
+      "actual": {
+        "model": null,
+        "reasoning_effort": null,
+        "source": "not_reported_by_cli"
+      },
+      "model_call_started": true,
+      "error": null,
+      "files": [
+        {
+          "path": "EXP/validation/dinov3b_preparation_20261118_r1/roles_direct/jobs/task-d12343b78bed34d179e80a7b-a0015/request.json",
+          "sha256": "2351500a04078e842ab9231e41e5f99e463189993fd9ded824922d6d45137e59"
+        },
+        {
+          "path": "EXP/validation/dinov3b_preparation_20261118_r1/roles_direct/jobs/task-d12343b78bed34d179e80a7b-a0015/llm_audit.json",
+          "sha256": "e1af95c95889ab795734b8a7aa6980b5da1dcb7ddd97713f4ab29a10743f484c"
+        },
+        {
+          "path": "EXP/validation/dinov3b_preparation_20261118_r1/roles_direct/jobs/task-d12343b78bed34d179e80a7b-a0015/cli/instructions.txt",
+          "sha256": "f8f24cdec0a802e7337ba668e1fd7bdb0103541f902f67b5846e2a4301e2350e"
+        },
+        {
+          "path": "EXP/validation/dinov3b_preparation_20261118_r1/roles_direct/jobs/task-d12343b78bed34d179e80a7b-a0015/cli/answer.json",
+          "sha256": "f3715ee3fb04b2db36bada3de10a22b018674fdea91cd7ef390a8704acfdaf69"
+        },
+        {
+          "path": "EXP/validation/dinov3b_preparation_20261118_r1/roles_direct/jobs/task-d12343b78bed34d179e80a7b-a0015/result.json",
+          "sha256": "96880811c8636d3b8135530e26cacd3cbd5b3c49a6d270a3db9b4b14efa8bc90"
+        }
+      ]
+    },
+    {
+      "task": "task-c1151d69d4fbe68f01c0c5df",
+      "role": "recorder",
+      "requested": {
+        "model": "gpt-6-luna",
+        "reasoning_effort": "high"
+      },
+      "actual": {
+        "model": null,
+        "reasoning_effort": null,
+        "source": "not_reported_by_cli"
+      },
+      "model_call_started": true,
+      "error": null,
+      "files": [
+        {
+          "path": "EXP/validation/dinov3b_preparation_20261118_r1/roles_direct/jobs/task-c1151d69d4fbe68f01c0c5df-a0001/request.json",
+          "sha256": "56f2fec6dbeee98f14035db1cb592f187657838318d5cb36e8165bb1d588b802"
+        },
+        {
+          "path": "EXP/validation/dinov3b_preparation_20261118_r1/roles_direct/jobs/task-c1151d69d4fbe68f01c0c5df-a0001/llm_audit.json",
+          "sha256": "a590e656f3a87a39687d2ecb64ecbd8c320907908e75bbc9ed4843431510f1da"
+        },
+        {
+          "path": "EXP/validation/dinov3b_preparation_20261118_r1/roles_direct/jobs/task-c1151d69d4fbe68f01c0c5df-a0001/cli/instructions.txt",
+          "sha256": "85f9bbcd44eb84b3a6f2c7b05dd7942a475d1091f24f1131e4671e3415fb6a30"
+        },
+        {
+          "path": "EXP/validation/dinov3b_preparation_20261118_r1/roles_direct/jobs/task-c1151d69d4fbe68f01c0c5df-a0001/cli/answer.json",
+          "sha256": "36a5dd72542f6350ed479dbda941e1015d17d9f64a1306313ab4b1578cb6f27e"
+        },
+        {
+          "path": "EXP/validation/dinov3b_preparation_20261118_r1/roles_direct/jobs/task-c1151d69d4fbe68f01c0c5df-a0001/result.json",
+          "sha256": "e9598d888557b3ff1e28712e150b84598bc9051552976ca17793832d04994f30"
+        }
+      ]
+    },
+    {
+      "task": "task-22c83ed143954442059d8cdf",
+      "role": "generation",
+      "requested": {
+        "model": "gpt-6-astra",
+        "reasoning_effort": "high"
+      },
+      "actual": {
+        "model": null,
+        "reasoning_effort": null,
+        "source": "not_reported_by_cli"
+      },
+      "model_call_started": true,
+      "error": null,
+      "files": [
+        {
+          "path": "EXP/validation/dinov3b_preparation_20261118_r1/roles_direct/jobs/task-22c83ed143954442059d8cdf-a0001/request.json",
+          "sha256": "78da402b346050c5b65811a83cc3435c9d2ee2981cea88a7b05dc28e2ef5f2fb"
+        },
+        {
+          "path": "EXP/validation/dinov3b_preparation_20261118_r1/roles_direct/jobs/task-22c83ed143954442059d8cdf-a0001/llm_audit.json",
+          "sha256": "524e7fb94aa1e4df83c06565043784f25f317c4fc829a123999c78e9d125fb9c"
+        },
+        {
+          "path": "EXP/validation/dinov3b_preparation_20261118_r1/roles_direct/jobs/task-22c83ed143954442059d8cdf-a0001/cli/instructions.txt",
+          "sha256": "82cbe1b0d73335b38ea64b2cd97ccdd01e8daad45badd4bcb6ff1cf0f5dcd4b4"
+        },
+        {
+          "path": "EXP/validation/dinov3b_preparation_20261118_r1/roles_direct/jobs/task-22c83ed143954442059d8cdf-a0001/cli/answer.json",
+          "sha256": "d7b4693efccb11c741d0c089d62969ea5ccfec7bd75136e71a4adb376a1c3fe5"
+        },
+        {
+          "path": "EXP/validation/dinov3b_preparation_20261118_r1/roles_direct/jobs/task-22c83ed143954442059d8cdf-a0001/result.json",
+          "sha256": "080a54711223b974c2c7821353f2cb967daadef1af68735276bfbeb44724caf1"
+        }
+      ]
+    },
+    {
+      "task": "task-bf81a54a31eda545f911f934",
+      "role": "generation",
+      "requested": {
+        "model": "gpt-6-astra",
+        "reasoning_effort": "high"
+      },
+      "actual": {
+        "model": null,
+        "reasoning_effort": null,
+        "source": "not_reported_by_cli"
+      },
+      "model_call_started": true,
+      "error": null,
+      "files": [
+        {
+          "path": "EXP/validation/dinov3b_preparation_20261118_r1/roles_direct/jobs/task-bf81a54a31eda545f911f934-a0001/request.json",
+          "sha256": "c2383fcbdfc4283a2af6e7c9793ff3f05a7f0f09c21f3939dba0671f4f2db53f"
+        },
+        {
+          "path": "EXP/validation/dinov3b_preparation_20261118_r1/roles_direct/jobs/task-bf81a54a31eda545f911f934-a0001/llm_audit.json",
+          "sha256": "c3765a6c239b7e97414bc16f53574f3ddaab7d99d482cfdb1ef075fc5fd343d7"
+        },
+        {
+          "path": "EXP/validation/dinov3b_preparation_20261118_r1/roles_direct/jobs/task-bf81a54a31eda545f911f934-a0001/cli/instructions.txt",
+          "sha256": "f8f24cdec0a802e7337ba668e1fd7bdb0103541f902f67b5846e2a4301e2350e"
+        },
+        {
+          "path": "EXP/validation/dinov3b_preparation_20261118_r1/roles_direct/jobs/task-bf81a54a31eda545f911f934-a0001/cli/answer.json",
+          "sha256": "7e5d75b0489f25b03e585ceb494def500fb93e050a5ce4089fd5fb0e28eaa1c2"
+        },
+        {
+          "path": "EXP/validation/dinov3b_preparation_20261118_r1/roles_direct/jobs/task-bf81a54a31eda545f911f934-a0001/result.json",
+          "sha256": "4445b4c84f108f4b28ceb6c7bbbe096a830bd646dab7f3d1e88cc6051d8b6c30"
+        }
+      ]
+    },
+    {
+      "task": "task-bf81a54a31eda545f911f934",
+      "role": "generation",
+      "requested": {
+        "model": "gpt-6-astra",
+        "reasoning_effort": "high"
+      },
+      "actual": {
+        "model": null,
+        "reasoning_effort": null,
+        "source": "not_reported_by_cli"
+      },
+      "model_call_started": true,
+      "error": null,
+      "files": [
+        {
+          "path": "EXP/validation/dinov3b_preparation_20261118_r1/roles_direct/jobs/task-bf81a54a31eda545f911f934-a0002/request.json",
+          "sha256": "93d28bddf6c40c544075b6548ec68580e5f6a3818517d6d136245823f813f8e8"
+        },
+        {
+          "path": "EXP/validation/dinov3b_preparation_20261118_r1/roles_direct/jobs/task-bf81a54a31eda545f911f934-a0002/llm_audit.json",
+          "sha256": "5ebc1d1005066c6344810267367328a70e87b34e831da5c7ca9524f0c0cefcc9"
+        },
+        {
+          "path": "EXP/validation/dinov3b_preparation_20261118_r1/roles_direct/jobs/task-bf81a54a31eda545f911f934-a0002/cli/instructions.txt",
+          "sha256": "f8f24cdec0a802e7337ba668e1fd7bdb0103541f902f67b5846e2a4301e2350e"
+        },
+        {
+          "path": "EXP/validation/dinov3b_preparation_20261118_r1/roles_direct/jobs/task-bf81a54a31eda545f911f934-a0002/cli/answer.json",
+          "sha256": "13889f950af0bb6203b576172921e06c0da236ba71107da67f0dc5911d52f820"
+        },
+        {
+          "path": "EXP/validation/dinov3b_preparation_20261118_r1/roles_direct/jobs/task-bf81a54a31eda545f911f934-a0002/result.json",
+          "sha256": "e4fa077418eee517191369751aa7a42d17cc9047b52ae20834d9177bdc5cd749"
+        }
+      ]
+    },
+    {
+      "task": "task-bf81a54a31eda545f911f934",
+      "role": "generation",
+      "requested": {
+        "model": "gpt-6-astra",
+        "reasoning_effort": "high"
+      },
+      "actual": {
+        "model": null,
+        "reasoning_effort": null,
+        "source": "not_reported_by_cli"
+      },
+      "model_call_started": true,
+      "error": null,
+      "files": [
+        {
+          "path": "EXP/validation/dinov3b_preparation_20261118_r1/roles_direct/jobs/task-bf81a54a31eda545f911f934-a0003/request.json",
+          "sha256": "885ddc4688f80df7a9b84b0740a5ed991340bfd20399cd3cc3d5c0458be2264e"
+        },
+        {
+          "path": "EXP/validation/dinov3b_preparation_20261118_r1/roles_direct/jobs/task-bf81a54a31eda545f911f934-a0003/llm_audit.json",
+          "sha256": "d5221d7872163df952775c5feead6c628c58b59090cba5a2b3fb3f48d3d9502a"
+        },
+        {
+          "path": "EXP/validation/dinov3b_preparation_20261118_r1/roles_direct/jobs/task-bf81a54a31eda545f911f934-a0003/cli/instructions.txt",
+          "sha256": "f8f24cdec0a802e7337ba668e1fd7bdb0103541f902f67b5846e2a4301e2350e"
+        },
+        {
+          "path": "EXP/validation/dinov3b_preparation_20261118_r1/roles_direct/jobs/task-bf81a54a31eda545f911f934-a0003/cli/answer.json",
+          "sha256": "7d806e147f8f0255c6ea4b863a9206f15b875cd3eaa4f5c997966f2c5fbb0982"
+        },
+        {
+          "path": "EXP/validation/dinov3b_preparation_20261118_r1/roles_direct/jobs/task-bf81a54a31eda545f911f934-a0003/result.json",
+          "sha256": "675ff529356b2db38d0c4312e4cdd247863b1838341d9a2880ec2978a1a7e063"
+        }
+      ]
+    },
+    {
+      "task": "task-bf81a54a31eda545f911f934",
+      "role": "generation",
+      "requested": {
+        "model": "gpt-6-astra",
+        "reasoning_effort": "high"
+      },
+      "actual": {
+        "model": null,
+        "reasoning_effort": null,
+        "source": "not_reported_by_cli"
+      },
+      "model_call_started": true,
+      "error": null,
+      "files": [
+        {
+          "path": "EXP/validation/dinov3b_preparation_20261118_r1/roles_direct/jobs/task-bf81a54a31eda545f911f934-a0004/request.json",
+          "sha256": "8f9199f10be906f4adf4a11196211e9abae4e0d202fb4e9ec78e0bb182e6eee1"
+        },
+        {
+          "path": "EXP/validation/dinov3b_preparation_20261118_r1/roles_direct/jobs/task-bf81a54a31eda545f911f934-a0004/llm_audit.json",
+          "sha256": "8d569aafb6480e9af40356678400b9c5a0c7bd7b23c56380184613a689993491"
+        },
+        {
+          "path": "EXP/validation/dinov3b_preparation_20261118_r1/roles_direct/jobs/task-bf81a54a31eda545f911f934-a0004/cli/instructions.txt",
+          "sha256": "f8f24cdec0a802e7337ba668e1fd7bdb0103541f902f67b5846e2a4301e2350e"
+        },
+        {
+          "path": "EXP/validation/dinov3b_preparation_20261118_r1/roles_direct/jobs/task-bf81a54a31eda545f911f934-a0004/cli/answer.json",
+          "sha256": "32c49ba20e9793d17bb5ff49c359b2c8c06ef16e03a58258eee38b41939d2dd0"
+        },
+        {
+          "path": "EXP/validation/dinov3b_preparation_20261118_r1/roles_direct/jobs/task-bf81a54a31eda545f911f934-a0004/result.json",
+          "sha256": "db4a5d905567abce7703eacdb00c827bdf9eb079889dfb22e29c0a7a112a95d5"
+        }
+      ]
+    },
+    {
+      "task": "task-bf81a54a31eda545f911f934",
+      "role": "generation",
+      "requested": {
+        "model": "gpt-6-astra",
+        "reasoning_effort": "high"
+      },
+      "actual": {
+        "model": null,
+        "reasoning_effort": null,
+        "source": "not_reported_by_cli"
+      },
+      "model_call_started": true,
+      "error": null,
+      "files": [
+        {
+          "path": "EXP/validation/dinov3b_preparation_20261118_r1/roles_direct/jobs/task-bf81a54a31eda545f911f934-a0005/request.json",
+          "sha256": "c0963f2924288ea307ea16531528e64839b9b2515ea33c3c90bc5d8d54a3710c"
+        },
+        {
+          "path": "EXP/validation/dinov3b_preparation_20261118_r1/roles_direct/jobs/task-bf81a54a31eda545f911f934-a0005/llm_audit.json",
+          "sha256": "6d6201711c7eacd31913965954fdc3f1f0d441d8643fab8455ce6781d2e02bd0"
+        },
+        {
+          "path": "EXP/validation/dinov3b_preparation_20261118_r1/roles_direct/jobs/task-bf81a54a31eda545f911f934-a0005/cli/instructions.txt",
+          "sha256": "f8f24cdec0a802e7337ba668e1fd7bdb0103541f902f67b5846e2a4301e2350e"
+        },
+        {
+          "path": "EXP/validation/dinov3b_preparation_20261118_r1/roles_direct/jobs/task-bf81a54a31eda545f911f934-a0005/cli/answer.json",
+          "sha256": "009240a518c59d2895116e7077a23b32910e8af939dd40038cc39eabf3d78ad7"
+        },
+        {
+          "path": "EXP/validation/dinov3b_preparation_20261118_r1/roles_direct/jobs/task-bf81a54a31eda545f911f934-a0005/result.json",
+          "sha256": "fc01cf46532e26d36d55844ca6d52cb485d10bb25771c0d966c15feea9ebfbb2"
+        }
+      ]
+    },
+    {
+      "task": "task-b28cfd32183eeaa31ff52bbc",
+      "role": "coding",
+      "requested": {
+        "model": "gpt-6.1-sol",
+        "reasoning_effort": "medium"
+      },
+      "actual": {
+        "model": null,
+        "reasoning_effort": null,
+        "source": "not_reported_by_cli"
+      },
+      "model_call_started": false,
+      "error": {
+        "code": "llm_quota_exhausted",
+        "message": "官方 CLI account/rateLimits/read 只读检查失败（quota_exhausted，RPC code=-32603）；未开始新的模型调用",
+        "path": "$",
+        "retryable": false
+      },
+      "files": [
+        {
+          "path": "EXP/validation/dinov3b_preparation_20261118_r1/roles_direct/jobs/task-b28cfd32183eeaa31ff52bbc-a0001/request.json",
+          "sha256": "132bb4a7b704a82d816727412b1849f81f5fb461ec22297357c2cff0bfa27c0a"
+        },
+        {
+          "path": "EXP/validation/dinov3b_preparation_20261118_r1/roles_direct/jobs/task-b28cfd32183eeaa31ff52bbc-a0001/llm_audit.json",
+          "sha256": "f46bcd9641a85f62fc42f80a016e25ba08f52ecf619d8db7bfa7ec47d4e81acf"
+        },
+        {
+          "path": "EXP/validation/dinov3b_preparation_20261118_r1/roles_direct/jobs/task-b28cfd32183eeaa31ff52bbc-a0001/result.json",
+          "sha256": "9a55e079ee00f199004ce34aa62616875af0e558866263ad718fb0e3a507ffab"
+        }
+      ]
+    },
+    {
+      "task": "task-bf81a54a31eda545f911f934",
+      "role": "generation",
+      "requested": {
+        "model": "gpt-6-astra",
+        "reasoning_effort": "high"
+      },
+      "actual": {
+        "model": null,
+        "reasoning_effort": null,
+        "source": "not_reported_by_cli"
+      },
+      "model_call_started": true,
+      "error": null,
+      "files": [
+        {
+          "path": "EXP/validation/dinov3b_preparation_20261118_r1/roles_direct/jobs/task-bf81a54a31eda545f911f934-a0006/request.json",
+          "sha256": "fdcd6dadcb3c87988d3d88316c994c54c6d1af48a38231fb4cdb5ae0a993605f"
+        },
+        {
+          "path": "EXP/validation/dinov3b_preparation_20261118_r1/roles_direct/jobs/task-bf81a54a31eda545f911f934-a0006/llm_audit.json",
+          "sha256": "19b1a289b9e466f86c54ff5d58baa91fcd4ad9647199abf77121b0f69ef0d038"
+        },
+        {
+          "path": "EXP/validation/dinov3b_preparation_20261118_r1/roles_direct/jobs/task-bf81a54a31eda545f911f934-a0006/cli/instructions.txt",
+          "sha256": "f8f24cdec0a802e7337ba668e1fd7bdb0103541f902f67b5846e2a4301e2350e"
+        },
+        {
+          "path": "EXP/validation/dinov3b_preparation_20261118_r1/roles_direct/jobs/task-bf81a54a31eda545f911f934-a0006/cli/answer.json",
+          "sha256": "6a19abb27476fe53568633ed11dba5ade24ff29143f74816b5ca79adce694ecf"
+        },
+        {
+          "path": "EXP/validation/dinov3b_preparation_20261118_r1/roles_direct/jobs/task-bf81a54a31eda545f911f934-a0006/result.json",
+          "sha256": "6228a1fb184badfdc806f5f193f3bdeed8a4369a47b448af3be35d155d0332db"
+        }
+      ]
+    },
+    {
+      "task": "task-bf81a54a31eda545f911f934",
+      "role": "generation",
+      "requested": {
+        "model": "gpt-6-astra",
+        "reasoning_effort": "high"
+      },
+      "actual": {
+        "model": null,
+        "reasoning_effort": null,
+        "source": "not_reported_by_cli"
+      },
+      "model_call_started": true,
+      "error": null,
+      "files": [
+        {
+          "path": "EXP/validation/dinov3b_preparation_20261118_r1/roles_direct/jobs/task-bf81a54a31eda545f911f934-a0007/request.json",
+          "sha256": "e9548d5c30e33a22c4b706450ca5c6f9dd3ebdcee380308b10d2bea5b918d0f0"
+        },
+        {
+          "path": "EXP/validation/dinov3b_preparation_20261118_r1/roles_direct/jobs/task-bf81a54a31eda545f911f934-a0007/llm_audit.json",
+          "sha256": "4ec74dc9c455ff8bb2c0ee4a92fc7fb0ee47cde66657cb30ccdb235fe1902509"
+        },
+        {
+          "path": "EXP/validation/dinov3b_preparation_20261118_r1/roles_direct/jobs/task-bf81a54a31eda545f911f934-a0007/cli/instructions.txt",
+          "sha256": "f8f24cdec0a802e7337ba668e1fd7bdb0103541f902f67b5846e2a4301e2350e"
+        },
+        {
+          "path": "EXP/validation/dinov3b_preparation_20261118_r1/roles_direct/jobs/task-bf81a54a31eda545f911f934-a0007/cli/answer.json",
+          "sha256": "84cb231094f29989c3b2ace8af2dbc4062125b3dfbc1d56969d53d3a760226d6"
+        },
+        {
+          "path": "EXP/validation/dinov3b_preparation_20261118_r1/roles_direct/jobs/task-bf81a54a31eda545f911f934-a0007/result.json",
+          "sha256": "36ffe4658ec84b843e4410e8cffa161e74bedae5822af73311e5573a8f2a16f2"
+        }
+      ]
+    },
+    {
+      "task": "task-5078586806c236057f507149",
+      "role": "coding",
+      "requested": {
+        "model": "gpt-6.1-sol",
+        "reasoning_effort": "medium"
+      },
+      "actual": {
+        "model": null,
+        "reasoning_effort": null,
+        "source": "not_reported_by_cli"
+      },
+      "model_call_started": true,
+      "error": null,
+      "files": [
+        {
+          "path": "EXP/validation/dinov3b_preparation_20261118_r1/roles_direct/jobs/task-5078586806c236057f507149-a0001/request.json",
+          "sha256": "bf807f4fd045876b65d4231e131c3a3636aeb8e429cbb89eb8ec4917c4ba43e0"
+        },
+        {
+          "path": "EXP/validation/dinov3b_preparation_20261118_r1/roles_direct/jobs/task-5078586806c236057f507149-a0001/llm_audit.json",
+          "sha256": "cc0ba69f7255e36fdd857809860feaf248c433d7cc0404f1161948f795bc2993"
+        },
+        {
+          "path": "EXP/validation/dinov3b_preparation_20261118_r1/roles_direct/jobs/task-5078586806c236057f507149-a0001/cli/instructions.txt",
+          "sha256": "aa7ea5a11d0b1159f5c61d1d283e83721a0d8e40cd35a55fe68501aecdcb1c73"
+        },
+        {
+          "path": "EXP/validation/dinov3b_preparation_20261118_r1/roles_direct/jobs/task-5078586806c236057f507149-a0001/cli/answer.json",
+          "sha256": "81bf68a70dc13584ea7da306637fd024da5abb191cf71a8e1415c25c81b70f84"
+        },
+        {
+          "path": "EXP/validation/dinov3b_preparation_20261118_r1/roles_direct/jobs/task-5078586806c236057f507149-a0001/result.json",
+          "sha256": "4f5283914cd4c539d271c39b6dd045b384a8e93834548e34139a891c1a733b34"
+        }
+      ]
+    },
+    {
+      "task": "task-5078586806c236057f507149",
+      "role": "coding",
+      "requested": {
+        "model": "gpt-6.1-sol",
+        "reasoning_effort": "medium"
+      },
+      "actual": {
+        "model": null,
+        "reasoning_effort": null,
+        "source": "not_reported_by_cli"
+      },
+      "model_call_started": true,
+      "error": null,
+      "files": [
+        {
+          "path": "EXP/validation/dinov3b_preparation_20261118_r1/roles_direct/jobs/task-5078586806c236057f507149-a0002/request.json",
+          "sha256": "3576c772bbb1fec0ee18694d26ebb6edbdf15daeaefcd65622ede27685415571"
+        },
+        {
+          "path": "EXP/validation/dinov3b_preparation_20261118_r1/roles_direct/jobs/task-5078586806c236057f507149-a0002/llm_audit.json",
+          "sha256": "831331f67240dd3847d0641c41806ff59f5e8c252a35278af95762b6a7f8c53b"
+        },
+        {
+          "path": "EXP/validation/dinov3b_preparation_20261118_r1/roles_direct/jobs/task-5078586806c236057f507149-a0002/cli/instructions.txt",
+          "sha256": "aa7ea5a11d0b1159f5c61d1d283e83721a0d8e40cd35a55fe68501aecdcb1c73"
+        },
+        {
+          "path": "EXP/validation/dinov3b_preparation_20261118_r1/roles_direct/jobs/task-5078586806c236057f507149-a0002/cli/answer.json",
+          "sha256": "38de5aed762231045e983b217bd532cb9cbddc6bbbfaa29dd7f1274204061901"
+        },
+        {
+          "path": "EXP/validation/dinov3b_preparation_20261118_r1/roles_direct/jobs/task-5078586806c236057f507149-a0002/result.json",
+          "sha256": "0b58eccedfc2d0b461701398809311d4dc529b8f2b040d5e3db93352358b3a5d"
+        }
+      ]
+    },
+    {
+      "task": "task-5078586806c236057f507149",
+      "role": "coding",
+      "requested": {
+        "model": "gpt-6.1-sol",
+        "reasoning_effort": "medium"
+      },
+      "actual": {
+        "model": null,
+        "reasoning_effort": null,
+        "source": "not_reported_by_cli"
+      },
+      "model_call_started": true,
+      "error": null,
+      "files": [
+        {
+          "path": "EXP/validation/dinov3b_preparation_20261118_r1/roles_direct/jobs/task-5078586806c236057f507149-a0003/request.json",
+          "sha256": "90f6e67bb7782b47062bb259e72c98c5df54b64798708d4815f0ea681269afad"
+        },
+        {
+          "path": "EXP/validation/dinov3b_preparation_20261118_r1/roles_direct/jobs/task-5078586806c236057f507149-a0003/llm_audit.json",
+          "sha256": "9f01d8b8eb2cb87b86789a07346837920e18af74f701639ea47cbd08fffaa654"
+        },
+        {
+          "path": "EXP/validation/dinov3b_preparation_20261118_r1/roles_direct/jobs/task-5078586806c236057f507149-a0003/cli/instructions.txt",
+          "sha256": "aa7ea5a11d0b1159f5c61d1d283e83721a0d8e40cd35a55fe68501aecdcb1c73"
+        },
+        {
+          "path": "EXP/validation/dinov3b_preparation_20261118_r1/roles_direct/jobs/task-5078586806c236057f507149-a0003/cli/answer.json",
+          "sha256": "dfca7a5f1188c9558efd1ac77d12131a445cb33be640a7b3ebca14d8aeb2369f"
+        },
+        {
+          "path": "EXP/validation/dinov3b_preparation_20261118_r1/roles_direct/jobs/task-5078586806c236057f507149-a0003/result.json",
+          "sha256": "09f7ff5b8a959cfaaad4b3a43f5a294b0636caf8621666d3339e72c35582b181"
+        }
+      ]
+    },
+    {
+      "task": "task-5078586806c236057f507149",
+      "role": "coding",
+      "requested": {
+        "model": "gpt-6.1-sol",
+        "reasoning_effort": "medium"
+      },
+      "actual": {
+        "model": null,
+        "reasoning_effort": null,
+        "source": "not_reported_by_cli"
+      },
+      "model_call_started": true,
+      "error": null,
+      "files": [
+        {
+          "path": "EXP/validation/dinov3b_preparation_20261118_r1/roles_direct/jobs/task-5078586806c236057f507149-a0004/request.json",
+          "sha256": "430173670fe10d882bb953c54775e1aced0f3bf7cb500275629e646921ac93fa"
+        },
+        {
+          "path": "EXP/validation/dinov3b_preparation_20261118_r1/roles_direct/jobs/task-5078586806c236057f507149-a0004/llm_audit.json",
+          "sha256": "f6b86ac522739ed2d663984e932c21bfeabd1c32a5e07b209ec6b36527b00f62"
+        },
+        {
+          "path": "EXP/validation/dinov3b_preparation_20261118_r1/roles_direct/jobs/task-5078586806c236057f507149-a0004/cli/instructions.txt",
+          "sha256": "aa7ea5a11d0b1159f5c61d1d283e83721a0d8e40cd35a55fe68501aecdcb1c73"
+        },
+        {
+          "path": "EXP/validation/dinov3b_preparation_20261118_r1/roles_direct/jobs/task-5078586806c236057f507149-a0004/cli/answer.json",
+          "sha256": "d7370143cb4597a051df8610740c581fc05acda8113d08d41fe023760890fe2a"
+        },
+        {
+          "path": "EXP/validation/dinov3b_preparation_20261118_r1/roles_direct/jobs/task-5078586806c236057f507149-a0004/result.json",
+          "sha256": "9753c15592fb6d136faa00551c1f01e61c529462fd9589aa39ccdb16f59e8d13"
+        }
+      ]
+    },
+    {
+      "task": "task-901d644cd983795498e00ee3",
+      "role": "safeguard",
+      "requested": {
+        "model": "gpt-6.1-sol",
+        "reasoning_effort": "medium"
+      },
+      "actual": {
+        "model": null,
+        "reasoning_effort": null,
+        "source": "not_reported_by_cli"
+      },
+      "model_call_started": true,
+      "error": null,
+      "files": [
+        {
+          "path": "EXP/validation/dinov3b_preparation_20261118_r1/roles_direct/jobs/task-901d644cd983795498e00ee3-a0001/request.json",
+          "sha256": "06c8c3c2541654bab4f6d15a53cc462c87f769983c8badc86533227dd5bc425d"
+        },
+        {
+          "path": "EXP/validation/dinov3b_preparation_20261118_r1/roles_direct/jobs/task-901d644cd983795498e00ee3-a0001/llm_audit.json",
+          "sha256": "3735e17c9e5f8d15db7a20ea0188a6770d3bde79be21844432c07fea98c01649"
+        },
+        {
+          "path": "EXP/validation/dinov3b_preparation_20261118_r1/roles_direct/jobs/task-901d644cd983795498e00ee3-a0001/cli/instructions.txt",
+          "sha256": "5f55083a5a13300d80b6ce5e709107c01328a49b82cde8fcbfd12ad76d1dca8b"
+        },
+        {
+          "path": "EXP/validation/dinov3b_preparation_20261118_r1/roles_direct/jobs/task-901d644cd983795498e00ee3-a0001/cli/answer.json",
+          "sha256": "02aa35b17ab1b4b8faef6faabeb91d30df7686c9817a981417fd46822ec756f7"
+        },
+        {
+          "path": "EXP/validation/dinov3b_preparation_20261118_r1/roles_direct/jobs/task-901d644cd983795498e00ee3-a0001/result.json",
+          "sha256": "5cb175415219a85f36d5b6d3d5b5f6e3c575600e694f5dc3ef62af53da809918"
+        }
+      ]
+    },
+    {
+      "task": "task-901d644cd983795498e00ee3",
+      "role": "safeguard",
+      "requested": {
+        "model": "gpt-6.1-sol",
+        "reasoning_effort": "medium"
+      },
+      "actual": {
+        "model": null,
+        "reasoning_effort": null,
+        "source": "not_reported_by_cli"
+      },
+      "model_call_started": true,
+      "error": null,
+      "files": [
+        {
+          "path": "EXP/validation/dinov3b_preparation_20261118_r1/roles_direct/jobs/task-901d644cd983795498e00ee3-a0002/request.json",
+          "sha256": "d73e64e2783879f5483a52e3c181756fd06b946bf9d91cb00ca7949d96452436"
+        },
+        {
+          "path": "EXP/validation/dinov3b_preparation_20261118_r1/roles_direct/jobs/task-901d644cd983795498e00ee3-a0002/llm_audit.json",
+          "sha256": "f6455bb2c6a993e9757c4ad9af422ebb4319be7d3551c8425969ca2f5b5cad53"
+        },
+        {
+          "path": "EXP/validation/dinov3b_preparation_20261118_r1/roles_direct/jobs/task-901d644cd983795498e00ee3-a0002/cli/instructions.txt",
+          "sha256": "5f55083a5a13300d80b6ce5e709107c01328a49b82cde8fcbfd12ad76d1dca8b"
+        },
+        {
+          "path": "EXP/validation/dinov3b_preparation_20261118_r1/roles_direct/jobs/task-901d644cd983795498e00ee3-a0002/cli/answer.json",
+          "sha256": "b53b8f126172912bfc1e3f6e53389968940618a2fb1a18501d033f91a6c453a5"
+        },
+        {
+          "path": "EXP/validation/dinov3b_preparation_20261118_r1/roles_direct/jobs/task-901d644cd983795498e00ee3-a0002/result.json",
+          "sha256": "eba4dab82e7ea8c9396fe537a477e98c9bd4d7aa5e7b8a56a1e5aaf3ebc81a83"
+        }
+      ]
+    },
+    {
+      "task": "task-bf81a54a31eda545f911f934",
+      "role": "generation",
+      "requested": {
+        "model": "gpt-6-astra",
+        "reasoning_effort": "high"
+      },
+      "actual": {
+        "model": null,
+        "reasoning_effort": null,
+        "source": "not_reported_by_cli"
+      },
+      "model_call_started": true,
+      "error": null,
+      "files": [
+        {
+          "path": "EXP/validation/dinov3b_preparation_20261118_r1/roles_direct/jobs/task-bf81a54a31eda545f911f934-a0008/request.json",
+          "sha256": "f3a3897181ea1437b57a0fb0454d4744095756bfd603a439c6f46152f4f60a2c"
+        },
+        {
+          "path": "EXP/validation/dinov3b_preparation_20261118_r1/roles_direct/jobs/task-bf81a54a31eda545f911f934-a0008/llm_audit.json",
+          "sha256": "7a2b795c9f71b489bf6c8ad5f2db42e3581a2557de9d423f7a7601605f6f3f85"
+        },
+        {
+          "path": "EXP/validation/dinov3b_preparation_20261118_r1/roles_direct/jobs/task-bf81a54a31eda545f911f934-a0008/cli/instructions.txt",
+          "sha256": "f8f24cdec0a802e7337ba668e1fd7bdb0103541f902f67b5846e2a4301e2350e"
+        },
+        {
+          "path": "EXP/validation/dinov3b_preparation_20261118_r1/roles_direct/jobs/task-bf81a54a31eda545f911f934-a0008/cli/answer.json",
+          "sha256": "91120360c10ff1bac75cb21ae7a268b82b2a01c136d092e4bc3937e5d7e54a1d"
+        },
+        {
+          "path": "EXP/validation/dinov3b_preparation_20261118_r1/roles_direct/jobs/task-bf81a54a31eda545f911f934-a0008/result.json",
+          "sha256": "080e3ef6ea6c8ade448afaf4344c12d51e7074691b1ec8d8a5f66eb4bf54a8f2"
+        }
+      ]
+    },
+    {
+      "task": "task-bf81a54a31eda545f911f934",
+      "role": "generation",
+      "requested": {
+        "model": "gpt-6-astra",
+        "reasoning_effort": "high"
+      },
+      "actual": {
+        "model": null,
+        "reasoning_effort": null,
+        "source": "not_reported_by_cli"
+      },
+      "model_call_started": true,
+      "error": null,
+      "files": [
+        {
+          "path": "EXP/validation/dinov3b_preparation_20261118_r1/roles_direct/jobs/task-bf81a54a31eda545f911f934-a0009/request.json",
+          "sha256": "a8ffde1f54a64326162bf93509a1d2c199dd31d53c582093d197a4e7aa40a40a"
+        },
+        {
+          "path": "EXP/validation/dinov3b_preparation_20261118_r1/roles_direct/jobs/task-bf81a54a31eda545f911f934-a0009/llm_audit.json",
+          "sha256": "4c7585dfd8cdcb6dadd5ba0a8bda500b6d8ce4eeb6691fe6eafae1bf8a117e77"
+        },
+        {
+          "path": "EXP/validation/dinov3b_preparation_20261118_r1/roles_direct/jobs/task-bf81a54a31eda545f911f934-a0009/cli/instructions.txt",
+          "sha256": "f8f24cdec0a802e7337ba668e1fd7bdb0103541f902f67b5846e2a4301e2350e"
+        },
+        {
+          "path": "EXP/validation/dinov3b_preparation_20261118_r1/roles_direct/jobs/task-bf81a54a31eda545f911f934-a0009/cli/answer.json",
+          "sha256": "1b6a56576af61ec906c05f9069d22a802a2f07db671480268a5a49357ca874c4"
+        },
+        {
+          "path": "EXP/validation/dinov3b_preparation_20261118_r1/roles_direct/jobs/task-bf81a54a31eda545f911f934-a0009/result.json",
+          "sha256": "51f290f5f8cf49738b06f3845d432bc16bcd3dff832c9fb372dc21f86e77762f"
+        }
+      ]
+    },
+    {
+      "task": "task-bf81a54a31eda545f911f934",
+      "role": "generation",
+      "requested": {
+        "model": "gpt-6-astra",
+        "reasoning_effort": "high"
+      },
+      "actual": {
+        "model": null,
+        "reasoning_effort": null,
+        "source": "not_reported_by_cli"
+      },
+      "model_call_started": true,
+      "error": null,
+      "files": [
+        {
+          "path": "EXP/validation/dinov3b_preparation_20261118_r1/roles_direct/jobs/task-bf81a54a31eda545f911f934-a0010/request.json",
+          "sha256": "4fa87d78874aee7a9438be5dcccbd896e8fe1048cb4c867f6bd99c62ff5fe4e1"
+        },
+        {
+          "path": "EXP/validation/dinov3b_preparation_20261118_r1/roles_direct/jobs/task-bf81a54a31eda545f911f934-a0010/llm_audit.json",
+          "sha256": "c887e59382e87f35ef25923164adc7fabf3288cf702e8061753d474281b490c1"
+        },
+        {
+          "path": "EXP/validation/dinov3b_preparation_20261118_r1/roles_direct/jobs/task-bf81a54a31eda545f911f934-a0010/cli/instructions.txt",
+          "sha256": "f8f24cdec0a802e7337ba668e1fd7bdb0103541f902f67b5846e2a4301e2350e"
+        },
+        {
+          "path": "EXP/validation/dinov3b_preparation_20261118_r1/roles_direct/jobs/task-bf81a54a31eda545f911f934-a0010/cli/answer.json",
+          "sha256": "fb49c58479d3ca661f7505b78331121af43603fa2d88cde3c901e1d86d0c65b1"
+        },
+        {
+          "path": "EXP/validation/dinov3b_preparation_20261118_r1/roles_direct/jobs/task-bf81a54a31eda545f911f934-a0010/result.json",
+          "sha256": "5d9169ba2a401433be3408dc520913e1d1ccd5782040d0a475d0c2d2adf2f72f"
+        }
+      ]
+    },
+    {
+      "task": "task-bf81a54a31eda545f911f934",
+      "role": "generation",
+      "requested": {
+        "model": "gpt-6-astra",
+        "reasoning_effort": "high"
+      },
+      "actual": {
+        "model": null,
+        "reasoning_effort": null,
+        "source": "not_reported_by_cli"
+      },
+      "model_call_started": true,
+      "error": null,
+      "files": [
+        {
+          "path": "EXP/validation/dinov3b_preparation_20261118_r1/roles_direct/jobs/task-bf81a54a31eda545f911f934-a0011/request.json",
+          "sha256": "4db9f137a934eca3920eaeb4241a61a207c5d6b614156d543546cb0f200444da"
+        },
+        {
+          "path": "EXP/validation/dinov3b_preparation_20261118_r1/roles_direct/jobs/task-bf81a54a31eda545f911f934-a0011/llm_audit.json",
+          "sha256": "683f538b4132891eec384e368f03182e94c261a72b34b3904dcce03d494b95aa"
+        },
+        {
+          "path": "EXP/validation/dinov3b_preparation_20261118_r1/roles_direct/jobs/task-bf81a54a31eda545f911f934-a0011/cli/instructions.txt",
+          "sha256": "f8f24cdec0a802e7337ba668e1fd7bdb0103541f902f67b5846e2a4301e2350e"
+        },
+        {
+          "path": "EXP/validation/dinov3b_preparation_20261118_r1/roles_direct/jobs/task-bf81a54a31eda545f911f934-a0011/cli/answer.json",
+          "sha256": "8627794dda6d7306eb4743c69729f085041b6967a9b79ac6b24008ac964de205"
+        },
+        {
+          "path": "EXP/validation/dinov3b_preparation_20261118_r1/roles_direct/jobs/task-bf81a54a31eda545f911f934-a0011/result.json",
+          "sha256": "18525810ff28fcd16d5b74b72a90c6fe6f3c830e87867cea3fe19cdf587d6f23"
+        }
+      ]
+    },
+    {
+      "task": "task-bf81a54a31eda545f911f934",
+      "role": "generation",
+      "requested": {
+        "model": "gpt-6-astra",
+        "reasoning_effort": "high"
+      },
+      "actual": {
+        "model": null,
+        "reasoning_effort": null,
+        "source": "not_reported_by_cli"
+      },
+      "model_call_started": true,
+      "error": null,
+      "files": [
+        {
+          "path": "EXP/validation/dinov3b_preparation_20261118_r1/roles_direct/jobs/task-bf81a54a31eda545f911f934-a0012/request.json",
+          "sha256": "385e8e699bf18a91afc8af8b61cdfa6fed94b84fdfb4eaa039064e1a1a54e1c1"
+        },
+        {
+          "path": "EXP/validation/dinov3b_preparation_20261118_r1/roles_direct/jobs/task-bf81a54a31eda545f911f934-a0012/llm_audit.json",
+          "sha256": "46fe48be5c165ad7fe484af04f63e3ccdb6fe1a32d7d853e1f7a3a473a3a6c4a"
+        },
+        {
+          "path": "EXP/validation/dinov3b_preparation_20261118_r1/roles_direct/jobs/task-bf81a54a31eda545f911f934-a0012/cli/instructions.txt",
+          "sha256": "f8f24cdec0a802e7337ba668e1fd7bdb0103541f902f67b5846e2a4301e2350e"
+        },
+        {
+          "path": "EXP/validation/dinov3b_preparation_20261118_r1/roles_direct/jobs/task-bf81a54a31eda545f911f934-a0012/cli/answer.json",
+          "sha256": "64b2e4480f67460b8c1035534b86369cbd0865999b9a62a046a85e33b2170a11"
+        },
+        {
+          "path": "EXP/validation/dinov3b_preparation_20261118_r1/roles_direct/jobs/task-bf81a54a31eda545f911f934-a0012/result.json",
+          "sha256": "e2a54cdf23059dc803e96fd5028b4563ca3c6499de76bc7bc83870f5bcaf796b"
+        }
+      ]
+    },
+    {
+      "task": "task-bf81a54a31eda545f911f934",
+      "role": "generation",
+      "requested": {
+        "model": "gpt-6-astra",
+        "reasoning_effort": "high"
+      },
+      "actual": {
+        "model": null,
+        "reasoning_effort": null,
+        "source": "not_reported_by_cli"
+      },
+      "model_call_started": true,
+      "error": null,
+      "files": [
+        {
+          "path": "EXP/validation/dinov3b_preparation_20261118_r1/roles_direct/jobs/task-bf81a54a31eda545f911f934-a0013/request.json",
+          "sha256": "e12300986344c0feb1b581df5b0bb514f0c91a08f2f17ca34f06aa6e18847e84"
+        },
+        {
+          "path": "EXP/validation/dinov3b_preparation_20261118_r1/roles_direct/jobs/task-bf81a54a31eda545f911f934-a0013/llm_audit.json",
+          "sha256": "995e55a3f81319290123a7e4935946553d015820395be398213b96265662bb27"
+        },
+        {
+          "path": "EXP/validation/dinov3b_preparation_20261118_r1/roles_direct/jobs/task-bf81a54a31eda545f911f934-a0013/cli/instructions.txt",
+          "sha256": "f8f24cdec0a802e7337ba668e1fd7bdb0103541f902f67b5846e2a4301e2350e"
+        },
+        {
+          "path": "EXP/validation/dinov3b_preparation_20261118_r1/roles_direct/jobs/task-bf81a54a31eda545f911f934-a0013/cli/answer.json",
+          "sha256": "df78633d7b9e353c8bb37a19275063d13f11f4bed4eca64f84c090b1ca57c30d"
+        },
+        {
+          "path": "EXP/validation/dinov3b_preparation_20261118_r1/roles_direct/jobs/task-bf81a54a31eda545f911f934-a0013/result.json",
+          "sha256": "7e4e6a9c661b23244f9cb3a9dfc1b7b661c4bae9cdbaa92e7037863ec1c79c98"
+        }
+      ]
+    },
+    {
+      "task": "task-d6e9d66e01addb4f78288d2d",
+      "role": "recorder",
+      "requested": {
+        "model": "gpt-6-luna",
+        "reasoning_effort": "high"
+      },
+      "actual": {
+        "model": null,
+        "reasoning_effort": null,
+        "source": "not_reported_by_cli"
+      },
+      "model_call_started": true,
+      "error": null,
+      "files": [
+        {
+          "path": "EXP/validation/dinov3b_preparation_20261118_r1/roles_direct/jobs/task-d6e9d66e01addb4f78288d2d-a0001/request.json",
+          "sha256": "b0f0dc404831243f1a952f19642eef79323e0e0829d8d0c60a3029e308d519f4"
+        },
+        {
+          "path": "EXP/validation/dinov3b_preparation_20261118_r1/roles_direct/jobs/task-d6e9d66e01addb4f78288d2d-a0001/llm_audit.json",
+          "sha256": "bbd2181da8452eb345dbbb75f21f269e2f1c057e4541cd1289066919bbdc45f3"
+        },
+        {
+          "path": "EXP/validation/dinov3b_preparation_20261118_r1/roles_direct/jobs/task-d6e9d66e01addb4f78288d2d-a0001/cli/instructions.txt",
+          "sha256": "85f9bbcd44eb84b3a6f2c7b05dd7942a475d1091f24f1131e4671e3415fb6a30"
+        },
+        {
+          "path": "EXP/validation/dinov3b_preparation_20261118_r1/roles_direct/jobs/task-d6e9d66e01addb4f78288d2d-a0001/cli/answer.json",
+          "sha256": "7b1fcda68c7864de31888e1143de59ebd6b790882182529ad063b8a4f24ee6d0"
+        },
+        {
+          "path": "EXP/validation/dinov3b_preparation_20261118_r1/roles_direct/jobs/task-d6e9d66e01addb4f78288d2d-a0001/result.json",
+          "sha256": "4d976ee1ee0f3c4efb0411e77e265424cd56254e89f31454f12a9a4e681d6d97"
+        }
+      ]
+    }
+  ],
+  "coding_sources": [
+    {
+      "id": "code-1cf17448046b1e238de8eada028c1e387736a544eb9330cda4622b00f0465a62",
+      "source": {
+        "path": "EXP/validation/dinov3b_preparation_20261118_r1/research_code/ed007eed8391dc2c4890613ecd350f1ce92d0c59ed8c38900a36990eb63c086a.py",
+        "sha256": "ed007eed8391dc2c4890613ecd350f1ce92d0c59ed8c38900a36990eb63c086a"
+      },
+      "binding": {
+        "path": "EXP/validation/dinov3b_preparation_20261118_r1/roles_direct/code/1cf17448046b1e238de8eada028c1e387736a544eb9330cda4622b00f0465a62/manifest.json",
+        "sha256": "0c186f493fdfb6e74dd0cbaef45a88f51aba867602a79c254752c05bd21f4132"
+      },
+      "request": "ExperimentCard-3998e3adb31147959644f176486c6dff@1"
+    },
+    {
+      "id": "code-5f58bc3b69712c05d474452f88076b8705178f6b481ebbea95cf6c72a54c6ca7",
+      "source": {
+        "path": "EXP/validation/dinov3b_preparation_20261118_r1/research_code/caf51bc80b78b98a7433de1a5aceca9474411bc31b2ac2b21c46787a311d65c9.py",
+        "sha256": "caf51bc80b78b98a7433de1a5aceca9474411bc31b2ac2b21c46787a311d65c9"
+      },
+      "binding": {
+        "path": "EXP/validation/dinov3b_preparation_20261118_r1/roles_direct/code/5f58bc3b69712c05d474452f88076b8705178f6b481ebbea95cf6c72a54c6ca7/manifest.json",
+        "sha256": "b2995b9d77d7d8e06a9e15cf84b2341189df2b4ee309c8ab776948fe062f0678"
+      },
+      "request": "ExperimentCard-3998e3adb31147959644f176486c6dff@1"
+    },
+    {
+      "id": "code-7414058df6d7c971dcf3e37186413c08da082de2549ad0e81c5180d8f1868549",
+      "source": {
+        "path": "EXP/validation/dinov3b_preparation_20261118_r1/research_code/d35863e73cf18bdf5d8f99ca6c923f6091d13dd75a472c76770f915f89228521.py",
+        "sha256": "d35863e73cf18bdf5d8f99ca6c923f6091d13dd75a472c76770f915f89228521"
+      },
+      "binding": {
+        "path": "EXP/validation/dinov3b_preparation_20261118_r1/roles_direct/code/7414058df6d7c971dcf3e37186413c08da082de2549ad0e81c5180d8f1868549/manifest.json",
+        "sha256": "12c6c68f3f18251702c674d2f2a948a3d2bf35d2bd0e7fff6e3c533241b42c2e"
+      },
+      "request": "ExperimentCard-5c800434e3b641e8be3bfd6e89209f11@1"
+    },
+    {
+      "id": "code-90fb73c33af429773f8d67b290a70a00690ef4856656e976b1a69e36302e78d6",
+      "source": {
+        "path": "EXP/validation/dinov3b_preparation_20261118_r1/research_code/5a7ec9d2cf838851073ab64588afcf2f308c8aab2e6b69bc3e632485dee5e18e.py",
+        "sha256": "5a7ec9d2cf838851073ab64588afcf2f308c8aab2e6b69bc3e632485dee5e18e"
+      },
+      "binding": {
+        "path": "EXP/validation/dinov3b_preparation_20261118_r1/roles_direct/code/90fb73c33af429773f8d67b290a70a00690ef4856656e976b1a69e36302e78d6/manifest.json",
+        "sha256": "49bf38be40fc69545d3d3b1b51fec9619a27ff0663b7dee5988d91cf6aac0dba"
+      },
+      "request": "ExperimentCard-0b78226ff11f4c3d8ddb05b72ccb3ea0@1"
+    }
+  ],
+  "experiments": [
+    {
+      "evidence": "EvidenceCard-754e5e6d685e4ff4a52d852c4d4a05bb@1",
+      "experiment": "ExperimentCard-be93acfdee0d4c0e8dda697ce0bc91eb@1",
+      "question": "在绑定 DINOv3-B/16 的 blocks.5 post-softmax 单点量化中，按键 token 类型分组的静态四比特对数码本，是否比同容量非语义分组更好；PV 重建选参相对于概率 MSE 选参的收益是否能保留至浮点后缀？",
+      "source": "real",
+      "code": {
+        "author": "coding",
+        "execution_choices": {
+          "training": false
+        },
+        "experiment_ref": "ExperimentCard-3998e3adb31147959644f176486c6dff@1",
+        "experiment_sha256": "1d368bc9f8d75dd78f20b78df90639da390bb94ba6ec2b02f91ddc79a01ddf4d",
+        "explanation": "基于父源码 caf51bc80b78b98a7433de1a5aceca9474411bc31b2ac2b21c46787a311d65c9 仅修复两处审核阻塞：aggregate 先判断字典，再识别误差记录或递归，标量仍计算图像均值，误差仍使用 pooled SSE/energy/count；training 声明兼容 execution 顶层及 resolved_choices，要求至少一处显式 false，任何冲突或缺失均拒绝。执行选择显式保持 training=false。其余六臂、码本、分组、两轮搜索、跨组交叉项、数据范围及状态复核逻辑保留。尚未真实执行验证。",
+        "id": "code-1cf17448046b1e238de8eada028c1e387736a544eb9330cda4622b00f0465a62",
+        "interface": "experiment_v1",
+        "path": "/root/data-fs/projects/Quantization_Agent_for_ViTs_gonly/EXP/validation/dinov3b_preparation_20261118_r1/roles_direct/code/1cf17448046b1e238de8eada028c1e387736a544eb9330cda4622b00f0465a62/implementation.py",
+        "source_sha256": "ed007eed8391dc2c4890613ecd350f1ce92d0c59ed8c38900a36990eb63c086a",
+        "structure": {
+          "functions": [
+            "aggregate",
+            "boundary",
+            "candidate_statistics",
+            "canonical",
+            "capture",
+            "check_replay",
+            "clone_tree",
+            "digest",
+            "downstream_metrics",
+            "encode",
+            "error",
+            "execute",
+            "flatten_metrics",
+            "groups",
+            "local_metrics",
+            "make_books",
+            "model_hash",
+            "objective_score",
+            "optimize",
+            "require",
+            "selected_batches"
+          ],
+          "interface": "experiment_v1",
+          "scope": "structural boundary only; not a proof of scientific correctness",
+          "syntax": "passed"
+        }
+      },
+      "frozen_experiment": {
+        "path": "EXP/validation/dinov3b_preparation_20261118_r1/roles_direct/cards/8fa1d6e698f3e25be6a0d620497d92c3ff4d5b8d4af2050a9486508678241cd8.json",
+        "sha256": "3d506fb10fd9edd59e3bdab8b13f4da9836da94c3f4f122294fd1cb54b398c6f"
+      },
+      "execution_inputs": {
+        "calibration": {
+          "count": 32,
+          "offset": 0,
+          "split": "calibration"
+        },
+        "interface": "experiment_v1",
+        "parameters": {
+          "block": "blocks.5",
+          "coordinate_sweeps": 2,
+          "log_base_q_candidates": [
+            19,
+            37,
+            55,
+            74
+          ],
+          "nonsemantic_group_seed": 42,
+          "scale_factors": [
+            0.0625,
+            0.125,
+            0.25,
+            0.5,
+            1.0
+          ],
+          "search_count": 64,
+          "search_offset": 0,
+          "site": "blocks.5.attn::post_softmax"
+        },
+        "resolved_choices": {
+          "calibration_samples": 32,
+          "training": false
+        },
+        "seed": 42,
+        "service": "custom_experiment"
+      },
+      "data": {
+        "calibration": {
+          "count": 32,
+          "ids_sha256": "746d2f3a9e48bd2dd3f2d4f7eba9fc97b220891bac238f80914e572ded639a25"
+        },
+        "search": {
+          "count": 64,
+          "ids_sha256": "8c4d7b2166b81be1ace62d273bf5e511b18a35218a2ed932500a881f5c396b17"
+        }
+      },
+      "resources": {
+        "cpu_seconds": 52.886637,
+        "energy_joules": null,
+        "gpu_bindings": [
+          {
+            "device_node": "/dev/nvidia2",
+            "index": 2,
+            "uuid": "GPU-df567935-d109-ae8c-1dec-9274a597bb77"
+          }
+        ],
+        "gpu_peak_allocated_bytes": 1286879744,
+        "gpu_peak_reserved_bytes": 1419771904,
+        "parallelism": {
+          "allocated_gpus": 1,
+          "allocation_policy": "candidate primary GPUs before intra-candidate parallelism",
+          "classification_shards_supported": false,
+          "dual_task_supported": false,
+          "fallback": "existing single-device backend/executor",
+          "requested_gpus": 1,
+          "unserved_candidate_reservations": 0
+        },
+        "peak_rss_kib": 1184560,
+        "physical_gpu": 2,
+        "physical_gpus": [
+          2
+        ],
+        "wall_seconds": 48.205057790502906
+      },
+      "receipt": {
+        "path": "EXP/validation/dinov3b_preparation_20261118_r1/roles_direct/cards/55528793d5b1b9f8b9cc80c317253431bc74f929b1c27dfc7531ab498d134a68.json",
+        "sha256": "e976159e0793a35cd0964f48e4600f8f53e455a4418aa8e64d89807dff7418bb"
+      }
+    },
+    {
+      "evidence": "EvidenceCard-6e9cc4af67ad4b81a1dcfa56812f4c9e@1",
+      "experiment": "ExperimentCard-dbef5d7141a04f69b7ca658679f4538d@1",
+      "question": "在 blocks.5 的局部四比特 P 量化中，语义分组的增量是否在消除坐标搜索误差、增加固定随机分组对照后仍存在；prefix/patch 两组能否替代 CLS/storage/patch 三组？",
+      "source": "real",
+      "code": {
+        "author": "coding",
+        "execution_choices": {
+          "training": false
+        },
+        "experiment_ref": "ExperimentCard-0b78226ff11f4c3d8ddb05b72ccb3ea0@1",
+        "experiment_sha256": "94040af7501e04a85c43ae24e5ec6a8dc9ae272f9402f9580b1e79a4bfcfdde8",
+        "explanation": "沿父源码 ed007eed8391dc2c4890613ecd350f1ce92d0c59ed8c38900a36990eb63c086a 增量扩展：保留编解码、真实attention捕获、block/RoPE回放、坐标搜索和保护检查；增加两组及五个固定随机分组、有限网格穷举、直接目标审计和逻辑臂去重。所有评分及逐图数据均返回，由宿主result资产持久化；独立arm_summaries提供简短聚合入口。PV误差直接累积EV平方，避免先加回PV再相减的舍入。审计失败保留全部结果并禁止宣称实际算子最优。没有声称已执行。",
+        "id": "code-90fb73c33af429773f8d67b290a70a00690ef4856656e976b1a69e36302e78d6",
+        "interface": "experiment_v1",
+        "path": "/root/data-fs/projects/Quantization_Agent_for_ViTs_gonly/EXP/validation/dinov3b_preparation_20261118_r1/roles_direct/code/90fb73c33af429773f8d67b290a70a00690ef4856656e976b1a69e36302e78d6/implementation.py",
+        "source_sha256": "5a7ec9d2cf838851073ab64588afcf2f308c8aab2e6b69bc3e632485dee5e18e",
+        "structure": {
+          "functions": [
+            "aggregate",
+            "boundary",
+            "candidate_statistics",
+            "canonical",
+            "capture",
+            "check_replay",
+            "clone_tree",
+            "comparison",
+            "digest",
+            "downstream_metrics",
+            "encode",
+            "error",
+            "error_record",
+            "execute",
+            "exhaustive",
+            "flatten_metrics",
+            "groups",
+            "local_metrics",
+            "make_books",
+            "model_hash",
+            "objective_score",
+            "optimize",
+            "require",
+            "selected_batches"
+          ],
+          "interface": "experiment_v1",
+          "scope": "structural boundary only; not a proof of scientific correctness",
+          "syntax": "passed"
+        }
+      },
+      "frozen_experiment": {
+        "path": "EXP/validation/dinov3b_preparation_20261118_r1/roles_direct/cards/6ba7d9ff2213d0234c1787f3ad8a9d5d6f8d5de03e17d3e1ac6238c06bfdc6eb.json",
+        "sha256": "b1cc8fbb1fe349167d27f9c02807754db15610997c8d6ac59c4d88481687ca96"
+      },
+      "execution_inputs": {
+        "calibration": {
+          "count": 32,
+          "offset": 0,
+          "split": "calibration"
+        },
+        "interface": "experiment_v1",
+        "parameters": {
+          "block": "blocks.5",
+          "coordinate_sweeps": 2,
+          "log_base_q_candidates": [
+            19,
+            37,
+            55,
+            74
+          ],
+          "nonsemantic_group_seeds": [
+            42,
+            43,
+            44,
+            45,
+            46
+          ],
+          "scale_factors": [
+            0.0625,
+            0.125,
+            0.25,
+            0.5,
+            1.0
+          ],
+          "search_count": 64,
+          "search_offset": 0,
+          "site": "blocks.5.attn::post_softmax"
+        },
+        "resolved_choices": {
+          "calibration_samples": 32,
+          "training": false
+        },
+        "seed": 42,
+        "service": "custom_experiment"
+      },
+      "data": {
+        "calibration": {
+          "count": 32,
+          "ids_sha256": "746d2f3a9e48bd2dd3f2d4f7eba9fc97b220891bac238f80914e572ded639a25"
+        },
+        "search": {
+          "count": 64,
+          "ids_sha256": "8c4d7b2166b81be1ace62d273bf5e511b18a35218a2ed932500a881f5c396b17"
+        }
+      },
+      "resources": {
+        "cpu_seconds": 60.622042,
+        "energy_joules": null,
+        "gpu_bindings": [
+          {
+            "device_node": "/dev/nvidia2",
+            "index": 2,
+            "uuid": "GPU-df567935-d109-ae8c-1dec-9274a597bb77"
+          }
+        ],
+        "gpu_peak_allocated_bytes": 1286179328,
+        "gpu_peak_reserved_bytes": 1533018112,
+        "parallelism": {
+          "allocated_gpus": 1,
+          "allocation_policy": "candidate primary GPUs before intra-candidate parallelism",
+          "classification_shards_supported": false,
+          "dual_task_supported": false,
+          "fallback": "existing single-device backend/executor",
+          "requested_gpus": 1,
+          "unserved_candidate_reservations": 0
+        },
+        "peak_rss_kib": 1189084,
+        "physical_gpu": 2,
+        "physical_gpus": [
+          2
+        ],
+        "wall_seconds": 54.99815100431442
+      },
+      "receipt": {
+        "path": "EXP/validation/dinov3b_preparation_20261118_r1/roles_direct/cards/87b2a2b08f3400eb2315e091d7834f77618b0d38125438d5763a26b087d22c16.json",
+        "sha256": "160331d7ae32bc2cddb55588b4cb2222df012e69e08e597758ab37a99d0449d5"
+      }
+    },
+    {
+      "evidence": "EvidenceCard-f09901ec85c3428595a84b77d6bf5337@1",
+      "experiment": "ExperimentCard-a931998367cd412d84ccf1c77349dd61@1",
+      "question": "在同一新构建并冻结的 adalog_w4a4 完整背景中，仅替换 blocks.5 的概率量化时，prefix/patch 双码本的 PV 重建收益是否优于同容量随机双组，并保留至相对全 FP 的累计输出偏差？",
+      "source": "real",
+      "code": {
+        "author": "coding",
+        "execution_choices": {
+          "training": false
+        },
+        "experiment_ref": "ExperimentCard-5c800434e3b641e8be3bfd6e89209f11@1",
+        "experiment_sha256": "e4da2bfc54e9632ad96fa73811590e2446b2262a53274d35762e916d3e08f6e6",
+        "explanation": "沿 C12 源码保留 reserve_zero 编解码、共同码本、FP64 Gram 穷举、pooled 指标与配对比较；改为标准执行器新建、导出并独立重载完整 AdaLog 父状态。P 从原概率量化器输入捕获，V 从实际 quant_b 输出捕获；直接替换 quant_a，不串联原量化器。记录全部七臂及累计误差分解，不导出或冒称完整 prefix 候选包。尚未实际执行。",
+        "id": "code-7414058df6d7c971dcf3e37186413c08da082de2549ad0e81c5180d8f1868549",
+        "interface": "experiment_v1",
+        "path": "/root/data-fs/projects/Quantization_Agent_for_ViTs_gonly/EXP/validation/dinov3b_preparation_20261118_r1/roles_direct/code/7414058df6d7c971dcf3e37186413c08da082de2549ad0e81c5180d8f1868549/implementation.py",
+        "source_sha256": "d35863e73cf18bdf5d8f99ca6c923f6091d13dd75a472c76770f915f89228521",
+        "structure": {
+          "functions": [
+            "aggregate",
+            "batches",
+            "boundary",
+            "candidate_statistics",
+            "canonical",
+            "capture",
+            "check_replay",
+            "clone_tree",
+            "comparison",
+            "digest",
+            "downstream_metrics",
+            "encode",
+            "error",
+            "error_record",
+            "execute",
+            "exhaustive",
+            "flatten_metrics",
+            "groups",
+            "local_metrics",
+            "make_books",
+            "model_hash",
+            "objective_score",
+            "require",
+            "residual_error",
+            "total_metrics"
+          ],
+          "interface": "experiment_v1",
+          "scope": "structural boundary only; not a proof of scientific correctness",
+          "syntax": "passed"
+        }
+      },
+      "frozen_experiment": {
+        "path": "EXP/validation/dinov3b_preparation_20261118_r1/roles_direct/cards/2fdba72815134a8b49d946000ff5027d6b2499e8a1c1a0e89ec3991d16ba60cf.json",
+        "sha256": "22fc074fe8b8e1482b1bc2cc6f32f04bd19b7c2905a79a496c700e8a85bc109b"
+      },
+      "execution_inputs": {
+        "calibration": {
+          "count": 32,
+          "offset": 0,
+          "split": "calibration"
+        },
+        "interface": "experiment_v1",
+        "parameters": {
+          "base_solution_id": "adalog_w4a4",
+          "block": "blocks.5",
+          "exclude_calibration_and_previous_search": true,
+          "log_base_q_candidates": [
+            19,
+            37,
+            55,
+            74
+          ],
+          "nonsemantic_group_seeds": [
+            42,
+            43,
+            44
+          ],
+          "scale_factors": [
+            0.0625,
+            0.125,
+            0.25,
+            0.5,
+            1.0
+          ],
+          "search_count": 64,
+          "search_offset": 64,
+          "site": "blocks.5.attn::post_softmax"
+        },
+        "resolved_choices": {
+          "calibration_samples": 32,
+          "training": false
+        },
+        "seed": 42,
+        "service": "custom_experiment"
+      },
+      "data": {
+        "calibration": {
+          "count": 32,
+          "ids_sha256": "746d2f3a9e48bd2dd3f2d4f7eba9fc97b220891bac238f80914e572ded639a25"
+        },
+        "search": {
+          "count": 128,
+          "ids_sha256": "1e427bed97971a0d2aa08e6962e92c66ee18f20fdf44c93d7b01648ada0dcbe8"
+        }
+      },
+      "resources": {
+        "cpu_seconds": 1933.187107,
+        "energy_joules": null,
+        "gpu_bindings": [
+          {
+            "device_node": "/dev/nvidia2",
+            "index": 2,
+            "uuid": "GPU-df567935-d109-ae8c-1dec-9274a597bb77"
+          }
+        ],
+        "gpu_peak_allocated_bytes": 2601464320,
+        "gpu_peak_reserved_bytes": 2904555520,
+        "parallelism": {
+          "allocated_gpus": 1,
+          "allocation_policy": "candidate primary GPUs before intra-candidate parallelism",
+          "classification_shards_supported": false,
+          "dual_task_supported": false,
+          "fallback": "existing single-device backend/executor",
+          "requested_gpus": 1,
+          "unserved_candidate_reservations": 0
+        },
+        "peak_rss_kib": 3702360,
+        "physical_gpu": 2,
+        "physical_gpus": [
+          2
+        ],
+        "wall_seconds": 1215.12754429318
+      },
+      "receipt": {
+        "path": "EXP/validation/dinov3b_preparation_20261118_r1/roles_direct/cards/57ce8b281e5413cb469445357f1ac5c112283c5cdea7ecce9305a0d10679f0a1.json",
+        "sha256": "fc1334b0161ff4ee670739d2630464f480ae9288cd6b0aa75737cc95f6fb3ffc"
+      }
+    }
+  ],
+  "continuation": {
+    "topic_versions": [
+      "topic-69cd4c13fa63a6534df1@1",
+      "topic-69cd4c13fa63a6534df1@2"
+    ],
+    "inspiration": "idea-bda56fd9876d500e6309",
+    "recovery": "本轮可提交上述完整定义、负结果和限制，不追加重复测量。下一项优先的小对照是在C20确切冻结父状态及已序列化shared-PV/prefix状态上进行诊断性2×2查询路由消融：分别令CLS查询行、其余查询行使用prefix或shared量化输出，保留全shared与全prefix两端，所有码本和其他状态不变、不拟合新参数。该混合路由仅用于因果定位，不作为最终候选。比较相同图像的CLS/storage/patch局部PV、累计PV、block8/11 patch、normalized CLS及教师KL；先在C20已测样本解释排序，再用未参与外层选择的新search样本检验方向。若CLS-only不能复现KL方向，撤回CLS保护解释；若方向仅在旧样本成立，保留偶然性或外层选择解释。完整候选仍须实现按N延展的固定语义成员、独立导出重载和冻结ADE迁移，不能将C20固定N=201的局部模块直接称为可部署实现。",
+    "previous_exact_code_delivered": [
+      "code-1cf17448046b1e238de8eada028c1e387736a544eb9330cda4622b00f0465a62",
+      "code-90fb73c33af429773f8d67b290a70a00690ef4856656e976b1a69e36302e78d6"
+    ],
+    "implementation_history": [
+      {
+        "code": "code-5f58bc3b69712c05d474452f88076b8705178f6b481ebbea95cf6c72a54c6ca7",
+        "configuration": {
+          "ref": "ExperimentCard-3998e3adb31147959644f176486c6dff@1",
+          "field": "/payload"
+        },
+        "executions": [],
+        "evidence": [],
+        "implementation": {
+          "path": "EXP/validation/dinov3b_preparation_20261118_r1/roles_direct/code/5f58bc3b69712c05d474452f88076b8705178f6b481ebbea95cf6c72a54c6ca7/implementation.py",
+          "sha256": "caf51bc80b78b98a7433de1a5aceca9474411bc31b2ac2b21c46787a311d65c9"
+        }
+      },
+      {
+        "code": "code-1cf17448046b1e238de8eada028c1e387736a544eb9330cda4622b00f0465a62",
+        "configuration": {
+          "ref": "ExperimentCard-3998e3adb31147959644f176486c6dff@1",
+          "field": "/payload"
+        },
+        "executions": [
+          "ExperimentCard-be93acfdee0d4c0e8dda697ce0bc91eb@1"
+        ],
+        "evidence": [
+          "EvidenceCard-754e5e6d685e4ff4a52d852c4d4a05bb@1"
+        ],
+        "implementation": {
+          "path": "EXP/validation/dinov3b_preparation_20261118_r1/roles_direct/code/1cf17448046b1e238de8eada028c1e387736a544eb9330cda4622b00f0465a62/implementation.py",
+          "sha256": "ed007eed8391dc2c4890613ecd350f1ce92d0c59ed8c38900a36990eb63c086a"
+        }
+      },
+      {
+        "code": "code-90fb73c33af429773f8d67b290a70a00690ef4856656e976b1a69e36302e78d6",
+        "configuration": {
+          "ref": "ExperimentCard-0b78226ff11f4c3d8ddb05b72ccb3ea0@1",
+          "field": "/payload"
+        },
+        "executions": [
+          "ExperimentCard-dbef5d7141a04f69b7ca658679f4538d@1"
+        ],
+        "evidence": [
+          "EvidenceCard-6e9cc4af67ad4b81a1dcfa56812f4c9e@1"
+        ],
+        "implementation": {
+          "path": "EXP/validation/dinov3b_preparation_20261118_r1/roles_direct/code/90fb73c33af429773f8d67b290a70a00690ef4856656e976b1a69e36302e78d6/implementation.py",
+          "sha256": "5a7ec9d2cf838851073ab64588afcf2f308c8aab2e6b69bc3e632485dee5e18e"
+        }
+      },
+      {
+        "code": "code-7414058df6d7c971dcf3e37186413c08da082de2549ad0e81c5180d8f1868549",
+        "configuration": {
+          "ref": "ExperimentCard-5c800434e3b641e8be3bfd6e89209f11@1",
+          "field": "/payload"
+        },
+        "executions": [
+          "ExperimentCard-a931998367cd412d84ccf1c77349dd61@1"
+        ],
+        "evidence": [
+          "EvidenceCard-f09901ec85c3428595a84b77d6bf5337@1"
+        ],
+        "implementation": {
+          "path": "EXP/validation/dinov3b_preparation_20261118_r1/roles_direct/code/7414058df6d7c971dcf3e37186413c08da082de2549ad0e81c5180d8f1868549/implementation.py",
+          "sha256": "d35863e73cf18bdf5d8f99ca6c923f6091d13dd75a472c76770f915f89228521"
+        }
+      }
+    ]
+  },
+  "baseline_evidence": {
+    "path": "EXP/validation/dinov3b_preparation_20261118_r1/baseline_partition/cards/49987bbfae46b2fedd62c0e52767c7d96f90355ec459e9f6c26bc55d3c997310.json",
+    "sha256": "531ab5afd4f68dd360d5630fed9382466aee2e5543c1f5c7376e483a50fa865f"
+  }
+}

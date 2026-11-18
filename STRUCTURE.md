@@ -41,7 +41,7 @@
 
 Git 跟踪稳定源码、Prompt、知识、轻量配置、测试及许可证；EXP 仅按 .gitignore 的精确路径保存已检查的轻量交付，原始运行/快照/日志留本机。reference/、.runtime_pkgs/、完整 ImageNet 清单、数据、权重和凭据不入库。忽略不代表删除；环境与本地依赖见 [ENVIRONMENT](QAViT/docs/ENVIRONMENT.md)。历史导航集中在 [HISTORY](QAViT/docs/HISTORY.md)，不在这里追加每次实施日志。
 
-当前流程见[多 ViT 伪代码](EXP/validation/multi_vit_20261118_r1/PSEUDOCODE.md)。工程清洗验证及成本实测见[历史报告](EXP/validation/engineering_cleanup_20261117_r1/REPORT.md)。实现继续使用原 workflow/experiment_requests、Journal、Memory、主题/灵感库和调度链；没有拆分架构或删除历史实现。源码执行身份与完整归档身份分别由 runtime/identity.py 维护；研究角色通过 interaction.read_snapshot_asset 读取确切成员。历史评分包保持原件，configs/evaluation/gonly_v0_3 是当前独立派生评价版本。
+当前流程见[基线准备与科研接续伪代码](EXP/validation/dinov3b_preparation_20261118_r1/PSEUDOCODE.md)。工程清洗验证及成本实测见[历史报告](EXP/validation/engineering_cleanup_20261117_r1/REPORT.md)。实现继续使用原 workflow/experiment_requests、Journal、Memory、主题/灵感库和调度链；没有拆分架构或删除历史实现。源码执行身份与完整归档身份分别由 runtime/identity.py 维护；研究角色通过 interaction.read_snapshot_asset 读取确切成员。历史评分包保持原件，configs/evaluation/gonly_v0_3 是当前独立派生评价版本。
 
 之前的三轮科研、能力、Skill、灵感和主题接入报告均保留原位置；适用版本与入口见 [历史导航](QAViT/docs/HISTORY.md)。EXP 的运行/快照仍为历史原件，当前实现不从旧 EXP 导入框架代码。
 

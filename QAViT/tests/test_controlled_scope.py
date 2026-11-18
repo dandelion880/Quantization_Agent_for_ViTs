@@ -422,8 +422,9 @@ class PreflightRecovery(TempCase):
         from tests.support import validation_config
         spec = role_spec("generation", "generate", {}, validation_config()["llm"])
         # This transport-order fixture must not depend on a CLI being on PATH.
-        # cli.run is mocked below; actual CLI discovery has separate coverage.
-        with patch("runtime.subscription.cli.executable", return_value='/fixture/codex'), \
+        # cli.run is mocked below; active subscriptions in other runs retain their slots.
+        with patch('runtime.model_router.ROOT', self.root), \
+             patch("runtime.subscription.cli.executable", return_value='/fixture/codex'), \
              patch("runtime.subscription.SubscriptionTransport.preflight", side_effect=[
                 codex_cli.fail("timeout", "temporary fixture"), {"source": "test_double"}]) as preflight, \
              patch("runtime.model_router.cli.run", side_effect=codex_cli.fail("authentication", "post-preflight fixture")) as model:

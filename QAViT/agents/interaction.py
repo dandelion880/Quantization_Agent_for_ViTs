@@ -1195,7 +1195,8 @@ class RoleInteraction:
                         deliver(source, expand_support=False)
             identifier = self.inspirations.bound_id(task, sequence)
             active = self.inspirations.active(sequence)
-            if identifier or active:
+            parent_branch = purpose == 'generate' and inputs['context'].get('slot') in ('H1', 'H2')
+            if identifier or (active and not parent_branch):
                 recovery = self.inspirations.recovery(identifier or active['id'], sequence)
                 context['inspiration_continuation'] = {**recovery,
                     'requests': recovery['requests'][-3:],
@@ -1243,7 +1244,10 @@ class RoleInteraction:
                     'sha256': sha256(raw).hexdigest(), 'location': 'context.skill_catalog'}
         if purpose in ('code', 'safeguard'):
             context['numeric_imports'] = sorted(NUMERIC_IMPORTS)
-            context['code_interface'] = (ROOT / 'QAViT/docs/CODE_INTERFACES.md').read_text()
+            document = ROOT / 'QAViT/docs/CODE_INTERFACES.md'
+            context['code_interface'] = document.read_text()
+            memory.setdefault('asset_locations', {})[str(document)] = {'sha256': sha256(document.read_bytes()).hexdigest(),
+                'location': 'context.code_interface'}
             context['public_interface_assets'] = [str(ROOT / 'QAViT/tools/ptq_agent/execution' / name)
                                                   for name in PUBLIC_INTERFACE_FILES]
         if 'request_experiment' in TASKS[purpose]['tools']:
@@ -1252,7 +1256,10 @@ class RoleInteraction:
             context['services'] = {**SERVICES, 'profile': {**SERVICES['profile'], 'tools': list(PROFILE_NAMES)},
                 'frozen_helper': {**SERVICES['frozen_helper'], 'tools': list(HELPER_NAMES)}}
             context['capability_catalog'] = (ROOT / 'QAViT/docs/CAPABILITIES.md').read_text().split('<!-- CALL_DETAILS -->', 1)[0]
-            context['experiment_interface'] = (ROOT / 'QAViT/docs/EXPERIMENT_INPUTS.md').read_text()
+            document = ROOT / 'QAViT/docs/EXPERIMENT_INPUTS.md'
+            context['experiment_interface'] = document.read_text()
+            memory.setdefault('asset_locations', {})[str(document)] = {'sha256': sha256(document.read_bytes()).hexdigest(),
+                'location': 'context.experiment_interface'}
             try:
                 context['method_catalog'] = [{**{k: row[k] for k in ('id', 'title', 'targets', 'document')},
                     'applicable_questions': row.get('tags', []),

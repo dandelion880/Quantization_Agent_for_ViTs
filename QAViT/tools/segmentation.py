@@ -41,7 +41,26 @@ def segmentation_dependencies(seed=42):
         sys.path[:] = paths
 
 
-def evaluate(backbone, backend, directory, count=None):
+def _fp_identity(backend, files, annotation_dir, *, settings, head, weights, classes, ignore):
+    from importlib import import_module
+    import torch
+    from core.cards import fingerprint
+    from runtime.identity import measurement_implementation
+    pairs = [(str(p), file_hash(p), file_hash(annotation_dir / (p.stem + '.png'))) for p in files]
+    device = torch.device(backend.device)
+    return fingerprint({'schema': 1, 'assets': [file_hash(settings), file_hash(head), *weights],
+        'ordered_images_and_annotations': pairs, 'classes': classes, 'ignore': int(ignore),
+        'implementation': measurement_implementation(), 'seed': backend.config['seed'],
+        'dependency_versions': {name: str(import_module(name).__version__) for name in
+            ('torch','torchvision','mmseg','mmengine','mmcv','numpy','cv2','PIL')},
+        'pinned_dependencies': file_hash(QAVIT / 'docs/runtime_dependencies.json'),
+        'cuda': torch.version.cuda, 'cudnn': torch.backends.cudnn.version(),
+        'device': [torch.cuda.get_device_name(device), torch.cuda.get_device_capability(device)] if device.type == 'cuda' else 'cpu',
+        'threads': torch.get_num_threads(), 'tf32': [torch.backends.cuda.matmul.allow_tf32, torch.backends.cudnn.allow_tf32],
+        'deterministic': [torch.are_deterministic_algorithms_enabled(), torch.backends.cudnn.deterministic, torch.backends.cudnn.benchmark]})
+
+
+def evaluate(backbone, backend, directory, count=None, *, fp_reference=None):
     """Use the selected task's trained head, preprocessing and frozen backbone."""
     import torch
     from runtime.files import save
@@ -73,6 +92,22 @@ def evaluate(backbone, backend, directory, count=None):
         files = files[:count]
     histograms = {name: torch.zeros((classes,classes), dtype=torch.int64) for name in ('fp', 'quantized')}
     model_hashes = [model_digest(reference), model_digest(backbone)]
+    annotation_dir = ADE / 'annotations/validation'
+    def identity():
+        return _fp_identity(backend, files, annotation_dir, settings=settings_path, head=head_path,
+                            weights=[model_hashes[0], receipt['checkpoint_sha256'], *frozen],
+                            classes=classes, ignore=ignore_index)
+    identity_before = identity()
+    reused = None
+    if fp_reference and file_hash(fp_reference['path']) == fp_reference['sha256']:
+        prior = read(fp_reference['path'])
+        if identity_before and prior.get('fp_identity') == identity_before:
+            counts = torch.tensor(prior['metrics']['fp']['confusion_matrix'])
+            if counts.dtype != torch.int64 or counts.shape != (classes, classes) or (counts < 0).any():
+                raise ValueError('invalid reference FP confusion counts')
+            histograms['fp'] = counts
+            reused = fp_reference['sha256']
+    adapters = [('quantized', q_adapter)] if reused else [('fp', fp_adapter), ('quantized', q_adapter)]
     with torch.inference_mode():
         for i, p in enumerate(files):
             annotation = ADE / 'annotations/validation' / (p.stem + '.png')
@@ -91,7 +126,7 @@ def evaluate(backbone, backend, directory, count=None):
                 if any(e['relative_mse'] > 1e-8 for e in errors):
                     raise ValueError('分割 FP adapter 数值一致性检查失败: ' + str(errors))
                 del modern, expected, actual, prepared, x
-            for name, adapter in (('fp', fp_adapter), ('quantized', q_adapter)):
+            for name, adapter in adapters:
                 segmentor.segmentor.backbone = adapter
                 output = checked_segmentation_step(segmentor, packed)
                 pred, gt = output.pred_sem_seg.data.cpu().long().reshape(-1), output.gt_sem_seg.data.cpu().long().reshape(-1)
@@ -104,6 +139,8 @@ def evaluate(backbone, backend, directory, count=None):
                 print('ADE', i+1, '/', len(files), flush=True)
     if [state_sha(h) for h in heads] != frozen or [model_digest(reference), model_digest(backbone)] != model_hashes:
         raise ValueError('ADE评价改变骨干或冻结Neck/Head')
+    if identity() != identity_before:
+        raise ValueError('ADE reference inputs or implementation changed during evaluation')
     results = {}
     for name, hist in histograms.items():
         tp = hist.diag().double(); total = hist.sum(1); predicted = hist.sum(0)
@@ -111,6 +148,7 @@ def evaluate(backbone, backend, directory, count=None):
                          'mAcc':float((tp/total).nanmean()*100), 'aAcc':float(tp.sum()/hist.sum()*100),
                          'confusion_matrix':hist.tolist()}
     return {'images':len(files), 'full_dataset_evaluation':expected_images is not None and len(files)==expected_images, 'classes':classes,
+            'fp_identity': identity_before, 'fp_reference_sha256': reused,
             'metrics':results, 'delta_mIoU_pp':results['quantized']['mIoU']-results['fp']['mIoU'],
             'head_receipt':str(head_path), 'head_receipt_sha256':file_hash(head_path), 'head_checkpoint':receipt['checkpoint'],
             'checkpoint_sha256':backend.checkpoint_hash, 'head_checkpoint_sha256':receipt['checkpoint_sha256'],

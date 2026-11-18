@@ -147,6 +147,27 @@ class PlanContractTests(unittest.TestCase):
 
 
 class ReloadAndInterfaceTests(TempCase):
+    def test_native_refinement_reaches_the_export_and_evaluated_instance(self):
+        from ptq_agent.execution.calibration_search import search_frozen_scales
+        from core.journal import read_json
+        brief, draft, plan = full_fixture()
+        payload = preflight_experiment(draft, brief, executable=True)
+        backend, cfg, data = backend_and_data(payload["execution"])
+        sid = plan["layers"][0]["module"]
+        def refine(backend, model, observed, parameters):
+            return search_frozen_scales(backend, model, observed, [
+                {"id":"mechanical_selection", "scales":{sid:{"activation":.75, "weight":.8}}}])
+        plugin = SimpleNamespace(build_plan=lambda *args: deepcopy(plan), refine_frozen=refine)
+        directory=self.root / 'refinement'
+        directory.mkdir()
+        with patch('tools.experiment_worker.module_from_approval', return_value=plugin):
+            result=evaluate_services({'payload':payload},backend,cfg,data,directory,None)
+        selected=result['observations']['refinement']
+        self.assertEqual(selected, read_json(directory/'model/manifest.json')['refinement'])
+        self.assertNotEqual(selected['baseline_state_sha256'], selected['selected_state_sha256'])
+        self.assertEqual(result['observations']['reload']['evaluated_instance'],'reloaded')
+        self.assertEqual(result['observations']['evaluations']['classification']['sample_count'],4)
+
     def test_real_cpu_plan_export_reload_evaluates_loaded_instance(self):
         from ptq_agent.execution.pipeline import QuantizationExecutor
         from tools.evaluating import evaluate

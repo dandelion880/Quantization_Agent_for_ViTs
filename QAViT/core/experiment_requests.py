@@ -511,6 +511,8 @@ class ExperimentRequests:
         explicit = (draft or {}).get('inspiration_id')
         if explicit and explicit not in self.inspirations.snapshot(self.read_view(author)['sequence']):
             raise ContractError('实验引用了未知或不可见的灵感')
+        if author['inputs'].get('context', {}).get('slot') in ('H1', 'H2'):
+            return {'inspiration_refs': [explicit]} if explicit else {}
         if author['inputs'].get('purpose') not in ('generate', 'plan_l3'):
             return {'inspiration_id': explicit} if explicit else {}
         identifier = self.inspirations.bound_id(author, self.read_view(author)['sequence'])

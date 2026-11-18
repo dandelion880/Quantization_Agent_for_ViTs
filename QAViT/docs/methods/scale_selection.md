@@ -45,7 +45,7 @@ selection = search_frozen_scales(
 
 候选`scales`可同时包含多个位点，每个位点可选择`activation`和/或`weight`正倍率，均相对初始冻结参数，不连乘。W当前仅RTN/uniform网格重新编码原FP参考权重；GPTQ/GPTAQ/AdaRound重新求解应沿已有执行器或明确的custom实现。A支持已有静态网格，保持实际bits、粒度与方法。整数复合算子缓存绑定不在此API中隐式更新，遇到该组合会明确拒绝。返回`selected_parameters`的实际小张量值/大张量hash、全部候选得分、确切样本ID、背景/目标、选择规则及参数安装状态。
 
-- `block="blocks.i"`：捕获真正的block输出，而不是位点输出；允许`token_scope=all/cls/patch`。改变位点须位于该block内。`reference=fp_model`对应原FP在同图像上的block输出，包含上游差异；`reference=local_fp`对应原FP block在当前冻结量化输入上的输出，隔离局部重建误差。两者回答不同问题。
+- `block="blocks.i"`：捕获真正的block输出，而不是位点输出；允许已验证的非空 `token_scope=all/cls/special/patch`。改变位点须位于该block内。`reference=fp_model`对应原FP在同图像上的block输出，包含上游差异；`reference=local_fp`对应原FP block在当前冻结量化输入上的输出，隔离局部重建误差。两者回答不同问题。
 - `block=None`：每个候选均实际执行整网；目标为整网输出/分类logits。此模式允许少样本教师KL、任务CE、真实校准Top-1 error与明确定义的平方梯度代理；它们是校准拟合目标，不能冒充独立准确率。
 - `context=quantized`保持当前完整冻结背景；`float`在候选评分期间关闭干预集合之外的量化器，可检验FP背景选参是否迁移到Q背景。local_fp只配quantized背景。此背景变化仅用于拟合，选中模型恢复完整Q状态后另行外层评价。
 - `count`只消费当前calibration视图的前count个样本；相同候选读取同一实际样本序列，不静默缩样。缓存超过`cache_mib`明确报错。可用调用方预定的小视图控制成本，不要求枚举全部组合。
@@ -59,4 +59,6 @@ selection = search_frozen_scales(
 | top1_error | 实际校准标签argmax错误比例，离散且少样本会平分；仅整网 |
 | hessian_diag_ce | 在**初始冻结模型logits**上由真实标签CE自动微分得到grad，取mean((grad*(candidate-reference))²)，再样本平均。只是logit对角平方梯度代理，非完整Hessian，也不是原生位点梯度的同一目标 |
 
-精确平分保留声明顺序第一项。少样本任务指标噪声、FP/Q背景和CLS/patch冲突应成为后续判别对照的依据，不能预设赢家。内层拟合、外层search候选选择、最终双任务L3各自保留数据与用途；ADE迁移只重载选中冻结包，不在ADE重新拟合。选中后仍需按已有executor导出/重载审核；将返回的selection加入`executor.report["custom_selection"]`，并从选中模型收集当前weight_record/params导出，避免拿初始拟合返回值导出旧参数。API本身不使一个诊断模型自动成为正式方案。
+精确平分保留声明顺序第一项。少样本任务指标噪声、FP/Q背景和CLS/patch冲突应成为后续判别对照的依据，不能预设赢家。内层拟合、外层search候选选择、最终双任务L3各自保留数据与用途；ADE迁移只重载选中冻结包，不在ADE重新拟合。选中后仍需按已有executor导出/重载审核；原生 v3 的 `executor_v1.refine_frozen(backend, model, data, parameters)` 可直接返回此次选择记录，宿主从该 model 收集生效的 W/A 及预处理，独立重载并校验。自定义执行器须在自己的 `export/load` 中保存和恢复全部生效状态。API本身不使一个诊断模型自动成为正式方案。
+
+已有固定区间适配可在静态 per_channel uniform_affine 行的 options 声明 token_partition，例如 {"axis":1,"prefix_ends":[1,5]} 仅表示该布局的 [0,1)、[1,5) 及尾部三组。以实际输入或模型 metadata 确定界点与 token 轴，转置 K 的 token 轴不同。每组的各个非 batch、非 token 特征坐标（可含 head）独立使用包括零的冻结 affine 网格，支持 minmax 或在声明的 percentile 候选中逐坐标按校准 MSE 选参。任务迁移可改变尾部长度。其他分组或目标可由 Coding 实现。

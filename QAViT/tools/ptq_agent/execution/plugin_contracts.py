@@ -27,6 +27,8 @@ CALIBRATION = obj({
 }, ["strategy"])
 OPTIONS = obj({
     "reserve_zero": {"type": "boolean"},
+    "token_partition": obj({"axis": {"type": "integer", "minimum": 1},
+                           "prefix_ends": arr({"type": "integer", "minimum": 1}, minItems=1)}, ["axis", "prefix_ends"]),
     "gptaq_signed_min": {"enum": [-8, -7]},
     "blocksize": {"type": "integer", "minimum": 1, "maximum": 1024},
     "damping": {"type": "number", "minimum": 0, "maximum": 1},
@@ -309,6 +311,15 @@ def validate_composition(plan, known, config, *, classification_available=False,
                               "twin_gelu": ("negative_factor",), "asymmetric_gelu": ("negative_factor",)}.get(layer["activation_method"], ()))
         if layer.get("activation_method") in ("log2", "log_sqrt2", "adalog"):
             legal_options.add("reserve_zero")
+        if 'token_partition' in options:
+            part = options['token_partition']
+            require(layer.get('activation_method') == 'uniform_affine' and layer['kind'] in
+                    ('linear', 'attention_query', 'attention_key', 'attention_value') and
+                    layer['activation']['granularity'] == 'per_channel' and part['axis'] != layer['activation']['axis']
+                    and calibration(layer, 'activation')['strategy'] in ('percentile','minmax')
+                    and plan['execution']['activation_calibration'] == 'static', 'unsupported fixed token partition grid')
+            require(part['prefix_ends'] == sorted(set(part['prefix_ends'])), 'prefix_ends must increase')
+            legal_options.add('token_partition')
         if "gptaq_signed_min" in options:
             require(layer["weight"]["bits"] == 4 and layer["weight"]["symmetric"], "gptaq_signed_min applies to signed W4")
         require(set(options) <= legal_options, "方法 options 包含当前组合不会执行的参数")

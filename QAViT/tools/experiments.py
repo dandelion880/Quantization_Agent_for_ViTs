@@ -305,7 +305,8 @@ def normalize_execution(execution, brief, *, level=None):
     from core.execution_contract import merge
     if 'training' in value:
         merge(choices, {'training': value.pop('training')}, 'resolved_choices')
-    fixed_training = brief.get('hard_constraints', {}).get('training')
+    constraints = brief.get('hard_constraints', {})
+    fixed_training = constraints.get('training', False if constraints.get('training_allowed') is False else None)
     if 'training' not in choices and type(fixed_training) is bool:
         choices['training'] = fixed_training
     if service in ('profile', 'frozen_helper', 'tensor_probe', 'evaluate_artifact'):
@@ -651,6 +652,14 @@ class ExperimentBroker:
         # 跨作业读取权限只由本次 Journal 派生，不能接受 Agent 自填的文件绑定。
         from tools.frozen import bind_sources, bind_solutions
         execution.pop('frozen_sources', None)
+        execution.pop('ade_fp_reference', None)
+        if any(r.get('kind') == 'ade_frozen' and r.get('full_dataset') for r in execution.get('evaluations', [])):
+            from core.solutions import SolutionLibrary
+            for row in SolutionLibrary(self.journal, brief).snapshot():
+                ref = next((a for a in row.get('artifacts', []) if Path(a['path']).name == 'segmentation.json'), None)
+                if ref:
+                    execution['ade_fp_reference'] = deepcopy(ref)
+                    break
         try:
             if payload.get('evidence_refs'):
                 execution['frozen_sources'] = bind_sources(self.journal, payload['evidence_refs'])

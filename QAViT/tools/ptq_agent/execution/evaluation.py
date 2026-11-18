@@ -156,7 +156,7 @@ class Evaluator:
                 m.calls = 0
         errors = OutputErrors()
         top = {"baseline_top1": 0, "baseline_top5": 0, "top1": 0, "top5": 0}
-        ids = []
+        ids, predictions = [], []
         cuda = str(self.backend.device).startswith("cuda")
         memory_before = torch.cuda.memory_allocated(self.backend.device) if cuda else None
         if cuda:
@@ -173,10 +173,13 @@ class Evaluator:
                     "分类输出必须为 [1,类别数]",
                 )
                 label = self.data.labels[sample_id]
+                row = {"label": label}
                 for prefix, values in (("baseline_", reference), ("", candidate)):
                     indices = values["output"].topk(min(5, values["output"].shape[1]), dim=-1).indices[0].tolist()
                     top[prefix + "top1"] += label == indices[0]
                     top[prefix + "top5"] += label in indices
+                    row[prefix + "top5_indices"] = indices
+                predictions.append(row)
             ids.append(sample_id)
             if len(ids) % 100 == 0:
                 print(f"evaluation {split}: {len(ids)}/{len(self.data.ids(split))}; "
@@ -227,6 +230,7 @@ class Evaluator:
             "evaluation": self.options["evaluation"],
             "sample_count": len(ids),
             "classification_counts": top if self.data.labels else None,
+            **({"per_sample_predictions": predictions} if predictions else {}),
             "sample_ids": ids,
             "metrics": metrics,
             "coverage": observed_coverage,

@@ -237,7 +237,15 @@ class InspirationTests(TempCase):
         with self.assertRaises(ContractError): wf.submit(parent,bad,'scripted')
         wf.submit(parent,hypothesis(1,'H3'),'scripted')
         candidate=wf.result_card(wf.queue.get(parent['task_id']))
-        chooser=self.author(wf,'H1')
+        for slot in ('H1', 'H2'):
+            parent_branch = self.author(wf, slot)
+            with self.assertRaises(ContractError):
+                self.idea(wf, parent_branch, status='active', reason='ordinary parent improvement')
+            self.assertEqual(wf.inspiration_request_binding(parent_branch, {'inspiration_id': first}),
+                             {'inspiration_refs': [first]})
+            self.assertNotIn('inspiration_continuation', wf.context(parent_branch))
+            wf.queue.finish(parent_branch['task_id'], result={})
+        chooser=self.author(wf,'H3')
         second=self.idea(wf,chooser,status='active',reason='next round should explore a different concrete mechanism')
         tid=wf.enqueue_role('plan/exact','plan_l3',context={'round':1,'slot':'H3','hypothesis_ref':candidate['id']})
         plan=wf.queue.get(tid)

@@ -94,7 +94,9 @@ def bind_solutions(journal, refs, brief):
                    'model_ref': ref, 'model_dir': str(directory),
                    'assets': [a for a in p['artifacts'] if directory in Path(a['path']).parents],
                    'candidate': deepcopy(row.get('code')), 'source_snapshot': deepcopy(source),
-                   'source_version': source_record['source_version'], 'measurement_origin': 'historical',
+                   'source_version': source_record['source_version'],
+                   **{k: source_record[k] for k in ('source_archive_sha256',) if k in source_record},
+                   'measurement_origin': row.get('baseline_origin', 'historical'),
                    'source_cache': str(journal.root / 'solution_library' / 'source' / source_record['source_version'])}
         # Validate and freeze source before accepting a request; failures do not recalibrate.
         _materialize_source(binding)

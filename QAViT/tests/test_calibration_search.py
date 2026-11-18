@@ -61,6 +61,23 @@ class CalibrationSearchTests(unittest.TestCase):
             self.assertEqual(set(report["baseline_active_targets"]), set(quantizers(self.model)))
             self.assertTrue(report["baseline_configuration_sha256"])
 
+    def test_selected_weight_and_activation_survive_an_independent_load(self):
+        from tools.frozen import FrozenData
+        from ptq_agent.execution.evaluation import model_digest
+        scales = {"blocks.0.attn.qkv": {"activation": .75, "weight": .8}}
+        result = search_frozen_scales(self.backend, self.model_copy, self.data,
+                                      [{"id":"selected", "scales":scales}])
+        self.assertNotEqual(result["baseline_state_sha256"], result["selected_state_sha256"])
+        self.assertEqual(len(result["candidates"][0]["per_sample_scores"]), len(result["sample_ids"]))
+        with tempfile.TemporaryDirectory() as directory:
+            target = Path(directory) / "model"
+            self.executor.export(self.model_copy, self.plan, self.weights, self.activations, target, self.audit)
+            cold = QuantizationExecutor(self.backend, self.cfg, FrozenData(self.data))
+            restored, _ = cold.load(target)
+            self.assertEqual(model_digest(restored), model_digest(self.model_copy))
+            x, _ = next(self.data.batches("search"))
+            self.assertTrue(torch.equal(forward(self.backend, restored, x), forward(self.backend, self.model_copy, x)))
+
     def test_state_hashes_compare_the_same_full_frozen_state(self):
         candidate = [{"id": "identity", "scales": {"blocks.0.attn.qkv": {"activation": 1.0}}}]
         x, _ = next(self.data.batches("search"))

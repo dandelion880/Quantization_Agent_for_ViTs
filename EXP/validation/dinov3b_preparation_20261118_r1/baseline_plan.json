@@ -1,0 +1,3620 @@
+{
+  "plan": {
+    "execution": {
+      "activation_calibration": "static",
+      "compute_dtype": "FP32",
+      "mode": "reference_qdq",
+      "order": "joint",
+      "within_stage": "sequential"
+    },
+    "layers": [
+      {
+        "activation": {
+          "axis": 1,
+          "bits": 4,
+          "format": "UINT4",
+          "granularity": "per_channel",
+          "group_size": null,
+          "scale": "minmax",
+          "symmetric": false
+        },
+        "activation_calibration": {
+          "percentiles": [
+            0.999
+          ],
+          "strategy": "percentile"
+        },
+        "activation_method": "uniform_affine",
+        "kind": "conv2d",
+        "module": "patch_embed.proj",
+        "options": {},
+        "weight": {
+          "axis": 0,
+          "bits": 4,
+          "format": "INT4",
+          "granularity": "per_channel",
+          "group_size": null,
+          "scale": "minmax",
+          "symmetric": true
+        },
+        "weight_calibration": {
+          "strategy": "minmax"
+        },
+        "weight_method": "uniform_minmax"
+      },
+      {
+        "activation": {
+          "axis": 3,
+          "bits": 4,
+          "format": "UINT4",
+          "granularity": "per_channel",
+          "group_size": null,
+          "scale": "minmax",
+          "symmetric": false
+        },
+        "activation_calibration": {
+          "percentiles": [
+            1.0,
+            0.999,
+            0.99
+          ],
+          "strategy": "percentile"
+        },
+        "activation_method": "uniform_affine",
+        "kind": "attention_query",
+        "module": "blocks.0.attn",
+        "options": {
+          "token_partition": {
+            "axis": 2,
+            "prefix_ends": [
+              1,
+              5
+            ]
+          }
+        },
+        "weight": null,
+        "weight_method": null
+      },
+      {
+        "activation": {
+          "axis": 2,
+          "bits": 4,
+          "format": "UINT4",
+          "granularity": "per_channel",
+          "group_size": null,
+          "scale": "minmax",
+          "symmetric": false
+        },
+        "activation_calibration": {
+          "percentiles": [
+            1.0,
+            0.999,
+            0.99
+          ],
+          "strategy": "percentile"
+        },
+        "activation_method": "uniform_affine",
+        "kind": "attention_key",
+        "module": "blocks.0.attn",
+        "options": {
+          "token_partition": {
+            "axis": 3,
+            "prefix_ends": [
+              1,
+              5
+            ]
+          }
+        },
+        "weight": null,
+        "weight_method": null
+      },
+      {
+        "activation": {
+          "axis": 3,
+          "bits": 4,
+          "format": "UINT4",
+          "granularity": "per_channel",
+          "group_size": null,
+          "scale": "minmax",
+          "symmetric": false
+        },
+        "activation_calibration": {
+          "percentiles": [
+            1.0,
+            0.999,
+            0.99
+          ],
+          "strategy": "percentile"
+        },
+        "activation_method": "uniform_affine",
+        "kind": "attention_value",
+        "module": "blocks.0.attn",
+        "options": {
+          "token_partition": {
+            "axis": 2,
+            "prefix_ends": [
+              1,
+              5
+            ]
+          }
+        },
+        "weight": null,
+        "weight_method": null
+      },
+      {
+        "activation": {
+          "axis": null,
+          "bits": 4,
+          "format": "UINT4",
+          "granularity": "per_tensor",
+          "group_size": null,
+          "scale": "minmax",
+          "symmetric": false
+        },
+        "activation_calibration": {
+          "strategy": "minmax"
+        },
+        "activation_method": "log2",
+        "kind": "post_softmax",
+        "module": "blocks.0.attn",
+        "options": {
+          "reserve_zero": true
+        },
+        "weight": null,
+        "weight_method": null
+      },
+      {
+        "activation": {
+          "axis": 2,
+          "bits": 4,
+          "format": "UINT4",
+          "granularity": "per_channel",
+          "group_size": null,
+          "scale": "minmax",
+          "symmetric": false
+        },
+        "activation_calibration": {
+          "percentiles": [
+            1.0,
+            0.999,
+            0.99
+          ],
+          "strategy": "percentile"
+        },
+        "activation_method": "uniform_affine",
+        "kind": "linear",
+        "module": "blocks.0.attn.qkv",
+        "options": {
+          "token_partition": {
+            "axis": 1,
+            "prefix_ends": [
+              1,
+              5
+            ]
+          }
+        },
+        "weight": {
+          "axis": 1,
+          "bits": 4,
+          "format": "INT4",
+          "granularity": "per_group",
+          "group_size": 32,
+          "scale": "minmax",
+          "symmetric": true
+        },
+        "weight_calibration": {
+          "strategy": "minmax"
+        },
+        "weight_method": "rtn"
+      },
+      {
+        "activation": {
+          "axis": 2,
+          "bits": 4,
+          "format": "UINT4",
+          "granularity": "per_channel",
+          "group_size": null,
+          "scale": "minmax",
+          "symmetric": false
+        },
+        "activation_calibration": {
+          "percentiles": [
+            1.0,
+            0.999,
+            0.99
+          ],
+          "strategy": "percentile"
+        },
+        "activation_method": "uniform_affine",
+        "kind": "linear",
+        "module": "blocks.0.attn.proj",
+        "options": {
+          "token_partition": {
+            "axis": 1,
+            "prefix_ends": [
+              1,
+              5
+            ]
+          }
+        },
+        "weight": {
+          "axis": 1,
+          "bits": 4,
+          "format": "INT4",
+          "granularity": "per_group",
+          "group_size": 32,
+          "scale": "minmax",
+          "symmetric": true
+        },
+        "weight_calibration": {
+          "strategy": "minmax"
+        },
+        "weight_method": "rtn"
+      },
+      {
+        "activation": {
+          "axis": 2,
+          "bits": 4,
+          "format": "UINT4",
+          "granularity": "per_channel",
+          "group_size": null,
+          "scale": "minmax",
+          "symmetric": false
+        },
+        "activation_calibration": {
+          "percentiles": [
+            1.0,
+            0.999,
+            0.99
+          ],
+          "strategy": "percentile"
+        },
+        "activation_method": "uniform_affine",
+        "kind": "linear",
+        "module": "blocks.0.mlp.fc1",
+        "options": {
+          "token_partition": {
+            "axis": 1,
+            "prefix_ends": [
+              1,
+              5
+            ]
+          }
+        },
+        "weight": {
+          "axis": 1,
+          "bits": 4,
+          "format": "INT4",
+          "granularity": "per_group",
+          "group_size": 32,
+          "scale": "minmax",
+          "symmetric": true
+        },
+        "weight_calibration": {
+          "strategy": "minmax"
+        },
+        "weight_method": "rtn"
+      },
+      {
+        "activation": {
+          "axis": 2,
+          "bits": 4,
+          "format": "UINT4",
+          "granularity": "per_channel",
+          "group_size": null,
+          "scale": "minmax",
+          "symmetric": false
+        },
+        "activation_calibration": {
+          "percentiles": [
+            1.0,
+            0.999,
+            0.99
+          ],
+          "strategy": "percentile"
+        },
+        "activation_method": "uniform_affine",
+        "kind": "linear",
+        "module": "blocks.0.mlp.fc2",
+        "options": {
+          "token_partition": {
+            "axis": 1,
+            "prefix_ends": [
+              1,
+              5
+            ]
+          }
+        },
+        "weight": {
+          "axis": 1,
+          "bits": 4,
+          "format": "INT4",
+          "granularity": "per_group",
+          "group_size": 32,
+          "scale": "minmax",
+          "symmetric": true
+        },
+        "weight_calibration": {
+          "strategy": "minmax"
+        },
+        "weight_method": "rtn"
+      },
+      {
+        "activation": {
+          "axis": 3,
+          "bits": 4,
+          "format": "UINT4",
+          "granularity": "per_channel",
+          "group_size": null,
+          "scale": "minmax",
+          "symmetric": false
+        },
+        "activation_calibration": {
+          "percentiles": [
+            1.0,
+            0.999,
+            0.99
+          ],
+          "strategy": "percentile"
+        },
+        "activation_method": "uniform_affine",
+        "kind": "attention_query",
+        "module": "blocks.1.attn",
+        "options": {
+          "token_partition": {
+            "axis": 2,
+            "prefix_ends": [
+              1,
+              5
+            ]
+          }
+        },
+        "weight": null,
+        "weight_method": null
+      },
+      {
+        "activation": {
+          "axis": 2,
+          "bits": 4,
+          "format": "UINT4",
+          "granularity": "per_channel",
+          "group_size": null,
+          "scale": "minmax",
+          "symmetric": false
+        },
+        "activation_calibration": {
+          "percentiles": [
+            1.0,
+            0.999,
+            0.99
+          ],
+          "strategy": "percentile"
+        },
+        "activation_method": "uniform_affine",
+        "kind": "attention_key",
+        "module": "blocks.1.attn",
+        "options": {
+          "token_partition": {
+            "axis": 3,
+            "prefix_ends": [
+              1,
+              5
+            ]
+          }
+        },
+        "weight": null,
+        "weight_method": null
+      },
+      {
+        "activation": {
+          "axis": 3,
+          "bits": 4,
+          "format": "UINT4",
+          "granularity": "per_channel",
+          "group_size": null,
+          "scale": "minmax",
+          "symmetric": false
+        },
+        "activation_calibration": {
+          "percentiles": [
+            1.0,
+            0.999,
+            0.99
+          ],
+          "strategy": "percentile"
+        },
+        "activation_method": "uniform_affine",
+        "kind": "attention_value",
+        "module": "blocks.1.attn",
+        "options": {
+          "token_partition": {
+            "axis": 2,
+            "prefix_ends": [
+              1,
+              5
+            ]
+          }
+        },
+        "weight": null,
+        "weight_method": null
+      },
+      {
+        "activation": {
+          "axis": null,
+          "bits": 4,
+          "format": "UINT4",
+          "granularity": "per_tensor",
+          "group_size": null,
+          "scale": "minmax",
+          "symmetric": false
+        },
+        "activation_calibration": {
+          "strategy": "minmax"
+        },
+        "activation_method": "log2",
+        "kind": "post_softmax",
+        "module": "blocks.1.attn",
+        "options": {
+          "reserve_zero": true
+        },
+        "weight": null,
+        "weight_method": null
+      },
+      {
+        "activation": {
+          "axis": 2,
+          "bits": 4,
+          "format": "UINT4",
+          "granularity": "per_channel",
+          "group_size": null,
+          "scale": "minmax",
+          "symmetric": false
+        },
+        "activation_calibration": {
+          "percentiles": [
+            1.0,
+            0.999,
+            0.99
+          ],
+          "strategy": "percentile"
+        },
+        "activation_method": "uniform_affine",
+        "kind": "linear",
+        "module": "blocks.1.attn.qkv",
+        "options": {
+          "token_partition": {
+            "axis": 1,
+            "prefix_ends": [
+              1,
+              5
+            ]
+          }
+        },
+        "weight": {
+          "axis": 1,
+          "bits": 4,
+          "format": "INT4",
+          "granularity": "per_group",
+          "group_size": 32,
+          "scale": "minmax",
+          "symmetric": true
+        },
+        "weight_calibration": {
+          "strategy": "minmax"
+        },
+        "weight_method": "rtn"
+      },
+      {
+        "activation": {
+          "axis": 2,
+          "bits": 4,
+          "format": "UINT4",
+          "granularity": "per_channel",
+          "group_size": null,
+          "scale": "minmax",
+          "symmetric": false
+        },
+        "activation_calibration": {
+          "percentiles": [
+            1.0,
+            0.999,
+            0.99
+          ],
+          "strategy": "percentile"
+        },
+        "activation_method": "uniform_affine",
+        "kind": "linear",
+        "module": "blocks.1.attn.proj",
+        "options": {
+          "token_partition": {
+            "axis": 1,
+            "prefix_ends": [
+              1,
+              5
+            ]
+          }
+        },
+        "weight": {
+          "axis": 1,
+          "bits": 4,
+          "format": "INT4",
+          "granularity": "per_group",
+          "group_size": 32,
+          "scale": "minmax",
+          "symmetric": true
+        },
+        "weight_calibration": {
+          "strategy": "minmax"
+        },
+        "weight_method": "rtn"
+      },
+      {
+        "activation": {
+          "axis": 2,
+          "bits": 4,
+          "format": "UINT4",
+          "granularity": "per_channel",
+          "group_size": null,
+          "scale": "minmax",
+          "symmetric": false
+        },
+        "activation_calibration": {
+          "percentiles": [
+            1.0,
+            0.999,
+            0.99
+          ],
+          "strategy": "percentile"
+        },
+        "activation_method": "uniform_affine",
+        "kind": "linear",
+        "module": "blocks.1.mlp.fc1",
+        "options": {
+          "token_partition": {
+            "axis": 1,
+            "prefix_ends": [
+              1,
+              5
+            ]
+          }
+        },
+        "weight": {
+          "axis": 1,
+          "bits": 4,
+          "format": "INT4",
+          "granularity": "per_group",
+          "group_size": 32,
+          "scale": "minmax",
+          "symmetric": true
+        },
+        "weight_calibration": {
+          "strategy": "minmax"
+        },
+        "weight_method": "rtn"
+      },
+      {
+        "activation": {
+          "axis": 2,
+          "bits": 4,
+          "format": "UINT4",
+          "granularity": "per_channel",
+          "group_size": null,
+          "scale": "minmax",
+          "symmetric": false
+        },
+        "activation_calibration": {
+          "percentiles": [
+            1.0,
+            0.999,
+            0.99
+          ],
+          "strategy": "percentile"
+        },
+        "activation_method": "uniform_affine",
+        "kind": "linear",
+        "module": "blocks.1.mlp.fc2",
+        "options": {
+          "token_partition": {
+            "axis": 1,
+            "prefix_ends": [
+              1,
+              5
+            ]
+          }
+        },
+        "weight": {
+          "axis": 1,
+          "bits": 4,
+          "format": "INT4",
+          "granularity": "per_group",
+          "group_size": 32,
+          "scale": "minmax",
+          "symmetric": true
+        },
+        "weight_calibration": {
+          "strategy": "minmax"
+        },
+        "weight_method": "rtn"
+      },
+      {
+        "activation": {
+          "axis": 3,
+          "bits": 4,
+          "format": "UINT4",
+          "granularity": "per_channel",
+          "group_size": null,
+          "scale": "minmax",
+          "symmetric": false
+        },
+        "activation_calibration": {
+          "percentiles": [
+            1.0,
+            0.999,
+            0.99
+          ],
+          "strategy": "percentile"
+        },
+        "activation_method": "uniform_affine",
+        "kind": "attention_query",
+        "module": "blocks.2.attn",
+        "options": {
+          "token_partition": {
+            "axis": 2,
+            "prefix_ends": [
+              1,
+              5
+            ]
+          }
+        },
+        "weight": null,
+        "weight_method": null
+      },
+      {
+        "activation": {
+          "axis": 2,
+          "bits": 4,
+          "format": "UINT4",
+          "granularity": "per_channel",
+          "group_size": null,
+          "scale": "minmax",
+          "symmetric": false
+        },
+        "activation_calibration": {
+          "percentiles": [
+            1.0,
+            0.999,
+            0.99
+          ],
+          "strategy": "percentile"
+        },
+        "activation_method": "uniform_affine",
+        "kind": "attention_key",
+        "module": "blocks.2.attn",
+        "options": {
+          "token_partition": {
+            "axis": 3,
+            "prefix_ends": [
+              1,
+              5
+            ]
+          }
+        },
+        "weight": null,
+        "weight_method": null
+      },
+      {
+        "activation": {
+          "axis": 3,
+          "bits": 4,
+          "format": "UINT4",
+          "granularity": "per_channel",
+          "group_size": null,
+          "scale": "minmax",
+          "symmetric": false
+        },
+        "activation_calibration": {
+          "percentiles": [
+            1.0,
+            0.999,
+            0.99
+          ],
+          "strategy": "percentile"
+        },
+        "activation_method": "uniform_affine",
+        "kind": "attention_value",
+        "module": "blocks.2.attn",
+        "options": {
+          "token_partition": {
+            "axis": 2,
+            "prefix_ends": [
+              1,
+              5
+            ]
+          }
+        },
+        "weight": null,
+        "weight_method": null
+      },
+      {
+        "activation": {
+          "axis": null,
+          "bits": 4,
+          "format": "UINT4",
+          "granularity": "per_tensor",
+          "group_size": null,
+          "scale": "minmax",
+          "symmetric": false
+        },
+        "activation_calibration": {
+          "strategy": "minmax"
+        },
+        "activation_method": "log2",
+        "kind": "post_softmax",
+        "module": "blocks.2.attn",
+        "options": {
+          "reserve_zero": true
+        },
+        "weight": null,
+        "weight_method": null
+      },
+      {
+        "activation": {
+          "axis": 2,
+          "bits": 4,
+          "format": "UINT4",
+          "granularity": "per_channel",
+          "group_size": null,
+          "scale": "minmax",
+          "symmetric": false
+        },
+        "activation_calibration": {
+          "percentiles": [
+            1.0,
+            0.999,
+            0.99
+          ],
+          "strategy": "percentile"
+        },
+        "activation_method": "uniform_affine",
+        "kind": "linear",
+        "module": "blocks.2.attn.qkv",
+        "options": {
+          "token_partition": {
+            "axis": 1,
+            "prefix_ends": [
+              1,
+              5
+            ]
+          }
+        },
+        "weight": {
+          "axis": 1,
+          "bits": 4,
+          "format": "INT4",
+          "granularity": "per_group",
+          "group_size": 32,
+          "scale": "minmax",
+          "symmetric": true
+        },
+        "weight_calibration": {
+          "strategy": "minmax"
+        },
+        "weight_method": "rtn"
+      },
+      {
+        "activation": {
+          "axis": 2,
+          "bits": 4,
+          "format": "UINT4",
+          "granularity": "per_channel",
+          "group_size": null,
+          "scale": "minmax",
+          "symmetric": false
+        },
+        "activation_calibration": {
+          "percentiles": [
+            1.0,
+            0.999,
+            0.99
+          ],
+          "strategy": "percentile"
+        },
+        "activation_method": "uniform_affine",
+        "kind": "linear",
+        "module": "blocks.2.attn.proj",
+        "options": {
+          "token_partition": {
+            "axis": 1,
+            "prefix_ends": [
+              1,
+              5
+            ]
+          }
+        },
+        "weight": {
+          "axis": 1,
+          "bits": 4,
+          "format": "INT4",
+          "granularity": "per_group",
+          "group_size": 32,
+          "scale": "minmax",
+          "symmetric": true
+        },
+        "weight_calibration": {
+          "strategy": "minmax"
+        },
+        "weight_method": "rtn"
+      },
+      {
+        "activation": {
+          "axis": 2,
+          "bits": 4,
+          "format": "UINT4",
+          "granularity": "per_channel",
+          "group_size": null,
+          "scale": "minmax",
+          "symmetric": false
+        },
+        "activation_calibration": {
+          "percentiles": [
+            1.0,
+            0.999,
+            0.99
+          ],
+          "strategy": "percentile"
+        },
+        "activation_method": "uniform_affine",
+        "kind": "linear",
+        "module": "blocks.2.mlp.fc1",
+        "options": {
+          "token_partition": {
+            "axis": 1,
+            "prefix_ends": [
+              1,
+              5
+            ]
+          }
+        },
+        "weight": {
+          "axis": 1,
+          "bits": 4,
+          "format": "INT4",
+          "granularity": "per_group",
+          "group_size": 32,
+          "scale": "minmax",
+          "symmetric": true
+        },
+        "weight_calibration": {
+          "strategy": "minmax"
+        },
+        "weight_method": "rtn"
+      },
+      {
+        "activation": {
+          "axis": 2,
+          "bits": 4,
+          "format": "UINT4",
+          "granularity": "per_channel",
+          "group_size": null,
+          "scale": "minmax",
+          "symmetric": false
+        },
+        "activation_calibration": {
+          "percentiles": [
+            1.0,
+            0.999,
+            0.99
+          ],
+          "strategy": "percentile"
+        },
+        "activation_method": "uniform_affine",
+        "kind": "linear",
+        "module": "blocks.2.mlp.fc2",
+        "options": {
+          "token_partition": {
+            "axis": 1,
+            "prefix_ends": [
+              1,
+              5
+            ]
+          }
+        },
+        "weight": {
+          "axis": 1,
+          "bits": 4,
+          "format": "INT4",
+          "granularity": "per_group",
+          "group_size": 32,
+          "scale": "minmax",
+          "symmetric": true
+        },
+        "weight_calibration": {
+          "strategy": "minmax"
+        },
+        "weight_method": "rtn"
+      },
+      {
+        "activation": {
+          "axis": 3,
+          "bits": 4,
+          "format": "UINT4",
+          "granularity": "per_channel",
+          "group_size": null,
+          "scale": "minmax",
+          "symmetric": false
+        },
+        "activation_calibration": {
+          "percentiles": [
+            1.0,
+            0.999,
+            0.99
+          ],
+          "strategy": "percentile"
+        },
+        "activation_method": "uniform_affine",
+        "kind": "attention_query",
+        "module": "blocks.3.attn",
+        "options": {
+          "token_partition": {
+            "axis": 2,
+            "prefix_ends": [
+              1,
+              5
+            ]
+          }
+        },
+        "weight": null,
+        "weight_method": null
+      },
+      {
+        "activation": {
+          "axis": 2,
+          "bits": 4,
+          "format": "UINT4",
+          "granularity": "per_channel",
+          "group_size": null,
+          "scale": "minmax",
+          "symmetric": false
+        },
+        "activation_calibration": {
+          "percentiles": [
+            1.0,
+            0.999,
+            0.99
+          ],
+          "strategy": "percentile"
+        },
+        "activation_method": "uniform_affine",
+        "kind": "attention_key",
+        "module": "blocks.3.attn",
+        "options": {
+          "token_partition": {
+            "axis": 3,
+            "prefix_ends": [
+              1,
+              5
+            ]
+          }
+        },
+        "weight": null,
+        "weight_method": null
+      },
+      {
+        "activation": {
+          "axis": 3,
+          "bits": 4,
+          "format": "UINT4",
+          "granularity": "per_channel",
+          "group_size": null,
+          "scale": "minmax",
+          "symmetric": false
+        },
+        "activation_calibration": {
+          "percentiles": [
+            1.0,
+            0.999,
+            0.99
+          ],
+          "strategy": "percentile"
+        },
+        "activation_method": "uniform_affine",
+        "kind": "attention_value",
+        "module": "blocks.3.attn",
+        "options": {
+          "token_partition": {
+            "axis": 2,
+            "prefix_ends": [
+              1,
+              5
+            ]
+          }
+        },
+        "weight": null,
+        "weight_method": null
+      },
+      {
+        "activation": {
+          "axis": null,
+          "bits": 4,
+          "format": "UINT4",
+          "granularity": "per_tensor",
+          "group_size": null,
+          "scale": "minmax",
+          "symmetric": false
+        },
+        "activation_calibration": {
+          "strategy": "minmax"
+        },
+        "activation_method": "log2",
+        "kind": "post_softmax",
+        "module": "blocks.3.attn",
+        "options": {
+          "reserve_zero": true
+        },
+        "weight": null,
+        "weight_method": null
+      },
+      {
+        "activation": {
+          "axis": 2,
+          "bits": 4,
+          "format": "UINT4",
+          "granularity": "per_channel",
+          "group_size": null,
+          "scale": "minmax",
+          "symmetric": false
+        },
+        "activation_calibration": {
+          "percentiles": [
+            1.0,
+            0.999,
+            0.99
+          ],
+          "strategy": "percentile"
+        },
+        "activation_method": "uniform_affine",
+        "kind": "linear",
+        "module": "blocks.3.attn.qkv",
+        "options": {
+          "token_partition": {
+            "axis": 1,
+            "prefix_ends": [
+              1,
+              5
+            ]
+          }
+        },
+        "weight": {
+          "axis": 1,
+          "bits": 4,
+          "format": "INT4",
+          "granularity": "per_group",
+          "group_size": 32,
+          "scale": "minmax",
+          "symmetric": true
+        },
+        "weight_calibration": {
+          "strategy": "minmax"
+        },
+        "weight_method": "rtn"
+      },
+      {
+        "activation": {
+          "axis": 2,
+          "bits": 4,
+          "format": "UINT4",
+          "granularity": "per_channel",
+          "group_size": null,
+          "scale": "minmax",
+          "symmetric": false
+        },
+        "activation_calibration": {
+          "percentiles": [
+            1.0,
+            0.999,
+            0.99
+          ],
+          "strategy": "percentile"
+        },
+        "activation_method": "uniform_affine",
+        "kind": "linear",
+        "module": "blocks.3.attn.proj",
+        "options": {
+          "token_partition": {
+            "axis": 1,
+            "prefix_ends": [
+              1,
+              5
+            ]
+          }
+        },
+        "weight": {
+          "axis": 1,
+          "bits": 4,
+          "format": "INT4",
+          "granularity": "per_group",
+          "group_size": 32,
+          "scale": "minmax",
+          "symmetric": true
+        },
+        "weight_calibration": {
+          "strategy": "minmax"
+        },
+        "weight_method": "rtn"
+      },
+      {
+        "activation": {
+          "axis": 2,
+          "bits": 4,
+          "format": "UINT4",
+          "granularity": "per_channel",
+          "group_size": null,
+          "scale": "minmax",
+          "symmetric": false
+        },
+        "activation_calibration": {
+          "percentiles": [
+            1.0,
+            0.999,
+            0.99
+          ],
+          "strategy": "percentile"
+        },
+        "activation_method": "uniform_affine",
+        "kind": "linear",
+        "module": "blocks.3.mlp.fc1",
+        "options": {
+          "token_partition": {
+            "axis": 1,
+            "prefix_ends": [
+              1,
+              5
+            ]
+          }
+        },
+        "weight": {
+          "axis": 1,
+          "bits": 4,
+          "format": "INT4",
+          "granularity": "per_group",
+          "group_size": 32,
+          "scale": "minmax",
+          "symmetric": true
+        },
+        "weight_calibration": {
+          "strategy": "minmax"
+        },
+        "weight_method": "rtn"
+      },
+      {
+        "activation": {
+          "axis": 2,
+          "bits": 4,
+          "format": "UINT4",
+          "granularity": "per_channel",
+          "group_size": null,
+          "scale": "minmax",
+          "symmetric": false
+        },
+        "activation_calibration": {
+          "percentiles": [
+            1.0,
+            0.999,
+            0.99
+          ],
+          "strategy": "percentile"
+        },
+        "activation_method": "uniform_affine",
+        "kind": "linear",
+        "module": "blocks.3.mlp.fc2",
+        "options": {
+          "token_partition": {
+            "axis": 1,
+            "prefix_ends": [
+              1,
+              5
+            ]
+          }
+        },
+        "weight": {
+          "axis": 1,
+          "bits": 4,
+          "format": "INT4",
+          "granularity": "per_group",
+          "group_size": 32,
+          "scale": "minmax",
+          "symmetric": true
+        },
+        "weight_calibration": {
+          "strategy": "minmax"
+        },
+        "weight_method": "rtn"
+      },
+      {
+        "activation": {
+          "axis": 3,
+          "bits": 4,
+          "format": "UINT4",
+          "granularity": "per_channel",
+          "group_size": null,
+          "scale": "minmax",
+          "symmetric": false
+        },
+        "activation_calibration": {
+          "percentiles": [
+            1.0,
+            0.999,
+            0.99
+          ],
+          "strategy": "percentile"
+        },
+        "activation_method": "uniform_affine",
+        "kind": "attention_query",
+        "module": "blocks.4.attn",
+        "options": {
+          "token_partition": {
+            "axis": 2,
+            "prefix_ends": [
+              1,
+              5
+            ]
+          }
+        },
+        "weight": null,
+        "weight_method": null
+      },
+      {
+        "activation": {
+          "axis": 2,
+          "bits": 4,
+          "format": "UINT4",
+          "granularity": "per_channel",
+          "group_size": null,
+          "scale": "minmax",
+          "symmetric": false
+        },
+        "activation_calibration": {
+          "percentiles": [
+            1.0,
+            0.999,
+            0.99
+          ],
+          "strategy": "percentile"
+        },
+        "activation_method": "uniform_affine",
+        "kind": "attention_key",
+        "module": "blocks.4.attn",
+        "options": {
+          "token_partition": {
+            "axis": 3,
+            "prefix_ends": [
+              1,
+              5
+            ]
+          }
+        },
+        "weight": null,
+        "weight_method": null
+      },
+      {
+        "activation": {
+          "axis": 3,
+          "bits": 4,
+          "format": "UINT4",
+          "granularity": "per_channel",
+          "group_size": null,
+          "scale": "minmax",
+          "symmetric": false
+        },
+        "activation_calibration": {
+          "percentiles": [
+            1.0,
+            0.999,
+            0.99
+          ],
+          "strategy": "percentile"
+        },
+        "activation_method": "uniform_affine",
+        "kind": "attention_value",
+        "module": "blocks.4.attn",
+        "options": {
+          "token_partition": {
+            "axis": 2,
+            "prefix_ends": [
+              1,
+              5
+            ]
+          }
+        },
+        "weight": null,
+        "weight_method": null
+      },
+      {
+        "activation": {
+          "axis": null,
+          "bits": 4,
+          "format": "UINT4",
+          "granularity": "per_tensor",
+          "group_size": null,
+          "scale": "minmax",
+          "symmetric": false
+        },
+        "activation_calibration": {
+          "strategy": "minmax"
+        },
+        "activation_method": "log2",
+        "kind": "post_softmax",
+        "module": "blocks.4.attn",
+        "options": {
+          "reserve_zero": true
+        },
+        "weight": null,
+        "weight_method": null
+      },
+      {
+        "activation": {
+          "axis": 2,
+          "bits": 4,
+          "format": "UINT4",
+          "granularity": "per_channel",
+          "group_size": null,
+          "scale": "minmax",
+          "symmetric": false
+        },
+        "activation_calibration": {
+          "percentiles": [
+            1.0,
+            0.999,
+            0.99
+          ],
+          "strategy": "percentile"
+        },
+        "activation_method": "uniform_affine",
+        "kind": "linear",
+        "module": "blocks.4.attn.qkv",
+        "options": {
+          "token_partition": {
+            "axis": 1,
+            "prefix_ends": [
+              1,
+              5
+            ]
+          }
+        },
+        "weight": {
+          "axis": 1,
+          "bits": 4,
+          "format": "INT4",
+          "granularity": "per_group",
+          "group_size": 32,
+          "scale": "minmax",
+          "symmetric": true
+        },
+        "weight_calibration": {
+          "strategy": "minmax"
+        },
+        "weight_method": "rtn"
+      },
+      {
+        "activation": {
+          "axis": 2,
+          "bits": 4,
+          "format": "UINT4",
+          "granularity": "per_channel",
+          "group_size": null,
+          "scale": "minmax",
+          "symmetric": false
+        },
+        "activation_calibration": {
+          "percentiles": [
+            1.0,
+            0.999,
+            0.99
+          ],
+          "strategy": "percentile"
+        },
+        "activation_method": "uniform_affine",
+        "kind": "linear",
+        "module": "blocks.4.attn.proj",
+        "options": {
+          "token_partition": {
+            "axis": 1,
+            "prefix_ends": [
+              1,
+              5
+            ]
+          }
+        },
+        "weight": {
+          "axis": 1,
+          "bits": 4,
+          "format": "INT4",
+          "granularity": "per_group",
+          "group_size": 32,
+          "scale": "minmax",
+          "symmetric": true
+        },
+        "weight_calibration": {
+          "strategy": "minmax"
+        },
+        "weight_method": "rtn"
+      },
+      {
+        "activation": {
+          "axis": 2,
+          "bits": 4,
+          "format": "UINT4",
+          "granularity": "per_channel",
+          "group_size": null,
+          "scale": "minmax",
+          "symmetric": false
+        },
+        "activation_calibration": {
+          "percentiles": [
+            1.0,
+            0.999,
+            0.99
+          ],
+          "strategy": "percentile"
+        },
+        "activation_method": "uniform_affine",
+        "kind": "linear",
+        "module": "blocks.4.mlp.fc1",
+        "options": {
+          "token_partition": {
+            "axis": 1,
+            "prefix_ends": [
+              1,
+              5
+            ]
+          }
+        },
+        "weight": {
+          "axis": 1,
+          "bits": 4,
+          "format": "INT4",
+          "granularity": "per_group",
+          "group_size": 32,
+          "scale": "minmax",
+          "symmetric": true
+        },
+        "weight_calibration": {
+          "strategy": "minmax"
+        },
+        "weight_method": "rtn"
+      },
+      {
+        "activation": {
+          "axis": 2,
+          "bits": 4,
+          "format": "UINT4",
+          "granularity": "per_channel",
+          "group_size": null,
+          "scale": "minmax",
+          "symmetric": false
+        },
+        "activation_calibration": {
+          "percentiles": [
+            1.0,
+            0.999,
+            0.99
+          ],
+          "strategy": "percentile"
+        },
+        "activation_method": "uniform_affine",
+        "kind": "linear",
+        "module": "blocks.4.mlp.fc2",
+        "options": {
+          "token_partition": {
+            "axis": 1,
+            "prefix_ends": [
+              1,
+              5
+            ]
+          }
+        },
+        "weight": {
+          "axis": 1,
+          "bits": 4,
+          "format": "INT4",
+          "granularity": "per_group",
+          "group_size": 32,
+          "scale": "minmax",
+          "symmetric": true
+        },
+        "weight_calibration": {
+          "strategy": "minmax"
+        },
+        "weight_method": "rtn"
+      },
+      {
+        "activation": {
+          "axis": 3,
+          "bits": 4,
+          "format": "UINT4",
+          "granularity": "per_channel",
+          "group_size": null,
+          "scale": "minmax",
+          "symmetric": false
+        },
+        "activation_calibration": {
+          "percentiles": [
+            1.0,
+            0.999,
+            0.99
+          ],
+          "strategy": "percentile"
+        },
+        "activation_method": "uniform_affine",
+        "kind": "attention_query",
+        "module": "blocks.5.attn",
+        "options": {
+          "token_partition": {
+            "axis": 2,
+            "prefix_ends": [
+              1,
+              5
+            ]
+          }
+        },
+        "weight": null,
+        "weight_method": null
+      },
+      {
+        "activation": {
+          "axis": 2,
+          "bits": 4,
+          "format": "UINT4",
+          "granularity": "per_channel",
+          "group_size": null,
+          "scale": "minmax",
+          "symmetric": false
+        },
+        "activation_calibration": {
+          "percentiles": [
+            1.0,
+            0.999,
+            0.99
+          ],
+          "strategy": "percentile"
+        },
+        "activation_method": "uniform_affine",
+        "kind": "attention_key",
+        "module": "blocks.5.attn",
+        "options": {
+          "token_partition": {
+            "axis": 3,
+            "prefix_ends": [
+              1,
+              5
+            ]
+          }
+        },
+        "weight": null,
+        "weight_method": null
+      },
+      {
+        "activation": {
+          "axis": 3,
+          "bits": 4,
+          "format": "UINT4",
+          "granularity": "per_channel",
+          "group_size": null,
+          "scale": "minmax",
+          "symmetric": false
+        },
+        "activation_calibration": {
+          "percentiles": [
+            1.0,
+            0.999,
+            0.99
+          ],
+          "strategy": "percentile"
+        },
+        "activation_method": "uniform_affine",
+        "kind": "attention_value",
+        "module": "blocks.5.attn",
+        "options": {
+          "token_partition": {
+            "axis": 2,
+            "prefix_ends": [
+              1,
+              5
+            ]
+          }
+        },
+        "weight": null,
+        "weight_method": null
+      },
+      {
+        "activation": {
+          "axis": null,
+          "bits": 4,
+          "format": "UINT4",
+          "granularity": "per_tensor",
+          "group_size": null,
+          "scale": "minmax",
+          "symmetric": false
+        },
+        "activation_calibration": {
+          "strategy": "minmax"
+        },
+        "activation_method": "log2",
+        "kind": "post_softmax",
+        "module": "blocks.5.attn",
+        "options": {
+          "reserve_zero": true
+        },
+        "weight": null,
+        "weight_method": null
+      },
+      {
+        "activation": {
+          "axis": 2,
+          "bits": 4,
+          "format": "UINT4",
+          "granularity": "per_channel",
+          "group_size": null,
+          "scale": "minmax",
+          "symmetric": false
+        },
+        "activation_calibration": {
+          "percentiles": [
+            1.0,
+            0.999,
+            0.99
+          ],
+          "strategy": "percentile"
+        },
+        "activation_method": "uniform_affine",
+        "kind": "linear",
+        "module": "blocks.5.attn.qkv",
+        "options": {
+          "token_partition": {
+            "axis": 1,
+            "prefix_ends": [
+              1,
+              5
+            ]
+          }
+        },
+        "weight": {
+          "axis": 1,
+          "bits": 4,
+          "format": "INT4",
+          "granularity": "per_group",
+          "group_size": 32,
+          "scale": "minmax",
+          "symmetric": true
+        },
+        "weight_calibration": {
+          "strategy": "minmax"
+        },
+        "weight_method": "rtn"
+      },
+      {
+        "activation": {
+          "axis": 2,
+          "bits": 4,
+          "format": "UINT4",
+          "granularity": "per_channel",
+          "group_size": null,
+          "scale": "minmax",
+          "symmetric": false
+        },
+        "activation_calibration": {
+          "percentiles": [
+            1.0,
+            0.999,
+            0.99
+          ],
+          "strategy": "percentile"
+        },
+        "activation_method": "uniform_affine",
+        "kind": "linear",
+        "module": "blocks.5.attn.proj",
+        "options": {
+          "token_partition": {
+            "axis": 1,
+            "prefix_ends": [
+              1,
+              5
+            ]
+          }
+        },
+        "weight": {
+          "axis": 1,
+          "bits": 4,
+          "format": "INT4",
+          "granularity": "per_group",
+          "group_size": 32,
+          "scale": "minmax",
+          "symmetric": true
+        },
+        "weight_calibration": {
+          "strategy": "minmax"
+        },
+        "weight_method": "rtn"
+      },
+      {
+        "activation": {
+          "axis": 2,
+          "bits": 4,
+          "format": "UINT4",
+          "granularity": "per_channel",
+          "group_size": null,
+          "scale": "minmax",
+          "symmetric": false
+        },
+        "activation_calibration": {
+          "percentiles": [
+            1.0,
+            0.999,
+            0.99
+          ],
+          "strategy": "percentile"
+        },
+        "activation_method": "uniform_affine",
+        "kind": "linear",
+        "module": "blocks.5.mlp.fc1",
+        "options": {
+          "token_partition": {
+            "axis": 1,
+            "prefix_ends": [
+              1,
+              5
+            ]
+          }
+        },
+        "weight": {
+          "axis": 1,
+          "bits": 4,
+          "format": "INT4",
+          "granularity": "per_group",
+          "group_size": 32,
+          "scale": "minmax",
+          "symmetric": true
+        },
+        "weight_calibration": {
+          "strategy": "minmax"
+        },
+        "weight_method": "rtn"
+      },
+      {
+        "activation": {
+          "axis": 2,
+          "bits": 4,
+          "format": "UINT4",
+          "granularity": "per_channel",
+          "group_size": null,
+          "scale": "minmax",
+          "symmetric": false
+        },
+        "activation_calibration": {
+          "percentiles": [
+            1.0,
+            0.999,
+            0.99
+          ],
+          "strategy": "percentile"
+        },
+        "activation_method": "uniform_affine",
+        "kind": "linear",
+        "module": "blocks.5.mlp.fc2",
+        "options": {
+          "token_partition": {
+            "axis": 1,
+            "prefix_ends": [
+              1,
+              5
+            ]
+          }
+        },
+        "weight": {
+          "axis": 1,
+          "bits": 4,
+          "format": "INT4",
+          "granularity": "per_group",
+          "group_size": 32,
+          "scale": "minmax",
+          "symmetric": true
+        },
+        "weight_calibration": {
+          "strategy": "minmax"
+        },
+        "weight_method": "rtn"
+      },
+      {
+        "activation": {
+          "axis": 3,
+          "bits": 4,
+          "format": "UINT4",
+          "granularity": "per_channel",
+          "group_size": null,
+          "scale": "minmax",
+          "symmetric": false
+        },
+        "activation_calibration": {
+          "percentiles": [
+            1.0,
+            0.999,
+            0.99
+          ],
+          "strategy": "percentile"
+        },
+        "activation_method": "uniform_affine",
+        "kind": "attention_query",
+        "module": "blocks.6.attn",
+        "options": {
+          "token_partition": {
+            "axis": 2,
+            "prefix_ends": [
+              1,
+              5
+            ]
+          }
+        },
+        "weight": null,
+        "weight_method": null
+      },
+      {
+        "activation": {
+          "axis": 2,
+          "bits": 4,
+          "format": "UINT4",
+          "granularity": "per_channel",
+          "group_size": null,
+          "scale": "minmax",
+          "symmetric": false
+        },
+        "activation_calibration": {
+          "percentiles": [
+            1.0,
+            0.999,
+            0.99
+          ],
+          "strategy": "percentile"
+        },
+        "activation_method": "uniform_affine",
+        "kind": "attention_key",
+        "module": "blocks.6.attn",
+        "options": {
+          "token_partition": {
+            "axis": 3,
+            "prefix_ends": [
+              1,
+              5
+            ]
+          }
+        },
+        "weight": null,
+        "weight_method": null
+      },
+      {
+        "activation": {
+          "axis": 3,
+          "bits": 4,
+          "format": "UINT4",
+          "granularity": "per_channel",
+          "group_size": null,
+          "scale": "minmax",
+          "symmetric": false
+        },
+        "activation_calibration": {
+          "percentiles": [
+            1.0,
+            0.999,
+            0.99
+          ],
+          "strategy": "percentile"
+        },
+        "activation_method": "uniform_affine",
+        "kind": "attention_value",
+        "module": "blocks.6.attn",
+        "options": {
+          "token_partition": {
+            "axis": 2,
+            "prefix_ends": [
+              1,
+              5
+            ]
+          }
+        },
+        "weight": null,
+        "weight_method": null
+      },
+      {
+        "activation": {
+          "axis": null,
+          "bits": 4,
+          "format": "UINT4",
+          "granularity": "per_tensor",
+          "group_size": null,
+          "scale": "minmax",
+          "symmetric": false
+        },
+        "activation_calibration": {
+          "strategy": "minmax"
+        },
+        "activation_method": "log2",
+        "kind": "post_softmax",
+        "module": "blocks.6.attn",
+        "options": {
+          "reserve_zero": true
+        },
+        "weight": null,
+        "weight_method": null
+      },
+      {
+        "activation": {
+          "axis": 2,
+          "bits": 4,
+          "format": "UINT4",
+          "granularity": "per_channel",
+          "group_size": null,
+          "scale": "minmax",
+          "symmetric": false
+        },
+        "activation_calibration": {
+          "percentiles": [
+            1.0,
+            0.999,
+            0.99
+          ],
+          "strategy": "percentile"
+        },
+        "activation_method": "uniform_affine",
+        "kind": "linear",
+        "module": "blocks.6.attn.qkv",
+        "options": {
+          "token_partition": {
+            "axis": 1,
+            "prefix_ends": [
+              1,
+              5
+            ]
+          }
+        },
+        "weight": {
+          "axis": 1,
+          "bits": 4,
+          "format": "INT4",
+          "granularity": "per_group",
+          "group_size": 32,
+          "scale": "minmax",
+          "symmetric": true
+        },
+        "weight_calibration": {
+          "strategy": "minmax"
+        },
+        "weight_method": "rtn"
+      },
+      {
+        "activation": {
+          "axis": 2,
+          "bits": 4,
+          "format": "UINT4",
+          "granularity": "per_channel",
+          "group_size": null,
+          "scale": "minmax",
+          "symmetric": false
+        },
+        "activation_calibration": {
+          "percentiles": [
+            1.0,
+            0.999,
+            0.99
+          ],
+          "strategy": "percentile"
+        },
+        "activation_method": "uniform_affine",
+        "kind": "linear",
+        "module": "blocks.6.attn.proj",
+        "options": {
+          "token_partition": {
+            "axis": 1,
+            "prefix_ends": [
+              1,
+              5
+            ]
+          }
+        },
+        "weight": {
+          "axis": 1,
+          "bits": 4,
+          "format": "INT4",
+          "granularity": "per_group",
+          "group_size": 32,
+          "scale": "minmax",
+          "symmetric": true
+        },
+        "weight_calibration": {
+          "strategy": "minmax"
+        },
+        "weight_method": "rtn"
+      },
+      {
+        "activation": {
+          "axis": 2,
+          "bits": 4,
+          "format": "UINT4",
+          "granularity": "per_channel",
+          "group_size": null,
+          "scale": "minmax",
+          "symmetric": false
+        },
+        "activation_calibration": {
+          "percentiles": [
+            1.0,
+            0.999,
+            0.99
+          ],
+          "strategy": "percentile"
+        },
+        "activation_method": "uniform_affine",
+        "kind": "linear",
+        "module": "blocks.6.mlp.fc1",
+        "options": {
+          "token_partition": {
+            "axis": 1,
+            "prefix_ends": [
+              1,
+              5
+            ]
+          }
+        },
+        "weight": {
+          "axis": 1,
+          "bits": 4,
+          "format": "INT4",
+          "granularity": "per_group",
+          "group_size": 32,
+          "scale": "minmax",
+          "symmetric": true
+        },
+        "weight_calibration": {
+          "strategy": "minmax"
+        },
+        "weight_method": "rtn"
+      },
+      {
+        "activation": {
+          "axis": 2,
+          "bits": 4,
+          "format": "UINT4",
+          "granularity": "per_channel",
+          "group_size": null,
+          "scale": "minmax",
+          "symmetric": false
+        },
+        "activation_calibration": {
+          "percentiles": [
+            1.0,
+            0.999,
+            0.99
+          ],
+          "strategy": "percentile"
+        },
+        "activation_method": "uniform_affine",
+        "kind": "linear",
+        "module": "blocks.6.mlp.fc2",
+        "options": {
+          "token_partition": {
+            "axis": 1,
+            "prefix_ends": [
+              1,
+              5
+            ]
+          }
+        },
+        "weight": {
+          "axis": 1,
+          "bits": 4,
+          "format": "INT4",
+          "granularity": "per_group",
+          "group_size": 32,
+          "scale": "minmax",
+          "symmetric": true
+        },
+        "weight_calibration": {
+          "strategy": "minmax"
+        },
+        "weight_method": "rtn"
+      },
+      {
+        "activation": {
+          "axis": 3,
+          "bits": 4,
+          "format": "UINT4",
+          "granularity": "per_channel",
+          "group_size": null,
+          "scale": "minmax",
+          "symmetric": false
+        },
+        "activation_calibration": {
+          "percentiles": [
+            1.0,
+            0.999,
+            0.99
+          ],
+          "strategy": "percentile"
+        },
+        "activation_method": "uniform_affine",
+        "kind": "attention_query",
+        "module": "blocks.7.attn",
+        "options": {
+          "token_partition": {
+            "axis": 2,
+            "prefix_ends": [
+              1,
+              5
+            ]
+          }
+        },
+        "weight": null,
+        "weight_method": null
+      },
+      {
+        "activation": {
+          "axis": 2,
+          "bits": 4,
+          "format": "UINT4",
+          "granularity": "per_channel",
+          "group_size": null,
+          "scale": "minmax",
+          "symmetric": false
+        },
+        "activation_calibration": {
+          "percentiles": [
+            1.0,
+            0.999,
+            0.99
+          ],
+          "strategy": "percentile"
+        },
+        "activation_method": "uniform_affine",
+        "kind": "attention_key",
+        "module": "blocks.7.attn",
+        "options": {
+          "token_partition": {
+            "axis": 3,
+            "prefix_ends": [
+              1,
+              5
+            ]
+          }
+        },
+        "weight": null,
+        "weight_method": null
+      },
+      {
+        "activation": {
+          "axis": 3,
+          "bits": 4,
+          "format": "UINT4",
+          "granularity": "per_channel",
+          "group_size": null,
+          "scale": "minmax",
+          "symmetric": false
+        },
+        "activation_calibration": {
+          "percentiles": [
+            1.0,
+            0.999,
+            0.99
+          ],
+          "strategy": "percentile"
+        },
+        "activation_method": "uniform_affine",
+        "kind": "attention_value",
+        "module": "blocks.7.attn",
+        "options": {
+          "token_partition": {
+            "axis": 2,
+            "prefix_ends": [
+              1,
+              5
+            ]
+          }
+        },
+        "weight": null,
+        "weight_method": null
+      },
+      {
+        "activation": {
+          "axis": null,
+          "bits": 4,
+          "format": "UINT4",
+          "granularity": "per_tensor",
+          "group_size": null,
+          "scale": "minmax",
+          "symmetric": false
+        },
+        "activation_calibration": {
+          "strategy": "minmax"
+        },
+        "activation_method": "log2",
+        "kind": "post_softmax",
+        "module": "blocks.7.attn",
+        "options": {
+          "reserve_zero": true
+        },
+        "weight": null,
+        "weight_method": null
+      },
+      {
+        "activation": {
+          "axis": 2,
+          "bits": 4,
+          "format": "UINT4",
+          "granularity": "per_channel",
+          "group_size": null,
+          "scale": "minmax",
+          "symmetric": false
+        },
+        "activation_calibration": {
+          "percentiles": [
+            1.0,
+            0.999,
+            0.99
+          ],
+          "strategy": "percentile"
+        },
+        "activation_method": "uniform_affine",
+        "kind": "linear",
+        "module": "blocks.7.attn.qkv",
+        "options": {
+          "token_partition": {
+            "axis": 1,
+            "prefix_ends": [
+              1,
+              5
+            ]
+          }
+        },
+        "weight": {
+          "axis": 1,
+          "bits": 4,
+          "format": "INT4",
+          "granularity": "per_group",
+          "group_size": 32,
+          "scale": "minmax",
+          "symmetric": true
+        },
+        "weight_calibration": {
+          "strategy": "minmax"
+        },
+        "weight_method": "rtn"
+      },
+      {
+        "activation": {
+          "axis": 2,
+          "bits": 4,
+          "format": "UINT4",
+          "granularity": "per_channel",
+          "group_size": null,
+          "scale": "minmax",
+          "symmetric": false
+        },
+        "activation_calibration": {
+          "percentiles": [
+            1.0,
+            0.999,
+            0.99
+          ],
+          "strategy": "percentile"
+        },
+        "activation_method": "uniform_affine",
+        "kind": "linear",
+        "module": "blocks.7.attn.proj",
+        "options": {
+          "token_partition": {
+            "axis": 1,
+            "prefix_ends": [
+              1,
+              5
+            ]
+          }
+        },
+        "weight": {
+          "axis": 1,
+          "bits": 4,
+          "format": "INT4",
+          "granularity": "per_group",
+          "group_size": 32,
+          "scale": "minmax",
+          "symmetric": true
+        },
+        "weight_calibration": {
+          "strategy": "minmax"
+        },
+        "weight_method": "rtn"
+      },
+      {
+        "activation": {
+          "axis": 2,
+          "bits": 4,
+          "format": "UINT4",
+          "granularity": "per_channel",
+          "group_size": null,
+          "scale": "minmax",
+          "symmetric": false
+        },
+        "activation_calibration": {
+          "percentiles": [
+            1.0,
+            0.999,
+            0.99
+          ],
+          "strategy": "percentile"
+        },
+        "activation_method": "uniform_affine",
+        "kind": "linear",
+        "module": "blocks.7.mlp.fc1",
+        "options": {
+          "token_partition": {
+            "axis": 1,
+            "prefix_ends": [
+              1,
+              5
+            ]
+          }
+        },
+        "weight": {
+          "axis": 1,
+          "bits": 4,
+          "format": "INT4",
+          "granularity": "per_group",
+          "group_size": 32,
+          "scale": "minmax",
+          "symmetric": true
+        },
+        "weight_calibration": {
+          "strategy": "minmax"
+        },
+        "weight_method": "rtn"
+      },
+      {
+        "activation": {
+          "axis": 2,
+          "bits": 4,
+          "format": "UINT4",
+          "granularity": "per_channel",
+          "group_size": null,
+          "scale": "minmax",
+          "symmetric": false
+        },
+        "activation_calibration": {
+          "percentiles": [
+            1.0,
+            0.999,
+            0.99
+          ],
+          "strategy": "percentile"
+        },
+        "activation_method": "uniform_affine",
+        "kind": "linear",
+        "module": "blocks.7.mlp.fc2",
+        "options": {
+          "token_partition": {
+            "axis": 1,
+            "prefix_ends": [
+              1,
+              5
+            ]
+          }
+        },
+        "weight": {
+          "axis": 1,
+          "bits": 4,
+          "format": "INT4",
+          "granularity": "per_group",
+          "group_size": 32,
+          "scale": "minmax",
+          "symmetric": true
+        },
+        "weight_calibration": {
+          "strategy": "minmax"
+        },
+        "weight_method": "rtn"
+      },
+      {
+        "activation": {
+          "axis": 3,
+          "bits": 4,
+          "format": "UINT4",
+          "granularity": "per_channel",
+          "group_size": null,
+          "scale": "minmax",
+          "symmetric": false
+        },
+        "activation_calibration": {
+          "percentiles": [
+            1.0,
+            0.999,
+            0.99
+          ],
+          "strategy": "percentile"
+        },
+        "activation_method": "uniform_affine",
+        "kind": "attention_query",
+        "module": "blocks.8.attn",
+        "options": {
+          "token_partition": {
+            "axis": 2,
+            "prefix_ends": [
+              1,
+              5
+            ]
+          }
+        },
+        "weight": null,
+        "weight_method": null
+      },
+      {
+        "activation": {
+          "axis": 2,
+          "bits": 4,
+          "format": "UINT4",
+          "granularity": "per_channel",
+          "group_size": null,
+          "scale": "minmax",
+          "symmetric": false
+        },
+        "activation_calibration": {
+          "percentiles": [
+            1.0,
+            0.999,
+            0.99
+          ],
+          "strategy": "percentile"
+        },
+        "activation_method": "uniform_affine",
+        "kind": "attention_key",
+        "module": "blocks.8.attn",
+        "options": {
+          "token_partition": {
+            "axis": 3,
+            "prefix_ends": [
+              1,
+              5
+            ]
+          }
+        },
+        "weight": null,
+        "weight_method": null
+      },
+      {
+        "activation": {
+          "axis": 3,
+          "bits": 4,
+          "format": "UINT4",
+          "granularity": "per_channel",
+          "group_size": null,
+          "scale": "minmax",
+          "symmetric": false
+        },
+        "activation_calibration": {
+          "percentiles": [
+            1.0,
+            0.999,
+            0.99
+          ],
+          "strategy": "percentile"
+        },
+        "activation_method": "uniform_affine",
+        "kind": "attention_value",
+        "module": "blocks.8.attn",
+        "options": {
+          "token_partition": {
+            "axis": 2,
+            "prefix_ends": [
+              1,
+              5
+            ]
+          }
+        },
+        "weight": null,
+        "weight_method": null
+      },
+      {
+        "activation": {
+          "axis": null,
+          "bits": 4,
+          "format": "UINT4",
+          "granularity": "per_tensor",
+          "group_size": null,
+          "scale": "minmax",
+          "symmetric": false
+        },
+        "activation_calibration": {
+          "strategy": "minmax"
+        },
+        "activation_method": "log2",
+        "kind": "post_softmax",
+        "module": "blocks.8.attn",
+        "options": {
+          "reserve_zero": true
+        },
+        "weight": null,
+        "weight_method": null
+      },
+      {
+        "activation": {
+          "axis": 2,
+          "bits": 4,
+          "format": "UINT4",
+          "granularity": "per_channel",
+          "group_size": null,
+          "scale": "minmax",
+          "symmetric": false
+        },
+        "activation_calibration": {
+          "percentiles": [
+            1.0,
+            0.999,
+            0.99
+          ],
+          "strategy": "percentile"
+        },
+        "activation_method": "uniform_affine",
+        "kind": "linear",
+        "module": "blocks.8.attn.qkv",
+        "options": {
+          "token_partition": {
+            "axis": 1,
+            "prefix_ends": [
+              1,
+              5
+            ]
+          }
+        },
+        "weight": {
+          "axis": 1,
+          "bits": 4,
+          "format": "INT4",
+          "granularity": "per_group",
+          "group_size": 32,
+          "scale": "minmax",
+          "symmetric": true
+        },
+        "weight_calibration": {
+          "strategy": "minmax"
+        },
+        "weight_method": "rtn"
+      },
+      {
+        "activation": {
+          "axis": 2,
+          "bits": 4,
+          "format": "UINT4",
+          "granularity": "per_channel",
+          "group_size": null,
+          "scale": "minmax",
+          "symmetric": false
+        },
+        "activation_calibration": {
+          "percentiles": [
+            1.0,
+            0.999,
+            0.99
+          ],
+          "strategy": "percentile"
+        },
+        "activation_method": "uniform_affine",
+        "kind": "linear",
+        "module": "blocks.8.attn.proj",
+        "options": {
+          "token_partition": {
+            "axis": 1,
+            "prefix_ends": [
+              1,
+              5
+            ]
+          }
+        },
+        "weight": {
+          "axis": 1,
+          "bits": 4,
+          "format": "INT4",
+          "granularity": "per_group",
+          "group_size": 32,
+          "scale": "minmax",
+          "symmetric": true
+        },
+        "weight_calibration": {
+          "strategy": "minmax"
+        },
+        "weight_method": "rtn"
+      },
+      {
+        "activation": {
+          "axis": 2,
+          "bits": 4,
+          "format": "UINT4",
+          "granularity": "per_channel",
+          "group_size": null,
+          "scale": "minmax",
+          "symmetric": false
+        },
+        "activation_calibration": {
+          "percentiles": [
+            1.0,
+            0.999,
+            0.99
+          ],
+          "strategy": "percentile"
+        },
+        "activation_method": "uniform_affine",
+        "kind": "linear",
+        "module": "blocks.8.mlp.fc1",
+        "options": {
+          "token_partition": {
+            "axis": 1,
+            "prefix_ends": [
+              1,
+              5
+            ]
+          }
+        },
+        "weight": {
+          "axis": 1,
+          "bits": 4,
+          "format": "INT4",
+          "granularity": "per_group",
+          "group_size": 32,
+          "scale": "minmax",
+          "symmetric": true
+        },
+        "weight_calibration": {
+          "strategy": "minmax"
+        },
+        "weight_method": "rtn"
+      },
+      {
+        "activation": {
+          "axis": 2,
+          "bits": 4,
+          "format": "UINT4",
+          "granularity": "per_channel",
+          "group_size": null,
+          "scale": "minmax",
+          "symmetric": false
+        },
+        "activation_calibration": {
+          "percentiles": [
+            1.0,
+            0.999,
+            0.99
+          ],
+          "strategy": "percentile"
+        },
+        "activation_method": "uniform_affine",
+        "kind": "linear",
+        "module": "blocks.8.mlp.fc2",
+        "options": {
+          "token_partition": {
+            "axis": 1,
+            "prefix_ends": [
+              1,
+              5
+            ]
+          }
+        },
+        "weight": {
+          "axis": 1,
+          "bits": 4,
+          "format": "INT4",
+          "granularity": "per_group",
+          "group_size": 32,
+          "scale": "minmax",
+          "symmetric": true
+        },
+        "weight_calibration": {
+          "strategy": "minmax"
+        },
+        "weight_method": "rtn"
+      },
+      {
+        "activation": {
+          "axis": 3,
+          "bits": 4,
+          "format": "UINT4",
+          "granularity": "per_channel",
+          "group_size": null,
+          "scale": "minmax",
+          "symmetric": false
+        },
+        "activation_calibration": {
+          "percentiles": [
+            1.0,
+            0.999,
+            0.99
+          ],
+          "strategy": "percentile"
+        },
+        "activation_method": "uniform_affine",
+        "kind": "attention_query",
+        "module": "blocks.9.attn",
+        "options": {
+          "token_partition": {
+            "axis": 2,
+            "prefix_ends": [
+              1,
+              5
+            ]
+          }
+        },
+        "weight": null,
+        "weight_method": null
+      },
+      {
+        "activation": {
+          "axis": 2,
+          "bits": 4,
+          "format": "UINT4",
+          "granularity": "per_channel",
+          "group_size": null,
+          "scale": "minmax",
+          "symmetric": false
+        },
+        "activation_calibration": {
+          "percentiles": [
+            1.0,
+            0.999,
+            0.99
+          ],
+          "strategy": "percentile"
+        },
+        "activation_method": "uniform_affine",
+        "kind": "attention_key",
+        "module": "blocks.9.attn",
+        "options": {
+          "token_partition": {
+            "axis": 3,
+            "prefix_ends": [
+              1,
+              5
+            ]
+          }
+        },
+        "weight": null,
+        "weight_method": null
+      },
+      {
+        "activation": {
+          "axis": 3,
+          "bits": 4,
+          "format": "UINT4",
+          "granularity": "per_channel",
+          "group_size": null,
+          "scale": "minmax",
+          "symmetric": false
+        },
+        "activation_calibration": {
+          "percentiles": [
+            1.0,
+            0.999,
+            0.99
+          ],
+          "strategy": "percentile"
+        },
+        "activation_method": "uniform_affine",
+        "kind": "attention_value",
+        "module": "blocks.9.attn",
+        "options": {
+          "token_partition": {
+            "axis": 2,
+            "prefix_ends": [
+              1,
+              5
+            ]
+          }
+        },
+        "weight": null,
+        "weight_method": null
+      },
+      {
+        "activation": {
+          "axis": null,
+          "bits": 4,
+          "format": "UINT4",
+          "granularity": "per_tensor",
+          "group_size": null,
+          "scale": "minmax",
+          "symmetric": false
+        },
+        "activation_calibration": {
+          "strategy": "minmax"
+        },
+        "activation_method": "log2",
+        "kind": "post_softmax",
+        "module": "blocks.9.attn",
+        "options": {
+          "reserve_zero": true
+        },
+        "weight": null,
+        "weight_method": null
+      },
+      {
+        "activation": {
+          "axis": 2,
+          "bits": 4,
+          "format": "UINT4",
+          "granularity": "per_channel",
+          "group_size": null,
+          "scale": "minmax",
+          "symmetric": false
+        },
+        "activation_calibration": {
+          "percentiles": [
+            1.0,
+            0.999,
+            0.99
+          ],
+          "strategy": "percentile"
+        },
+        "activation_method": "uniform_affine",
+        "kind": "linear",
+        "module": "blocks.9.attn.qkv",
+        "options": {
+          "token_partition": {
+            "axis": 1,
+            "prefix_ends": [
+              1,
+              5
+            ]
+          }
+        },
+        "weight": {
+          "axis": 1,
+          "bits": 4,
+          "format": "INT4",
+          "granularity": "per_group",
+          "group_size": 32,
+          "scale": "minmax",
+          "symmetric": true
+        },
+        "weight_calibration": {
+          "strategy": "minmax"
+        },
+        "weight_method": "rtn"
+      },
+      {
+        "activation": {
+          "axis": 2,
+          "bits": 4,
+          "format": "UINT4",
+          "granularity": "per_channel",
+          "group_size": null,
+          "scale": "minmax",
+          "symmetric": false
+        },
+        "activation_calibration": {
+          "percentiles": [
+            1.0,
+            0.999,
+            0.99
+          ],
+          "strategy": "percentile"
+        },
+        "activation_method": "uniform_affine",
+        "kind": "linear",
+        "module": "blocks.9.attn.proj",
+        "options": {
+          "token_partition": {
+            "axis": 1,
+            "prefix_ends": [
+              1,
+              5
+            ]
+          }
+        },
+        "weight": {
+          "axis": 1,
+          "bits": 4,
+          "format": "INT4",
+          "granularity": "per_group",
+          "group_size": 32,
+          "scale": "minmax",
+          "symmetric": true
+        },
+        "weight_calibration": {
+          "strategy": "minmax"
+        },
+        "weight_method": "rtn"
+      },
+      {
+        "activation": {
+          "axis": 2,
+          "bits": 4,
+          "format": "UINT4",
+          "granularity": "per_channel",
+          "group_size": null,
+          "scale": "minmax",
+          "symmetric": false
+        },
+        "activation_calibration": {
+          "percentiles": [
+            1.0,
+            0.999,
+            0.99
+          ],
+          "strategy": "percentile"
+        },
+        "activation_method": "uniform_affine",
+        "kind": "linear",
+        "module": "blocks.9.mlp.fc1",
+        "options": {
+          "token_partition": {
+            "axis": 1,
+            "prefix_ends": [
+              1,
+              5
+            ]
+          }
+        },
+        "weight": {
+          "axis": 1,
+          "bits": 4,
+          "format": "INT4",
+          "granularity": "per_group",
+          "group_size": 32,
+          "scale": "minmax",
+          "symmetric": true
+        },
+        "weight_calibration": {
+          "strategy": "minmax"
+        },
+        "weight_method": "rtn"
+      },
+      {
+        "activation": {
+          "axis": 2,
+          "bits": 4,
+          "format": "UINT4",
+          "granularity": "per_channel",
+          "group_size": null,
+          "scale": "minmax",
+          "symmetric": false
+        },
+        "activation_calibration": {
+          "percentiles": [
+            1.0,
+            0.999,
+            0.99
+          ],
+          "strategy": "percentile"
+        },
+        "activation_method": "uniform_affine",
+        "kind": "linear",
+        "module": "blocks.9.mlp.fc2",
+        "options": {
+          "token_partition": {
+            "axis": 1,
+            "prefix_ends": [
+              1,
+              5
+            ]
+          }
+        },
+        "weight": {
+          "axis": 1,
+          "bits": 4,
+          "format": "INT4",
+          "granularity": "per_group",
+          "group_size": 32,
+          "scale": "minmax",
+          "symmetric": true
+        },
+        "weight_calibration": {
+          "strategy": "minmax"
+        },
+        "weight_method": "rtn"
+      },
+      {
+        "activation": {
+          "axis": 3,
+          "bits": 4,
+          "format": "UINT4",
+          "granularity": "per_channel",
+          "group_size": null,
+          "scale": "minmax",
+          "symmetric": false
+        },
+        "activation_calibration": {
+          "percentiles": [
+            1.0,
+            0.999,
+            0.99
+          ],
+          "strategy": "percentile"
+        },
+        "activation_method": "uniform_affine",
+        "kind": "attention_query",
+        "module": "blocks.10.attn",
+        "options": {
+          "token_partition": {
+            "axis": 2,
+            "prefix_ends": [
+              1,
+              5
+            ]
+          }
+        },
+        "weight": null,
+        "weight_method": null
+      },
+      {
+        "activation": {
+          "axis": 2,
+          "bits": 4,
+          "format": "UINT4",
+          "granularity": "per_channel",
+          "group_size": null,
+          "scale": "minmax",
+          "symmetric": false
+        },
+        "activation_calibration": {
+          "percentiles": [
+            1.0,
+            0.999,
+            0.99
+          ],
+          "strategy": "percentile"
+        },
+        "activation_method": "uniform_affine",
+        "kind": "attention_key",
+        "module": "blocks.10.attn",
+        "options": {
+          "token_partition": {
+            "axis": 3,
+            "prefix_ends": [
+              1,
+              5
+            ]
+          }
+        },
+        "weight": null,
+        "weight_method": null
+      },
+      {
+        "activation": {
+          "axis": 3,
+          "bits": 4,
+          "format": "UINT4",
+          "granularity": "per_channel",
+          "group_size": null,
+          "scale": "minmax",
+          "symmetric": false
+        },
+        "activation_calibration": {
+          "percentiles": [
+            1.0,
+            0.999,
+            0.99
+          ],
+          "strategy": "percentile"
+        },
+        "activation_method": "uniform_affine",
+        "kind": "attention_value",
+        "module": "blocks.10.attn",
+        "options": {
+          "token_partition": {
+            "axis": 2,
+            "prefix_ends": [
+              1,
+              5
+            ]
+          }
+        },
+        "weight": null,
+        "weight_method": null
+      },
+      {
+        "activation": {
+          "axis": null,
+          "bits": 4,
+          "format": "UINT4",
+          "granularity": "per_tensor",
+          "group_size": null,
+          "scale": "minmax",
+          "symmetric": false
+        },
+        "activation_calibration": {
+          "strategy": "minmax"
+        },
+        "activation_method": "log2",
+        "kind": "post_softmax",
+        "module": "blocks.10.attn",
+        "options": {
+          "reserve_zero": true
+        },
+        "weight": null,
+        "weight_method": null
+      },
+      {
+        "activation": {
+          "axis": 2,
+          "bits": 4,
+          "format": "UINT4",
+          "granularity": "per_channel",
+          "group_size": null,
+          "scale": "minmax",
+          "symmetric": false
+        },
+        "activation_calibration": {
+          "percentiles": [
+            1.0,
+            0.999,
+            0.99
+          ],
+          "strategy": "percentile"
+        },
+        "activation_method": "uniform_affine",
+        "kind": "linear",
+        "module": "blocks.10.attn.qkv",
+        "options": {
+          "token_partition": {
+            "axis": 1,
+            "prefix_ends": [
+              1,
+              5
+            ]
+          }
+        },
+        "weight": {
+          "axis": 1,
+          "bits": 4,
+          "format": "INT4",
+          "granularity": "per_group",
+          "group_size": 32,
+          "scale": "minmax",
+          "symmetric": true
+        },
+        "weight_calibration": {
+          "strategy": "minmax"
+        },
+        "weight_method": "rtn"
+      },
+      {
+        "activation": {
+          "axis": 2,
+          "bits": 4,
+          "format": "UINT4",
+          "granularity": "per_channel",
+          "group_size": null,
+          "scale": "minmax",
+          "symmetric": false
+        },
+        "activation_calibration": {
+          "percentiles": [
+            1.0,
+            0.999,
+            0.99
+          ],
+          "strategy": "percentile"
+        },
+        "activation_method": "uniform_affine",
+        "kind": "linear",
+        "module": "blocks.10.attn.proj",
+        "options": {
+          "token_partition": {
+            "axis": 1,
+            "prefix_ends": [
+              1,
+              5
+            ]
+          }
+        },
+        "weight": {
+          "axis": 1,
+          "bits": 4,
+          "format": "INT4",
+          "granularity": "per_group",
+          "group_size": 32,
+          "scale": "minmax",
+          "symmetric": true
+        },
+        "weight_calibration": {
+          "strategy": "minmax"
+        },
+        "weight_method": "rtn"
+      },
+      {
+        "activation": {
+          "axis": 2,
+          "bits": 4,
+          "format": "UINT4",
+          "granularity": "per_channel",
+          "group_size": null,
+          "scale": "minmax",
+          "symmetric": false
+        },
+        "activation_calibration": {
+          "percentiles": [
+            1.0,
+            0.999,
+            0.99
+          ],
+          "strategy": "percentile"
+        },
+        "activation_method": "uniform_affine",
+        "kind": "linear",
+        "module": "blocks.10.mlp.fc1",
+        "options": {
+          "token_partition": {
+            "axis": 1,
+            "prefix_ends": [
+              1,
+              5
+            ]
+          }
+        },
+        "weight": {
+          "axis": 1,
+          "bits": 4,
+          "format": "INT4",
+          "granularity": "per_group",
+          "group_size": 32,
+          "scale": "minmax",
+          "symmetric": true
+        },
+        "weight_calibration": {
+          "strategy": "minmax"
+        },
+        "weight_method": "rtn"
+      },
+      {
+        "activation": {
+          "axis": 2,
+          "bits": 4,
+          "format": "UINT4",
+          "granularity": "per_channel",
+          "group_size": null,
+          "scale": "minmax",
+          "symmetric": false
+        },
+        "activation_calibration": {
+          "percentiles": [
+            1.0,
+            0.999,
+            0.99
+          ],
+          "strategy": "percentile"
+        },
+        "activation_method": "uniform_affine",
+        "kind": "linear",
+        "module": "blocks.10.mlp.fc2",
+        "options": {
+          "token_partition": {
+            "axis": 1,
+            "prefix_ends": [
+              1,
+              5
+            ]
+          }
+        },
+        "weight": {
+          "axis": 1,
+          "bits": 4,
+          "format": "INT4",
+          "granularity": "per_group",
+          "group_size": 32,
+          "scale": "minmax",
+          "symmetric": true
+        },
+        "weight_calibration": {
+          "strategy": "minmax"
+        },
+        "weight_method": "rtn"
+      },
+      {
+        "activation": {
+          "axis": 3,
+          "bits": 4,
+          "format": "UINT4",
+          "granularity": "per_channel",
+          "group_size": null,
+          "scale": "minmax",
+          "symmetric": false
+        },
+        "activation_calibration": {
+          "percentiles": [
+            1.0,
+            0.999,
+            0.99
+          ],
+          "strategy": "percentile"
+        },
+        "activation_method": "uniform_affine",
+        "kind": "attention_query",
+        "module": "blocks.11.attn",
+        "options": {
+          "token_partition": {
+            "axis": 2,
+            "prefix_ends": [
+              1,
+              5
+            ]
+          }
+        },
+        "weight": null,
+        "weight_method": null
+      },
+      {
+        "activation": {
+          "axis": 2,
+          "bits": 4,
+          "format": "UINT4",
+          "granularity": "per_channel",
+          "group_size": null,
+          "scale": "minmax",
+          "symmetric": false
+        },
+        "activation_calibration": {
+          "percentiles": [
+            1.0,
+            0.999,
+            0.99
+          ],
+          "strategy": "percentile"
+        },
+        "activation_method": "uniform_affine",
+        "kind": "attention_key",
+        "module": "blocks.11.attn",
+        "options": {
+          "token_partition": {
+            "axis": 3,
+            "prefix_ends": [
+              1,
+              5
+            ]
+          }
+        },
+        "weight": null,
+        "weight_method": null
+      },
+      {
+        "activation": {
+          "axis": 3,
+          "bits": 4,
+          "format": "UINT4",
+          "granularity": "per_channel",
+          "group_size": null,
+          "scale": "minmax",
+          "symmetric": false
+        },
+        "activation_calibration": {
+          "percentiles": [
+            1.0,
+            0.999,
+            0.99
+          ],
+          "strategy": "percentile"
+        },
+        "activation_method": "uniform_affine",
+        "kind": "attention_value",
+        "module": "blocks.11.attn",
+        "options": {
+          "token_partition": {
+            "axis": 2,
+            "prefix_ends": [
+              1,
+              5
+            ]
+          }
+        },
+        "weight": null,
+        "weight_method": null
+      },
+      {
+        "activation": {
+          "axis": null,
+          "bits": 4,
+          "format": "UINT4",
+          "granularity": "per_tensor",
+          "group_size": null,
+          "scale": "minmax",
+          "symmetric": false
+        },
+        "activation_calibration": {
+          "strategy": "minmax"
+        },
+        "activation_method": "log2",
+        "kind": "post_softmax",
+        "module": "blocks.11.attn",
+        "options": {
+          "reserve_zero": true
+        },
+        "weight": null,
+        "weight_method": null
+      },
+      {
+        "activation": {
+          "axis": 2,
+          "bits": 4,
+          "format": "UINT4",
+          "granularity": "per_channel",
+          "group_size": null,
+          "scale": "minmax",
+          "symmetric": false
+        },
+        "activation_calibration": {
+          "percentiles": [
+            1.0,
+            0.999,
+            0.99
+          ],
+          "strategy": "percentile"
+        },
+        "activation_method": "uniform_affine",
+        "kind": "linear",
+        "module": "blocks.11.attn.qkv",
+        "options": {
+          "token_partition": {
+            "axis": 1,
+            "prefix_ends": [
+              1,
+              5
+            ]
+          }
+        },
+        "weight": {
+          "axis": 1,
+          "bits": 4,
+          "format": "INT4",
+          "granularity": "per_group",
+          "group_size": 32,
+          "scale": "minmax",
+          "symmetric": true
+        },
+        "weight_calibration": {
+          "strategy": "minmax"
+        },
+        "weight_method": "rtn"
+      },
+      {
+        "activation": {
+          "axis": 2,
+          "bits": 4,
+          "format": "UINT4",
+          "granularity": "per_channel",
+          "group_size": null,
+          "scale": "minmax",
+          "symmetric": false
+        },
+        "activation_calibration": {
+          "percentiles": [
+            1.0,
+            0.999,
+            0.99
+          ],
+          "strategy": "percentile"
+        },
+        "activation_method": "uniform_affine",
+        "kind": "linear",
+        "module": "blocks.11.attn.proj",
+        "options": {
+          "token_partition": {
+            "axis": 1,
+            "prefix_ends": [
+              1,
+              5
+            ]
+          }
+        },
+        "weight": {
+          "axis": 1,
+          "bits": 4,
+          "format": "INT4",
+          "granularity": "per_group",
+          "group_size": 32,
+          "scale": "minmax",
+          "symmetric": true
+        },
+        "weight_calibration": {
+          "strategy": "minmax"
+        },
+        "weight_method": "rtn"
+      },
+      {
+        "activation": {
+          "axis": 2,
+          "bits": 4,
+          "format": "UINT4",
+          "granularity": "per_channel",
+          "group_size": null,
+          "scale": "minmax",
+          "symmetric": false
+        },
+        "activation_calibration": {
+          "percentiles": [
+            1.0,
+            0.999,
+            0.99
+          ],
+          "strategy": "percentile"
+        },
+        "activation_method": "uniform_affine",
+        "kind": "linear",
+        "module": "blocks.11.mlp.fc1",
+        "options": {
+          "token_partition": {
+            "axis": 1,
+            "prefix_ends": [
+              1,
+              5
+            ]
+          }
+        },
+        "weight": {
+          "axis": 1,
+          "bits": 4,
+          "format": "INT4",
+          "granularity": "per_group",
+          "group_size": 32,
+          "scale": "minmax",
+          "symmetric": true
+        },
+        "weight_calibration": {
+          "strategy": "minmax"
+        },
+        "weight_method": "rtn"
+      },
+      {
+        "activation": {
+          "axis": 2,
+          "bits": 4,
+          "format": "UINT4",
+          "granularity": "per_channel",
+          "group_size": null,
+          "scale": "minmax",
+          "symmetric": false
+        },
+        "activation_calibration": {
+          "percentiles": [
+            1.0,
+            0.999,
+            0.99
+          ],
+          "strategy": "percentile"
+        },
+        "activation_method": "uniform_affine",
+        "kind": "linear",
+        "module": "blocks.11.mlp.fc2",
+        "options": {
+          "token_partition": {
+            "axis": 1,
+            "prefix_ends": [
+              1,
+              5
+            ]
+          }
+        },
+        "weight": {
+          "axis": 1,
+          "bits": 4,
+          "format": "INT4",
+          "granularity": "per_group",
+          "group_size": 32,
+          "scale": "minmax",
+          "symmetric": true
+        },
+        "weight_calibration": {
+          "strategy": "minmax"
+        },
+        "weight_method": "rtn"
+      }
+    ],
+    "preprocess": [],
+    "schema_version": 3,
+    "unlisted_modules": "keep_fp",
+    "unresolved": []
+  },
+  "plan_sha256": "7c401e29080dc2172629a05c013b9b57e0a726de20aeff2e14b9b3d84cfb13d8",
+  "definition": "Fixed training-free RTN W4 G32 + static prefix/channel affine A4 + zero-reserved log2 P. One predefined adaptation following the component controls.",
+  "construction": "seed.partitioned(backend) on the bound DINOv3-B model",
+  "source_pilot": "role_source/EXP/pilot_partition",
+  "protocol": "static_w4a4/1"
+}

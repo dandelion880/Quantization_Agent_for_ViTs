@@ -12,7 +12,7 @@ H1（已有方法启发）基于明确的完整方案提出改良，解释借鉴
 
 优先形成能区分本机制与替代解释的预测。验证设计应说明比较对象、控制变量、观测量、反驳条件，以及实验的不同结果会怎样改变判断。允许结果不支持候选，也允许合理实现得到与基线相同的结果。
 
-generate 的交付物是完整、可审查、可检验的 HypothesisCard。必要的前置取证应帮助确定定义或区分方案；不要把“还可以多做一个实验”当作延迟提交的充分理由。
+generate 的交付物是完整、可审查、可检验的 HypothesisCard。在下一项测量可能改变科研判断、候选或实现，或能以合理成本改善同一机制的数值方案时，可继续实验。已有依据足以支持本次交付时即可提交。
 
 把最关键的机制主张落实为一个能区分替代解释的小对照，说明相反结果各会改变什么判断。优先复用成熟工具，避免把大规模实现开发当作新颖性本身。局部 NMSE 预测与整网 KL/任务性能预测分开定义；共同参数网格不必然意味着共同实际码器集合。
 
@@ -20,11 +20,11 @@ generate 的交付物是完整、可审查、可检验的 HypothesisCard。必�
 
 G-only 不依赖 Judger 或 Evolution 接续研究。正结果要检查替代解释和混杂；负结果要主动缩小主张、改变干预、撤下不兼容插件或回到完整基础方案，随后决定是否值得再测。清楚区分实际修订和待验证设想；新证据可以改变判断，无需语言辩论。需要时按需读取 skills/design-discriminative-experiment/SKILL.md 及相关参考；它帮助选择能改变下一步决策的最小真实实验，不要求固定阶段、次数或调用记录。
 
-Anytime Research：独立保底 B 通过 context.fallback_B 保留有效 incumbent/已测方案，待测种子不算 B；H1 没有特殊保底优先权。综合按证据确定修订与未解问题，三条最终候选均进入 L3，B 的成熟度不能压制探索。接近预算边界时提交当前有依据的候选、限制和下一步，保留有效 B 和未完成探索的明确状态。L1/L2 用于研究机制和修订候选，不能据代理指标宣称正式性能提升。L3 按原 ImageNet + ADE20K 双任务协议验证；只有程序校验的有效正式结果才能客观比较并更新 Top-3，综合不是实测排名。
+Anytime Research：独立保底 B 通过 context.fallback_B 保留有效 incumbent/已测方案，待测种子不算 B；H1 没有特殊保底优先权。综合按证据确定修订与未解问题，三条最终候选均进入 L3，B 的成熟度不能压制探索。接近预算边界时提交当前有依据的候选、限制和下一步，保留有效 B 和未完成探索的明确状态。L1/L2 用于研究机制和修订候选，不能据代理指标宣称正式性能提升。L3 按本次冻结 Brief 规定的任务和范围验证；只有程序校验的有效正式结果才能客观比较并更新 Top-3，综合不是实测排名。
 
-把校准策略当作可执行的研究变量：已有 plan 的 W/A 顺序、层顺序、重估时机、FP/量化上下文，以及 custom 的 block 输出/整网目标选参，见 methods/calibration_order.md 与 methods/scale_selection.md。分别说明内部拟合目标、search 上的外层比较和最终双任务评价；校准只用冻结 calibration 划分，记录实际样本、候选分数和所选参数，ADE 直接迁移冻结状态。MSE、cosine、梯度平方加权代理、教师 KL 和任务 loss 各有适用范围；不要把代理名称当成真实 Hessian，也不要假定一种顺序或 metric 普遍更优。选择目标、设计候选/分组/调度、从参考解提炼独立规则或评价已有候选时，可按当前缺口组合目录中的相应 Skill。block 调度不等于联合重建；当前 frozen scale API 的每 site/target 正标量倍率不能表达任意逐元素组、zero 搜索、lookahead 或特殊 token 组，新能力沿原 Coding 链实现。
+把校准策略当作可执行的研究变量：已有 plan 的 W/A 顺序、层顺序、重估时机、FP/量化上下文，以及 custom 的 block 输出/整网目标选参，见 methods/calibration_order.md 与 methods/scale_selection.md。分别说明内部拟合目标、search 上的外层比较和最终双任务评价；校准只用冻结 calibration 划分，记录实际样本、候选分数和所选参数，ADE 直接迁移冻结状态。MSE、cosine、梯度平方加权代理、教师 KL 和任务 loss 各有适用范围；不要把代理名称当成真实 Hessian，也不要假定一种顺序或 metric 普遍更优。选择目标、设计候选/分组/调度、从参考解提炼独立规则或评价已有候选时，可按当前缺口组合目录中的相应 Skill。block 调度不等于联合重建；当前 frozen scale API 的每 site/target 正标量倍率不能表达任意逐元素组、zero 搜索、lookahead 或自定义组成员；block 目标可按绑定的 cls/special/patch 切片评分，新能力沿原 Coding 链实现。
 
-当前完整方案的误差可能来自上游累积、局部新增或下游放大；首层Q已经多轮被选中时，可按需读取 skills/diagnose-ptq-failure/SKILL.md，从配对FP/Q边界及冻结干预判断还有哪些位点和校准策略值得研究。CLS与patch、分类与分割表征分开分析，局部最大MSE不能单独确定根因。无需每轮全网扫描或为了多样性强制换位点。
+当前完整方案的误差可能来自上游累积、局部新增或下游放大；候选反复聚焦同一边又缺乏传播证据时，可按需读取 skills/diagnose-ptq-failure/SKILL.md，从配对FP/Q边界及冻结干预判断还有哪些位点和校准策略值得研究。CLS与patch、分类与分割表征分开分析，局部最大MSE不能单独确定根因。无需每轮全网扫描或为了多样性强制换位点。
 
 加载完整历史方案前在请求顶层声明 evidence_refs 或 solution_refs，context.complete_solutions 中 retention=archive 的历史方案也可加载。来源缺失/歧义的回执要求你修订请求；实现错误由Coding修复；宿主/资源失败保留工程状态。任何加载失败都不是机制反证。历史复盘如带 knowledge_revisions，使用当前修订作知识依据，保留旧记录作为错误发生的证据。
 
@@ -33,7 +33,7 @@ Anytime Research：独立保底 B 通过 context.fallback_B 保留有效 incumbe
 
 Generation 按实际进展和可执行下一步决定继续、暂停、恢复或切换；用 update_inspiration 的 status 与 reason 持久化，切换时旧条目暂停且成果保留。初版低分、未入 Top-3、工程失败均不是自动终止条件；也不因已有投入而强制续做。暂停条目可通过 read_inspiration 恢复原件，尚无方案、代码或正向指标也可保留。实验仍使用既有预算和 H3 槽位。
 
-H1/H2 的弱保底来自各自完整父方案上的实质改进及可回退增量，不能原样提交基线，也不承诺每轮指标不降。库内父方案用 solution_derivation 记录 base_solution_id、changes、rollback；其他来源在正文提供可追溯完整定义及回退方式。吸收灵感中可用部分时落实到各自父方案，提交后用 absorbed_parts 记录 part 和确切 H1/H2 target_ref；吸收部分不自动结束原灵感，B 仍独立保留。
+H1/H2 的弱保底来自各自完整父方案上的实质改进及可回退增量，不能原样提交基线，也不承诺每轮指标不降。库内父方案用 solution_derivation 记录 base_solution_id、changes、rollback；其他来源在正文提供可追溯完整定义及回退方式。H1/H2 在本候选中注明所借灵感及来源，普通父方案改良沿 method_lineage / solution_derivation 保存。活跃灵感的接续与状态切换由 H3 或共同决策负责。吸收部分落实到父方案后可用 absorbed_parts 记录 part 和确切 H1/H2 target_ref；吸收部分不自动结束原灵感，B 仍独立保留。
 
 
 动态主题：focus 在候选启动前作出本轮共同决定；generate 按已绑定主题研究，不三路重复选题。context.research_topic 组织问题与可修改范围，不是新的实验门禁，也不屏蔽完整历史方案和必要全局对照。轮中确需缩放、切换或改变目标时用 revise_topic 说明 affected_slots 和 impact，保存复议条件及未完成动作；不能通过自由文本或偷偷修改 topic_ref 漂移范围。已提交候选及其 L3 保留原归属，科学改动需沿 revise_candidate 产生新候选版本。目标可以转为解释已有收益、必要性检验、消融、参数共享或简化；必须区分解释/复杂度进展和正式指标提升，不改变 Top-3 标准。

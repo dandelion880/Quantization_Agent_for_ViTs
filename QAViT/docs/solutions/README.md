@@ -24,3 +24,5 @@ B 是既有 incumbent 和同协议实测方案库中的保留结果：沿用 mIo
 跨运行冻结加载在实验请求顶层提交 `solution_refs: ["<complete_solutions 中 evaluated 的 id>"]`，自定义 `experiment_v1` 中调用 `context['load_frozen'](solution_id)`。宿主仅从本运行已提交的方案库快照派生路径，核对原 Evidence、原模型包与批准代码哈希、源版本及同协议身份；待测种子、任意路径及缺失来源均拒绝。`source_snapshot` 在本运行的 `solution_library/source/<source_version>/` 物化为隔离数值包，加载原版本 backend/executor 并执行其原身份检查，不伪装当前源码身份。自定义 executor 的 `ptq_agent` imports 定向至该隔离包，批准源码本身不改写；不支持的无别名 dotted import 明确拒绝。加载只调用 `load`，禁读数据 batches，绝不调用 `prepare` 或重新校准。返回回执区分 `measurement_origin=historical` 与本次后续新实验；读取旧成绩本身不是新增实测。原包与旧运行保持只读。
 
 旧库项若缺少 `source_snapshot`，宿主按原运行 Journal 中该 Experiment 的确切提交时点，选择当时生效的初始源码快照或 `implementation_intervention` 快照；验证原提交链及已声明 source_version 一致后，只补充新任务绑定，不改旧库、旧卡或源文件。无法从原日志唯一确定时拒绝。源码缓存由宿主冻结请求时预先物化；数值 worker 在 Landlock 内仅核验和读取，不能自行在作业外创建来源文件。
+
+准备阶段的程序基线可以由正式输入顶层 prepared_baseline 引入，字段为 run_dir、evidence_ref。来源必须是 baseline_measurement 的真实全量 L3，协议、资产、冻结审计、独立重载和双任务证据须核验。目录方案及局部诊断仍可作为带来源的待测定义。准备 B 保留来源与原 FP 实测，独立于 H1/H2/H3。
