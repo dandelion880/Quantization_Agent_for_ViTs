@@ -1,6 +1,8 @@
 # 环境、依赖与只读资产
 
-沿用本机已验证安装，不自动安装/升级：Python 3.10.8、torch 2.1.2+cu118、torchvision 0.16.2+cu118、jsonschema 4.22.0。Linux Landlock 用于生成代码写隔离。真实订阅调用要求既有登录和经单独核验的 codex-cli 0.164.0 或 0.166.0；精确版本、模型目录、档位及工具隔离仍逐次核验，其他版本不自动放行。用户升级后的 0.166.0 兼容验证与显式恢复记录位于 `EXP/validation/cli166_resume_20261031_r1`；旧运行配置和旧回执保留，通过源码干预与运行级传输记录声明变化，不静默替换已绑定可执行文件路径。
+沿用本机已验证安装。环境使用 Python 3.10.8、torch 2.1.2+cu118、torchvision 0.16.2+cu118 和 jsonschema 4.22.0。Linux Landlock 用于生成代码写隔离。
+
+当前已验证的订阅入口使用 Codex CLI 0.170.0 和现有 ChatGPT 登录。每次调用仍检查精确版本、模型目录、推理档位和工具隔离。角色分配见 `configs/models.json`，真实结构化响应和隔离验证见 [0.170.0 兼容记录](../../EXP/validation/cli170_sync_20261118_r1/cli170_compatibility.json)。历史运行如绑定了已移除的 CLI 路径，恢复时须通过显式干预记录传输变更，参见 `EXP/validation/cli166_resume_20261031_r1`。
 
 `.runtime_pkgs/` 是随项目交付的必要第三方运行依赖，不是临时缓存。保留 common（包括 NumPy 1.26.4、MMEngine/MMCV）、classification（timm 0.3.2）和 segmentation（timm 1.0.20、MMSeg）全部现有内容。分类与分割两套 timm 按原逻辑隔离加载。精确版本、许可证相对位置及历史来源在 [runtime_dependencies.json](runtime_dependencies.json)；历史来源目录只用于溯源，不是当前 import 路径。官方 DeiT 源码与 LICENSE 保存在 `tools/model_sources/deit/`，源文件哈希仍与资产收据核对。未推断或添加未知来源的许可证授权。
 
