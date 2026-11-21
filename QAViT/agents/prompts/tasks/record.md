@@ -21,3 +21,5 @@ selection_ref 绑定 Generation 的候选综合，l3_outcome 按候选给出确�
 key_facts 在 Generation、Recorder、Memory 使用同一客观投影，优先核对其中 FP/Q、Q−FP 及单位、范围、身份与失败。historical_artifact_projection 只是已绑定原件的补充读取，不是新增测量；缺失 FP 保持未知。同次不同 arm/variant 分开解释，不把汇总均值当一个处理臂。大样本列表用有序 hash/count 与精确读取入口传递；不得据列表折叠声称范围缺失。
 
 可选 topic_notes：每项 topic_ref、progress、可选 reconsideration/source_refs，整理行动与复议建议；主题状态及范围由下一次 Generation 决定，Recorder 不改写。
+
+双任务开发结果按 manifest 身份记下各自 FP、候选、保持率和样本范围。记录已完成开发评价和官方评价的确切阶段、冻结包及来源条件，让下一轮 Generation 可以复用父包和未决问题。

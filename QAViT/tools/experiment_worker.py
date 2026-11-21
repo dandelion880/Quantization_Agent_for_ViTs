@@ -338,14 +338,29 @@ def tensor_probe(experiment, backend, cfg, data, directory, approval):
 
 
 def evaluate_task(backend, cfg, data, model, plan, requested, directory, native, coverage):
+    dev = requested.get('split') in ('dev', 'ade_dev')
+    if dev:
+        from tools.development import read_view, ClassificationDev
+        binding = cfg['_development_view']
+        view = read_view(binding)
+        if requested['kind'] == 'classification':
+            data = ClassificationDev(backend, view, binding['sha256'])
     if requested['kind'] == 'classification':
         from tools.evaluating import evaluate
-        return evaluate(backend, cfg, data, model, plan, requested['split'], requested.get('count'), None,
+        value = evaluate(backend, cfg, data, model, plan, requested['split'], requested.get('count'), None,
                         **({'native': False, 'sites': coverage['declared_sites']} if not native else {}))
+        if dev:
+            value.update(complete_view=value['sample_ids'] == data.ids('dev'),
+                         development_sha256=binding['sha256'], purpose='development')
+        return value
     if requested['kind'] == 'ade_frozen':
         from tools.segmentation import evaluate
-        return evaluate(model, backend, directory, requested.get('count'),
+        value = evaluate(model, backend, directory, requested.get('count'),
+                        **({'development': view['ade_frozen']} if dev else {}),
                         **({'fp_reference': cfg['_ade_fp_reference']} if cfg.get('_ade_fp_reference') else {}))
+        if dev:
+            value.update(development_sha256=binding['sha256'], purpose='development')
+        return value
     raise ContractError('尚未注册评测适配器: ' + requested['kind'])
 
 
@@ -371,8 +386,11 @@ def evaluation_summary(requested, value):
                 metrics['baseline_' + key] = fp[key]
                 metrics['delta_' + key + '_pp'] = q[key] - fp[key]
         row = {'metrics': metrics, 'sample_count': value['images'],
-               'sample_ids': value['sample_ids'], 'split': 'ade_validation'}
+               'sample_ids': value['sample_ids'], 'split': value.get('split', 'ade_validation')}
         name = 'segmentation'
+    if value.get('purpose') == 'development':
+        row.update(purpose='development', complete_view=value['complete_view'],
+                   development_sha256=value['development_sha256'])
     percentage = {'top1', 'top5', 'mIoU', 'mAcc', 'aAcc'}
     row.update(full_dataset=value['full_dataset_evaluation'],
                metric_units={k: 'percentage_points' if k.endswith('_pp') else 'percent'
@@ -383,7 +401,8 @@ def evaluation_summary(requested, value):
                parallelism=deepcopy(value.get('parallelism', {})))
     return name, row
 
-def evaluate_services(experiment, backend, cfg, data, directory, approval, gpus=(), *, deadline_unix=None):
+def evaluate_services(experiment, backend, cfg, data, directory, approval, gpus=(), *, deadline_unix=None,
+                      native_dual_task_only=False):
     from ptq_agent.execution.pipeline import QuantizationExecutor, plan_uses_calibration
     from ptq_agent.execution.model import RTNExecutor
     from core.execution_contract import validate_plan_schema
@@ -394,88 +413,123 @@ def evaluate_services(experiment, backend, cfg, data, directory, approval, gpus=
     spec = experiment["payload"]["execution"]
     choices = spec["resolved_choices"]
     from ptq_agent.execution.plugin_contracts import site_id
+    package = spec.get('evaluation_package') if spec['service'] == 'evaluate_artifact' else None
     native = True
     model_files = []
     preparation_reads = {}
     refinement = None
     from tools.frozen import FrozenData
     if spec["service"] == "quantize_evaluate":
-        from tools.runtime_interface import ObservedData
-        plugin = module_from_approval(approval, experiment) if spec.get('requires_code') else None
-        plan = (plugin.build_plan(backend, deepcopy(cfg), deepcopy(experiment["payload"]), deepcopy(spec.get("parameters", {})))
-                if plugin else deepcopy(spec['plan']))
-        selection = data_view(data, spec["calibration"], "calibration") if spec.get("calibration") else data
-        observed = ObservedData(selection)
-        factory = getattr(plugin, "make_executor", RTNExecutor)
-        executor = factory(backend, deepcopy(cfg), observed)
-        native = type(executor) in (RTNExecutor, QuantizationExecutor)
-        if native:
-            plan = validate_plan_schema(plan)
-            if type(executor) is QuantizationExecutor and plan["schema_version"] == 2 and not executor.diagnostic:
-                # An explicitly returned built-in factory has the same declared
-                # protocol range as direct/default built-in execution.
-                factory = RTNExecutor
-                executor = factory(backend, deepcopy(cfg), observed)
-        coverage = plan_constraints(plan, choices, backend, cfg, spec.get("quantization_contract"), native=native)
-        if native:
-            validate_plan(backend, plan, cfg, detect(backend), {}, allow_unknown_shapes=True)
-            if plan_uses_calibration(plan) and not spec.get('calibration'):
-                raise ContractError("原生量化执行器需要明确 calibration 数据视图")
-        model, weights, activations, audit = executor.prepare(plan, {})
-        if plugin and hasattr(plugin, 'refine_frozen'):
-            if not native or plan['schema_version'] != 3 or not spec.get('calibration'):
-                raise ContractError('refine_frozen requires a native v3 plan and explicit calibration view; custom executors refine during prepare')
-            refinement = plugin.refine_frozen(backend, model, observed, deepcopy(spec.get('parameters', {})))
-            if not isinstance(refinement, dict):
-                raise ContractError('refine_frozen must return a JSON object describing the applied selection')
-            if any(split != 'calibration' for split in observed.reads):
-                raise ContractError('frozen refinement must fit only on its selected calibration view')
-        verifier = factory(backend, deepcopy(cfg), FrozenData(selection))
-        if native:
-            verifier.input_shapes = executor.input_shapes
-            verifier.audit(model, plan)
-        model_dir = directory / "model"
-        executor.export(model, plan, weights, activations, model_dir, audit)
-        model_files = sorted(p for p in model_dir.rglob('*') if p.is_file())
-        if not model_files:
-            raise ContractError("执行器未生成可重载的实际模型资产")
-        calibration_ids = list(dict.fromkeys(observed.reads.get('calibration', [])))
-        # 原生 manifest 的 calibration_ids 记录真实捕获，而非可用数据池。
-        if native:
-            exported_manifest = read_json(model_dir / 'manifest.json')
-            exported_manifest['calibration_ids'] = calibration_ids
-            if refinement is not None:
-                exported_manifest['refinement'] = refinement
-            if spec.get('research_protocol_sha256'):
-                exported_manifest['preparation_training'] = choices['training']
-            exported_manifest.pop('content_sha256', None)
-            exported_manifest['content_sha256'] = fingerprint(exported_manifest)
-            atomic_json(model_dir / 'manifest.json', exported_manifest)
-        frozen_files = {str(p.relative_to(model_dir)): file_sha256(p) for p in model_files}
-        loaded, manifest = verifier.load(model_dir)
-        preparation_reads = {split: {"split": split, "sample_ids": list(dict.fromkeys(ids)),
-            "sample_count": len(set(ids)), "full_dataset": split == "final" and list(dict.fromkeys(ids)) == data.ids(split)
-                and data.identity.get("full_validation") is True}
-            for split, ids in observed.reads.items()}
-        if not native:
+        def prepare(backend, cfg, data, visible_payload, preselected=False):
+            from tools.runtime_interface import ObservedData
+            refinement = None
+            plugin = module_from_approval(approval, experiment) if spec.get('requires_code') else None
+            plan = (plugin.build_plan(backend, deepcopy(cfg), deepcopy(visible_payload), deepcopy(spec.get("parameters", {})))
+                    if plugin else deepcopy(spec['plan']))
+            selection = data
+            if not preselected and spec.get('calibration'):
+                selection = data_view(data, spec['calibration'], 'calibration')
+            observed = ObservedData(selection, calibration_only=choices['training'] or experiment['payload']['level'] == 'L3',
+                                   withhold_final=bool(spec.get('research_quantization_contract', {}).get('protocol')))
+            factory = getattr(plugin, "make_executor", RTNExecutor)
+            executor = factory(backend, deepcopy(cfg), observed)
+            native = type(executor) in (RTNExecutor, QuantizationExecutor)
+            if native:
+                plan = validate_plan_schema(plan)
+                if type(executor) is QuantizationExecutor and plan["schema_version"] == 2 and not executor.diagnostic:
+                    # An explicitly returned built-in factory has the same declared
+                    # protocol range as direct/default built-in execution.
+                    factory = RTNExecutor
+                    executor = factory(backend, deepcopy(cfg), observed)
+            coverage = plan_constraints(plan, choices, backend, cfg, spec.get("quantization_contract"), native=native)
+            if native:
+                validate_plan(backend, plan, cfg, detect(backend), {}, allow_unknown_shapes=True)
+                if plan_uses_calibration(plan) and not spec.get('calibration'):
+                    raise ContractError("原生量化执行器需要明确 calibration 数据视图")
+            model, weights, activations, audit = executor.prepare(plan, {})
+            if plugin and hasattr(plugin, 'refine_frozen'):
+                if not native or plan['schema_version'] != 3 or not spec.get('calibration'):
+                    raise ContractError('refine_frozen requires a native v3 plan and explicit calibration view; custom executors refine during prepare')
+                refinement = plugin.refine_frozen(backend, model, observed, deepcopy(spec.get('parameters', {})))
+                if not isinstance(refinement, dict):
+                    raise ContractError('refine_frozen must return a JSON object describing the applied selection')
+                if any(split != 'calibration' for split in observed.reads):
+                    raise ContractError('frozen refinement must fit only on its selected calibration view')
+            verifier = factory(backend, deepcopy(cfg), FrozenData(selection))
+            if native:
+                verifier.input_shapes = executor.input_shapes
+                verifier.audit(model, plan)
+            model_dir = directory / "model"
+            executor.export(model, plan, weights, activations, model_dir, audit)
+            model_files = sorted(p for p in model_dir.rglob('*') if p.is_file())
+            if not model_files:
+                raise ContractError("执行器未生成可重载的实际模型资产")
             calibration_ids = list(dict.fromkeys(observed.reads.get('calibration', [])))
-        if loaded is model:
-            raise ContractError("执行器 load 必须返回实际重建实例，不能复用导出前模型")
-        if frozen_files != {str(p.relative_to(model_dir)): file_sha256(p)
-                            for p in model_dir.rglob('*') if p.is_file()}:
-            raise ContractError("执行器重载改写了已导出的模型资产")
-        reload_check = Evaluator(backend, cfg, data).reload_check(model, loaded, split="search")
-        if native and model_digest(loaded) != model_digest(model):
-            raise ContractError('导出前后的冻结参数或缓冲区不同')
-        model = loaded
-        if native:
-            plan = manifest["plan"]
-            coverage = plan_constraints(plan, choices, backend, cfg, spec.get("quantization_contract"))
-            verifier.audit(model, plan)
+            # 原生 manifest 的 calibration_ids 记录真实捕获，而非可用数据池。
+            if native:
+                exported_manifest = read_json(model_dir / 'manifest.json')
+                exported_manifest['calibration_ids'] = calibration_ids
+                if refinement is not None:
+                    exported_manifest['refinement'] = refinement
+                if spec.get('research_protocol_sha256'):
+                    exported_manifest['preparation_training'] = choices['training']
+                exported_manifest.pop('content_sha256', None)
+                exported_manifest['content_sha256'] = fingerprint(exported_manifest)
+                atomic_json(model_dir / 'manifest.json', exported_manifest)
+            frozen_files = {str(p.relative_to(model_dir)): file_sha256(p) for p in model_files}
+            loaded, manifest = verifier.load(model_dir)
+            preparation_reads = {split: {"split": split, "sample_ids": list(dict.fromkeys(ids)),
+                "sample_count": len(set(ids)), "full_dataset": split == "final" and list(dict.fromkeys(ids)) == data.ids(split)
+                    and data.identity.get("full_validation") is True}
+                for split, ids in observed.reads.items()}
+            if not native:
+                calibration_ids = list(dict.fromkeys(observed.reads.get('calibration', [])))
+            if loaded is model:
+                raise ContractError("执行器 load 必须返回实际重建实例，不能复用导出前模型")
+            if frozen_files != {str(p.relative_to(model_dir)): file_sha256(p)
+                                for p in model_dir.rglob('*') if p.is_file()}:
+                raise ContractError("执行器重载改写了已导出的模型资产")
+            # For formal fits, use the bound calibration view for the reload probe;
+            # no search image is needed before the held-out tasks.
+            probe_calibration = experiment['payload']['level'] == 'L3' and bool(spec.get('calibration'))
+            host_probe_model = model if preselected and not probe_calibration else None
+            reload_check = {} if host_probe_model is not None else Evaluator(
+                backend, cfg, selection if probe_calibration else data).reload_check(
+                    model, loaded, split='calibration' if probe_calibration else 'search')
+            if native and model_digest(loaded) != model_digest(model):
+                raise ContractError('导出前后的冻结参数或缓冲区不同')
+            model = loaded
+            if native:
+                plan = manifest["plan"]
+                coverage = plan_constraints(plan, choices, backend, cfg, spec.get("quantization_contract"))
+                verifier.audit(model, plan)
+            else:
+                reload_check['loader'] = 'approved_custom_executor'
+            return (model, model_dir, verifier, plan, coverage, calibration_ids, reload_check, plugin,
+                    native, preparation_reads, model_files, refinement, host_probe_model)
+        if spec.get('result_protocol', {}).get('development_view'):
+            from tools.development import prepare_with_calibration
+            prepared = prepare_with_calibration(prepare, backend, cfg, data, experiment, directory, approval)
         else:
-            reload_check['loader'] = 'approved_custom_executor'
+            prepared = prepare(backend, cfg, data, experiment['payload'])
+        (model, model_dir, verifier, plan, coverage, calibration_ids, reload_check, plugin,
+         native, preparation_reads, model_files, refinement, host_probe_model) = prepared
+        if host_probe_model is not None:
+            reload_check.update(Evaluator(backend, cfg, data).reload_check(host_probe_model, model, split='calibration'))
+        del prepared, host_probe_model
+    elif package:
+        from tools.frozen import reload_complete
+        model_dir = Path(package['model_dir'])
+        model, manifest = reload_complete(package, backend, cfg, data)
+        native = False
+        plan = manifest['plan']
+        coverage = plan_constraints(plan, choices, backend, cfg, spec.get('quantization_contract'), native=False)
+        calibration_ids = []
+        reload_check = {'passed': True, 'source_evidence_ref': package['evidence_ref'],
+                        'scope': 'verified identical frozen state; no calibration during evaluation'}
     else:
         executor = RTNExecutor(backend, cfg, FrozenData(data))
+        verifier = executor
         model_dir = Path(spec["model_dir"])
         model, manifest = executor.load(model_dir)
         if spec.get('result_protocol', {}).get('final_training') is False and manifest.get('preparation_training') is not False:
@@ -494,7 +548,9 @@ def evaluate_services(experiment, backend, cfg, data, directory, approval, gpus=
     if spec.get('quantization_contract', {}).get('protocol'):
         from core.static_w4a4 import check_audit
         required = coverage['static_w4a4']
-        if native:
+        if package:
+            static_receipt = check_audit(package['frozen_audit'], required)
+        elif native:
             from core.static_w4a4 import native_audit
             from ptq_agent.execution.sites import site_catalog
             static_receipt = native_audit(model, plan, site_catalog(backend), required)
@@ -504,15 +560,43 @@ def evaluate_services(experiment, backend, cfg, data, directory, approval, gpus=
     from tools.result_contract import classification_shard_fallback, dual_task_fallback
     fallback = classification_shard_fallback(experiment['payload'], {})
     dual_reason = dual_task_fallback(experiment['payload'])
-    if not native and getattr(plugin, 'parallel_frozen_load', False) is not True:
+    if not native and not package and (native_dual_task_only or getattr(plugin, 'parallel_frozen_load', False) is not True):
         dual_reason = 'approved custom executor has not declared independent frozen loading'
+    if package and package.get('candidate'):
+        from runtime.gpu_resources import parallel_candidate
+        if not parallel_candidate(package['candidate'], native_only=native_dual_task_only):
+            dual_reason = 'archived executor is not eligible for independent parallel loading'
+    if spec.get('result_protocol', {}).get('development_view'):
+        cfg = {**cfg, '_development_view': spec['result_protocol']['development_view']}
     if dual_reason is None and len(gpus) > 1:
         from tools.dual_task_evaluation import evaluate_parallel
         evaluations = evaluate_parallel(experiment, backend, cfg, data, model, plan, coverage,
                                         native, model_dir, directory, gpus, approval, deadline_unix=deadline_unix)
     else:
         evaluations = {}
-        for requested in spec["evaluations"]:
+        independent_serial = (dual_task_fallback(experiment['payload']) is None
+                              and spec.get('result_protocol', {}).get('reload_before_evaluation') is True)
+        if independent_serial:
+            from tools.dual_task_evaluation import package_files
+            serial_assets = package_files(model_dir)
+            reload_check['independent_serial_tasks'] = []
+            if cfg.get('_development_view') and any((r.get('count') or 0) > 1 for r in spec['evaluations']):
+                probe_dir = directory / 'interface_probe'
+                probe_dir.mkdir(exist_ok=True)
+                for task in spec['evaluations']:
+                    value = evaluate_task(backend, cfg, data, model, plan, {**task, 'count': 1},
+                                          probe_dir, native, coverage)
+                    name, summary = evaluation_summary(task, value)
+                    atomic_json(probe_dir / (name + '.json'), {'purpose':'engineering_probe','receipt':summary})
+                if model_digest(model) != before:
+                    raise ContractError('interface probe modified the frozen model')
+        for index, requested in enumerate(spec["evaluations"]):
+            if independent_serial and index:
+                previous = model
+                model, _ = reload_complete(package, backend, cfg, data) if package else verifier.load(model_dir)
+                if model is previous or model_digest(model) != before or package_files(model_dir) != serial_assets:
+                    raise ContractError('serial task did not independently reload the identical frozen package')
+                del previous
             if requested["kind"] == "classification" and native and len(gpus) > 1 and fallback is None:
                 from tools.classification_shards import evaluate_parallel
                 value = evaluate_parallel(experiment, backend, cfg, data, model, plan, requested, model_dir, directory, gpus,
@@ -524,6 +608,10 @@ def evaluate_services(experiment, backend, cfg, data, directory, approval, gpus=
             name, summary = evaluation_summary(requested, value)
             atomic_json(directory / (name + '.json'), value)
             evaluations[name] = summary
+            if independent_serial:
+                if model_digest(model) != before or package_files(model_dir) != serial_assets:
+                    raise ContractError('serial evaluation changed the frozen model or package')
+                reload_check['independent_serial_tasks'].append({'kind': requested['kind'], 'model_digest': before})
     if model_digest(model) != before:
         raise ContractError("评测改变了候选模型状态")
     files = [asset(p) for p in sorted(directory.glob("*.json")) if p.name not in ("request.json", "started.json", "result.json")]
@@ -584,7 +672,8 @@ def run_experiment(request, directory):
             result = tensor_probe(experiment, backend, cfg, data, directory, approval)
         elif spec["service"] in ("evaluate_artifact", "quantize_evaluate"):
             result = evaluate_services(experiment, backend, cfg, data, directory, approval, request.get('gpus', []),
-                                       deadline_unix=request.get('deadline_unix'))
+                                       deadline_unix=request.get('deadline_unix'),
+                                       native_dual_task_only=(request.get('parallelism') or {}).get('native_dual_task_only', False))
         else:
             plugin = module_from_approval(approval, experiment)
             from tools.runtime_interface import execute_custom

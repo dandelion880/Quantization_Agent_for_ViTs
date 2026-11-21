@@ -7,6 +7,7 @@ from runtime.paths import QAVIT
 
 
 NUMERIC_TASK_TIMEOUT_SECONDS = {"L1": 3600, "L2": 10800, "L3": 86400}
+GENERATION_ROUTES = {("gpt-6-astra", "high"), ("gpt-6.2-astra", "high")}
 
 
 def numeric_task_timeout(runtime, level="L1"):
@@ -35,8 +36,11 @@ def config_check(config, *, resolve_resources=False, historical=False):
     for value in settings["agent_models"].values():
         if not isinstance(value, (list, tuple)) or len(value) != 2 or not all(isinstance(v, str) and v for v in value):
             raise ContractError("模型路由须为 [model, effort]")
-    if not historical and list(settings["agent_models"]["generation"]) != ["gpt-6-astra", "high"]:
-        raise ContractError("G-only Generation 科研任务固定 gpt-6-astra / high；禁止运行覆盖降级")
+    cap = settings.get('subscription_max_used_percent')
+    if cap is not None and (type(cap) not in (int, float) or not 0 < cap <= 100):
+        raise ContractError('subscription_max_used_percent 必须在 (0, 100] 内')
+    if not historical and tuple(settings["agent_models"]["generation"]) not in GENERATION_ROUTES:
+        raise ContractError("G-only Generation 需使用已核验的 Astra / high 路由；禁止静默降级")
     runtime = config.setdefault("runtime", {})
     if resolve_resources:
         from runtime.gpu_resources import resolve_runtime_resources

@@ -427,10 +427,19 @@ class ExperimentRequests:
         latest = outcomes[-1] if outcomes else {'request_state': 'not_started', 'execution_state': 'not_started',
                   'interpretation_state': 'not_separately_requested', 'experiment_ref': None, 'cache_reused': False}
         valid = list(dict.fromkeys(ref for outcome in outcomes for ref in outcome['valid_evidence_refs']))
+        stages = {'development': [], 'official': [], 'other': []}
+        for ref in valid:
+            measured = self.journal.card(ref)['payload']['observations'].get('evaluations', {})
+            purposes = {v.get('purpose') for v in measured.values()}
+            stage = ('development' if purposes == {'development'} else
+                     'official' if measured and all(v.get('full_dataset') for v in measured.values()) else 'other')
+            stages[stage].append(ref)
         facts = [{'task_id': t['task_id'], 'key': t['key'], 'task_ref': t['task_card'],
                   'state': t['state'], 'result': t.get('result'), 'error': t.get('error')} for t in related]
         return {**latest, 'status': status, 'slot': slot, 'hypothesis_ref': hypothesis_ref,
-                'request_root': key,
+                'request_root': key, 'stage_evidence': stages,
+                'development_validation_success': bool(stages['development']),
+                'official_validation_success': bool(stages['official']),
                 'planning_state': plan['state'] if plan else 'not_started',
                 'plan_revision': plan['inputs'].get('context', {}).get('plan_revision', 0) if plan else None,
                 'tasks': facts, 'task_refs': [t['task_card'] for t in related],
@@ -484,6 +493,8 @@ class ExperimentRequests:
         return {**common, 'status': status,
                 'candidates': {slot: {k: v for k, v in row.items() if k != 'tasks'} for slot, row in rows.items()},
                 'expected_slots': expected, 'historical_single_candidate': historical,
+                'development_complete': bool(expected) and all(rows.get(k, {}).get('development_validation_success') for k in expected),
+                'official_complete': bool(expected) and all(rows.get(k, {}).get('official_validation_success') for k in expected),
                 'missing_slots': [slot for slot in expected if slot not in rows],
                 'validated_slots': [slot for slot, row in rows.items() if row['formal_validation_success']],
                 'tasks': [t for row in rows.values() for t in row['tasks']] + unattributed,
@@ -711,6 +722,10 @@ class ExperimentRequests:
         # Evidence has already passed the execution protocol and immutable storage
         # checks. Interpretation belongs to the requester or the normal Recorder;
         # it is never a dependency for returning this numerical result.
+        if execution.get('result_protocol', {}).get('purpose') == 'development':
+            source = self.journal.card(evidence['payload']['experiment_ref'])
+            self.solutions.consider_round(task['inputs'].get('round'), evidence, source, None,
+                                         validator=self.broker.validate_evidence_for)
         interpretation = self.queue.get_by_key(key + '/interpret')
         interpreted = self.result_card(interpretation)
         self.queue.finish(task['task_id'], outputs=[evidence['id']], result={

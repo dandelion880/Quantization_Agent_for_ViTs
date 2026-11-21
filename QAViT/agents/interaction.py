@@ -16,6 +16,7 @@ from core.debate import INITIAL_PAIRS, ranking_table, validate_verdict
 from agents.roles import tools_for, submission_schema
 from tools.experiments import SERVICES
 from tools.data_receipt import data_receipt
+from agents.source_workspace import edit, engineering_context, locate, revision
 from tools.safeguards import write_artifact, NUMERIC_IMPORTS, PUBLIC_INTERFACE_FILES
 
 
@@ -1243,6 +1244,8 @@ class RoleInteraction:
                 memory.setdefault('asset_locations', {})[str(catalog)] = {
                     'sha256': sha256(raw).hexdigest(), 'location': 'context.skill_catalog'}
         if purpose in ('code', 'safeguard'):
+            if purpose == 'code':
+                context['coding_skills'] = {'read_asset': {'asset': 'knowledge/coding/INDEX.md'}}
             context['numeric_imports'] = sorted(NUMERIC_IMPORTS)
             document = ROOT / 'QAViT/docs/CODE_INTERFACES.md'
             context['code_interface'] = document.read_text()
@@ -1282,7 +1285,8 @@ class RoleInteraction:
             self.deliver_asset(task, context, 'previous_candidate_source', inputs['context']['revision_feedback']['previous_candidate'])
         if purpose in ('code', 'safeguard'):
             for index, row in enumerate(inputs['context'].get('implementation_history', [])):
-                self.deliver_asset(task, context, 'prior_implementation_' + str(index), row['candidate'])
+                item = row['candidate']
+                context['prior_implementation_' + str(index)] = {'sha256': item['source_sha256'], 'read_asset': {'asset': item['path']}}
         if purpose == 'rank':
             context['task']['matches'] = self.selection_matches(inputs['context'])
             context['task']['direct_results'] = ranking_table(context['task']['matches'], inputs['context']['eligible'])
@@ -1301,6 +1305,10 @@ class RoleInteraction:
                 'total_characters': len(canonical(value)), 'next_offset': int(stop) if stop < len(canonical(value)) else None,
                 'reason': '当前任务的长字段深读入口'})
             context['task'][key] = {'read_card': {'ref': ref, 'field': field}, 'required': False}
+        if purpose in ('code','safeguard'):
+            context = engineering_context(context)
+            memory = context['memory']
+            presented.update({card['id']: card for card in memory['cards'] if card.get('id')})
         self.coalesce_feedback(memory, presented, bodies)
         notes = [(child, child['inputs']['research_note']) for _, child, _ in self.result_values(task)
                  if child['kind'] == 'experiment_request' and child['inputs'].get('research_note')]
@@ -1625,8 +1633,15 @@ class RoleInteraction:
             static = {str(p.resolve()): file_sha256(p) for p in paths if p.is_file() and
                       any(root in p.resolve().parents for root in (ROOT / 'reference', *self.knowledge_roots()))}
         solution_assets = self.solutions.assets(sequence)
+        # An operator can hand off exact, hashed historical research files in the
+        # frozen Brief. This does not import the other run's cards or permissions.
+        handoff = self.asset_references(self.brief['payload'].get('research_handoff', {}))
+        validation = ROOT / 'EXP/validation'
+        handoff = {path: digest for path, digest in handoff.items() if digest
+                   and validation in Path(path).parents and not self.archive_path(path)}
         allowed.update(solution_assets)
         allowed.update(static)
+        allowed.update(handoff)
         if self.model_metadata:
             source = self.model_metadata['asset']
             allowed[source['path']] = source['sha256']
@@ -1726,7 +1741,7 @@ class RoleInteraction:
                     and manifest.get('source_sha256') == file_sha256(source)):
                 allowed[path] = manifest['source_sha256']
         return {path: digest or file_sha256(path) for path, digest in allowed.items() if Path(path).is_file() and not self.archive_path(path)
-                and (path in public or path in solution_assets or any(root in Path(path).parents
+                and (path in public or path in solution_assets or path in handoff or any(root in Path(path).parents
                                            for root in (self.run_dir, ROOT / 'reference', *self.knowledge_roots())))}
 
     @staticmethod
@@ -1765,7 +1780,7 @@ class RoleInteraction:
             if member not in files or not permitted(member):
                 raise ContractError('快照成员未授权或不存在；评价规则及历史提示词不属于源码恢复视图')
             text = files[member]
-        start, limit = args.get('offset',0), args.get('limit',self.PAGE_CHARACTERS)
+        start, limit = locate(text, args), args.get('limit',self.PAGE_CHARACTERS)
         return {**original, 'asset': str(path), 'snapshot_field': args['snapshot_field'], 'member': member,
                 'sha256': hashlib.sha256(text.encode()).hexdigest(), 'offset': start, 'text': text[start:start+limit],
                 'total_characters': len(text), 'next_offset': start+limit if start+limit<len(text) else None}
@@ -1909,6 +1924,8 @@ class RoleInteraction:
         if name not in schemas:
             raise ContractError('角色调用了未授权工具')
         validate_schema(args, schemas[name], name)
+        if name == 'edit_source':
+            return edit(self.run_dir / 'code/workspaces' / parent['task_id'], args, self.authorized_assets(parent))
         if name == 'read_topic':
             if 'topic_ref' not in args:
                 return self.research_directory('topic',self.read_view(parent)['sequence'],**args)
@@ -1963,6 +1980,9 @@ class RoleInteraction:
                 visible=lambda c: self.can_read_card(parent, c))
         if name == 'read_asset':
             path = self.asset_path(args['asset'])
+            private_view = self.brief['payload'].get('execution_guidance', {}).get('development', {}).get('manifest', {})
+            if private_view.get('path') and path == self.asset_path(private_view['path']):
+                raise ContractError('development manifest is evaluator-only; use the aggregate data receipt')
             if 'snapshot_field' in args:
                 return self.read_snapshot_asset(parent, path, args)
             if 'member' in args:
@@ -1978,7 +1998,7 @@ class RoleInteraction:
                 text = path.read_text(encoding='utf-8')
             except UnicodeError as exc:
                 raise ContractError('read_asset 仅支持 UTF-8 文本') from exc
-            start, limit = args.get('offset', 0), args.get('limit', self.PAGE_CHARACTERS)
+            start, limit = locate(text, args), args.get('limit', self.PAGE_CHARACTERS)
             return {'asset': str(path), 'sha256': digest, 'offset': start, 'text': text[start:start + limit],
                     'total_characters': len(text), 'next_offset': start + limit if start + limit < len(text) else None}
         raise ContractError('未知宿主工具')
@@ -2145,6 +2165,8 @@ class RoleInteraction:
             return
         if purpose in ("code",):
             experiment = self.journal.card(context["experiment_ref"])
+            if 'revision' in content:
+                content = {**content, 'source': revision(self.run_dir / 'code/workspaces' / task['task_id'], content['revision'])}
             artifact = write_artifact(self.run_dir, experiment, content, task["role"])
             self.queue.finish(task["task_id"], result={"artifact": artifact, "receipt": str(receipt_path),
                 "parent_code_ids": list(dict.fromkeys(row['candidate']['id']
@@ -2174,6 +2196,10 @@ class RoleInteraction:
             self.broker.card_references(content)
             if content["level"] != "L3":
                 raise ContractError("正式计划必须明确 L3")
+            if self.brief['payload'].get('execution_guidance', {}).get('development'):
+                from tools.development import stage_protocol
+                if stage_protocol(self.brief['payload'], content['execution'], 'L3').get('purpose') != 'development':
+                    raise ContractError('当前候选 L3 计划须提交绑定的两个开发视图；官方阶段另记')
             self.queue.finish(task["task_id"], result={"draft": content, "original_request": original_request})
             return
         kind = TASKS[purpose]["output"]

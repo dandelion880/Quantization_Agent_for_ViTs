@@ -167,17 +167,27 @@ def gpu_bindings(gpus, settings=None):
 
 
 
-def approved_parallel_load(approval):
-    """Read an explicit literal capability without importing generated code."""
-    import ast
-    from core.journal import file_sha256
+def approved_parallel_load(approval, *, native_only=False):
+    """Inspect the approved source without running it."""
     if not approval or approval.get('status') != 'approved':
         return False
-    candidate = approval.get('candidate', {})
+    return parallel_candidate(approval.get('candidate', {}), native_only=native_only)
+
+
+def parallel_candidate(candidate, *, native_only=False):
+    import ast
+    from core.journal import file_sha256
     path = Path(candidate.get('path', ''))
     if not path.is_file() or file_sha256(path) != candidate.get('source_sha256'):
         raise ContractError('approved parallel executor source changed or missing')
     tree = ast.parse(path.read_text())
+    if native_only:
+        # A build_plan/refine_frozen plugin can use the tested native loader.
+        # A custom factory requires its own validated parallel loading path.
+        return not any((isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef, ast.ClassDef)) and node.name == 'make_executor')
+                       or (isinstance(node, ast.Name) and node.id == 'make_executor')
+                       or (isinstance(node, ast.alias) and (node.asname or node.name) == 'make_executor')
+                       for node in ast.walk(tree))
     declarations = []
     for node in tree.body:
         targets = node.targets if isinstance(node, ast.Assign) else [node.target] if isinstance(node, ast.AnnAssign) else []
@@ -196,7 +206,12 @@ def placement(experiment, settings, brief=None, *, approval=None):
             else list(dict.fromkeys(settings.get('allowed_gpus', [])))) if cuda else []
     from tools.result_contract import dual_task_fallback
     dual = cuda and dual_task_fallback(payload) is None
-    custom_serial = dual and spec.get('requires_code') and not approved_parallel_load(approval)
+    native_only = settings.get('native_dual_task_only', False)
+    package = spec.get('evaluation_package') or {}
+    bound_code = package.get('candidate')
+    custom_serial = dual and (
+        (spec.get('requires_code') and not approved_parallel_load(approval, native_only=native_only))
+        or (bound_code and not parallel_candidate(bound_code, native_only=native_only)))
     if custom_serial:
         dual = False
     requested = resources.get('gpu_count', 2 if dual else 1)
@@ -206,7 +221,8 @@ def placement(experiment, settings, brief=None, *, approval=None):
     if dual:
         fallback = None
     elif custom_serial:
-        fallback = 'approved custom code has no literal parallel_frozen_load=True declaration'
+        fallback = ('custom executor parallel frozen load not validated for this run' if native_only else
+                    'approved custom code has no literal parallel_frozen_load=True declaration')
     # An explicit gpu pins the primary; other authorized GPUs may supply shards.
     if (supported or dual) and requested > 1 and pool:
         pool += [g for g in settings.get('allowed_gpus', []) if g not in pool]
@@ -215,7 +231,7 @@ def placement(experiment, settings, brief=None, *, approval=None):
             'gpu_count': min(requested, 2) if dual else (min(requested, useful) if supported else 1),
             'pinned_gpu': resources.get('gpu') if cuda else None,
             'parallelism': {'requested_gpus': requested, 'classification_shards_supported': bool(supported),
-                            'dual_task_supported': dual,
+                            'dual_task_supported': dual, **({'native_dual_task_only': True} if native_only else {}),
                             'fallback': None if supported or dual else (fallback or 'CPU single-device execution')}}
 
 

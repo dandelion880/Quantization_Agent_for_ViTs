@@ -22,14 +22,58 @@ class FrozenData:
         raise ContractError('frozen load cannot read data or recalibrate')
 
 
-def bind_sources(journal, refs):
+def completed_package(payload, experiment):
+    """A diagnostic export alone cannot confer full-model W4A4 status."""
+    obs = payload['observations']
+    if (experiment['payload']['level'] != 'L3' or payload['measurement_source'] != 'real'
+            or experiment['payload']['execution']['resolved_choices'].get('training') is not False
+            or not obs.get('static_w4a4', {}).get('frozen') or not obs.get('reload', {}).get('host_verified')):
+        return {}
+    reference = next((a for a in payload['artifacts'] if Path(a['path']).name == 'segmentation.json'), None)
+    if not reference:
+        return {}
+    return {'verified_segmentation': reference, 'frozen_audit': obs['static_w4a4']}
+
+
+def reload_complete(binding, backend, cfg, data):
+    from ptq_agent.execution.evaluation import model_digest
+    ref = binding.get('verified_segmentation')
+    if not ref or file_sha256(ref['path']) != ref['sha256']:
+        raise ContractError('missing verified complete candidate measurement')
+    expected = read_json(ref['path'])['backbone_hashes']
+    model, receipt = load_frozen(binding, backend, cfg, data)
+    if [model_digest(backend.model), model_digest(model)] != expected:
+        raise ContractError('reloaded package differs from the original evaluated state')
+    return model, receipt['manifest']
+
+
+def original_package(payload, execution, journal):
+    """An evaluation has a new receipt but retains the exact originally prepared loader."""
+    binding = execution.get('evaluation_package')
+    if execution.get('service') != 'evaluate_artifact' or not binding:
+        return None
+    if payload['provenance'].get('model_ref') != binding.get('model_ref') or not binding.get('verified_segmentation'):
+        raise ContractError('evaluation evidence differs from its bound complete frozen package')
+    result = deepcopy(binding)
+    result['source_cache'] = str(journal.root / 'solution_library' / 'source' / result['source_version'])
+    _materialize_source(result)
+    return result
+
+
+def bind_sources(journal, refs, *, training_free_only=False):
     bindings = []
     for ref in refs:
         evidence = journal.card(ref)
         p = evidence['payload']
         if evidence['kind'] != 'EvidenceCard' or evidence['author'] != 'program' or p['status'] != 'completed':
             continue
-        if not p['observations'].get('reload', {}).get('host_verified'):
+        if training_free_only and p['provenance'].get('training_declared') is True:
+            continue  # The metrics remain citable; the trained state cannot supply final parameters.
+        verified = p['observations'].get('reload', {}).get('host_verified')
+        experiment = journal.card(p['experiment_ref'])
+        origin = original_package(p, experiment['payload']['execution'], journal) if verified else None
+        if origin:
+            bindings.append({**origin, 'evidence_ref':ref, 'measurement_origin':'frozen_package_reevaluation'})
             continue
         manifest = next((a for a in p['artifacts'] if Path(a['path']).name == 'manifest.json' and Path(a['path']).parent.name == 'model'), None)
         if not manifest:
@@ -41,13 +85,21 @@ def bind_sources(journal, refs):
             and e['task']['inputs'].get('experiment_ref') == p['experiment_ref']
             and ref in e['task']['outputs']), None)
         from core.solutions import SolutionLibrary
-        journal.card(p['experiment_ref'])  # Verify the committed card bytes before using its index.
+        experiment = journal.card(p['experiment_ref'])  # Verify committed bytes before using its index.
+        source = SolutionLibrary(journal, {}, shared=False).source_record(journal.cards[p['experiment_ref']]['sequence'])
+        if not verified:
+            # A real custom L1/L2 measurement can export a native diagnostic
+            # package. Bind only its exactly identified main package, and let
+            # the worker's existing native loader verify it before any use.
+            if not native_diagnostic_package(p, experiment, approval, source['source_version'], directory, assets):
+                continue
         # Evidence and solution IDs bind the same source era. A resumed host may
         # have changed even though this is still the same scientific run.
-        source = SolutionLibrary(journal, {}, shared=False).source_record(journal.cards[p['experiment_ref']]['sequence'])
         binding = {'evidence_ref': ref, 'experiment_ref': p['experiment_ref'],
             'model_ref': p['provenance']['model_ref'], 'model_dir': str(directory), 'assets': assets,
-            'candidate': deepcopy(approval['candidate']) if approval else None,
+            'candidate': deepcopy(approval['candidate']) if approval and verified else None,
+            **({'source_reload': 'native_loader_required'} if not verified else {}),
+            **completed_package(p, experiment),
             **deepcopy(source),
             'source_cache': str(journal.root / 'solution_library' / 'source' / source['source_version'])}
         _materialize_source(binding)
@@ -55,38 +107,82 @@ def bind_sources(journal, refs):
     return bindings
 
 
+def native_diagnostic_package(evidence, experiment, approval, origin_core, directory, assets):
+    payload = experiment['payload']
+    provenance = evidence['provenance']
+    if (payload['level'] not in ('L1', 'L2') or payload['execution']['service'] != 'custom_experiment'
+            or evidence['measurement_source'] != 'real' or provenance.get('training_declared') is not False
+            or not approval or approval.get('status') != 'approved'):
+        return False
+    from tools.safeguards import verify_artifact
+    if (approval.get('host_implementation_sha256') != origin_core
+            or approval.get('experiment_ref') != experiment['id']
+            or approval.get('experiment_sha256') != experiment['content_sha256']
+            or approval.get('approval_sha256') != fingerprint({k: v for k, v in approval.items() if k != 'approval_sha256'})):
+        raise ContractError('native diagnostic package does not match its historical execution approval')
+    verify_artifact(approval['candidate'], experiment)
+    files = {Path(row['path']).name: row['sha256'] for row in assets}
+    if (len(assets) != 2 or set(files) != {'manifest.json', 'weights.pt'}
+            or fingerprint(files) != provenance.get('model_ref')):
+        return False
+    if any(file_sha256(directory / name) != digest for name, digest in files.items()):
+        raise ContractError('native diagnostic package changed after its Evidence was committed')
+    manifest = read_json(directory / 'manifest.json')
+    return (manifest.get('schema_version') == 2 and manifest.get('plan', {}).get('schema_version') == 3
+            and manifest.get('identity') == provenance.get('model_identity')
+            and manifest.get('preparation_training') is not True
+            and manifest.get('weights_sha256') == files['weights.pt']
+            and manifest.get('content_sha256') == fingerprint({k: v for k, v in manifest.items() if k != 'content_sha256'}))
+
+
 def bind_solutions(journal, refs, brief):
     """Resolve only the run's committed protocol catalog, never an agent-supplied path."""
-    from core.solutions import SolutionLibrary, protocol_key
+    from core.solutions import SolutionLibrary, prepared_compatibility, protocol_key
     rows = {r['id']: r for r in SolutionLibrary(journal, brief).available()}
     bindings = []
     if not isinstance(refs, list) or any(not isinstance(r, str) for r in refs):
         raise ContractError('solution_refs must be a list of catalog solution IDs')
     for ref in dict.fromkeys(refs):
         row = rows.get(ref)
-        if not row or row.get('status') != 'evaluated' or row.get('protocol_hash') != protocol_key(brief):
+        if not row or row.get('status') not in ('evaluated','development_evaluated') or row.get('protocol_hash') != protocol_key(brief):
             raise ContractError('frozen solution must be an evaluated entry in this protocol catalog')
         origin = Path(row['run_dir'])
         evidence_path = origin / 'cards' / (hashlib.sha256(row['evidence_ref'].encode()).hexdigest() + '.json')
         evidence = read_json(evidence_path)
         validate_card(evidence)
         p = evidence['payload']
+        compatibility = row.get('protocol_compatibility')
+        source_brief = row['configuration'] if compatibility else brief
         if (evidence['id'] != row['evidence_ref'] or evidence['author'] != 'program'
                 or p['status'] != 'completed' or p['measurement_source'] != 'real'
                 or p['provenance'].get('model_ref') != ref
                 or p['experiment_ref'] != row['experiment_ref']
-                or p['provenance'].get('protocol_hash') != fingerprint(brief['evaluation_protocol'])
+                or p['provenance'].get('protocol_hash') != (row['execution']['protocol_hash'] if row.get('status') == 'development_evaluated' else fingerprint(source_brief['evaluation_protocol']))
                 or not p['observations'].get('reload', {}).get('host_verified')
                 or not p['observations'].get('reload', {}).get('passed')):
             raise ContractError('historical solution evidence identity or reload receipt mismatch')
         for task, metric in (('classification', 'top1'), ('segmentation', 'mIoU')):
             result = p['observations'].get('evaluations', {}).get(task, {})
-            if result.get('full_dataset') is not True or result.get('metrics', {}).get(metric) != row['metrics'].get(metric):
+            complete = (result.get('complete_view') and result.get('development_sha256') == row.get('view_sha256')
+                        if row.get('status') == 'development_evaluated' else result.get('full_dataset'))
+            if complete is not True or result.get('metrics', {}).get(metric) != row['metrics'].get(metric):
                 raise ContractError('historical complete-task scores do not match source evidence')
+        inherited = original_package(p, row['execution'], journal)
+        if inherited:
+            bindings.append({**inherited, 'evidence_ref': evidence['id'], 'solution_id': ref})
+            continue
         manifest = next((a for a in p['artifacts'] if Path(a['path']).name == 'manifest.json'
                          and Path(a['path']).parent.name == 'model'), None)
         if not manifest:
             raise ContractError('historical solution has no exported model package')
+        if compatibility:
+            from tools.experiment_worker import backend_configuration
+            if row.get('baseline_origin') != 'preparation' or file_sha256(manifest['path']) != manifest['sha256']:
+                raise ContractError('prepared baseline compatibility lacks its original manifest')
+            old_backend = read_json(manifest['path'])['identity']['config']
+            new_backend = backend_configuration({'backend': brief['model']['adapter']})['backend']
+            if compatibility != prepared_compatibility(source_brief, brief, old_backend, new_backend):
+                raise ContractError('prepared baseline compatibility receipt does not match the current task')
         directory = Path(manifest['path']).parent
         source_record = historical_source(row)
         source = source_record['source_snapshot']
@@ -97,7 +193,11 @@ def bind_solutions(journal, refs, brief):
                    'source_version': source_record['source_version'],
                    **{k: source_record[k] for k in ('source_archive_sha256',) if k in source_record},
                    'measurement_origin': row.get('baseline_origin', 'historical'),
+                   **({'protocol_compatibility': compatibility} if compatibility else {}),
                    'source_cache': str(journal.root / 'solution_library' / 'source' / source_record['source_version'])}
+        source_experiment = read_json(origin / 'cards' / (hashlib.sha256(p['experiment_ref'].encode()).hexdigest() + '.json'))
+        validate_card(source_experiment)
+        binding.update(completed_package(p, source_experiment))
         # Validate and freeze source before accepting a request; failures do not recalibrate.
         _materialize_source(binding)
         bindings.append(binding)
@@ -199,6 +299,17 @@ def _historical_runtime(binding, backend, cfg):
         identity.pop('agent_code_sha256', None)
         identity.pop('loader_sha256', None)
         identity.get('data', {}).pop('adapter_sha256', None)
+    compatibility = binding.get('protocol_compatibility')
+    if compatibility:
+        from core.solutions import CALIBRATION_BINDING_FIELDS
+        for identity, side in ((expected, 'source'), (host, 'target')):
+            config = identity['config']
+            if (config.pop('research_protocol_sha256', None) != compatibility[side + '_protocol_hash']
+                    or config['calibration_samples'] != compatibility[side + '_calibration_samples']
+                    or identity['data'].pop('manifest_sha256') != compatibility[side + '_data_sha256']):
+                raise ContractError('prepared baseline reload does not match the bound source and target protocols')
+            for key in CALIBRATION_BINDING_FIELDS:
+                config.pop(key)
     if expected != host or historical.original_state != backend.original_state:
         raise ContractError('historical package model/data identity does not match current task')
     config = deepcopy(manifest.get('runtime_config', cfg))
@@ -252,12 +363,15 @@ def load_frozen(binding, backend, cfg, data):
         manifest_identity = read_json(Path(binding['model_dir']) / 'manifest.json')['identity']
         current_identity = backend.identity()
         numerical_hash = manifest_identity.get('agent_code_sha256')
-        if not numerical_hash or numerical_hash != current_identity.get('agent_code_sha256'):
+        if binding.get('protocol_compatibility') or not numerical_hash or numerical_hash != current_identity.get('agent_code_sha256'):
             namespace, loading_backend, loading_cfg, factory = _historical_runtime(binding, backend, cfg)
     if candidate:
         module = _candidate_module(candidate, namespace)
         factory = getattr(module, 'make_executor', factory)
 
+    if binding.get('protocol_compatibility'):
+        from ptq_agent.execution.evaluation import VerifiedManifestData
+        data = VerifiedManifestData(loading_backend, loading_cfg)
     executor = factory(loading_backend, deepcopy(loading_cfg), FrozenData(data))
     model, manifest = executor.load(Path(binding['model_dir']))
     verify()
@@ -266,4 +380,6 @@ def load_frozen(binding, backend, cfg, data):
     return model, {'evidence_ref': binding['evidence_ref'], 'model_ref': binding['model_ref'],
                    'loaded_without_prepare': True, 'manifest': manifest,
                    'solution_id': binding.get('solution_id'), 'source_version': binding.get('source_version'),
+                   **({'source_reload': binding['source_reload']} if 'source_reload' in binding else {}),
+                   **({'protocol_compatibility': binding['protocol_compatibility']} if binding.get('protocol_compatibility') else {}),
                    'measurement_origin': binding.get('measurement_origin', 'current_run'), 'new_measurement': False}

@@ -70,7 +70,7 @@ def executable(config):
     raise fail("not_configured", "未找到官方 Codex CLI；请设置 llm.codex.cli_path")
 
 
-def policy(directory):
+def policy(directory, *, native=False):
     values = {
         "model_provider": '"openai"', "forced_login_method": '"chatgpt"',
         "approval_policy": '"never"', "sandbox_mode": '"read-only"',
@@ -85,21 +85,32 @@ def policy(directory):
         "model_post_turn_compact_threshold_percent": "0",
         "log_dir": json.dumps(str(directory / "cli_logs")),
     }
+    if native:
+        from runtime.coding_native import NATIVE_FEATURES
+        values.pop('sandbox_mode')
     args = [part for k, v in values.items() for part in ("-c", f"{k}={v}")]
     for name in DISABLED_FEATURES:
-        args += ["--disable", name]
+        args += ["--enable" if native and name in NATIVE_FEATURES else "--disable", name]
     return args + ["--enable", "skip_host_skill_discovery"]
 
 
 def terminate(process):
     """取消整个本次 CLI 进程组，避免超时后残留子进程继续生成。"""
-    if process.poll() is None:
+    try:
         os.killpg(process.pid, signal.SIGTERM)
-        try:
-            process.wait(timeout=3)
-        except subprocess.TimeoutExpired:
-            os.killpg(process.pid, signal.SIGKILL)
-            process.wait(timeout=3)
+    except ProcessLookupError:
+        process.wait()
+        return
+    try:
+        process.wait(timeout=3)
+    except subprocess.TimeoutExpired:
+        pass
+    # A finished group leader may leave a tool process behind.
+    try:
+        os.killpg(process.pid, signal.SIGKILL)
+    except ProcessLookupError:
+        pass
+    process.wait(timeout=3)
 
 
 def parent_guard(parent):
@@ -121,11 +132,11 @@ def register_process(process):
         atomic_json(Path(directory) / ("cli-" + str(process.pid) + ".json"), process_identity(process.pid))
 
 
-def run(command, directory, timeout, prompt=None):
+def run(command, directory, timeout, prompt=None, *, event_path=None):
     """stdout/stderr 落临时文件，不把 CLI 日志或潜在凭据直接输出到用户终端。"""
     if timeout <= 0:
         raise fail("timeout", "Codex 调用已超过截止时间")
-    with tempfile.TemporaryFile() as out, tempfile.TemporaryFile() as err:
+    with (event_path.open("w+b") if event_path else tempfile.TemporaryFile()) as out, tempfile.TemporaryFile() as err:
         process = subprocess.Popen(command, cwd=directory, env=environment(),
                                    stdin=subprocess.PIPE, stdout=out, stderr=err,
                                    start_new_session=True, preexec_fn=parent_guard(os.getpid()))

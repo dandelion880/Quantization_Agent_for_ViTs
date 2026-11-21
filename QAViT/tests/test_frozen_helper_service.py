@@ -45,6 +45,7 @@ class FrozenHelperService(TempCase):
         request = self.request('profile_frozen_propagation', {'blocks': ['blocks.0', 'blocks.1'],
             'split': 'search', 'count': None, 'offset': 1,
             'interventions': [{'id': 'fp0', 'kind': 'fp_block', 'block': 'blocks.0'}]})
+        request['payload']['execution']['research_quantization_contract'] = {'protocol': 'static_w4a4/1'}
         model, receipt = load_frozen(self.binding, self.backend, self.cfg, self.data)
         spec = request['payload']['execution']
         before = file_sha256(self.package / 'weights.pt')

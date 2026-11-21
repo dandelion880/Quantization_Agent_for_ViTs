@@ -72,7 +72,9 @@ def run_managed(workflow, *, started_unix, readiness=None):
                     current = workflow.budget.snapshot()
                     if workflow.budget.excludes_numeric:
                         stop_at = current['deadline_unix'] - current['config'].get('shutdown_reserve_seconds', 0) / 2
-                    if time.time() >= stop_at and not workflow.numeric_running():
+                    hard = current['config'].get('absolute_deadline_unix')
+                    hard_stop = hard is not None and time.time() >= hard - current['config'].get('shutdown_reserve_seconds', 0) / 2
+                    if hard_stop or (time.time() >= stop_at and not workflow.numeric_running()):
                         workflow.runtime.stop_identity(identity)
                         break
                     try:

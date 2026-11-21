@@ -15,6 +15,54 @@ def protocol_key(brief):
     return fingerprint({k: brief.get(k) for k in ('model', 'evaluation_protocol', 'quantization_contract', 'hard_constraints')})
 
 
+CALIBRATION_BINDING_FIELDS = ('calibration_samples', 'data_path', 'data_sha256')
+
+
+def prepared_compatibility(source, target, old_backend, new_backend):
+    """Verify the narrow opt-in migration for a measured, frozen native baseline."""
+    from tools.experiments import bind_backend
+    from ptq_agent.backends.image_data import ImageManifest
+
+    def comparable(brief, backend):
+        model = deepcopy(brief['model'])
+        binding = model.pop('binding')
+        adapter = model['adapter']
+        bound = bind_backend(adapter, segmentation=binding['segmentation'])
+        if fingerprint(bound) != binding['sha256']:
+            raise ContractError('prepared baseline comparison has a changed model binding')
+        for key in CALIBRATION_BINDING_FIELDS:
+            adapter.get('backend_overrides', {}).pop(key, None)
+        if not adapter.get('backend_overrides'):
+            adapter.pop('backend_overrides', None)
+        model['fixed_assets'] = [a for a in bound['checkpoint_assets'] if a['path'] != backend['data_path']]
+        model['segmentation_assets'] = bound.get('segmentation_assets')
+        evaluation = deepcopy(brief['evaluation_protocol'])
+        if evaluation.pop('calibration_samples') != backend['calibration_samples'] or evaluation.get('final_training') is not False:
+            raise ContractError('prepared baseline requires declared calibration counts and training-free final evaluation')
+        hard = deepcopy(brief['hard_constraints'])
+        hard.pop('training_allowed', None)
+        return model, evaluation, hard, brief.get('quantization_contract')
+
+    if comparable(source, old_backend) != comparable(target, new_backend):
+        raise ContractError('prepared baseline model, quantization or final evaluation changed')
+    ignored = {*CALIBRATION_BINDING_FIELDS, 'device', 'research_protocol_sha256'}
+    if {k: v for k, v in old_backend.items() if k not in ignored} != {k: v for k, v in new_backend.items() if k not in ignored}:
+        raise ContractError('prepared baseline backend changed outside calibration or device placement')
+    old = ImageManifest(Path(old_backend['data_path']), old_backend['data_sha256'])
+    new = ImageManifest(Path(new_backend['data_path']), new_backend['data_sha256'])
+    count = old_backend['calibration_samples']
+    if (not old.full_validation or not new.full_validation or old.class_to_idx != new.class_to_idx
+            or old.PREPROCESS != new.PREPROCESS or old.split_sources != new.split_sources
+            or any(old.splits[s] != new.splits[s] for s in ('search', 'final'))
+            or len(old.splits['calibration']) != count or len(new.splits['calibration']) != new_backend['calibration_samples']
+            or new.splits['calibration'][:count] != old.splits['calibration']):
+        raise ContractError('prepared baseline requires an extension preserving calibration prefix and exact search/final views')
+    return {'kind': 'prepared_calibration_extension', 'source_protocol_hash': protocol_key(source),
+            'target_protocol_hash': protocol_key(target), 'source_calibration_samples': count,
+            'target_calibration_samples': new_backend['calibration_samples'],
+            'source_data_sha256': old_backend['data_sha256'], 'target_data_sha256': new_backend['data_sha256']}
+
+
 def rank(rows):
     def key(row):
         m = row['metrics']
@@ -68,6 +116,9 @@ class SolutionLibrary:
         with file_lock(self.root / 'library.lock', timeout=10):
             archived = [read_json(p) for p in sorted((self.root / 'archive').glob('*.json'))]
             archived = [r for r in archived if r.get('protocol_hash') == self.key]
+            view = self.brief.get('execution_guidance', {}).get('development', {}).get('manifest', {})
+            view_directory = self.root / 'development' / fingerprint(view.get('sha256'))
+            prior_views = [read_json(path) for path in sorted(view_directory.glob('*.json'))] if view else []
             path = self.root / 'top3.json'
             if path.exists():
                 entries = self._bound_entries(path)
@@ -75,7 +126,9 @@ class SolutionLibrary:
                 atomic_json(path, {'protocol_hash': self.key, 'entries': entries})
         self.journal.commit('solutions/initialize', events=[{'type': 'solution_library', 'entries': entries,
             'protocol_hash': self.key, 'reason': 'mature seeds; pending scores are not empirical rankings'},
-            {'type': 'solution_archive', 'entries': archived, 'protocol_hash': self.key}])
+            {'type': 'solution_archive', 'entries': archived, 'protocol_hash': self.key},
+            *[{'type':'solution_development', 'entry':row} for row in prior_views
+              if row.get('protocol_hash') == self.key and row.get('view_sha256') == view.get('sha256')]])
         self.materialize()
 
     def seeds(self):
@@ -108,6 +161,18 @@ class SolutionLibrary:
                 historical[event['entry']['id']] = event['entry']
         known = {r['id'] for r in rows}
         rows += [deepcopy(r) for k, r in historical.items() if k not in known]
+        development = {}
+        for event in self.journal.events:
+            if event['type'] == 'solution_development' and (sequence is None or event['commit_sequence'] <= sequence):
+                entry = event['entry']
+                development.setdefault(entry['id'], {})[entry['view_sha256']] = entry
+        for ref, views in development.items():
+            existing = next((row for row in rows if row['id'] == ref), None)
+            if existing is None:
+                existing = deepcopy(list(views.values())[-1])
+                rows.append(existing)
+            existing['development'] = {key: {k: row[k] for k in ('metrics','reference_metrics','evidence_ref','experiment_ref')}
+                                       for key, row in views.items()}
         known = {r['id'] for r in rows}
         return rows + [r for r in self.seeds() if r['id'] not in known]
 
@@ -132,6 +197,14 @@ class SolutionLibrary:
                 'policy': 'Retain B while exploring H1/H2/H3; historical scores are not current measurements.'}
 
     def materialize(self):
+        for event in self.journal.events:
+            if event['type'] != 'solution_development':
+                continue
+            row = event['entry']
+            if row.get('run_dir') == str(self.journal.root):
+                target = self.root / 'development' / fingerprint(row['view_sha256']) / (fingerprint(row['evidence_ref']) + '.json')
+                if not target.exists():
+                    atomic_json(target, row)
         for row in self.available():
             target = self.journal.root / 'solution_library' / (fingerprint(row['id']) + '.json')
             body = deepcopy(row)
@@ -159,10 +232,10 @@ class SolutionLibrary:
 
     def catalog(self, sequence=None):
         active = {r['id'] for r in self.snapshot(sequence)}
-        return [{**{k: v for k, v in row.items() if k in ('id', 'title', 'status', 'metrics', 'reference_metrics', 'evidence_ref', 'hypothesis_ref')},
-                 'retention': 'top3' if row['id'] in active else ('archive' if row.get('status') == 'evaluated' else 'seed'),
+        return [{**{k: v for k, v in row.items() if k in ('id', 'title', 'status', 'metrics', 'reference_metrics', 'development', 'evidence_ref', 'hypothesis_ref')},
+                 'retention': 'top3' if row['id'] in active else ('archive' if row.get('status') in ('evaluated','development_evaluated') else 'seed'),
                  'configuration_asset': str(self.journal.root / 'solution_library' / (fingerprint(row['id']) + '.json')),
-                 'measurement_origin': (row.get('baseline_origin') or ('current_run' if row.get('run_dir') == str(self.journal.root) else 'historical')) if row.get('status') == 'evaluated' else 'unmeasured_seed',
+                 'measurement_origin': (row.get('baseline_origin') or ('current_run' if row.get('run_dir') == str(self.journal.root) else 'historical')) if row.get('status') in ('evaluated','development_evaluated') else 'unmeasured_seed',
                  'new_measurement': False}
                 for row in self.available(sequence)]
 
@@ -195,13 +268,16 @@ class SolutionLibrary:
     def import_prepared(self, reference):
         """Accept a measured native baseline from an explicit, round-free preparation run."""
         from core.workflow import Workflow
-        if not isinstance(reference, dict) or set(reference) != {'run_dir', 'evidence_ref'}:
+        if (not isinstance(reference, dict) or not {'run_dir', 'evidence_ref'} <= set(reference)
+                or set(reference) - {'run_dir', 'evidence_ref', 'compatibility'}
+                or ('compatibility' in reference and reference['compatibility'] != 'prepared_calibration_extension')):
             raise ContractError('prepared_baseline requires run_dir and evidence_ref')
         key = 'solutions/prepared/' + fingerprint(reference)
         if any(e['type'] == 'prepared_baseline_imported' and e['reference'] == reference for e in self.journal.events):
             return
         origin = Workflow((ROOT / reference['run_dir']).resolve(), read_only=True)
-        if (origin.config['purpose'] != 'baseline_measurement' or origin.solutions.key != self.key
+        if (origin.config['purpose'] != 'baseline_measurement'
+                or (origin.solutions.key != self.key and not reference.get('compatibility'))
                 or self.brief['evaluation_protocol'].get('formal_incumbent_allowed') is False):
             raise ContractError('baseline preparation source or frozen protocol mismatch')
         evidence = origin.journal.card(reference['evidence_ref'])
@@ -212,7 +288,7 @@ class SolutionLibrary:
                 or experiment['payload'].get('candidate_binding') or p['measurement_source'] != 'real'
                 or execution['service'] != 'quantize_evaluate' or execution.get('requires_code') or not execution.get('plan')
                 or execution['resolved_choices']['training'] is not False
-                or execution.get('research_protocol_sha256') != self.key):
+                or execution.get('research_protocol_sha256') != origin.solutions.key):
             raise ContractError('prepared baseline needs a complete independently rebuildable native measurement')
         origin.broker.validate_evidence_for(experiment, evidence)
         reload = p['observations'].get('reload', {})
@@ -225,6 +301,14 @@ class SolutionLibrary:
                                   and Path(a['path']).parent.name == 'model'))
         if manifest.get('preparation_training') is not False or p['provenance'].get('training_declared') is not False:
             raise ContractError('prepared baseline has no verified training-free reconstruction')
+        compatibility = None
+        if origin.solutions.key != self.key:
+            from tools.experiment_worker import backend_configuration
+            target = backend_configuration({'backend': self.brief['model']['adapter']})['backend']
+            compatibility = prepared_compatibility(origin.brief['payload'], self.brief,
+                                                    manifest['identity']['config'], target)
+            if len(manifest['calibration_ids']) != compatibility['source_calibration_samples']:
+                raise ContractError('prepared baseline bundle calibration count disagrees with its origin')
         results = p['observations']['evaluations']
         entry = {'id': p['provenance']['model_ref'], 'title': origin.config['name'], 'status': 'evaluated',
             'baseline_origin': 'preparation', 'protocol_hash': self.key, 'metrics': self._complete_metrics(p),
@@ -233,6 +317,7 @@ class SolutionLibrary:
             'configuration': deepcopy(origin.brief['payload']), 'execution': execution,
             'actual_quantization': p['observations']['coverage'], 'artifacts': p['artifacts'],
             'evidence_ref': evidence['id'], 'experiment_ref': experiment['id'], 'run_dir': str(origin.run_dir),
+            **({'protocol_compatibility': compatibility} if compatibility else {}),
             **origin.solutions.source_record(origin.journal.cards[experiment['id']]['sequence'])}
         current = self._retain(entry)
         self.journal.commit(key, events=[{'type': 'prepared_baseline_imported', 'reference': reference},
@@ -248,28 +333,37 @@ class SolutionLibrary:
         p = evidence['payload']
         try:
             validator(experiment, evidence, code_artifact=p["provenance"].get("code_artifact"))
+            dev = experiment['payload']['execution'].get('result_protocol', {}).get('purpose') == 'development'
             if (p['measurement_source'] != 'real' or p['status'] != 'completed' or experiment['payload']['level'] != 'L3'
-                    or self.brief['evaluation_protocol'].get('formal_incumbent_allowed') is False):
+                    or (not dev and self.brief['evaluation_protocol'].get('formal_incumbent_allowed') is False)):
                 raise ContractError('not a valid real final evaluation')
-            metrics = self._complete_metrics(p)
+            if dev:
+                evaluations = p['observations']['evaluations']
+                metrics = {key: evaluations[name]['metrics'][key] for name,key in
+                           (('classification','top1'), ('segmentation','mIoU'))}
+            else:
+                metrics = self._complete_metrics(p)
             binding = experiment['payload'].get('candidate_binding', {})
-            hypothesis_ref = binding.get('hypothesis_ref', selection['payload'].get('selected_hypothesis_ref'))
-            candidates = selection['payload'].get('candidate_refs', {})
+            if selection is None and not dev:
+                raise ContractError('official solution requires a frozen selection')
+            selection_payload = selection['payload'] if selection else {}
+            hypothesis_ref = binding.get('hypothesis_ref', selection_payload.get('selected_hypothesis_ref'))
+            candidates = selection_payload.get('candidate_refs', {})
             slot = next((slot for slot, ref in candidates.items() if ref == hypothesis_ref), None)
-            historical_unbound = (not binding and selection['payload'].get('selection_stage') == 'gonly_preselection'
+            historical_unbound = (not binding and selection_payload.get('selection_stage') == 'gonly_preselection'
                                   and slot == selection['payload'].get('selected_slot')
                                   and hypothesis_ref == selection['payload'].get('selected_hypothesis_ref'))
             if candidates and not historical_unbound and (slot is None or binding.get('selection_ref') != selection['id']):
                 raise ContractError('L3 evidence does not bind an exact synthesized candidate')
-            slot = slot or selection['payload'].get('selected_slot')
-            if not slot or not hypothesis_ref:
+            slot = slot or selection_payload.get('selected_slot') or binding.get('slot')
+            if not dev and (not slot or not hypothesis_ref):
                 raise ContractError('L3 candidate identity missing')
-            candidate = {'id': p['provenance']['model_ref'], 'title': slot + ' round ' + str(number),
+            candidate = {'id': p['provenance']['model_ref'], 'title': (slot or 'Development') + (' round ' + str(number) if number is not None else ''),
                 'status': 'evaluated', 'metrics': metrics, 'protocol_hash': self.key,
                 'configuration': deepcopy(self.brief), 'execution': deepcopy(experiment['payload']['execution']),
                 'actual_quantization': deepcopy(p['observations'].get('coverage', {})),
                 'evidence_ref': evidence['id'], 'experiment_ref': experiment['id'], 'run_dir': str(self.journal.root),
-                'selection_ref': selection['id'], 'hypothesis_ref': hypothesis_ref, 'slot': slot,
+                'selection_ref': selection['id'] if selection else binding.get('selection_ref'), 'hypothesis_ref': hypothesis_ref, 'slot': slot,
                 **{k:v for k,v in (self.journal.card(hypothesis_ref)['payload'] if hypothesis_ref in self.journal.cards else {}).items()
                    if k in ('topic_ref','method_id','inspiration_id')},
                 **self.source_record(self.journal.cards.get(experiment['id'], {}).get('sequence')),
@@ -280,6 +374,15 @@ class SolutionLibrary:
                     approval = task['task']['inputs'].get('approval')
                     if approval:
                         candidate['code'] = deepcopy(approval['candidate'])
+            if dev:
+                candidate.update(status='development_evaluated', view_sha256=evaluations['classification']['development_sha256'],
+                    reference_metrics={key: evaluations[name]['metrics']['baseline_' + key] for name,key in
+                                       (('classification','top1'), ('segmentation','mIoU'))})
+                self.journal.commit(event_key, events=[{'type':'solution_development','entry':candidate},
+                    {'type':'solution_considered','round':number,'selected':False,'evidence_ref':evidence['id'],
+                     'purpose':'development'}])
+                self.materialize()
+                return
             current = self._retain(candidate)
             events = [{'type': 'solution_library', 'entries': current, 'protocol_hash': self.key},
                       {'type': 'solution_considered', 'round': number, 'evidence_ref': evidence['id'],

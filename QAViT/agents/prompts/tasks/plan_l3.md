@@ -6,7 +6,7 @@ L3 不以某项 L2 性能达标为前提。根据当前实际预算、资源与�
 
 使用 context.data_receipt 核对可用数据池、split、样本范围、身份摘要及来源；可用池大小不等于本实验选定数量，未知项不能猜测。依据 context.budget_receipt 的 clock_mode、exclude_numeric_wait 和 meaning 解释余额：启用 exclude_numeric_wait 时，纯数值执行、等待资源和结果不消耗智能体时间，不要求数值耗时小于 research_remaining_seconds；期间重叠的推理、Coding、审核仍计时且不重复扣除。remaining_seconds/available_seconds 是该模式的智能体余额，research_remaining_seconds 已扣复盘/停机预留；暂停恢复保留已消费预算。历史显式模式沿用回执所述口径。不得仅因数值预计耗时超过智能体余额推迟 L3 或缩减协议。
 
-按 ResearchBrief.evaluation_protocol 明确的任务、数据范围和完成条件制定计划；有 evaluations 时保持其 kind、split、count 等明确要求，不自动增加分类、分割或完整数据评测。协议允许的子集 L3 只支持其实际范围；协议要求完整评测时，不能因时间不足缩减后仍称完成。记录规定量化覆盖与例外、模型导出及重载身份、数据视图和指标口径；已有合格冻结模型包可按协议复用。小样本搜索、单点回放和历史指标不能冒充协议尚未完成的评测。
+按当前阶段绑定的协议制定计划，开发阶段取 execution_guidance.development，官方阶段取 ResearchBrief.evaluation_protocol；有 evaluations 时保持其 kind、split、count 等明确要求，不自动增加分类、分割或完整数据评测。协议允许的子集 L3 只支持其实际范围；协议要求完整评测时，不能因时间不足缩减后仍称完成。记录规定量化覆盖与例外、模型导出及重载身份、数据视图和指标口径；已有合格冻结模型包可按协议复用。小样本搜索、单点回放和历史指标不能冒充协议尚未完成的评测。
 
 按 payload_contract.schema_location 指向的同一实验草案 Schema 提交，level=L3。常规执行参数已经在 context.experiment_interface；明确研究问题、所需测量和科学约束；有明确预测及决策影响时再提供。宿主生成固定字段与执行镜像。已有方法直接给 plan，已有模型包用 evaluate_artifact；真正新增能力才经 Coding 交付单份实现，程序补齐执行记录并交 Safeguard 对照原始需求审查。无需提交内部变量名、固定输出树或测试夹具。
 
@@ -18,3 +18,5 @@ L3 不以某项 L2 性能达标为前提。根据当前实际预算、资源与�
 有效 Evidence 保存并通过规定数值协议后即返回；不会为返回实验结果另行强制调用 interpret。已有原研究步骤和轮末 Recorder 负责解释；解释或复盘失败不撤销已成立的数值验证。
 
 资源由宿主调度：优先每个候选一张 GPU 完成校准、冻结和双任务，候选需求满足后余卡用于已有支持的候选内部双任务并行；卡少正常排队。Coding 保持串行；协议指定双任务冻结迁移时，两项评测使用同一冻结模型。
+
+若 execution_guidance.development 已绑定，三个完成候选分别提交该配置的完整双任务开发视图，沿用任务头与几何，冻结后评价。Generation 可以在综合前对中间完整候选取同一开发证据。开发视图的 FP 保持率与官方阶段分别记载。官方阶段只评价事先冻结的方法和必要对照。

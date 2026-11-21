@@ -362,9 +362,10 @@ def evidence_facts(card, root=None):
             numeric = type(q) in (int, float) and type(fp) in (int, float)
             pairs[metric] = {'FP': fp, 'Q': q, 'unit': 'percent',
                 'delta_Q_minus_FP': q - fp if numeric else None, 'delta_unit': 'percentage_points',
+                'retention_percent': 100*q/fp if numeric and fp else None,
                 'pair_status': 'paired' if numeric else 'missing_FP_or_Q'}
         result['evaluations'][name] = {**{k: deepcopy(row[k]) for k in
-            ('split', 'sample_count', 'full_dataset', 'metric_units', 'status', 'error') if k in row},
+            ('split', 'sample_count', 'full_dataset', 'complete_view', 'purpose', 'development_sha256', 'metric_units', 'status', 'error') if k in row},
             'sample_ids': sample_list_view(row['sample_ids'], ref, field + '/sample_ids') if 'sample_ids' in row else None,
             'metrics': metrics, 'paired_metrics': pairs, 'source': sources,
             **({'legacy_paired_source': legacy_source} if legacy_source else {})}

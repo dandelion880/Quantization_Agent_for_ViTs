@@ -133,7 +133,7 @@ class Workflow(RoleInteraction, ExperimentRequests, WorkflowDriver):
                      if set(t["outputs"]).intersection(refs)]
         # 同场 A/B、仲裁仍各自调用并串行领取；独立配对不共享订阅互斥锁。
         resources = ([f"llm:judger:{context['round']}:" + "-".join(context['pair'])]
-                     if role == "judger" and context.get("pair") else ["llm:subscription"])
+                     if role == "judger" and context.get("pair") else (["llm:coding"] if role == "coding" else []))
         return self.queue.enqueue(key, "llm", role=role, inputs={"purpose": purpose, "refs": list(dict.fromkeys(refs)),
                                   "context": context, **({"parent_task": parent_task} if parent_task else {})}, depends_on=list(dict.fromkeys([*depends, *producers])), resource_keys=resources,
                                   max_retries=self.config["llm"].get("max_transport_retries", 2))

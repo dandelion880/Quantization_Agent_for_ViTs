@@ -122,4 +122,16 @@ def data_receipt(brief, execution=None, *, evidence=()):
                 result["unknowns"].append("ADE20K 图像/标注目录缺失或不成对，可用范围未知。")
         except (OSError, ValueError, KeyError, TypeError) as exc:
             result["unknowns"].append("ADE 配置读取失败，可用范围未知：" + str(exc))
+    development = brief.get('execution_guidance', {}).get('development')
+    if development:
+        from tools.development import read_view
+        try:
+            view = read_view(development['manifest'])
+            result['development'] = {'purpose':'development','evaluator_only':True,
+                'manifest_sha256':development['manifest']['sha256'],
+                'available_samples':{k:len(view[k]) for k in ('classification','ade_frozen')},
+                'source_splits':{'classification':'train','ade_frozen':'training'},
+                'ade_labels':view.get('ade_labels'), 'ade_head_overlap':view.get('ade_head_overlap')}
+        except (OSError,ValueError,KeyError,TypeError) as exc:
+            result['unknowns'].append('开发视图清单未确认：'+str(exc))
     return result

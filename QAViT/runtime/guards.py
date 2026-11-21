@@ -75,3 +75,40 @@ def protect_files(directory, *, cuda_device_nodes=()):
     return {"mechanism": "Linux Landlock", "abi": abi, "write_roots": [str(p) for p in roots],
             'cuda_device_nodes': [str(p) for p in devices if p.exists()]}
 
+
+
+def with_preparation_reads(run, paths):
+    """Limit filesystem reads in the candidate thread. The caller retains evaluator access."""
+    import ctypes
+    from concurrent.futures import ThreadPoolExecutor
+    from ctypes import c_int, c_uint64
+
+    def restricted():
+        libc = ctypes.CDLL(None, use_errno=True)
+        read_file, read_dir = 1 << 2, 1 << 3
+        rights = c_uint64(read_file | read_dir)
+        fd = libc.syscall(444, ctypes.byref(rights), ctypes.sizeof(rights), 0)
+        if fd < 0:
+            raise OSError(ctypes.get_errno(), 'Landlock preparation ruleset')
+
+        class PathRule(ctypes.Structure):
+            _pack_ = 1
+            _fields_ = [('access', c_uint64), ('parent', c_int)]
+
+        try:
+            for path in {Path(p).resolve() for p in paths}:
+                entry = os.open(path, os.O_PATH | os.O_CLOEXEC)
+                try:
+                    rule = PathRule(read_file | read_dir if path.is_dir() else read_file, entry)
+                    if libc.syscall(445, fd, 1, ctypes.byref(rule), 0):
+                        raise OSError(ctypes.get_errno(), 'Landlock preparation path', str(path))
+                finally:
+                    os.close(entry)
+            if libc.prctl(38, 1, 0, 0, 0) or libc.syscall(446, fd, 0):
+                raise OSError(ctypes.get_errno(), 'Landlock preparation boundary')
+        finally:
+            os.close(fd)
+        return run()
+
+    with ThreadPoolExecutor(max_workers=1) as executor:
+        return executor.submit(restricted).result()

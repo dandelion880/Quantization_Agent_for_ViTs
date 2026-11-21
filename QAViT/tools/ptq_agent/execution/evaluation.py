@@ -148,7 +148,7 @@ class Evaluator:
                 handle.remove()
 
     def _evaluate(self, model, plan, split, *, native, observed=None):
-        require(split in ("search", "final"), "评价分区无效")
+        require(split in ("search", "final", "dev"), "评价分区无效")
         before = model_digest(model)
         baseline_before = model_digest(self.backend.model)
         for m in model.modules():

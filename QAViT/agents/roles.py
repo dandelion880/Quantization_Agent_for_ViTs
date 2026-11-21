@@ -76,14 +76,16 @@ TOOLS = {t["name"]: t for t in [
             "properties": {**{k: TEXT for k in ('site', 'token_type', 'metric', 'text')},
                            "minimum": {"type": "number"}, "maximum": {"type": "number"}}},
         "offset": {"type": "integer", "minimum": 0}, "limit": {"type": "integer", "minimum": 1, "maximum": 12000}}, ["ref"])),
+    tool("edit_source", "在当前 Coding 任务保存一次精确替换，返回宿主计算的 revision。初稿 old 为空；base 可绑定已有 revision，或和 asset 一起指定授权 Python 源。", object_schema(
+        {"asset": TEXT, "base": TEXT, "old": {"type":"string"}, "new": {"type":"string"}}, ["old","new"])),
     tool("read_asset", (
         "按已授权来源读取 UTF-8 文本；offset/limit 是字符数，单页最多12000。"
         "返回 text、sha256、total_characters、next_offset；按需继续分页核实具体论据。"
-        "只允许本调用快照中卡片/工具/任务明确关联的资产及项目接口资料，不能遍历运行日志绕过权限。"
+        "find 定位字面串，symbol 定位 Python 函数或类，offset 指定查找起点。只允许本调用快照中卡片/工具/任务明确关联的资产及项目接口资料，不能遍历运行日志绕过权限。"
         "恢复宿主原件时，asset 使用 source_snapshot.path 并提供 snapshot_field=source_snapshot.field；"
         "省略 member 返回可读成员目录，指定 member 返回该成员的原始字节文本及归档身份。完整快照不直接授权。"
     ), object_schema({"asset": TEXT, "offset": {"type": "integer", "minimum": 0},
-                       'snapshot_field': TEXT, 'member': TEXT,
+                       'snapshot_field': TEXT, 'member': TEXT, 'find': TEXT, 'symbol': TEXT,
                        "limit": {"type": "integer", "minimum": 1, "maximum": 12000}}, ["asset"])),
     tool("literature_search", (
         "按 query 检索 Crossref 公开文献元数据，返回至多 5 条标题、DOI、URL 和可用链接。"
@@ -127,8 +129,10 @@ def submission_schema(purpose):
     if purpose == 'plan_l3':
         return {'anyOf': [deepcopy(EXPERIMENT_SUBMISSION_SCHEMA), object_schema({'defer_reason': TEXT}, ['defer_reason'])]}
     if purpose == 'code':
-        return object_schema({'interface': {'enum': ['quantizer_v1', 'executor_v1', 'experiment_v1']},
-                              'source': TEXT, 'explanation': TEXT, 'execution_choices': OBJECT}, ['source'])
+        schema = object_schema({'interface': {'enum': ['quantizer_v1', 'executor_v1', 'experiment_v1']},
+                              'source': TEXT, 'revision': TEXT, 'explanation': TEXT, 'execution_choices': OBJECT}, [])
+        schema['oneOf'] = [{'required': ['source']}, {'required': ['revision']}]
+        return schema
     contract = deepcopy(PAYLOAD_SCHEMAS.get(TASKS[purpose]['output']))
     if contract is None:
         return None

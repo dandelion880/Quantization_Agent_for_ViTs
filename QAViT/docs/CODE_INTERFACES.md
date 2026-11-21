@@ -71,3 +71,11 @@ Recorder 的 `B_transition.before_l3` 从所引用综合任务（兼容历史预
 获准研究参考优化与最终 training-free 的已有字段、产物边界和真实工具限制见 [科研 Skill 兼容说明](SCIENTIFIC_SKILLS_COMPATIBILITY.md)。STE 需现有 custom 实现；全程禁训合同不会被研究用途或 Skill 覆盖。
 
 在完整分割评测中，宿主可绑定已验证方案的 FP 混淆矩阵。数据字节及顺序、模型和头、推理实现、运行环境和协议均一致时可复用 FP；源文件及其校验和写入测量，第一张图的特征核验与量化模型的全量运行照常执行。
+
+### 文件交付与开发评价
+
+Coding 可用 edit_source 从授权的 Python 父版本精确替换一段，后续编辑引用上次返回的 base，最终提交 revision。宿主读取该任务的完整文件并按原规则计算不可变实现身份。保留直接提交 source。read_asset 支持 find 和 symbol 定位后分页。开发视图仅由 evaluator 在冻结包重载后构造，拟合使用选定的 calibration 视图。
+
+新任务可显式配置 llm.coding_native_tools。原生工作区跨同任务续调保留，工作区的 implementation.py 用于最终交付。公共和父源码按哈希复制到只读 sources。原生 shell 只用于 CPU 工程调试，数值研究走现有 GPU worker。启动时实际探测权限配置，失败时 llm_audit.coding_channel 记录原因并沿用宿主编辑通道。本轮环境只能验证回退，原生执行和用量需在支持 namespace 的环境继续验证。
+
+已有完整包复测时，在实验需求的 solution_refs 指定库内模型身份，execution 使用 evaluate_artifact 和当前阶段的 evaluations；同时绑定多个包时用 execution.source_ref 明选一份。宿主解析原始执行器、源版本和模型文件。不传新的 calibration，也无需 Coding 重写加载逻辑。新算法只需更改原生数值计划时实现 build_plan；如需在校准集上改动已构建的量化参数，可在同一模块实现 refine_frozen(backend, model, data, parameters)，返回实际选择的诊断字典。完整自定义执行器继续支持同一份源码的导出、独立重载和审计。

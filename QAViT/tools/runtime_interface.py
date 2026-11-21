@@ -26,9 +26,15 @@ class EngineeringBlocked(RuntimeError):
 
 
 class ObservedData:
-    def __init__(self, data):
+    def __init__(self, data, *, calibration_only=False, withhold_final=False):
         self._data = data
         self.labels, self.identity = data.labels, deepcopy(data.identity)
+        if calibration_only or withhold_final:
+            allowed = ('calibration',) if calibration_only else ('calibration', 'search')
+            views = {split: data.ids(split) for split in allowed if split in self.identity['split_ids']}
+            self.labels = {sid: self.labels[sid] for ids in views.values() for sid in ids if sid in self.labels}
+            self.identity.update(split_ids=views, counts={s: len(ids) for s, ids in views.items()}, full_validation=False)
+            self.shape_observation_splits = tuple(s for s in getattr(data, 'shape_observation_splits', ()) if s in views)
         self.reads = {}
 
     def __getattr__(self, name):
@@ -52,7 +58,14 @@ def execute_custom(plugin, payload, backend, cfg, data, directory):
     import torch
     from ptq_agent.execution.evaluation import model_digest
     spec = payload["execution"]
-    observed = ObservedData(data)
+    training = spec['resolved_choices'].get('training') is True
+    selected = data
+    if training and spec.get('calibration'):
+        from tools.experiment_worker import data_view
+        selected = data_view(data, spec['calibration'], 'calibration')
+    observed = ObservedData(selected, calibration_only=training,
+                           withhold_final=(spec.get('service') == 'custom_experiment'
+                                           and bool(spec.get('research_quantization_contract', {}).get('protocol'))))
     candidate = deepcopy(backend.model)
     sites = set()
     selected_site = spec.get("site", spec["resolved_choices"].get("target_site"))

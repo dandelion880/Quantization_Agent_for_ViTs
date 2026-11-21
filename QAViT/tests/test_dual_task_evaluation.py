@@ -220,6 +220,61 @@ while not (p.parent/'start.json').exists(): time.sleep(.02)
     def test_timeout_cleans_actual_child(self):
         self.exercise_child_failure(deadline=True)
 
+    def test_secondary_lease_is_released_while_classifier_continues(self):
+        import fcntl
+        from tools.dual_task_evaluation import package_files
+        model_dir = self.root / 'model'
+        model_dir.mkdir()
+        files = [self.root / name for name in ('gpu-primary', 'gpu-secondary')]
+        primary, secondary = [os.open(p, os.O_CREAT | os.O_RDWR, 0o600) for p in files]
+        for fd in (primary, secondary):
+            fcntl.flock(fd, fcntl.LOCK_EX | fcntl.LOCK_NB)
+        popen = subprocess.Popen
+        children = []
+        raw = {'metrics': {'top1': 20., 'baseline_top1': 80.}, 'sample_count': 1,
+               'sample_ids': ['a'], 'split': 'search', 'full_dataset_evaluation': False}
+        ade = {'metrics': {'fp': {'mIoU': 40., 'mAcc': 50., 'aAcc': 70.},
+                           'quantized': {'mIoU': 4., 'mAcc': 7., 'aAcc': 20.}}, 'images': 1,
+               'sample_ids': ['a'], 'full_dataset_evaluation': False}
+
+        def launch(command, **kwargs):
+            self.assertEqual(kwargs['pass_fds'], (secondary,))
+            p = Path(command[-1]); request = read_json(p)
+            self.assertEqual(request['model_assets'], package_files(model_dir))
+            receipt = {k: request[k] for k in ('model_digest', 'baseline_digest', 'plan_sha256', 'model_assets')}
+            receipt.update(status='completed', request_sha256=file_sha256(p))
+            atomic_json(p.parent / 'ready.json', receipt)
+            atomic_json(p.parent / 'result.json', {**receipt, 'evaluation': ade,
+                                                  'started_unix': time.time(), 'finished_unix': time.time()})
+            child = popen([sys.executable, '-B', '-c', 'pass'], **kwargs)
+            children.append(child)
+            return child
+
+        def classify(*args, **kwargs):
+            children[0].wait(timeout=3)
+            with files[1].open('r+b') as probe:
+                fcntl.flock(probe, fcntl.LOCK_EX | fcntl.LOCK_NB)
+            with files[0].open('r+b') as probe, self.assertRaises(BlockingIOError):
+                fcntl.flock(probe, fcntl.LOCK_EX | fcntl.LOCK_NB)
+            return raw
+
+        try:
+            with patch('tools.dual_task_evaluation.subprocess.Popen', side_effect=launch), \
+                    patch.dict(os.environ, {'QAVIT_GPU_LEASE_FDS': f'{primary},{secondary}'}), \
+                    patch('ptq_agent.execution.evaluation.model_digest', return_value='model'), \
+                    patch('tools.experiment_worker.evaluate_task', side_effect=classify):
+                evaluate_parallel({'id': 'x', 'payload': payload()}, SimpleNamespace(model=None), {}, None,
+                                  None, {}, {}, True, model_dir, self.root, [0, 1], None,
+                                  deadline_unix=time.time() + 10)
+            self.assertEqual(read_json(self.root / 'dual_secondary_transferred.json')['gpu'], 1)
+        finally:
+            os.close(primary)
+            if not (self.root / 'dual_secondary_transferred.json').exists():
+                try:
+                    os.close(secondary)
+                except OSError:
+                    pass
+
     def test_parent_failure_cleans_actual_child(self):
         self.exercise_child_failure(parent_failure=True)
 

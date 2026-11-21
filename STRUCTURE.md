@@ -46,3 +46,5 @@ Git 跟踪稳定源码、Prompt、知识、轻量配置、测试及许可证；E
 之前的三轮科研、能力、Skill、灵感和主题接入报告均保留原位置；适用版本与入口见 [历史导航](QAViT/docs/HISTORY.md)。EXP 的运行/快照仍为历史原件，当前实现不从旧 EXP 导入框架代码。
 
 新运行的 model_metadata.json 由 tools/profiling.py 复用后端目录和结构 profile 生成。tools/vision_models.py 处理源构造器与任务特征差异，模型与任务配置归 configs/，阶段目标见 [DINOv3 研究输入](EXP/inputs/dinov3b_static_w4a4/input.json)。
+
+独立开发评价的数据适配位于 `QAViT/tools/development.py`，Coding 文件修订与原生通道分别位于 `QAViT/agents/source_workspace.py` 和 `QAViT/runtime/coding_native.py`。按需工程资料见 `QAViT/knowledge/coding/`。本轮验证、数据清单生成入口和当前伪代码位于 `EXP/validation/l3_dev_20261120/`。

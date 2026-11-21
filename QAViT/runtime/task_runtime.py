@@ -125,6 +125,8 @@ class TaskRuntime:
         state = self.budget.reserve(execution, task["kind"], estimated_seconds=estimated,
                                     resources={"keys": task["resource_keys"]})
         deadline = time.time() + estimated
+        if budget.get('absolute_worker_deadline_unix') is not None:
+            deadline = min(deadline, budget['absolute_worker_deadline_unix'])
         if not (task['kind'] == 'experiment' and self.budget.excludes_numeric):
             deadline = min(self.budget.snapshot()["worker_deadline_unix"], deadline)
         request = {**body, "task_id": task["task_id"], "execution_id": execution,
@@ -198,6 +200,15 @@ class TaskRuntime:
             process = self.children.get(request["execution_id"])
             if process:
                 process.poll()  # reap 防止 zombie 被误认为活动任务。
+            transferred = directory / 'dual_secondary_transferred.json'
+            if len(request.get('gpus', [])) == 2 and not task.get('secondary_lease_transferred') and transferred.is_file():
+                phase = read_json(transferred)
+                secondary = request['gpus'][1]
+                child = directory / 'processes' / 'dual-segmentation.json'
+                if phase['gpu'] == secondary and child.is_file() and phase['process'] == read_json(child):
+                    self.queue.change(task['task_id'], 'running', patch={'secondary_lease_transferred': True,
+                        'resource_keys': [key for key in task['resource_keys'] if key != 'gpu:' + str(secondary)]})
+                    task = self.queue.get(task['task_id'])
             receipt = directory / "result.json"
             if receipt.exists():
                 result = read_json(receipt)

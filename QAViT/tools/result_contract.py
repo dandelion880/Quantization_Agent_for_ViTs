@@ -1,4 +1,5 @@
 """所有 L3 服务共用的冻结结果协议；completed 不是验证结论。"""
+from pathlib import Path
 import math
 import json
 from jsonschema import Draft202012Validator, SchemaError
@@ -61,7 +62,7 @@ def dual_task_fallback(payload):
 
 def result_requirements(payload, brief):
     spec = payload["execution"]
-    protocol = brief["evaluation_protocol"] if payload["level"] == "L3" else {}
+    protocol = spec.get("result_protocol", brief["evaluation_protocol"]) if payload["level"] == "L3" else {}
     requirements = protocol.get("required_results", [])
     if not isinstance(requirements, list):
         raise ContractError("evaluation_protocol.required_results 必须是数组")
@@ -116,7 +117,7 @@ def check_results(payload, brief, data):
     observations = data.get("observations")
     if not isinstance(observations, dict) or not observations:
         raise ContractError("测量证据缺少 observations")
-    protocol = brief["evaluation_protocol"] if payload["level"] == "L3" else {}
+    protocol = spec.get("result_protocol", brief["evaluation_protocol"]) if payload["level"] == "L3" else {}
     if observations.get("status") in ("engineering_blocked", "blocked", "failed"):
         raise ContractError("engineering failure is not completed numerical evidence")
     if payload['level'] == 'L3' and spec.get('quantization_contract', {}).get('protocol'):
@@ -132,13 +133,28 @@ def check_results(payload, brief, data):
     for requested in spec.get("evaluations", []):
         name = evaluation_name(requested)
         measured = evaluations.get(name, {})
-        split = "ade_validation" if requested["kind"] == "ade_frozen" else requested["split"]
+        split = (('ade_dev' if requested.get('split') == 'ade_dev' else 'ade_validation')
+                 if requested['kind'] == 'ade_frozen' else requested['split'])
         count, ids, metrics = measured.get("sample_count"), measured.get("sample_ids"), measured.get("metrics")
         if (type(count) is not int or count <= 0 or not isinstance(ids, list) or len(ids) != count
                 or any(not isinstance(i, str) or not i for i in ids) or len(set(ids)) != count
                 or measured.get("split") != split or not isinstance(metrics, dict) or not metrics):
             raise ContractError("测量证据缺少符合冻结规格的评测结果: " + requested["kind"])
         expected_ids = identity.get("split_ids", {}).get(split)
+        if split in ('dev', 'ade_dev'):
+            from tools.development import read_view
+            binding = spec.get('result_protocol', {}).get('development_view', {})
+            if (not binding or measured.get('development_sha256') != binding['sha256']
+                    or measured.get('complete_view') is not True or measured.get('full_dataset') is not False
+                    or measured.get('purpose') != 'development'):
+                raise ContractError('development view identity or completeness mismatch')
+            view = read_view(binding)
+            expected_ids = ([r['sample_id'] for r in view['classification']] if split == 'dev'
+                            else [r['name'] for r in view['ade_frozen']])
+            actual_ids = ids if split == 'dev' else [Path(i).name for i in ids]
+            if actual_ids != expected_ids:
+                raise ContractError('development view sample identity mismatch')
+            expected_ids = ids
         if expected_ids is not None and ids != expected_ids[:requested["count"]]:
             raise ContractError("评测实际 sample_ids 与冻结数据顺序/范围不一致")
         if requested["count"] is not None and count != requested["count"]:
@@ -157,6 +173,8 @@ def check_results(payload, brief, data):
                 and measured.get("full_dataset") is not True):
             raise ContractError("冻结评测要求完整数据，实际证据仅为子集")
         required_metrics = list(requested.get("metrics", []))
+        if split in ('dev', 'ade_dev'):
+            required_metrics.append('baseline_top1' if split == 'dev' else 'baseline_mIoU')
         if requested["kind"] == "classification" and data.get("measurement_source") == "real":
             required_metrics.append("top1")
         if requested["kind"] == "ade_frozen":

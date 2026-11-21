@@ -52,3 +52,7 @@ H1/H2 可引用 context.complete_solutions 的完整起点，局部改动不覆�
 获准研究参考优化与最终 training-free 的已有字段、产物边界和真实工具限制见 [科研 Skill 兼容说明](SCIENTIFIC_SKILLS_COMPATIBILITY.md)。STE 需现有 custom 实现；全程禁训合同不会被研究用途或 Skill 覆盖。
 
 模型请求的训练声明使用 `execution.training`，Coding 使用 `execution_choices.training`；宿主在 `normalize_execution` 生成 `execution.resolved_choices.training`。旧内部写法仅兼容已有程序/历史接口；两者同时出现必须一致，不能用字段别名绕过冻结 Brief。
+
+### 固定开发视图
+
+可在 execution_guidance.development 绑定 manifest（path、sha256、bytes）和 evaluations。完整候选以 L3 请求双任务 classification/dev 和 ade_frozen/ade_dev，两个 count 对应固定清单的全长。可在 Generation 取证或三候选规划时使用。result_protocol 区分此次开发评价和 evaluation_protocol 中保留的官方评价。complete_view 表示当前视图遍历完成，full_dataset 表示官方全量。开发记录随模型身份保存在方案库 development 字段；官方 Top-3 和 B 单独维护。相同冻结包可以有多个评价记录。

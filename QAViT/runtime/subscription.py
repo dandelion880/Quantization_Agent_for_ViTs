@@ -186,17 +186,18 @@ class SubscriptionTransport:
         return self.verified
 
 
-    def command(self, directory):
+    def command(self, directory, *, native=None):
+        mode = native[1] if native else ["--sandbox", "read-only"]
         return [self.cli, "exec", "--ignore-user-config", "--ignore-rules", "--strict-config",
-                "--ephemeral", "--skip-git-repo-check", "--sandbox", "read-only",
+                "--ephemeral", "--skip-git-repo-check", *mode,
                 "--model", self.model, "-c", "model_reasoning_effort=" + json.dumps(self.effort),
                 "-c", "model_instructions_file=" + json.dumps(str(directory / "instructions.txt")),
-                "--cd", str(directory), "--color", "never", "--json",
+                "--cd", str(native[0] if native else directory), "--color", "never", "--json",
                 "--output-schema", str(directory / "schema.json"),
-                "--output-last-message", str(directory / "answer.json"), *cli.policy(directory), "-"]
+                "--output-last-message", str(directory / "answer.json"), *cli.policy(directory, native=bool(native)), "-"]
 
 
-    def decode(self, raw, final, request):
+    def decode(self, raw, final, request, *, native=False):
         events = [strict_json(line) for line in raw.splitlines() if line.strip()]
         completed, messages, safe, isolation_notices = [], [], [], 0
         actual = {"model": None, "reasoning_effort": None, "source": "not_reported_by_cli"}
@@ -218,6 +219,9 @@ class SubscriptionTransport:
                 if item.get("type") == "error" and item.get("message") == cli.skill_discovery_notice():
                     safe.append(event)
                     continue
+                if native and item.get('type') in ('command_execution','file_change','code_mode'):
+                    safe.append(event)
+                    continue
                 require(item.get("type") in ("agent_message", "reasoning"),
                         f"未知或禁止的 CLI item 类型 {item.get('type')!r}；拒绝将其视为纯决策", code="llm_tool_isolation")
                 if kind == "item.completed" and item.get("type") == "agent_message":
@@ -231,11 +235,14 @@ class SubscriptionTransport:
                     require(value == expected, f"Codex 实际 {key} 与请求不符", code="llm_model_mismatch")
                     actual[key], actual["source"] = value, "cli_event"
             safe.append(event)
-        require(len(completed) == 1 and len(messages) == 1 and isinstance(final, str) and bool(final.strip()),
+        require((bool(completed) and bool(messages) if native else len(completed) == 1 and len(messages) == 1) and isinstance(final, str) and bool(final.strip()),
                 "缺少唯一完整 final/turn.completed；拒绝截断响应", code="llm_format_error")
-        require(isolation_notices > 0, "缺少 CLI 工具 host 已关闭的实际通知；不假设隔离成功", code="llm_tool_isolation")
-        require(messages[0].strip() == final.strip(), "stdout 与最终文件不一致", code="llm_format_error")
-        usage = completed[0].get("usage")
+        require((isolation_notices == 0 if native else isolation_notices > 0), "缺少 CLI 工具 host 已关闭的实际通知；不假设隔离成功", code="llm_tool_isolation")
+        require(messages[-1].strip() == final.strip(), "stdout 与最终文件不一致", code="llm_format_error")
+        from runtime.coding_native import usage_total
+        usage = usage_total([row.get('usage') for row in completed]) if native else completed[0].get('usage')
+        if native:
+            require(usage is not None, "native completed turn usage missing", code="llm_format_error")
         if usage is not None:
             require(isinstance(usage, dict), "usage 格式错误", code="llm_format_error")
         schema = output_schema(request)  # Host protocol validation is not model-output repair.
@@ -278,5 +285,5 @@ class SubscriptionTransport:
             response = LLMResponse(tool_calls=decoded, usage=usage, source=self.source)
         return response, {"events": safe, "output": result, "resolved_arguments": arguments,
                           "usage": usage, "actual": actual,
-                          "tool_host_disabled_verified": True}
+                          "tool_host_disabled_verified": not native}
 

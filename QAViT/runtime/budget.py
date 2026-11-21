@@ -1,6 +1,7 @@
 """持久墙钟预算；L1/L2 没有固定次数限制，恢复不重置已用时间。"""
 from pathlib import Path
 from copy import deepcopy
+import math
 import shutil
 import time
 import os
@@ -31,6 +32,9 @@ class BudgetLedger:
                 raise ContractError("未知预算计时协议")
             if cfg.get('exclude_numeric_wait') and cfg.get('clock_mode') != 'active_segments':
                 raise ContractError('exclude_numeric_wait 使用 active_segments 持久运行段计时')
+            hard = cfg.get('absolute_deadline_unix')
+            if hard is not None and (type(hard) not in (int, float) or not math.isfinite(hard) or hard <= 0):
+                raise ContractError('absolute_deadline_unix 必须为有效 Unix 时间')
             if type(cfg["max_rounds"]) is not int or cfg["max_rounds"] < 1 or cfg["wall_seconds"] <= 0:
                 raise ContractError("预算轮次/时间非法")
             reserves = [cfg.get(k, 0) for k in ("closeout_reserve_seconds", "shutdown_reserve_seconds")]
@@ -116,6 +120,11 @@ class BudgetLedger:
         else:
             remaining = max(0, value["deadline_unix"] - now)
         shutdown = value["config"].get("shutdown_reserve_seconds", 0)
+        hard = value['config'].get('absolute_deadline_unix')
+        if hard is not None:
+            remaining = min(remaining, max(0, hard - now))
+            if value['deadline_unix'] is not None:
+                value['deadline_unix'] = min(value['deadline_unix'], hard)
         configured_closeout = value["config"].get("closeout_reserve_seconds", 0)
         closeout = (0 if value["config"].get("clock_mode") == "active_segments" and closeout_releases
                     else configured_closeout)
@@ -126,6 +135,7 @@ class BudgetLedger:
                 'excluded_numeric_wait_seconds': excluded,
                 'numeric_waits': list(waits.values()),
                 "worker_deadline_unix": value["deadline_unix"] - shutdown if value["deadline_unix"] is not None else None,
+                "absolute_worker_deadline_unix": hard - shutdown if hard is not None else None,
                 "research_remaining_seconds": max(0, remaining - shutdown - closeout),
                 "configured_closeout_reserve_seconds": configured_closeout,
                 "effective_closeout_reserve_seconds": closeout,
@@ -170,7 +180,8 @@ class BudgetLedger:
         previous_end = max((s["stopped_unix"] for s in state["segments"]), default=0)
         started = max(previous_end, min(now, now if started_unix is None else started_unix))
         deadline = min(started + state["remaining_seconds"],
-                       state["config"].get("parent_deadline_unix", float("inf")))
+                       state["config"].get("parent_deadline_unix", float("inf")),
+                       state["config"].get("absolute_deadline_unix", float("inf")))
         identifier = "segment-" + str(len(state["segments"]) + 1)
         self.journal.commit("budget/segment/start/" + identifier, events=[{
             "type": "budget_segment_started", "segment_id": identifier, "started_unix": started,
@@ -234,6 +245,9 @@ class BudgetLedger:
 
     def check(self, *, estimated_seconds=0, check_disk=True, kind=None, allow_numeric_drain=False):
         state = self.snapshot()
+        hard = state['absolute_worker_deadline_unix']
+        if hard is not None and state['as_of_unix'] >= hard:
+            raise BudgetExhausted('到达绝对截止的停机预留边界，停止所有在途任务')
         if state["config"].get("clock_mode") == "active_segments" and not state["active_segment"]:
             raise BudgetExhausted("累计运行预算已暂停；必须通过受监控的启动入口创建运行段")
         if state["remaining_seconds"] <= 0 and not (self.excludes_numeric and allow_numeric_drain):

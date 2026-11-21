@@ -60,7 +60,7 @@ def _fp_identity(backend, files, annotation_dir, *, settings, head, weights, cla
         'deterministic': [torch.are_deterministic_algorithms_enabled(), torch.backends.cudnn.deterministic, torch.backends.cudnn.benchmark]})
 
 
-def evaluate(backbone, backend, directory, count=None, *, fp_reference=None):
+def evaluate(backbone, backend, directory, count=None, *, fp_reference=None, development=None):
     """Use the selected task's trained head, preprocessing and frozen backbone."""
     import torch
     from runtime.files import save
@@ -79,11 +79,16 @@ def evaluate(backbone, backend, directory, count=None, *, fp_reference=None):
     # JSON将原配置tuple保存为list；MMSeg Resize要求tuple，恢复容器类型而不改数值。
     pipeline = Compose([{**row, 'scale':tuple(row['scale'])} if isinstance(row.get('scale'), list)
                         else row for row in settings['pipeline']])
-    files = sorted((ADE / 'images/validation').glob('*.jpg'))
-    total_files = len(files)
     expected_images = settings.get('expected_images')
-    if not files or (expected_images is not None and total_files != expected_images):
-        raise ValueError('分割 validation 图像数量与任务资产不符')
+    if development is None:
+        files = sorted((ADE / 'images/validation').glob('*.jpg'))
+        annotation_dir = ADE / 'annotations/validation'
+        if not files or (expected_images is not None and len(files) != expected_images):
+            raise ValueError('分割 validation 图像数量与任务资产不符')
+    else:
+        from tools.development import segmentation_files
+        files, annotation_dir = segmentation_files(ADE, development)
+    total_files = len(files)
     classes = settings['model']['decode_head']['num_classes']
     ignore_index = segmentor.segmentor.decode_head.ignore_index
     if count is not None:
@@ -92,7 +97,6 @@ def evaluate(backbone, backend, directory, count=None, *, fp_reference=None):
         files = files[:count]
     histograms = {name: torch.zeros((classes,classes), dtype=torch.int64) for name in ('fp', 'quantized')}
     model_hashes = [model_digest(reference), model_digest(backbone)]
-    annotation_dir = ADE / 'annotations/validation'
     def identity():
         return _fp_identity(backend, files, annotation_dir, settings=settings_path, head=head_path,
                             weights=[model_hashes[0], receipt['checkpoint_sha256'], *frozen],
@@ -110,7 +114,7 @@ def evaluate(backbone, backend, directory, count=None, *, fp_reference=None):
     adapters = [('quantized', q_adapter)] if reused else [('fp', fp_adapter), ('quantized', q_adapter)]
     with torch.inference_mode():
         for i, p in enumerate(files):
-            annotation = ADE / 'annotations/validation' / (p.stem + '.png')
+            annotation = annotation_dir / (p.stem + '.png')
             packed = pipeline(dict(img_path=str(p), seg_map_path=str(annotation), reduce_zero_label=True, seg_fields=[]))
             if i == 0:
                 from mmengine.dataset import pseudo_collate
@@ -147,7 +151,8 @@ def evaluate(backbone, backend, directory, count=None, *, fp_reference=None):
         results[name] = {'mIoU':float((tp/(total+predicted-tp)).nanmean()*100),
                          'mAcc':float((tp/total).nanmean()*100), 'aAcc':float(tp.sum()/hist.sum()*100),
                          'confusion_matrix':hist.tolist()}
-    return {'images':len(files), 'full_dataset_evaluation':expected_images is not None and len(files)==expected_images, 'classes':classes,
+    return {'images':len(files), 'split': 'ade_dev' if development is not None else 'ade_validation',
+            'complete_view':len(files)==total_files, 'full_dataset_evaluation':development is None and expected_images is not None and len(files)==expected_images, 'classes':classes,
             'fp_identity': identity_before, 'fp_reference_sha256': reused,
             'metrics':results, 'delta_mIoU_pp':results['quantized']['mIoU']-results['fp']['mIoU'],
             'head_receipt':str(head_path), 'head_receipt_sha256':file_hash(head_path), 'head_checkpoint':receipt['checkpoint'],

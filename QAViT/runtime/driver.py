@@ -69,6 +69,10 @@ class WorkflowDriver:
                 keys = [k for k in task['resource_keys'] if not k.startswith(('model:', 'gpu:'))]
                 if keys != task['resource_keys']:
                     self.queue.change(task['task_id'], task['state'], patch={'resource_keys': keys})
+            if (task['kind'] == 'llm' and task['role'] != 'judger'
+                    and task['resource_keys'] == ['llm:subscription']):
+                self.queue.change(task['task_id'], task['state'], patch={
+                    'resource_keys': ['llm:coding'] if task['role'] == 'coding' else []})
             pair = task['inputs'].get('context', {}).get('pair')
             if (task['kind'] == 'llm' and task['role'] == 'judger' and pair
                     and task['state'] not in ('running', 'completed', 'failed', 'cancelled', 'ineligible')
@@ -104,8 +108,10 @@ class WorkflowDriver:
             messages = [{'role': 'assistant', 'content': {'tool_calls': [
                 {'id': c['id'], 'name': c['name']} for c in row['content'].get('tool_calls', [])]}}
                 for row in task.get('conversation', [])]
-            return {"kind": "llm", "spec": role_spec(task["role"], inputs["purpose"], context,
-                        self.config["llm"], messages=messages), 'read_permissions': permissions,
+            spec = role_spec(task["role"], inputs["purpose"], context, self.config["llm"], messages=messages)
+            if task['role'] == 'coding' and spec['settings'].get('coding_native_tools') is True:
+                spec['native_read_permissions'] = {p:h for p,h in permissions.items() if p.endswith('.py')}
+            return {"kind": "llm", "spec": spec, 'read_permissions': permissions,
                     "estimated_seconds": min(self.config["runtime"]["task_timeout_seconds"], self.budget.snapshot()["remaining_seconds"])}
         if task["kind"] == "experiment":
             experiment = self.journal.card(inputs["experiment_ref"])
@@ -161,7 +167,7 @@ class WorkflowDriver:
                 if task['role'] == 'judger':
                     if sum(t['role'] == 'judger' for t in llms) >= 3:
                         continue
-                elif any(t['role'] != 'judger' for t in llms):
+                elif task['role'] == 'coding' and any(t['role'] == 'coding' for t in llms):
                     continue
             if task["kind"] == "experiment" and sum(t["kind"] == "experiment" for t in active) >= self.config["runtime"]["experiment_concurrency"]:
                 continue
@@ -299,7 +305,8 @@ class WorkflowDriver:
             evidence = self.broker.evidence(experiment, receipt, path, code_artifact=approval["candidate"] if approval else None)
             self.queue.finish(task["task_id"], outputs=[evidence["id"]], result={"receipt": str(path)}, cards=[evidence],
                               events=[self.memory.live_update(evidence_ref=evidence["id"])])
-            if experiment["payload"]["level"] == "L3":
+            if (experiment["payload"]["level"] == "L3" and
+                    experiment['payload']['execution'].get('result_protocol', {}).get('purpose') != 'development'):
                 provenance = evidence["payload"]["provenance"]
                 if provenance.get("model_ref"):
                     try:

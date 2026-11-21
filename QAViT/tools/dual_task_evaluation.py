@@ -65,14 +65,22 @@ def evaluate_parallel(experiment, backend, cfg, data, model, plan, coverage, nat
     env = dict(os.environ, CUDA_VISIBLE_DEVICES=uuids[1] if len(uuids) > 1 else str(gpus[1]),
                QAVIT_RESOURCE_ASSIGNED='1')
     lease_fds = tuple(int(fd) for fd in os.environ.get('QAVIT_GPU_LEASE_FDS', '').split(',') if fd)
+    # The ADE process needs only the second device's lease. Keep the primary
+    # lease in the classifier and let ADE process exit release its own device.
+    split_lease = len(lease_fds) == 2 and len(gpus) == 2
     child = None
+    identity = None
     try:
         with (output / 'worker.log').open('a') as log:
             child = subprocess.Popen([sys.executable, '-B', str(Path(__file__).resolve()), str(path)],
                 env=env, stdout=log, stderr=subprocess.STDOUT, start_new_session=True,
-                preexec_fn=parent_guard(os.getpid()), pass_fds=lease_fds)
+                preexec_fn=parent_guard(os.getpid()), pass_fds=lease_fds[1:] if split_lease else lease_fds)
         identity = process_identity(child.pid)
         atomic_json(directory / 'processes' / 'dual-segmentation.json', identity)
+        if split_lease:
+            os.close(lease_fds[1])
+            os.environ['QAVIT_GPU_LEASE_FDS'] = str(lease_fds[0])
+            atomic_json(directory / 'dual_secondary_transferred.json', {'gpu': gpus[1], 'process': identity})
         # Validate the independent loader before starting either measurement.
         # In particular small subsets must overlap in evaluation, not merely in
         # process lifetime while the secondary GPU is still loading the model.
@@ -139,7 +147,7 @@ def evaluate_parallel(experiment, backend, cfg, data, model, plan, coverage, nat
             # Always reap, including after successful durable output. On parent
             # termination TaskRuntime also owns this registered process group.
             if child.poll() is None:
-                TaskRuntime.stop_identity(identity)
+                TaskRuntime.stop_identity(identity or process_identity(child.pid))
             try:
                 child.wait(timeout=5)
             except subprocess.TimeoutExpired:
@@ -175,13 +183,18 @@ def run(request, path):
     if torch.cuda.is_available():
         torch.cuda.manual_seed_all(seed)
     try:
-        factory = RTNExecutor
-        if not request['native']:
-            plugin = module_from_approval(request['approval'], experiment)
-            factory = plugin.make_executor
-        from tools.frozen import FrozenData
-        executor = factory(backend, deepcopy(cfg), FrozenData(data))
-        model, manifest = executor.load(model_dir)  # deliberately never prepare/fit/export
+        package = spec.get('evaluation_package') if spec.get('service') == 'evaluate_artifact' else None
+        if package:
+            from tools.frozen import reload_complete
+            model, manifest = reload_complete(package, backend, cfg, data)
+        else:
+            factory = RTNExecutor
+            if not request['native']:
+                plugin = module_from_approval(request['approval'], experiment)
+                factory = plugin.make_executor
+            from tools.frozen import FrozenData
+            executor = factory(backend, deepcopy(cfg), FrozenData(data))
+            model, manifest = executor.load(model_dir)  # deliberately never prepare/fit/export
         plan = manifest['plan'] if request['native'] else request['plan']
         coverage = plan_constraints(plan, spec['resolved_choices'], backend, cfg,
                                     spec.get('quantization_contract'), native=request['native'])
@@ -189,7 +202,9 @@ def run(request, path):
         if spec.get('quantization_contract', {}).get('protocol'):
             from core.static_w4a4 import check_audit, native_audit
             from ptq_agent.execution.sites import site_catalog
-            if request['native']:
+            if package:
+                check_audit(package['frozen_audit'], coverage['static_w4a4'])
+            elif request['native']:
                 native_audit(model, plan, site_catalog(backend), coverage['static_w4a4'])
             else:
                 check_audit(executor.audit(model, plan).get('static_w4a4'), coverage['static_w4a4'])
@@ -208,6 +223,8 @@ def run(request, path):
         start = time.time()
         if request.get('deadline_unix') is not None and start >= request['deadline_unix']:
             raise TimeoutError('dual-task deadline exceeded before evaluation')
+        if spec.get('result_protocol', {}).get('development_view'):
+            cfg = {**cfg, '_development_view': spec['result_protocol']['development_view']}
         value = evaluate_task(backend, cfg, data, model, plan, request['requested'], path.parent,
                               request['native'], coverage)
         check_loaded_identity({**result, 'model_digest': model_digest(model),

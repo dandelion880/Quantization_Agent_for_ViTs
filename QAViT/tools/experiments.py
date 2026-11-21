@@ -285,6 +285,9 @@ def normalize_calibration(value, brief=None):
         raise ContractError("execution.calibration.offset 必须是非负整数")
 
 
+from tools.development import stage_protocol
+
+
 def normalize_execution(execution, brief, *, level=None):
     """纯参数检查和唯一值补全；不读取资产、不创建卡片、不执行实验。"""
     if not isinstance(execution, dict):
@@ -383,6 +386,11 @@ def normalize_execution(execution, brief, *, level=None):
                 for key, default in (('count', 1), ('seed', value['seed']), ('offset', 0)):
                     value['arguments'].setdefault(key, default)
     normalize_calibration(value, brief if consumes_calibration else None)
+    if choices['training'] and (value.get('calibration', {}).get('split', 'calibration') != 'calibration'
+            or value.get('evaluation', {}).get('split', 'search') != 'search'
+            or any(row.get('kind') != 'classification' or row.get('split') != 'search'
+                   for row in value.get('evaluations', []))):
+        raise ContractError('研究参考优化只使用 calibration 拟合；已有宿主评测仅可使用独立 ImageNet search')
     if service == "tensor_probe":
         parameters = value.setdefault("parameters", {})
         if not isinstance(parameters, dict):
@@ -416,9 +424,10 @@ def normalize_execution(execution, brief, *, level=None):
     check_constraints({"hard_constraints": scalar_constraints}, choices)
     if brief.get("hard_constraints", {}).get("training_allowed") is False and choices["training"]:
         raise ContractError("execution.resolved_choices.training 与用户禁止训练的约束冲突")
-    if "protocol_hash" in value and value["protocol_hash"] != fingerprint(brief["evaluation_protocol"]):
+    protocol = stage_protocol(brief, value, level)
+    if "protocol_hash" in value and value["protocol_hash"] != fingerprint(protocol):
         raise ContractError("execution.protocol_hash 与 ResearchBrief.evaluation_protocol 不一致")
-    if "result_protocol" in value and value["result_protocol"] != brief["evaluation_protocol"]:
+    if "result_protocol" in value and value["result_protocol"] != protocol:
         raise ContractError("execution.result_protocol 与 ResearchBrief.evaluation_protocol 不一致")
     if value["backend"] == brief["model"].get("adapter"):
         value["model_scope"] = deepcopy(brief["model"].get("scope", {"model": brief["model"].get("name")}))
@@ -436,7 +445,7 @@ def normalize_execution(execution, brief, *, level=None):
 
 def check_l3_evaluations(payload, brief):
     """只检查 Brief 已结构化声明的 L3 评测项，不推断自然语言任务或补默认双任务。"""
-    required = brief["evaluation_protocol"].get("evaluations")
+    required = stage_protocol(brief, payload["execution"], payload["level"]).get("evaluations")
     if payload["level"] != "L3" or required is None:
         return
     if not isinstance(required, list) or any(not isinstance(r, dict) or not r.get("kind") for r in required):
@@ -472,7 +481,7 @@ def preflight_experiment(payload, brief, runtime=None, *, executable=False):
     check_l3_evaluations(value, brief)
     result_requirements(value, brief)
     if value["level"] == "L3":
-        value["execution"]["result_protocol"] = deepcopy(brief["evaluation_protocol"])
+        value["execution"]["result_protocol"] = deepcopy(stage_protocol(brief, value["execution"], "L3"))
     return value
 
 
@@ -543,7 +552,7 @@ def resolve_execution(execution, brief, *, level=None):
     if value.get("model_dir"):
         model = Path(value["model_dir"]).resolve()
         value["model_assets"] = [asset(model / n) for n in ("manifest.json", "weights.pt")]
-    value["protocol_hash"] = fingerprint(brief["evaluation_protocol"])
+    value["protocol_hash"] = fingerprint(stage_protocol(brief, value, level))
     value["service_version"] = SERVICE_VERSION
     value["runtime"] = runtime_identity()
     value["measurement_implementation"] = measurement_implementation()
@@ -592,7 +601,7 @@ class ExperimentBroker:
         if value.get('solution_refs'):
             from core.solutions import SolutionLibrary
             known = {r['id'] for r in SolutionLibrary(self.journal, self.journal.card(self.brief_ref)['payload']).available()
-                     if r.get('status') == 'evaluated'}
+                     if r.get('status') in ('evaluated','development_evaluated')}
             if any(ref not in known for ref in value['solution_refs']):
                 raise ContractError('solution_refs must select evaluated complete solutions visible in this protocol catalog')
         return value
@@ -662,12 +671,22 @@ class ExperimentBroker:
                     break
         try:
             if payload.get('evidence_refs'):
-                execution['frozen_sources'] = bind_sources(self.journal, payload['evidence_refs'])
+                execution['frozen_sources'] = bind_sources(self.journal, payload['evidence_refs'],
+                    training_free_only=payload['level'] == 'L3' and brief['evaluation_protocol'].get('final_training') is False)
             if payload.get('solution_refs'):
                 execution.setdefault('frozen_sources', []).extend(bind_solutions(self.journal, payload['solution_refs'], brief))
         except (ContractError, OSError) as exc:
             from runtime.failures import FrozenSourceError
             raise FrozenSourceError(str(exc)) from exc
+        execution.pop('evaluation_package', None)
+        if execution['service'] == 'evaluate_artifact' and execution.get('frozen_sources') and not execution.get('model_dir'):
+            from tools.runtime_interface import select_frozen_source
+            package = select_frozen_source(execution['frozen_sources'], execution.get('source_ref'))
+            if not package.get('verified_segmentation'):
+                raise ContractError('bound package lacks a complete frozen training-free measurement')
+            execution.update(evaluation_package=package, model_dir=package['model_dir'], model_assets=package['assets'])
+        if execution['service'] == 'evaluate_artifact' and not execution.get('model_dir'):
+            raise ContractError('references did not resolve to a complete frozen model package')
         if execution['service'] == 'frozen_helper':
             from tools.runtime_interface import select_frozen_source
             select_frozen_source(execution.get('frozen_sources', []), execution.get('source_ref'))
