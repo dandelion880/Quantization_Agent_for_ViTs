@@ -63,6 +63,7 @@ def executable(config):
     value = config.get("cli_path")
     candidates = ([Path(value)] if value else
                   [Path(shutil.which("codex") or "/nonexistent"),
+                   Path.home() / ".local/bin/codex",
                    Path.home() / ".codex/packages/app-server-daemon/current/bin/codex"])
     for path in candidates:
         if path.is_file() and os.access(path, os.X_OK):

@@ -11,6 +11,7 @@ from pathlib import Path
 from . import VERSION
 from .common import (QAVIT, EvalError, SourceStore, canonical, confined, digest,
                      fingerprint, loads, redact, write_json)
+from .judge import DEFAULT_EFFORT, DEFAULT_MODEL
 from .metrics import call_metrics, run_timing, task_timing, tool_metrics
 from .rules import task_catalog
 
@@ -430,7 +431,7 @@ def prepare(run_path, output, rules, pricing=None):
         "task_catalog_sha256": digest((QAVIT / "agents/tasks.py").read_bytes()),
         "research_identity_source": run.file_rows["research_run.json"], "pricing": pricing,
         "source_files": list(run.store.files.values()), "run_sha256": fingerprint(run_result),
-        "judge_config": {"model": "gpt-6.1-sol", "reasoning_effort": "medium"},
+        "judge_config": {"model": DEFAULT_MODEL, "reasoning_effort": DEFAULT_EFFORT},
         "isolation": "No production imports, queues, budgets, locks, Journal or GPU operations during extraction."}
     # Detect concurrent rewriting of a captured source; appended commits are outside this frozen horizon.
     for row in manifest["source_files"]:

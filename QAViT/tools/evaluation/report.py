@@ -104,8 +104,9 @@ def markdown(report):
         return "Unknown" if value is None else str(round(value, 3)) if isinstance(value, float) else str(value)
     def text(value):
         return html.escape(str(redact(value))).replace("|", "\\|").replace("\n", " ")
+    judge = report["judge_config"]
     lines = ["# QAViT Eval-L0 离线报告", "", f"运行：`{report['run_id']}`；规则：`{report['rules_fingerprint']}`。",
-             "独立 Judge：gpt-6.1-sol / medium。质量与成本分列；未评分不代表低质量，未知用量不代表零消耗。",
+             f"独立 Judge 使用 {text(judge['model'])} / {text(judge['reasoning_effort'])}。质量与成本分别报告。",
              "无人工真值、无通过阈值；本报告不作单个 LLM 的因果贡献、误拒率或漏放率结论。", "",
              "## 科研质量（按角色和具体任务）", "",
              "| 角色 / purpose / 分层 | 任务 / 已评 | Q 均值 / 中位数 | 已评项 / 适用项 / 总项 | Unknown / N/A | 有效证据覆盖 |",

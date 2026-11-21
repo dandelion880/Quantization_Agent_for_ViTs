@@ -31,7 +31,7 @@ python -B QAViT/tools/evaluation report EXP/evaluations/<eval_id>
 python -B QAViT/tools/evaluation verify EXP/evaluations/<eval_id>
 ```
 
-可重复传 `--case`；明确需要评全部已准备任务时用 `--all`。不存在自动抽样或生成科研任务的命令。默认评分器固定为 `gpt-6.1-sol / medium`，不读取 `configs/models.json` 的科研角色路由。`--cli-path` 可选择已核验版本的本机 Codex CLI；不自动升级、不降级模型、不切换 API 后端。
+可重复传 `--case`；明确需要评全部已准备任务时用 `--all`。不存在自动抽样或生成科研任务的命令。新评估默认使用 `gpt-6.2-sol / medium`，已有评估沿用其清单中冻结的模型与推理档位，不读取 `configs/models.json` 的科研角色路由。`--cli-path` 可选择已核验版本的本机 Codex CLI；不自动升级、不降级模型、不切换 API 后端。
 
 `--max-attempts` 为该评价案例累计上限（1–3，默认 2），不是每次重启重新计数；鉴权、额度、计费边界、隔离、模型身份等故障会结束本次评分会话。默认每次模型尝试含预检限时 300 秒；`--max-input-characters` 默认 600000。超长材料保留完整冻结对象并报告 `input_limit`，不静默裁剪。可在确认模型上下文允许时显式提高；CLI 上下文错误仍作为评价失败记录。
 

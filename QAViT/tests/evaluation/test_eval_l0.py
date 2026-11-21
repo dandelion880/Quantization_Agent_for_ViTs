@@ -433,6 +433,26 @@ class EvalTest(unittest.TestCase):
         self.assertEqual(report["judge_overhead"]["tokens"]["input_tokens"]["known_sum"], 9)
         self.assertEqual(report["groups"][0]["Q_distribution"]["mean"], 100)
 
+    def test_legacy_evaluation_uses_its_frozen_judge(self):
+        case = self.prepare_one()
+        path = self.output / "manifest.json"
+        manifest = read_json(path)
+        manifest["judge_config"]["model"] = "gpt-6.1-sol"
+        del manifest["manifest_sha256"]
+        manifest["manifest_sha256"] = fingerprint(manifest)
+        write_json(path, manifest)
+
+        def invoke(directory, *args):
+            self.assertEqual(read_json(directory / "request.json")["model"], "gpt-6.1-sol")
+            return self.fake_worker(case)(directory, *args)
+
+        result = grade_case(self.output, case, self.rules, invoke=invoke)
+        self.assertEqual(result["status"], "validated")
+        self.assertIsNotNone(accepted_result(self.output, case, self.rules))
+        report_path, report = build_report(self.output, self.rules)
+        self.assertEqual(report["judge_config"]["model"], "gpt-6.1-sol")
+        self.assertIn("gpt-6.1-sol / medium", report_path.read_text())
+
     def test_invalid_judge_bounded_retries_no_fake_score(self):
         case = self.prepare_one()
         status = grade_case(self.output, case, self.rules, max_attempts=2, invoke=self.fake_worker(case, invalid=True))
