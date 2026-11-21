@@ -311,9 +311,15 @@ def evidence_facts(card, root=None):
         if key in observations:
             result[key] = project_observations(observations[key], ref, pointer('/payload/observations', key))
     if isinstance(observations.get('arms'), dict):
-        result['arm_results'] = {name: {key: deepcopy(arm[key]) for key in (*ARM_LABELS, 'whole_network', 'metrics', 'summary', 'status', 'error')
-                                      if key in arm}
-                                for name, arm in observations['arms'].items() if isinstance(arm, dict)}
+        result['arm_results'] = {}
+        for name, arm in observations['arms'].items():
+            if not isinstance(arm, dict):
+                continue
+            arm_path = pointer('/payload/observations/arms', name)
+            result['arm_results'][name] = {
+                key: project_observations(value, ref, pointer(arm_path, key), max_characters=1600)
+                for key, value in arm.items() if key in (*ARM_LABELS, 'whole_network', 'metrics', 'summary', 'status', 'error')
+                or key.startswith('paired_difference_vs_')}
     elif isinstance(observations.get('arms'), list):
         result['arm_results'] = project_observations(observations['arms'], ref, '/payload/observations/arms')
     if 'arms' in observations:

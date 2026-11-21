@@ -10,14 +10,19 @@ import time
 from .common import (EvalError, canonical, confined, digest, fingerprint, read_json,
                      redact, source_value, write_json)
 
-DEFAULT_MODEL = "gpt-6.1-sol"
+DEFAULT_MODEL = "gpt-6.2-sol"
 DEFAULT_EFFORT = "medium"
 
 
-def load_evaluation(root, rules):
+def evaluation_manifest(root):
     manifest = read_json(Path(root) / "manifest.json")
     if manifest["manifest_sha256"] != fingerprint({k: v for k, v in manifest.items() if k != "manifest_sha256"}):
         raise EvalError("evaluation manifest changed")
+    return manifest
+
+
+def load_evaluation(root, rules):
+    manifest = evaluation_manifest(root)
     if rules.version != manifest["rules_fingerprint"]:
         raise EvalError("rule version changed; prepare a new evaluation")
     if fingerprint(read_json(Path(root) / "run.json")) != manifest["run_sha256"]:
@@ -159,9 +164,10 @@ def accepted_result(root, case, rules):
     if raw != result["result"]:
         raise EvalError("raw/accepted Judge output mismatch")
     bundle = render(root, case, rules)
+    judge_config = evaluation_manifest(root)["judge_config"]
     if (request["bundle_sha256"] != fingerprint(bundle) or request.get("system_prompt") != bundle["system_prompt"] or
-            request.get("case_prompt") != bundle["case_prompt"] or request.get("model") != DEFAULT_MODEL or
-            request.get("reasoning_effort") != DEFAULT_EFFORT):
+            request.get("case_prompt") != bundle["case_prompt"] or request.get("model") != judge_config["model"] or
+            request.get("reasoning_effort") != judge_config["reasoning_effort"]):
         raise EvalError("Judge evidence bundle changed")
     q = rules.validate(raw, case, bundle["supplied_sources"])
     if q != result["quality"]:
@@ -180,7 +186,7 @@ def grade_case(root, case, rules, *, max_attempts=2, timeout=300, max_input_char
     if case["data_coverage"]["blocking_issues"]:
         return {"case_id": case["case_id"], "status": "source_integrity_error", "issues": case["data_coverage"]["blocking_issues"]}
     bundle = render(root, case, rules)
-    request = {"model": DEFAULT_MODEL, "reasoning_effort": DEFAULT_EFFORT,
+    request = {**evaluation_manifest(root)["judge_config"],
                "case_id": case["case_id"], "case_sha256": case["case_sha256"], "rules_fingerprint": rules.version,
                "bundle_sha256": fingerprint(bundle), "system_prompt": bundle["system_prompt"], "case_prompt": bundle["case_prompt"],
                "implementation": {p.name: digest(p.read_bytes()) for p in Path(__file__).parent.glob("*.py")}}
@@ -217,12 +223,13 @@ def grade_case(root, case, rules, *, max_attempts=2, timeout=300, max_input_char
 
 def validate_attempt(root, directory, case, rules, bundle):
     try:
+        judge_config = evaluation_manifest(root)["judge_config"]
         audit = read_json(directory / "audit.json")
         request = read_json(directory / "request.json")
         if (audit.get("status") != "completed" or audit.get("tool_host_disabled_verified") is not True or
                 audit.get("request_sha256") != digest((directory / "request.json").read_bytes()) or
                 request.get("bundle_sha256") != fingerprint(bundle) or request.get("case_sha256") != case["case_sha256"] or
-                request.get("rules_fingerprint") != rules.version or request.get("model") != DEFAULT_MODEL or request.get("reasoning_effort") != DEFAULT_EFFORT or
+                request.get("rules_fingerprint") != rules.version or request.get("model") != judge_config["model"] or request.get("reasoning_effort") != judge_config["reasoning_effort"] or
                 request.get("system_prompt") != bundle["system_prompt"] or request.get("case_prompt") != bundle["case_prompt"]):
             raise EvalError("incomplete or mismatched independent Judge receipt")
         raw = read_json(directory / "judge_output.json")

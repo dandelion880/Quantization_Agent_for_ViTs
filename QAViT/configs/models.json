@@ -4,7 +4,7 @@
     "low"
   ],
   "generation": [
-    "gpt-6-astra",
+    "gpt-6.2-astra",
     "high"
   ],
   "recorder": [
@@ -12,11 +12,11 @@
     "high"
   ],
   "coding": [
-    "gpt-6.1-sol",
+    "gpt-6.2-sol",
     "medium"
   ],
   "safeguard": [
-    "gpt-6.1-sol",
+    "gpt-6.2-sol",
     "medium"
   ]
 }

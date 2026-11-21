@@ -112,7 +112,7 @@
       }
     },
     "goals": {
-      "research": "以同一源模型和协议上的成对证据评价改进，保留完整可回退实现；近期以 DINOv3-B 为主，DeiT-B 在独立运行中回归和对照。",
+      "research": "轮内以独立 L3-dev 双任务的成对 FP/Q 反馈决策。最终冻结方案后测一次完整官方验证集，两项各自达到同协议 FP 的 90% 以上；以下目标数值属于官方验证视图。保留完整可回退实现；近期以 DINOv3-B 为主，DeiT-B 在独立运行中回归和对照。",
       "targets": {
         "fp_reference_percent": {
           "mIoU": 52.8578,
@@ -193,6 +193,10 @@
           }
         }
       ],
+      "paired_development_results": {
+        "path": "EXP/validation/l3_dev_20261120/facts.json",
+        "sha256": "f62756cc45fcd13e1cd8c23b9a864fa3a967dd2f6f5350a7e9d7bb83d86c9dd0"
+      },
       "preparation_report": {
         "path": "EXP/validation/dinov3b_preparation_20261118_r1/REPORT.md",
         "sha256": "b0976f086e9dea65fe2f173a5dfdd2a02167bd511939284dad3f4ce162826c77"
@@ -219,7 +223,7 @@
         "path": "EXP/validation/dinov3b_preparation_20261118_r1/source_index.json",
         "sha256": "f427c578733c27019d00e23c868b8f8f5015712e52b21a51187e1c2afe2d4f9d"
       },
-      "summary": "B32 是工程准备的独立起点：group-32 RTN，Linear 输入及 Q/K/V 按 CLS、storage、patch 静态 affine 拟合，P 为留零 log2。ImageNet 56.748%，ADE 29.6848%，原 32 个 train 样本，见已验证的方案库导入及独立重载。roles_direct 的局部实验仅是历史科研来源，未自动导入其 Memory、主题或灵感。历史主题 topic-69cd4c13fa63a6534df1@2 与灵感 idea-bda56fd9876d500e6309 可供 Generation 自主接续。仅 blocks.5 P、其余 FP 的历史研究得到 prefix/patch 两组与三组所选逐键码器相同；完整 AdaLog 冻结父状态上、新的 64 张 search 中，语义两组的新增 PV NMSE 0.00826616 高于三个等容量随机两组 0.00807328–0.00809509，总体语义分组优势解释撤回。可回退单层方案保留为线索。未闭合项包括固定 N=201 与 ADE 可变长度、局部代理与累计传播、CLS 教师分布和 patch 特征排序的可能冲突，也可改换方向。PTQ4DINO 资料路径 QAViT/knowledge/research-skills/research-routes/ptq4dino.md，历史成绩协议不同，只供线索。"
+      "summary": "B32 是工程准备的独立起点：group-32 RTN，Linear 输入及 Q/K/V 按 CLS、storage、patch 静态 affine 拟合，P 为留零 log2。ImageNet 56.748%，ADE 29.6848%，原 32 个 train 样本，见已验证的方案库导入及独立重载。roles_direct 的局部实验仅是历史科研来源，未自动导入其 Memory、主题或灵感。历史主题 topic-69cd4c13fa63a6534df1@2 与灵感 idea-bda56fd9876d500e6309 可供 Generation 自主接续。仅 blocks.5 P、其余 FP 的历史研究得到 prefix/patch 两组与三组所选逐键码器相同；完整 AdaLog 冻结父状态上、新的 64 张 search 中，语义两组的新增 PV NMSE 0.00826616 高于三个等容量随机两组 0.00807328–0.00809509，总体语义分组优势解释撤回。可回退单层方案保留为线索。未闭合项包括固定 N=201 与 ADE 可变长度、局部代理与累计传播、CLS 教师分布和 patch 特征排序的可能冲突，也可改换方向。PTQ4DINO 资料路径 QAViT/knowledge/research-skills/research-routes/ptq4dino.md，历史成绩协议不同，只供线索。已有独立开发视图（分类 5000、分割 502）的完整包测量见 paired_development_results。B32 的 Top-1/mIoU 为 57.78/33.1328；H1 在 64 图父状态上改变 fc2 舍入选行，结果为 61.38/34.0804。同视图 FP 为 81.04/74.7617。两包校准条件不同，差值不能单独归因于选行；其已观察官方分割方向也不同。原 Evidence ID 属于历史 Journal。"
     },
     "scientific_question": "如何在实际绑定的 DINOv3-B/16 上获得显著、可信、可复现的静态 W4A4 量化精度提升？",
     "search_space": {

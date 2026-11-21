@@ -11,6 +11,8 @@ import re
 from runtime.paths import ROOT
 from core.cards import ContractError, canonical, fingerprint, make_card, validate_payload, validate_schema, TEXT, PAYLOAD_SCHEMAS
 from core.journal import file_sha256, read_json, atomic_json, journal_read
+from core.memory import short_field
+from core.evidence_scope import card_scope
 from core.evidence import project_observations, selected_leaves, pointer, evidence_facts, compact_sample_lists, sample_list_view
 from core.debate import INITIAL_PAIRS, ranking_table, validate_verdict
 from agents.roles import tools_for, submission_schema
@@ -972,6 +974,44 @@ class RoleInteraction:
                            'Equal candidate and after_l3 identities can result from promotion; compare before_l3 and exact Evidence. '
                            'Retained historical measurements are not a new contemporaneous control or proof of causal effect.'}
 
+    def previous_candidate_results(self, task, sequence, delivered):
+        """Project the closed preceding round, including candidates absent from Top-3."""
+        number = task['inputs']['context'].get('round')
+        if number is None or number <= 1:
+            return []
+        prior = next((e for e in reversed(self.journal.events) if e['type'] == 'round_finished'
+                      and e['commit_sequence'] <= sequence and e['round'] + 1 == number), {})
+        outcome = prior.get('l3_outcome', {})
+        rows = []
+        for slot, result in outcome.get('candidates', {}).items():
+            candidate = result.get('hypothesis_ref')
+            if not candidate:
+                continue
+            payload = self.require_visible(task, candidate, field=('payload',))
+            row = {'slot': slot, 'candidate_ref': candidate, 'status': result['status'],
+                   'measurements': [], 'read_card': {'ref': candidate}}
+            row['parent_solution_id'] = payload.get('solution_derivation', {}).get('base_solution_id')
+            for key in ('research_question', 'solution_derivation', 'intervention'):
+                if key in payload:
+                    row[key] = short_field(payload[key], candidate, '/payload/' + key, 450)
+            for ref in result.get('valid_evidence_refs', []):
+                if ref in delivered:
+                    row['measurements'].append({'ref': ref, 'body_location': 'memory.cards'})
+                    continue
+                card = self.require_visible(task, ref)
+                facts = evidence_facts(card, self.journal.root)
+                calibration = card_scope(card).get('data', {}).get('calibration', {})
+                row['measurements'].append({
+                    'ref': ref, 'experiment_ref': facts['experiment_ref'], 'protocol_hash': facts['protocol_hash'],
+                    'model_ref': facts['identity'].get('model_ref'), 'measurement_source': facts['measurement_source'],
+                    'calibration_count': calibration.get('sample_count'),
+                    'calibration_ids_sha256': fingerprint(calibration['sample_ids']) if 'sample_ids' in calibration else None,
+                    'tasks': {name: {key: values[key] for key in ('purpose', 'split', 'sample_count', 'complete_view',
+                              'full_dataset', 'development_sha256', 'paired_metrics') if key in values}
+                              for name, values in facts['evaluations'].items()}})
+            rows.append(row)
+        return rows
+
     @journal_read
     def context(self, task):
         task = deepcopy(task)
@@ -1117,15 +1157,19 @@ class RoleInteraction:
         for ref in self.required_refs(task):
             deliver(ref)
         history = []
-        for ref in sorted(self.historical_experiment_refs(task)):
+        for ref in sorted(self.historical_experiment_refs(task), key=lambda r: self.journal.cards[r]['sequence']):
             card = self.require_visible(task, ref)
             if card['kind'] != 'EvidenceCard':
                 continue
-            from core.memory import short_field
             entry = self.retriever.entry(card, include_body=False)
             # History is navigation plus observed counterexamples/limits. Exact
             # per-arm measurements stay queryable without repeating entire trials.
-            history.append({**{k: v for k, v in entry.items() if k in
+            experiment_ref = card['payload']['experiment_ref']
+            question = self.require_visible(task, experiment_ref, field=('payload', 'question'))
+            history.append({'experiment_ref': experiment_ref,
+                'question': short_field(question, experiment_ref, '/payload/question', 350),
+                'controls_source': {'ref': experiment_ref, 'field': '/payload/controls'},
+                **{k: v for k, v in entry.items() if k in
                 ('ref', 'kind', 'title', 'status', 'measurement_source', 'scope', 'read_card')},
                 'observations': project_observations(card['payload']['observations'], ref, max_characters=1000),
                 'limits': {k: short_field(card['payload'][k], ref, '/payload/' + k, 350)
@@ -1223,6 +1267,10 @@ class RoleInteraction:
         from core.static_w4a4 import DESCRIPTION
         context["static_w4a4_protocol"] = DESCRIPTION
         context.update(available_seconds=budget['remaining_seconds'], budget_receipt=budget)
+        if purpose in ('focus', 'generate'):
+            previous = self.previous_candidate_results(task, sequence, delivered)
+            if previous:
+                memory['previous_candidate_results'] = previous
         if self.model_metadata:
             context['model_metadata'] = {**self.model_metadata['summary'],
                 'read_asset': {'asset': self.model_metadata['asset']['path']}}

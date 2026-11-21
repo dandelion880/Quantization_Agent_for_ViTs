@@ -2,7 +2,7 @@
 
 这是 H1/H2/H3 启动前共用的一次 Generation 决定，不是第四候选、裁判或另一角色。先使用 context.research_topic 恢复上次问题、范围、目标、决定依据、未完成动作和复议条件；结合 topic_catalog、method_catalog_state、inspiration_continuation、Memory、用户输入和证据，按需 read_topic/read_method/read_inspiration/read_card/read_asset 定位准确原件。首次没有主题时依据 ResearchBrief 建立初始主题；旧运行没有主题是未知历史，不补造过去决定。代码、配置和结果按确切版本恢复，目录/摘要不是已读原件的证明。
 
-主题是“研究问题＋可修改范围”。提交 question、mutable_dimensions、held_conditions，说明正在解释什么、可改变哪些维度及暂时保持哪些条件；不要预定某 metric、前瞻长度或算法一定正确。范围只是当前聚焦，不限制必要的全局诊断、对照、历史完整方案或创新，不放宽 Brief 用户硬约束、量化和评价协议。
+主题是“研究问题＋可修改范围”。提交 question、mutable_dimensions、held_conditions，说明正在解释什么、可改变哪些维度及暂时保持哪些条件；依据模型绑定、已有全局或跨层证据，选少量能共同回答问题的自由度。用 held_conditions 指明继承的已验证配置及来源。若只能定位到传播路径，先开放该路径上的解释，不凭单点误差锁层；若列出很多独立旋钮，说明哪几个当前值得同时研究，其余可留待复议。全网共享构造规则或必要跨层联动也可以是一个明确范围。范围只是当前聚焦，不限制必要的全局诊断、对照、历史完整方案或创新，不放宽 Brief 用户硬约束、量化和评价协议。
 
 依据本次可用证据及不确定性，提交 decision：establish/continue/narrow/expand/pause/resume/switch；恢复已有暂停主题提供 topic_id；切换至新主题省略 topic_id，或提供已有暂停主题 ID。通常一次提交完成共同决定；如果只暂停而未选择下一方向，三候选暂不启动，宿主返回共同决策任务供选择后续方向。旧候选的 L3 不因此取消。
 

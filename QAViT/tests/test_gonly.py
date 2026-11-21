@@ -178,7 +178,7 @@ class GOnlyRegression(TempCase):
 
     def test_generation_route_defaults_overrides_and_direct_router_cannot_downgrade(self):
         default = model_defaults()
-        self.assertEqual(default['generation'], ['gpt-6-astra', 'high'])
+        self.assertEqual(default['generation'], ['gpt-6.2-astra', 'high'])
         self.assertNotIn('judger', default)
         self.assertNotIn('evolution', default)
         for purpose in ('generate', 'select', 'plan_l3'):
@@ -187,9 +187,9 @@ class GOnlyRegression(TempCase):
         for route in (['gpt-6.1-sol', 'high'], ['gpt-6-astra', 'medium']):
             config = validation_config()
             config['llm']['agent_models'] = {**default, 'generation': route}
-            with self.assertRaisesRegex(ContractError, 'gpt-6-astra'):
+            with self.assertRaisesRegex(ContractError, 'Astra / high'):
                 config_check(config)
-            with self.assertRaisesRegex(ContractError, 'gpt-6-astra'):
+            with self.assertRaisesRegex(ContractError, 'Astra / high'):
                 client_for('generation', config['llm'])
 
     def test_preselection_can_experiment_resume_and_pass_evidence_to_l3(self):

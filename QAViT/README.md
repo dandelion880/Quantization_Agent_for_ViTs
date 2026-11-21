@@ -1,6 +1,6 @@
 # QAViT V2
 
-QAViT 让 LLM 负责量化科研推理，程序负责数值执行、身份与来源、状态和归档。科研运行入口 run.py，研究配置协议 qavit.research/2。本分支为 G-only：Generation 统一承担科研任务（gpt-6-astra/high），保留 Coding 单实现→Safeguard→执行、Recorder、Supervisor 及既有预算/GPU 调度。稳定 Full 位于 main / full-baseline-20261110-8800006。
+QAViT 让 LLM 负责量化科研推理，程序负责数值执行、身份与来源、状态和归档。科研运行入口 run.py，研究配置协议 qavit.research/2。本分支为 G-only：Generation 统一承担科研任务（gpt-6.2-astra/high），保留 Coding 单实现→Safeguard→执行、Recorder、Supervisor 及既有预算/GPU 调度。稳定 Full 位于 main / full-baseline-20261110-8800006。
 
 ## 阅读与修改入口
 
@@ -21,7 +21,7 @@ agents/tasks.py、roles.py、prompts/ 定义任务/角色/工具及提示词；a
 
 ## 环境与运行
 
-先按 [ENVIRONMENT.md](docs/ENVIRONMENT.md) 准备依赖、模型服务与只读资产。入口不安装或升级依赖。角色模型默认值唯一维护于 configs/models.json；Generation 固定 gpt-6-astra/high，其他角色可显式覆盖，生效配置冻结于 research_run.json，不自动回退。运行中源码、Prompt 或知识变化仍遵守既有身份与显式 intervention 恢复规则。
+先按 [ENVIRONMENT.md](docs/ENVIRONMENT.md) 准备依赖、模型服务与只读资产。入口不安装或升级依赖。角色模型默认值唯一维护于 configs/models.json；Generation 默认使用 gpt-6.2-astra/high，显式配置可选已核验的 Astra/high 路由，其他角色也可显式覆盖，生效配置冻结于 research_run.json，不自动回退。运行中源码、Prompt 或知识变化仍遵守既有身份与显式 intervention 恢复规则。
 
 将 configs/research.json 复制到新的 EXP 目录并填写 ResearchBrief、评测协议、约束、资源及预算。模板故意不能直接运行。从项目根目录执行：
 
@@ -52,6 +52,8 @@ H3 默认持续发展一条活跃灵感，按确切代码、配置、结果和�
 
 动态主题与方法谱系见 [资源生命周期](docs/RESOURCE_LIFECYCLE.md#动态研究主题与方法谱系)；每轮先恢复再由 Generation 共用选题，轮中改变追加版本，不限制原全局搜索、历史父方案或 B。该版伪代码和针对性状态/真实 Generation 行为回放见 [本轮记录](../EXP/validation/research_topics_20261117_r1/REPORT.md)。
 
-工程清洗、恢复边界、成本实测和回放验证见 [工程报告](../EXP/validation/engineering_cleanup_20261117_r1/REPORT.md)；最新伪代码见 [当前流程](../EXP/validation/multi_vit_20261118_r1/PSEUDOCODE.md)。规则仍在上述原维护入口，旧报告仅描述当时版本。
+工程清洗、恢复边界、成本实测和回放验证见 [工程报告](../EXP/validation/engineering_cleanup_20261117_r1/REPORT.md)；最新伪代码见 [当前流程](../EXP/validation/decision_20261121/PSEUDOCODE.md)。规则仍在上述原维护入口，旧报告仅描述当时版本。
 
-模型输入与绑定示例见 [环境与资产](docs/ENVIRONMENT.md) 和 [DINOv3 研究输入](../EXP/inputs/dinov3b_static_w4a4/input.json)。新运行的 model_metadata.json 保存实测块调用、token 布局、量化边与任务特征入口；各角色默认接收摘要。
+模型输入与绑定示例见 [环境与资产](docs/ENVIRONMENT.md) 和 [DINOv3 独立开发集研究输入](../EXP/inputs/dinov3b_static_w4a4_independent_dev/input.json)。新运行的 model_metadata.json 保存实测块调用、token 布局、量化边与任务特征入口；各角色默认接收摘要。
+
+下一轮 focus 和 generate 从 memory.previous_candidate_results 恢复上一轮逐候选实测及其条件。DINOv3-B 轮内使用 L3-dev，90% 目标按最终完整官方验证的各任务 FP 核对。[科研决策回放与边界](../EXP/validation/decision_20261121/REPORT.md)

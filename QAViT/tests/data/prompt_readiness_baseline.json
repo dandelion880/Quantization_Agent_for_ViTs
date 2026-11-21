@@ -21,18 +21,18 @@
   "explicit_fix_source": "EXP/validation/parent_evolution_20261029_r1/prompts.diff; authorized parent/final workflow update, 2026-10-29; EXP/validation/serial_debate_memory_20261029_r1/prompts.diff; authorized serial debate/shared science/fixed verdict update, 2026-10-29; EXP/validation/experiment_inputs_20261029_r1/prompts.diff; authorized experiment input and Brief-scope alignment, 2026-10-29; EXP/validation/gonly_hardening_20261116_r1/revision: same-request candidate revision recovery, actual UTC 2026-11-15; EXP/validation/gonly_hardening_20261116_r1: structured dual-task execution failures for Coding and Safeguard, actual UTC 2026-11-15; EXP/validation/gonly_postrun_B_context_20261115_r1: post-formal read-only before/after retained B context, no formal-run intervention; EXP/validation/gonly_research_capability_20261116_r1: source recovery, calibration execution, propagation diagnosis and append-only knowledge corrections; EXP/validation/skill_system_integration_20261116_r1: seven optional skills, reference optimization versus independently reconstructed training-free method, unchanged frozen Brief semantics; EXP/validation/capabilities_multi_l3_20261117_r1: unified executable capability discovery, scientific synthesis/revision and all final candidates independently enter L3; candidate-priority GPU scheduling and per-candidate Recorder outcomes; EXP/validation/inspiration_continuity_20261117_r1: independent idea notes, exact cross-round H3 continuation, H1/H2 reversible derivations; unchanged B, three-candidate L3 and quantization protocol; EXP/validation/research_topics_20261117_r1: shared Generation topic recovery/decision, explicit midround scope versions, retained reconsideration/actions and method lineage; original global search and L3 rules unchanged; EXP/validation/engineering_cleanup_20261117_r1/prompts.diff: exact action continuation, optional note isolation, model-visible training and authorized snapshot members; semantic regressions and real-code replays accompany changes; EXP/validation/dinov3b_preparation_20261118_r1/prompts.diff: productive numerical development, parent derivations and scoped final evaluation; native plan schemas include the opt-in fixed token partition for the measured preparation baseline",
   "explicit_prompt_fixes": {
     "arbitrate": "c77abcdfd9fbac6ee30a56b9765b4f2374e91aa4e6003e5fb69176e132187467",
-    "code": "ff62be9249bdb085d072e3264c2e8fe4125dddcd2c0dcced5f1e03c8a10f9579",
+    "code": "5cdfdcc14c3a9d19723e9eece7ff38c95cf203f220c3cb2f7314370348589cae",
     "evolve": "7f5b511b612f892f2e6724458abb8f1f092ffb94503f8ef4204c378258643b29",
-    "focus": "26938968e2f540612adeafdcac1e7ccf9f1669414f2395e81d193101b60ca069",
-    "generate": "2856b91a6d6b7d84e8e1bbeae7b2e74d0304cd84070bf69170ef8d193652300b",
+    "focus": "7cfbd137fbccef964eb828b77b00e1e08ab0a7cb7eef728c56e1cb48d0bd4ae4",
+    "generate": "e4518acc6110f2a786d8d913617944026c0a8c0d1886190a39643409aebaecbb",
     "interpret": "12b86b01a7acb64631cc47d313fd9c7aa24e83be3c518ba9566b27a714d2e99d",
-    "plan_l3": "6aaaa5e7e27511b1d4d3d50195b46f01ed6e7739010c016a4eee698d7cd1982f",
+    "plan_l3": "c6ecef020d947b4f34ec24148d4c149fdee976956cbafe413de17a3a61106eef",
     "position": "a646ef350a0aace95395b8680a357888822ba9a3df2c19bfbdb9ec507cfc480e",
     "rank": "eb06c9a05d47a3d1b5dbba59084b045fef99dcca0778874c87826c1900ff854b",
-    "record": "c4659b3377016ed90f82fb92f5bd95913951cc160c3da087e7a86dde1c50a604",
-    "safeguard": "4bf834721fb6f37985d71610edb4a3432d2e27f2523631fc52c53db731ff5430",
+    "record": "cdcff33aac7e1e8c6f7e5aca0eb5f4ac937134ba464165d18997d82e9727e901",
+    "safeguard": "2ff299e8a96e9461d9093659930f2ce32d5beeae6d6b7019eb82a8ba024b5059",
     "screen": "b6aa316b489a08be3e9decf23842d865382e4b8826e56391647e61d3db98c88d",
-    "select": "6b7cca9f6bddf4b499918b8867e49241a67925c3a4e160d1f71976c4d746205f",
+    "select": "831462b2ca45f876eef13ed5197ca1cd643f7fd27a6df8131799d82de4c25dec",
     "supervise": "eaaa1d51c1a2b759fa254ccc246e7d54ff81e8a08168ed07e00356d0deeac3bc"
   },
   "explicit_schema_fixes": {
@@ -41,7 +41,9 @@
     "validate_experiment": "abd544d78dcc6b7814ec7173b9a6652bb92ef5a18baac96c340497c41d2c8722"
   },
   "fix_notes": [
-    "G-only: Generation generate/select/plan_l3; evidence-driven revision and optional discriminative-experiment skill; Recorder receives preselection without H4."
+    "G-only: Generation generate/select/plan_l3; evidence-driven revision and optional discriminative-experiment skill; Recorder receives preselection without H4.",
+    "Decision context: bounded active dimensions, matched parent controls, development versus official goals.",
+    "Synchronize already committed 6aa8f28 Coding, Safeguard and Recorder prompt changes."
   ],
   "generation_loop_note": "2026-11-04: only Generation/Evolution autonomous pre-H experiments, selected support refs and removal of routine Judger approval/interpretation. See EXP/validation/generation_loop_20261104_r1/prompts.diff.",
   "gonly_readiness_change": "2026-11-15: independent B, scientific revision and exact selection versions, paired evidence and stable question closure. Original assembled baselines retained.",

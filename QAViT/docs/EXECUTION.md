@@ -35,7 +35,7 @@ G-only 每轮发布 H1/H2/H3 三个 generate 任务，允许自主进行“静�
 
 每份有效 L3 结果独立归档和更新方案库/B，不以轮次已经处理为由忽略后到结果。完成顺序不改变候选归属；同协议排序沿用 mIoU、再 Top-1 及稳定平分规则。每候选独立报告计划、执行、Evidence、失败或延期；全轮 formal_validation_success 要求 H1/H2/H3 均通过协议，部分成功不会写成全部成功。明确旧 gonly_preselection 且已结束的历史单候选轮次按当时 expected_slots 报告，避免重写原有成功事实。暂停恢复沿各请求原键和版本继续，已接收结果不重测；个别失败不阻断其他候选。Recorder 在批次中综合各候选结果及未完成项。
 
-Generation 的 generate/select/plan_l3 均固定 gpt-6-astra/high，配置覆盖和直接调用不得降级；运行时逐次预检目录、档位和账户，服务端未回显身份时如实记为未知，回显冲突或降级拒绝接受。Coding、Safeguard、Recorder、Supervisor 沿用原角色配置。默认 llm_concurrency=4（可设1–4），现有非 Judger 订阅互斥继续使用；历史并发兼容代码不触发科研任务。
+Generation 的 generate/select/plan_l3 默认使用 gpt-6.2-astra/high，配置覆盖和直接调用不得降级；运行时逐次预检目录、档位和账户，服务端未回显身份时如实记为未知，回显冲突或降级拒绝接受。Coding、Safeguard 默认使用 gpt-6.2-sol/medium，Recorder、Supervisor 使用 gpt-6-luna。默认 llm_concurrency=4（可设1–4），现有非 Judger 订阅互斥继续使用；历史并发兼容代码不触发科研任务。
 
 数值实验使用独立 experiment_concurrency 上限，新模板为 auto，解析后等于允许 GPU 池大小（CPU 路径为1）；显式整数上限保持有效。原非数值worker合计上限llm_concurrency+1保留，数值不占这些槽。不以相同模型checkpoint或全局numeric锁串行化独立实验。GPU按空闲情况分配，以 UUID 文件租约跨进程互斥；worker及分片继承租约，忙卡留在ready队列，不占尝试/重试次数。Coding→Safeguard→执行→原请求Evidence链不变。旧运行显式并发1仍遵守原配置。
 
