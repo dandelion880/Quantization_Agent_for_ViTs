@@ -18,7 +18,7 @@ from core.debate import INITIAL_PAIRS, ranking_table, validate_verdict
 from agents.roles import tools_for, submission_schema
 from tools.experiments import SERVICES
 from tools.data_receipt import data_receipt
-from agents.source_workspace import edit, engineering_context, locate, revision
+from agents.source_workspace import edit, engineering_context, asset_text_page, revision
 from tools.safeguards import write_artifact, NUMERIC_IMPORTS, PUBLIC_INTERFACE_FILES
 
 
@@ -1334,7 +1334,8 @@ class RoleInteraction:
         if purpose in ('code', 'safeguard'):
             for index, row in enumerate(inputs['context'].get('implementation_history', [])):
                 item = row['candidate']
-                context['prior_implementation_' + str(index)] = {'sha256': item['source_sha256'], 'read_asset': {'asset': item['path']}}
+                context['prior_implementation_' + str(index)] = {'sha256': item['source_sha256'], 'read_asset': {'asset': item['path']},
+                    **({'edit_base': {'asset': item['path'], 'base': item['source_sha256']}} if purpose == 'code' else {})}
         if purpose == 'rank':
             context['task']['matches'] = self.selection_matches(inputs['context'])
             context['task']['direct_results'] = ranking_table(context['task']['matches'], inputs['context']['eligible'])
@@ -1439,7 +1440,9 @@ class RoleInteraction:
         digest = artifact['source_sha256']
         if file_sha256(path) != digest:
             raise ContractError('必需源码资产哈希改变')
-        text = path.read_text()
+        if task['inputs']['purpose'] == 'code':
+            context[key + '_edit_base'] = {'asset': str(path), 'base': digest}
+        text = path.read_bytes().decode('utf-8')
         if len(text) <= 4 * self.PAGE_CHARACTERS:
             context[key] = text
             context['memory'].setdefault('asset_locations', {})[str(path)] = {'sha256': digest, 'location': 'context.' + key}
@@ -1623,7 +1626,8 @@ class RoleInteraction:
             elif isinstance(value, dict) and value.get('asset') in card_paths and verified_page(value, card_paths[value['asset']], True):
                 item['result'] = {'ref': card_paths[value['asset']], 'body_location': 'context bound object or complete tool result'}
             elif isinstance(value, dict) and value.get('asset') in asset_locations and value.get('sha256') == asset_locations[value['asset']]['sha256']:
-                item['result'] = {'asset': value['asset'], 'body_location': asset_locations[value['asset']]['location']}
+                item['result'] = {**{k: value[k] for k in ('sha256', 'edit_base') if k in value},
+                                  'asset': value['asset'], 'body_location': asset_locations[value['asset']]['location']}
             else:
                 digest = fingerprint(value)
                 if digest in seen:
@@ -1684,9 +1688,9 @@ class RoleInteraction:
         # An operator can hand off exact, hashed historical research files in the
         # frozen Brief. This does not import the other run's cards or permissions.
         handoff = self.asset_references(self.brief['payload'].get('research_handoff', {}))
-        validation = ROOT / 'EXP/validation'
+        handoff_roots = (ROOT / 'EXP/validation', ROOT / 'EXP/inputs')
         handoff = {path: digest for path, digest in handoff.items() if digest
-                   and validation in Path(path).parents and not self.archive_path(path)}
+                   and any(root in Path(path).parents for root in handoff_roots) and not self.archive_path(path)}
         allowed.update(solution_assets)
         allowed.update(static)
         allowed.update(handoff)
@@ -1826,12 +1830,11 @@ class RoleInteraction:
             text = canonical(value)
         else:
             if member not in files or not permitted(member):
-                raise ContractError('快照成员未授权或不存在；评价规则及历史提示词不属于源码恢复视图')
+                matches = [n for n in sorted(files) if permitted(n) and Path(n).name == Path(member).name]
+                raise ContractError('快照成员不可读；省略 member 列出授权成员。授权的同名成员: ' + canonical(matches))
             text = files[member]
-        start, limit = locate(text, args), args.get('limit',self.PAGE_CHARACTERS)
         return {**original, 'asset': str(path), 'snapshot_field': args['snapshot_field'], 'member': member,
-                'sha256': hashlib.sha256(text.encode()).hexdigest(), 'offset': start, 'text': text[start:start+limit],
-                'total_characters': len(text), 'next_offset': start+limit if start+limit<len(text) else None}
+                'sha256': hashlib.sha256(text.encode()).hexdigest(), **asset_text_page(text, args, self.PAGE_CHARACTERS)}
 
     def topic_context(self, ref, sequence):
         if not ref:
@@ -2036,19 +2039,22 @@ class RoleInteraction:
             if 'member' in args:
                 raise ContractError('member 需要明确 snapshot_field，不猜测快照位置')
             allowed = self.authorized_assets(parent)
-            if str(path) not in allowed or not path.is_file():
-                raise ContractError('资产读取限本调用已提交授权来源；立场隔离禁止目录旁路')
+            if str(path) not in allowed:
+                raise ContractError('资产读取限本调用已提交授权来源；立场隔离禁止目录旁路。'
+                                    '请使用目录的精确 read_asset；宿主源码/配置可从已绑定 source_snapshot 用相对成员名读取。')
+            if not path.is_file():
+                raise ContractError('已绑定资产当前不可用: ' + str(path))
             expected = allowed[str(path)]
             digest = file_sha256(path)
             if expected and digest != expected:
                 raise ContractError('资产内容已变化，不属于本调用冻结可见版本')
             try:
-                text = path.read_text(encoding='utf-8')
+                text = path.read_bytes().decode('utf-8')
             except UnicodeError as exc:
                 raise ContractError('read_asset 仅支持 UTF-8 文本') from exc
-            start, limit = locate(text, args), args.get('limit', self.PAGE_CHARACTERS)
-            return {'asset': str(path), 'sha256': digest, 'offset': start, 'text': text[start:start + limit],
-                    'total_characters': len(text), 'next_offset': start + limit if start + limit < len(text) else None}
+            edit_base = {'edit_base': {'asset': str(path), 'base': digest}} if (
+                path.suffix == '.py' and parent['inputs']['purpose'] == 'code' and expected) else {}
+            return {**edit_base, 'asset': str(path), 'sha256': digest, **asset_text_page(text, args, self.PAGE_CHARACTERS)}
         raise ContractError('未知宿主工具')
 
 

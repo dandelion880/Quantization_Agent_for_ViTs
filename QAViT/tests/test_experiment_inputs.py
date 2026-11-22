@@ -297,7 +297,10 @@ class BriefEvaluationRegression(InputCase):
 
     def evidence(self, wf, *, full=False, commit=True):
         rows = wf.brief["payload"]["evaluation_protocol"]["evaluations"]
-        spec = wf.broker.freeze(self.draft(rows), requester="judger")
+        from tests.support import scheduler_l3_draft
+        draft = scheduler_l3_draft()
+        draft["execution"]["evaluations"] = deepcopy(rows)
+        spec = wf.broker.freeze(draft, requester="judger")
         wf.journal.commit("fixture/spec", cards=[spec])
         evaluations = {}
         for row in rows:

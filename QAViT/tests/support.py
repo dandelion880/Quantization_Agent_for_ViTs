@@ -52,6 +52,18 @@ def experiment_payload(level="L1"):
             "validation": {"baseline": "FP32 original", "scope": "controlled local QDQ, not full-model accuracy"}}
 
 
+def scheduler_l3_draft():
+    from tests.test_plan_execution_consistency import numeric_plan
+    plan = numeric_plan(granularity='per_tensor')
+    plan['layers'] = [row for row in plan['layers'] if row['module'] == 'blocks.0.mlp.fc2']
+    for target in ('weight', 'activation'):
+        plan['layers'][0][target].update(format='INT4', bits=4)
+    draft = experiment_payload('L3')
+    draft['execution'].update(service='quantize_evaluate', parameters={}, plan=plan,
+                              evaluations=[{'kind':'classification','split':'final','count':2}])
+    return draft
+
+
 def topic_decision(wf):
     """Scripted direction for old lifecycle fixtures, never scientific evidence."""
     current=wf.topics.active()

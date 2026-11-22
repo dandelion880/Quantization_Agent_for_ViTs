@@ -219,10 +219,12 @@ class WorkflowDriver:
             count += 1
         return count
 
-    def update_numeric_wait(self):
+    def update_numeric_wait(self, *, draining=False):
         tasks = list(self.queue.snapshot(fields=("kind", "state")).values())
         numeric = any(t['kind'] == 'experiment' and t['state'] in ('pending', 'ready', 'running', 'retry') for t in tasks)
-        agent = any(t['kind'] != 'experiment' and t['state'] in ('ready', 'running', 'retry') for t in tasks)
+        # During drain dispatch is suspended. Only a running nonnumeric job overlaps.
+        active = ('running',) if draining else ('ready', 'running', 'retry')
+        agent = any(t['kind'] != 'experiment' and t['state'] in active for t in tasks)
         self.budget.numeric_wait(numeric and not agent)
 
     def numeric_running(self):
@@ -493,7 +495,7 @@ class WorkflowDriver:
                     if scan:
                         self._disk_checked_at = time.monotonic()
                     self.poll()
-                    self.update_numeric_wait()
+                    self.update_numeric_wait(draining=self.numeric_running() and budget['research_remaining_seconds'] <= 0)
                     self.release_scope_closeout_reserve()
                     budget = self.budget.snapshot()
                     if self.transport_blocked:

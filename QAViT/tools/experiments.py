@@ -154,6 +154,7 @@ def prepare_request(payload, brief, runtime=None):
     if 'training' in execution:
         # Check the mirror without rewriting the original request.
         merge(deepcopy(choices), {'training': execution['training']}, 'resolved_choices')
+    validate_diagnostic_view(execution, value['level'])
     training = execution.get('training', choices.get('training'))
     if training is True and (service in ('profile', 'frozen_helper', 'tensor_probe', 'evaluate_artifact')
                             or brief.get('hard_constraints', {}).get('training_allowed') is False
@@ -288,6 +289,25 @@ def normalize_calibration(value, brief=None):
 from tools.development import stage_protocol
 
 
+def validate_diagnostic_view(execution, level):
+    if execution.get('service') != 'custom_experiment':
+        return
+    parameters = execution.get('parameters', {})
+    if not isinstance(parameters, dict):
+        raise ContractError('execution.parameters 必须是对象')
+    view = parameters.get('diagnostic_view')
+    if view is None:
+        return
+    if level not in ('L1', 'L2'):
+        raise ContractError('diagnostic_view requires a local experiment')
+    validate_schema(view, {'type': 'object', 'additionalProperties': False, 'required': ['split', 'count'],
+        'properties': {'split': {'enum': ['calibration', 'search']}, 'offset': {'type': 'integer', 'minimum': 0},
+                       'count': {'type': ['integer', 'null'], 'minimum': 1}, 'ordering_seed': {'type': 'integer'}}},
+        'execution.parameters.diagnostic_view')
+    if execution.get('training', execution['resolved_choices'].get('training')) and view['split'] != 'calibration':
+        raise ContractError('reference optimization reads only calibration during fit')
+
+
 def normalize_execution(execution, brief, *, level=None):
     """纯参数检查和唯一值补全；不读取资产、不创建卡片、不执行实验。"""
     if not isinstance(execution, dict):
@@ -386,6 +406,7 @@ def normalize_execution(execution, brief, *, level=None):
                 for key, default in (('count', 1), ('seed', value['seed']), ('offset', 0)):
                     value['arguments'].setdefault(key, default)
     normalize_calibration(value, brief if consumes_calibration else None)
+    validate_diagnostic_view(value, level)
     if choices['training'] and (value.get('calibration', {}).get('split', 'calibration') != 'calibration'
             or value.get('evaluation', {}).get('split', 'search') != 'search'
             or any(row.get('kind') != 'classification' or row.get('split') != 'search'
@@ -653,6 +674,14 @@ class ExperimentBroker:
     def freeze(self, payload, *, requester, refs=()):
         payload = preflight_experiment(payload, self.journal.card(self.brief_ref)['payload'], self.runtime, executable=True)
         brief = self.journal.card(self.brief_ref)["payload"]
+        if (self.runtime or {}).get('development_only_research') and requester != 'program':
+            execution = payload['execution']
+            if payload['level'] == 'L3' and execution['result_protocol'].get('purpose') != 'development':
+                raise ContractError('科研阶段 L3 使用绑定的完整双任务开发视图；官方终评由宿主在候选冻结后执行')
+            if any(row.get('split') in ('final', 'ade_validation') or
+                   (row.get('kind') == 'ade_frozen' and row.get('split') != 'ade_dev')
+                   for row in [execution.get('evaluation', {}), *execution.get('evaluations', [])]):
+                raise ContractError('科研阶段不能派发官方验证视图的评测')
         payload["execution"] = resolve_execution(payload["execution"], brief, level=payload["level"])
         execution = payload["execution"]
         # CUDA placement is operational: an empty/busy authorized pool leaves

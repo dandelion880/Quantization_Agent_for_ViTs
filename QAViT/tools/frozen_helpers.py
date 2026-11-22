@@ -64,30 +64,9 @@ class FrozenHelper:
 
 
 def frozen_helper_service(experiment, backend, cfg, data, directory):
-    from tools.experiment_worker import data_view
     from tools.runtime_interface import execute_custom
     spec = experiment['payload']['execution']
-    key = 'calibration' if spec['arguments'].get('split', 'calibration') == 'calibration' else 'evaluation'
-    selection = spec[key]
-    view = data_view(data, selection)
-
-    class RestrictedView:
-        labels, identity = view.labels, view.identity
-
-        def ids(self, split):
-            if split != selection['split']:
-                raise ContractError('frozen helper cannot read outside its requested split')
-            return view.ids(split)
-
-        def batches(self, split):
-            self.ids(split)
-            yield from view.batches(split)
-
-    # Observation wraps the already restricted view, including nonzero offsets.
-    # execute_custom validates against that view, so its relative offset is zero.
-    payload = deepcopy(experiment['payload'])
-    payload['execution'][key]['offset'] = 0
-    result = execute_custom(FrozenHelper, payload, backend, cfg, RestrictedView(), directory)
+    result = execute_custom(FrozenHelper, experiment['payload'], backend, cfg, data, directory)
     result['execution_facts']['measurement_kind'] = ('frozen_propagation' if spec['tool'] == HELPER_NAMES[0]
                                                      else 'calibration_scale_selection')
     report = result['observations']['result']

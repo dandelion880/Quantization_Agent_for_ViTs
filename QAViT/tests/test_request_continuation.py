@@ -216,9 +216,8 @@ class RequestContinuation(TempCase):
                         measurements.append(evidence['id'])
                         wf.progress_request(wf.queue.get(task['task_id']))
                 elif task['inputs']['purpose'] == 'plan_l3':
-                    draft = experiment_payload('L3')
-                    draft['execution'].update(service='evaluate_artifact', parameters={}, evaluations=[{
-                        'kind': 'classification', 'split': 'final', 'count': 2}])
+                    from tests.support import scheduler_l3_draft
+                    draft = scheduler_l3_draft()
                     if task['inputs']['context'].get('plan_revision'):
                         self.assertIn('RequestBudgetInsufficient', canonical(task['inputs']['context']['request_feedback']))
                         draft['question'] += ' (revised after explicit feasibility feedback)'

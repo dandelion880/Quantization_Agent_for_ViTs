@@ -507,3 +507,23 @@ coverage.xml
 !/EXP/validation/decision_20261121/replay.py
 !/EXP/validation/decision_20261121/verified.log
 !/EXP/validation/decision_20261121/verify.py
+
+# Release index and concise local measurements. Raw actor calls, accounts and weights stay local.
+!/EXP/validation/engineering_replay_20261122/
+!/EXP/validation/engineering_replay_20261122/REPORT.md
+!/EXP/validation/engineering_replay_20261122/COVERAGE.md
+!/EXP/validation/engineering_replay_20261122/collection.json
+!/EXP/validation/engineering_replay_20261122/audit.py
+!/EXP/validation/engineering_replay_20261122/audit.json
+!/EXP/validation/engineering_replay_20261122/evidence_index.py
+!/EXP/validation/engineering_replay_20261122/engineering_cases.json
+!/EXP/validation/engineering_replay_20261122/behavior_results.json
+!/EXP/validation/engineering_replay_20261122/chain.py
+!/EXP/validation/engineering_replay_20261122/chain.log
+!/EXP/validation/engineering_replay_20261122/package_probe.py
+!/EXP/validation/engineering_replay_20261122/package_check/
+!/EXP/validation/engineering_replay_20261122/package_check/receipt.json
+!/EXP/validation/engineering_replay_20261122/verify.py
+!/EXP/validation/engineering_replay_20261122/verification.json
+!/EXP/validation/engineering_replay_20261122/data_check/
+!/EXP/validation/engineering_replay_20261122/data_check/receipt.json

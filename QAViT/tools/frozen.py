@@ -55,6 +55,8 @@ def original_package(payload, execution, journal):
     if payload['provenance'].get('model_ref') != binding.get('model_ref') or not binding.get('verified_segmentation'):
         raise ContractError('evaluation evidence differs from its bound complete frozen package')
     result = deepcopy(binding)
+    if not result.get('model_identity') and result.get('candidate'):
+        result['model_identity'] = package_identity(result, read_json(Path(result['model_dir']) / 'manifest.json'))
     result['source_cache'] = str(journal.root / 'solution_library' / 'source' / result['source_version'])
     _materialize_source(result)
     return result
@@ -96,7 +98,8 @@ def bind_sources(journal, refs, *, training_free_only=False):
         # Evidence and solution IDs bind the same source era. A resumed host may
         # have changed even though this is still the same scientific run.
         binding = {'evidence_ref': ref, 'experiment_ref': p['experiment_ref'],
-            'model_ref': p['provenance']['model_ref'], 'model_dir': str(directory), 'assets': assets,
+            'model_ref': p['provenance']['model_ref'], **({'model_identity': deepcopy(p['provenance']['model_identity'])} if p['provenance'].get('model_identity') else {}),
+            'model_dir': str(directory), 'assets': assets,
             'candidate': deepcopy(approval['candidate']) if approval and verified else None,
             **({'source_reload': 'native_loader_required'} if not verified else {}),
             **completed_package(p, experiment),
@@ -187,7 +190,7 @@ def bind_solutions(journal, refs, brief):
         source_record = historical_source(row)
         source = source_record['source_snapshot']
         binding = {'solution_id': ref, 'evidence_ref': evidence['id'], 'experiment_ref': p['experiment_ref'],
-                   'model_ref': ref, 'model_dir': str(directory),
+                   'model_ref': ref, **({'model_identity': deepcopy(p['provenance']['model_identity'])} if p['provenance'].get('model_identity') else {}), 'model_dir': str(directory),
                    'assets': [a for a in p['artifacts'] if directory in Path(a['path']).parents],
                    'candidate': deepcopy(row.get('code')), 'source_snapshot': deepcopy(source),
                    'source_version': source_record['source_version'],
@@ -271,7 +274,7 @@ def _materialize_source(binding, *, create=True):
     return root
 
 
-def _historical_runtime(binding, backend, cfg):
+def _historical_runtime(binding, backend, cfg, identity):
     """Load matching immutable numerical source in a private package namespace."""
     root = _materialize_source(binding, create=False)
     namespace = 'qavit_history_' + binding['source_version']
@@ -283,7 +286,7 @@ def _historical_runtime(binding, backend, cfg):
         spec.loader.exec_module(module)
     manifest = read_json(Path(binding['model_dir']) / 'manifest.json')
     # Rebuild the old backend from the declared model/assets, not a fabricated identity.
-    expected = deepcopy(manifest['identity'])
+    expected = deepcopy(identity)
     host = deepcopy(backend.identity())
     old_config = deepcopy(expected['config'])
     old_config['device'] = host['config']['device']
@@ -343,6 +346,29 @@ def _candidate_module(candidate, namespace=None):
     return module
 
 
+def package_identity(binding, manifest):
+    """The host records the backend identity. The approved exporter owns its manifest schema."""
+    if binding.get('model_identity'):
+        return binding['model_identity']
+    if isinstance(manifest.get('identity'), dict) and 'config' in manifest['identity']:
+        return manifest['identity']
+    # Legacy custom bundles have only an Evidence reference. Require the original
+    # host-produced package and matching artifact receipts before taking its identity.
+    directory = Path(binding['model_dir'])
+    if not binding.get('candidate') or directory.parent.parent.name != 'jobs':
+        raise ContractError('frozen package lacks its bound backend identity')
+    origin = directory.parent.parent.parent
+    ref = binding['evidence_ref']
+    card = validate_card(read_json(origin / 'cards' / (hashlib.sha256(ref.encode()).hexdigest() + '.json')))
+    payload = card['payload']
+    if (card['kind'] != 'EvidenceCard' or card['author'] != 'program' or card['id'] != ref or payload['status'] != 'completed'
+            or payload['provenance'].get('model_ref') != binding['model_ref']
+            or payload['experiment_ref'] != binding['experiment_ref']
+            or any(asset not in payload['artifacts'] for asset in binding['assets'])):
+        raise ContractError('legacy frozen package differs from its source Evidence')
+    return payload['provenance']['model_identity']
+
+
 def load_frozen(binding, backend, cfg, data):
     def verify():
         directory = Path(binding['model_dir'])
@@ -360,11 +386,16 @@ def load_frozen(binding, backend, cfg, data):
     namespace, loading_backend, loading_cfg = None, backend, cfg
     if binding.get('source_snapshot'):
         _source_files(binding)  # Always verify the declared original source, even on same-version loads.
-        manifest_identity = read_json(Path(binding['model_dir']) / 'manifest.json')['identity']
+        manifest_identity = package_identity(binding, read_json(Path(binding['model_dir']) / 'manifest.json'))
         current_identity = backend.identity()
         numerical_hash = manifest_identity.get('agent_code_sha256')
         if binding.get('protocol_compatibility') or not numerical_hash or numerical_hash != current_identity.get('agent_code_sha256'):
-            namespace, loading_backend, loading_cfg, factory = _historical_runtime(binding, backend, cfg)
+            namespace, loading_backend, loading_cfg, factory = _historical_runtime(binding, backend, cfg, manifest_identity)
+        else:
+            expected = deepcopy(manifest_identity)
+            expected['config']['device'] = current_identity['config']['device']
+            if expected != current_identity:
+                raise ContractError('frozen source model/data identity differs from current backend')
     if candidate:
         module = _candidate_module(candidate, namespace)
         factory = getattr(module, 'make_executor', factory)

@@ -34,9 +34,8 @@ class MultiCandidateL3(TempCase):
         advance_with_topic_fixture(wf)
         for ready in wf.queue.ready():
             task = wf.queue.claim(ready['task_id'])
-            draft = experiment_payload('L3')
-            draft['execution'].update(service='evaluate_artifact', parameters={}, evaluations=[{
-                'kind': 'classification', 'split': 'final', 'count': 2}])
+            from tests.support import scheduler_l3_draft
+            draft = scheduler_l3_draft()
             wf.submit(task, draft, 'scripted')
         advance_with_topic_fixture(wf)
         requests = {t['inputs']['slot']: t for t in wf.queue.ready() if t['kind'] == 'experiment_request'}
@@ -49,6 +48,20 @@ class MultiCandidateL3(TempCase):
         _, evidence = l3_fixtures.L3Regression.evidence(self, wf, current)
         wf.queue.finish(current['task_id'], outputs=[evidence['id']], result={'status': 'completed'})
         return evidence
+
+    def test_stopped_supervisor_collects_one_late_receipt_once(self):
+        from runtime.run_segments import collect_final_receipts
+        wf, requests = self.prepare('late-l3')
+        with patch.object(wf, 'poll', side_effect=lambda: self.measured(wf, requests['H2'])):
+            self.assertEqual(collect_final_receipts(wf), [])
+        considered = [e['evidence_ref'] for e in wf.journal.events if e['type'] == 'solution_considered']
+        self.assertEqual(considered, wf.l3_outcome(1)['valid_evidence_refs'])
+        self.assertEqual(len(considered), 1)
+        sequence = wf.journal.sequence
+        self.assertEqual(collect_final_receipts(wf), [])
+        self.assertEqual(sequence, wf.journal.sequence)
+        with patch.object(wf, 'consider_l3', side_effect=OSError('storage unavailable')):
+            self.assertEqual(collect_final_receipts(wf)[0]['round'], 1)
 
     def test_all_completion_orders_preserve_exact_binding_and_receive_all_results(self):
         for order in permutations(('H1', 'H2', 'H3')):

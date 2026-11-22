@@ -19,6 +19,8 @@ Generation/Evolution 可在 H 正式提交前直接 request_experiment，多次�
 | evaluate_artifact（L2/L3） | model_dir、evaluations；实际加载标准 plan v2/package v1 或 plan v3/package v2 模型包并评测；不通用加载自定义包。 |
 | custom_experiment（L1/L2/L3） | 新方法/统计的目的、所需结果和科学约束；Coding 完成单份源码与必要执行选择，再由 Safeguard 对照原始需求审查。 |
 
+局部自定义统计可声明 execution.parameters.diagnostic_view={split,count,offset?,ordering_seed?}。它只绑定解码前的有序研究子视图，无需声明分类指标。
+
 仅实际需要校准时声明 calibration；无图像的权重统计、能力查询和纯浮点对照不要求虚构校准。已声明的 calibration.count 必须为正整数或显式 null（从 offset 到末尾）。tensor_probe/quantize_evaluate 固定 calibration split。样本池容量不等于本次用量，见 data_receipt。L3 必须符合 Brief 的实际评测协议；不能用较小样本冒充完成。L1/L2 的局部干预、消融和浮点对照不继承最终候选的全网覆盖/位宽要求，整网评估不改变实际干预范围。自定义实现可使用新方法名、observer 和参数，无须给内置计划 parameter_bindings；实际选择内置执行器时仍受其能力约束。输出层级、任务性能、泛化及硬件加速分别判断。
 
 | profile.tool | arguments |

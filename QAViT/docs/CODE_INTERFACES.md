@@ -26,11 +26,13 @@ Coding 必须返回完整 source；interface 可由已知执行条件绑定，ex
 
 evaluations 支持 `{"kind":"classification","split":"search","count":16}`；该示例不规定全局评测任务。L3 按 ResearchBrief.evaluation_protocol 的任务、范围和完成条件执行；结构化 evaluations 中的 kind/split/count 由预检与证据检查共同核对，未声明项不猜测、不自动增加分类或分割。协议要求 full_dataset=true 时，内置评测的实测结果须确为完整数据。缩减评测仅支持其声明范围；L3 层级或流程完成不代表完整数据评测。ade_frozen 已在绑定的 DeiT-B 和 DINOv3-B/16 骨干与各自冻结分割头上实测。其他骨干、特征接口及头须按其绑定单独验证。其它模型可使用用户声明且绑定源码的 factory backend；新下游任务需经审查的实验适配。L3 不设置 L2 精度阈值，保留原预算与完整实验检查。
 
+自定义冻结包的根 manifest 由批准的 loader 解释。宿主从原 Evidence 绑定模型身份、源码和完整资产树，含嵌套父包。
+
 所有 L3 服务共用实际结果门禁。execution.evaluations 的每项必须给出 kind、split（ade_frozen 固定为 ade_validation）及显式 count；可列 metrics 和 full_dataset。结果逐项检查指标、唯一样本 ID、顺序/数量和完整范围；重复 kind 或不支持的 offset/字段明确拒绝。没有标准评测的自定义 L3，须在 Brief.evaluation_protocol.required_results 列出 `{path,schema}`（路径相对于 observations），不能仅填写“completed”。有 batch_size、calibration_samples、search_samples、data_protocol、manifest_sha256 等结构化协议字段时，也核验实际身份/范围。结果缺失不能发布为完成 Evidence、命中缓存或被报告为验证成功。
 
 协议可明确 `reload_before_evaluation: true`。内置 quantize_evaluate 始终由宿主独立 load/audit，并使用该重载实例进行评测；evaluate_artifact 同样评测实际加载实例。custom_experiment（experiment_v1 只声明 execute，不声明独立 loader）的标准 L3 评测、完整模型或重载要求必须返回本作业内标准 v2/v3 模型包的 model_dir，宿主重新加载、审计并执行评测；插件自报的重载标志/标准成绩不能作为通过依据。任意新增评测接口仍须注册和核验，不能伪造已支持。
 
-真实数据接口为 `data.ids(split)` 和 `data.batches(split)`，split 是字符串（如 `"calibration"`），不是 execution.calibration 配置字典；后者的 count/offset 须由实现按冻结定义核对和选取。batches 每项为 `(image_tensor, sample_id)`，调用 `backend.forward_model(reference_model, image_tensor)`，不能将整个二元组传入模型。Safeguard 核对真实数据分支；宿主记录实际读取和前向范围。
+真实数据接口为 `data.ids(split)` 和 `data.batches(split)`，split 是字符串（如 `"calibration"`），不是 execution.calibration 配置字典；宿主在解码前绑定已声明的 calibration/evaluation 视图。ids 和 batches 直接给出已切片的顺序，勿再次应用 offset。L1/L2 custom_experiment 的 parameters.diagnostic_view 接受 split（calibration 或 search）、count、可选 offset 和 ordering_seed；其 identity.diagnostic_view 提供原始 ordered_pool_ids。宿主按真实迭代回执核对样本。batches 每项为 `(image_tensor, sample_id)`，调用 `backend.forward_model(reference_model, image_tensor)`，不能将整个二元组传入模型。Safeguard 核对真实数据分支；宿主记录实际读取和前向范围。
 
 执行条件按本次实际操作绑定：L1/L2 局部或浮点对照可观察整网；L3 才继承最终候选要求。仅做权重统计可以不读取图像、不声明 calibration/sample_selection；实际读取由宿主记录。training-free 允许对独立张量的只读梯度诊断，禁止优化器更新并保护源模型。方法解释与可选逐位点 reason/evidence 不代替核验，也不作为机械必填字段。
 
@@ -79,3 +81,5 @@ Coding 可用 edit_source 从授权的 Python 父版本精确替换一段，后�
 新任务可显式配置 llm.coding_native_tools。原生工作区跨同任务续调保留，工作区的 implementation.py 用于最终交付。公共和父源码按哈希复制到只读 sources。原生 shell 只用于 CPU 工程调试，数值研究走现有 GPU worker。启动时实际探测权限配置，失败时 llm_audit.coding_channel 记录原因并沿用宿主编辑通道。本轮环境只能验证回退，原生执行和用量需在支持 namespace 的环境继续验证。
 
 已有完整包复测时，在实验需求的 solution_refs 指定库内模型身份，execution 使用 evaluate_artifact 和当前阶段的 evaluations；同时绑定多个包时用 execution.source_ref 明选一份。宿主解析原始执行器、源版本和模型文件。不传新的 calibration，也无需 Coding 重写加载逻辑。新算法只需更改原生数值计划时实现 build_plan；如需在校准集上改动已构建的量化参数，可在同一模块实现 refine_frozen(backend, model, data, parameters)，返回实际选择的诊断字典。完整自定义执行器继续支持同一份源码的导出、独立重载和审计。
+
+对资产或已绑定快照成员使用 `find` 或 `symbol` 时，`matched=false` 表示该次检索没有交付正文。可使用回包的 `read_asset` 参数打开同一授权正文首页，再按需翻页。

@@ -92,7 +92,8 @@ class Workflow(RoleInteraction, ExperimentRequests, WorkflowDriver):
         self.broker = ExperimentBroker(self.journal, self.brief["id"], self.budget, self.config['runtime'])
         self.runtime = TaskRuntime(self.run_dir, self.queue, self.budget, self.config["runtime"])
         from core.solutions import SolutionLibrary
-        self.solutions = SolutionLibrary(self.journal, self.brief["payload"], shared=self.config.get("purpose") == "research")
+        self.solutions = SolutionLibrary(self.journal, self.brief["payload"],
+            shared=self.config.get("purpose") == "research" and not self.config.get("isolated_solution_library"))
         if not read_only:
             self.solutions.initialize()
             if self.config.get('prepared_baseline') is not None:

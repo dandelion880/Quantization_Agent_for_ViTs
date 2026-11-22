@@ -26,14 +26,37 @@ class EngineeringBlocked(RuntimeError):
 
 
 class ObservedData:
-    def __init__(self, data, *, calibration_only=False, withhold_final=False):
+    def __init__(self, data, *, calibration_only=False, withhold_final=False, selections=(), restricted_split=None):
         self._data = data
         self.labels, self.identity = data.labels, deepcopy(data.identity)
-        if calibration_only or withhold_final:
+        from tools.experiment_worker import data_view
+        self._views = {}
+        for key, selection in selections:
+            split = selection['split']
+            view = data_view(data, selection)
+            if split in self._views and view.selected != self._views[split].selected:
+                raise ContractError('conflicting requested ranges for split ' + split)
+            self._views[split] = view
+            self.identity['split_ids'][split] = list(view.selected)
+            self.identity['counts'][split] = len(view.selected)
+            if split == 'final':
+                self.identity['full_validation'] = view.identity['full_validation']
+            if key == 'diagnostic_view':
+                seed = data.identity.get('ordering_seeds', {}).get(split)
+                if 'ordering_seed' in selection and selection['ordering_seed'] != seed:
+                    raise ContractError('diagnostic_view ordering_seed differs from bound manifest')
+                self.identity[key] = {**selection, 'ordering_seed': seed, 'predecode_bound': True,
+                                      'observed': True, 'ordered_pool_ids': data.ids(split)}
+        if calibration_only or withhold_final or restricted_split or self._views:
             allowed = ('calibration',) if calibration_only else ('calibration', 'search')
-            views = {split: data.ids(split) for split in allowed if split in self.identity['split_ids']}
+            if not calibration_only and not withhold_final:
+                allowed = self.identity['split_ids']
+            if 'diagnostic_view' in self.identity:
+                allowed = [s for s in allowed if s in self._views]
+            views = {s: self.identity['split_ids'][s] for s in allowed if s in self.identity['split_ids']
+                     and (not restricted_split or restricted_split == s)}
             self.labels = {sid: self.labels[sid] for ids in views.values() for sid in ids if sid in self.labels}
-            self.identity.update(split_ids=views, counts={s: len(ids) for s, ids in views.items()}, full_validation=False)
+            self.identity.update(split_ids=views, counts={s: len(ids) for s, ids in views.items()}, full_validation=self.identity.get('full_validation', False) and 'final' in views)
             self.shape_observation_splits = tuple(s for s in getattr(data, 'shape_observation_splits', ()) if s in views)
         self.reads = {}
 
@@ -45,11 +68,11 @@ class ObservedData:
             raise ContractError("data.ids/batches(split) 要求非空字符串，不能传入选择字典")
         if split not in self.identity["split_ids"]:
             raise ContractError("数据 split 未注册: " + split)
-        return self._data.ids(split)
+        return self._views.get(split, self._data).ids(split)
 
     def batches(self, split):
         self.ids(split)
-        for inputs, sid in self._data.batches(split):
+        for inputs, sid in self._views.get(split, self._data).batches(split):
             self.reads.setdefault(split, []).append(sid)
             yield inputs, sid
 
@@ -59,13 +82,19 @@ def execute_custom(plugin, payload, backend, cfg, data, directory):
     from ptq_agent.execution.evaluation import model_digest
     spec = payload["execution"]
     training = spec['resolved_choices'].get('training') is True
-    selected = data
-    if training and spec.get('calibration'):
-        from tools.experiment_worker import data_view
-        selected = data_view(data, spec['calibration'], 'calibration')
-    observed = ObservedData(selected, calibration_only=training,
-                           withhold_final=(spec.get('service') == 'custom_experiment'
-                                           and bool(spec.get('research_quantization_contract', {}).get('protocol'))))
+    selections = [(key, spec[key]) for key in ('calibration', 'evaluation') if spec.get(key)]
+    if spec.get('service') == 'custom_experiment' and payload.get('level') in ('L1', 'L2') and not training:
+        selections.extend(('evaluations', row) for row in spec.get('evaluations', [])
+                          if row['kind'] == 'classification' and row['split'] in data.identity['split_ids'])
+    diagnostic = spec.get('parameters', {}).get('diagnostic_view') if spec.get('service') == 'custom_experiment' else None
+    if diagnostic is not None:
+        from tools.experiments import validate_diagnostic_view
+        validate_diagnostic_view(spec, payload.get('level'))
+        selections.append(('diagnostic_view', diagnostic))
+    observed = ObservedData(data, calibration_only=training, selections=selections,
+                            restricted_split=selections[0][1]['split'] if spec.get('service') == 'frozen_helper' else None,
+                            withhold_final=(spec.get('service') == 'custom_experiment'
+                                            and bool(spec.get('research_quantization_contract', {}).get('protocol'))))
     candidate = deepcopy(backend.model)
     sites = set()
     selected_site = spec.get("site", spec["resolved_choices"].get("target_site"))
@@ -153,19 +182,18 @@ def execute_custom(plugin, payload, backend, cfg, data, directory):
     for split, ids in observed.reads.items():
         unique_ids = list(dict.fromkeys(ids))
         measured[split] = {"split": split, "sample_ids": unique_ids, "sample_count": len(unique_ids),
+                           "read_count": len(ids), "read_order_sha256": fingerprint(ids),
                            "full_dataset": split == "final" and unique_ids == data.ids(split)
                                            and data.identity.get("full_validation") is True}
-    for key in ("calibration", "evaluation"):
-        selection = spec.get(key)
-        if selection:
-            split = selection["split"]
-            offset, count = selection.get("offset", 0), selection["count"]
-            if offset < 0 or offset >= len(data.ids(split)) or (count is not None and count > len(data.ids(split)) - offset):
-                raise ContractError("自定义数据视图/接口案例样本池不足，不能静默缩小冻结样本数")
-            expected = data.ids(split)[offset:None if count is None else offset + count]
-            # 超额读取也是真实范围，不能以插件自报 sample_selection 隐藏它。
-            if measured.get(split, {}).get("sample_ids") != expected:
-                raise ContractError("自定义执行实际读取范围与冻结 " + key + " 不一致")
+    for key, selection in selections:
+        split = selection["split"]
+        offset, count = selection.get("offset", 0), selection["count"]
+        if offset < 0 or offset >= len(data.ids(split)) or (count is not None and count > len(data.ids(split)) - offset):
+            raise ContractError("自定义数据视图/接口案例样本池不足，不能静默缩小冻结样本数")
+        expected = data.ids(split)[offset:None if count is None else offset + count]
+        # 超额读取也是真实范围，不能以插件自报 sample_selection 隐藏它。
+        if measured.get(split, {}).get("sample_ids") != expected:
+            raise ContractError("自定义执行实际读取范围与冻结 " + key + " 不一致")
     for row in evaluations.values():
         split = row.get("split")
         if not isinstance(split, str) or split not in measured:

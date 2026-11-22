@@ -11,7 +11,7 @@
 
 content 只交付本次实现及必要执行选择。
 - interface：可省略，程序采用当前已绑定的受支持接口；显式提交时须与该接口一致。
-- 交付一份完整 Python 实现。直接提交 source，或用 edit_source 编辑后提交宿主返回的 revision。原生工作区可用时，以工作区 implementation.py 交付，依照本回合的提交接口。
+- 交付一份完整 Python 实现。直接提交 source，或将父源码的 edit_base.asset、edit_base.base 连同 old/new 交给 edit_source。继续编辑时只用返回的 revision 作 base，最终提交 revision。原生工作区可用时，以工作区 implementation.py 交付，依照本回合的提交接口。
 - explanation：可选，按需说明关键算法、统计位点、张量轴和状态行为，以及具体执行选择的依据。
 - execution_choices：需要补充时提供执行参数对象，只含必要选择；已知模型、数据、源码哈希、资源和来源由程序绑定。
 

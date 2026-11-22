@@ -71,6 +71,17 @@ class ScientificSkills(TempCase):
             with self.assertRaises(ContractError):
                 self.read(wf, task, 'read_asset', asset=str(path))
 
+    def test_reference_search_miss_can_reopen_body(self):
+        wf = self.workflow(1)
+        task, _ = self.begin(wf, self.generation(wf))
+        asset = 'skills/diagnose-ptq-failure/references/frozen-propagation.md'
+        page = self.read(wf, task, 'read_asset', asset=asset, find='offset', limit=4500)
+        self.assertFalse(page['matched'])
+        self.assertEqual(page['text'], '')
+        full = self.read(wf, task, 'read_asset', **page['read_asset'])
+        self.assertEqual(full['text'], wf.asset_path(asset).read_text())
+        self.assertGreater(len(full['text']), 0)
+
     def test_discovery_is_for_research_roles_and_not_engineering_or_supervisor(self):
         wf = self.workflow(1)
         parent = make_card('HypothesisCard', wf.journal.run_id, hypothesis(1, 'H1'))

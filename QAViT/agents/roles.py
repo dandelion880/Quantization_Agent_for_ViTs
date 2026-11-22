@@ -76,8 +76,8 @@ TOOLS = {t["name"]: t for t in [
             "properties": {**{k: TEXT for k in ('site', 'token_type', 'metric', 'text')},
                            "minimum": {"type": "number"}, "maximum": {"type": "number"}}},
         "offset": {"type": "integer", "minimum": 0}, "limit": {"type": "integer", "minimum": 1, "maximum": 12000}}, ["ref"])),
-    tool("edit_source", "在当前 Coding 任务保存一次精确替换，返回宿主计算的 revision。初稿 old 为空；base 可绑定已有 revision，或和 asset 一起指定授权 Python 源。", object_schema(
-        {"asset": TEXT, "base": TEXT, "old": {"type":"string"}, "new": {"type":"string"}}, ["old","new"])),
+    tool("edit_source", "在当前 Coding 任务保存一次精确替换，返回宿主计算的 revision。初稿 old 为空；base 可绑定已有 revision，指定 asset 时必须同时传 read_asset 返回的 edit_base.asset 和 edit_base.base（文件字节 SHA256）。", {**object_schema(
+        {"asset": TEXT, "base": TEXT, "old": {"type":"string"}, "new": {"type":"string"}}, ["old","new"]), "dependentRequired": {"asset": ["base"]}}),
     tool("read_asset", (
         "按已授权来源读取 UTF-8 文本；offset/limit 是字符数，单页最多12000。"
         "返回 text、sha256、total_characters、next_offset；按需继续分页核实具体论据。"
@@ -106,7 +106,7 @@ TOOLS = {t["name"]: t for t in [
     ), object_schema({"query": MEMORY_QUERY_SCHEMA, "after_version": {"type": "integer", "minimum": 0},
         "offset": {"type": "integer", "minimum": 0}, "limit": {"type": "integer", "minimum": 1, "maximum": 50}}, [])),
     tool("request_experiment", (
-        "唯一科研执行入口。给出实验目的、所需结果和科学约束；预测及决策影响可以省略。已有条件在 context.experiment_interface。"
+        "唯一科研执行入口。给出实验目的、所需结果和科学约束；预测及决策影响可以省略。已有条件在 context.experiment_interface。L1/L2 的局部自定义统计用 parameters.diagnostic_view 声明有序 split、count、offset，可附 ordering_seed 校验；不需要分类分数时省略 evaluations。"
         "宿主补全固定身份、资源、执行镜像；冻结来源须由请求 evidence_refs/solution_refs 明确声明（无歧义的 controls 同名来源兼容规范化）。缺失或选择歧义返回 Generation 修订，不交 Coding 猜测。已有算法直接传 plan，相同设置可用 layers[].modules 展开。"
         "新增代码先保存原始需求，再由 Coding 交付单份实现和必要执行选择，程序绑定后交 Safeguard 科学审查。"
         "Generation 可在形成 H、候选综合和 L3 规划时自主取证；常规实验直接返回原任务。"

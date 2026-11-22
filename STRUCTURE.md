@@ -48,3 +48,5 @@ Git 跟踪稳定源码、Prompt、知识、轻量配置、测试及许可证；E
 新运行的 model_metadata.json 由 tools/profiling.py 复用后端目录和结构 profile 生成。tools/vision_models.py 处理源构造器与任务特征差异，模型与任务配置归 configs/，阶段目标见 [DINOv3 研究输入](EXP/inputs/dinov3b_static_w4a4/input.json)。
 
 独立开发评价的数据适配位于 `QAViT/tools/development.py`，Coding 文件修订与原生通道分别位于 `QAViT/agents/source_workspace.py` 和 `QAViT/runtime/coding_native.py`。按需工程资料见 `QAViT/knowledge/coding/`。开发协议验证与数据清单生成入口位于 `EXP/validation/l3_dev_20261120/`。
+
+Eval-L0 的行为回放入口位于 `QAViT/tools/evaluation/breakpoint.py`；真实案例、按组件运行的 CPU 回归和短链路验证见[断点评测集合](EXP/validation/engineering_replay_20261122/REPORT.md)。[覆盖矩阵](EXP/validation/engineering_replay_20261122/COVERAGE.md)记录各阶段可验证的职责及缺口。

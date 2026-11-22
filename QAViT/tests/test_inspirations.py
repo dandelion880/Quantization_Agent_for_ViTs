@@ -108,8 +108,8 @@ class InspirationTests(TempCase):
         wf.submit(select, {'rationale':'all three enter L3'}, 'scripted'); advance_with_topic_fixture(wf)
         for task in wf.queue.ready():
             task = wf.queue.claim(task['task_id'])
-            draft = experiment_payload('L3')
-            draft['execution'].update(service='evaluate_artifact', parameters={}, evaluations=[{'kind':'classification','split':'final','count':2}])
+            from tests.support import scheduler_l3_draft
+            draft = scheduler_l3_draft()
             wf.submit(task, draft, 'scripted')
         advance_with_topic_fixture(wf)
         trials = {t['inputs']['slot']:t for t in wf.queue.ready() if t['kind']=='experiment_request'}
@@ -149,7 +149,12 @@ class InspirationTests(TempCase):
         next_request, _, next_code = self.code_request(wf, next_task)
         handed = next_code['inputs']['context']['implementation_history']
         self.assertEqual(handed[0]['candidate'],artifact)
-        self.assertIn('EXACT_H3_V1',wf.context(next_code)['prior_implementation_0'])
+        handle = wf.context(next_code)['prior_implementation_0']
+        page = wf.host_tool({'inputs': {'name':'read_asset', 'arguments':handle['read_asset'],
+                                        'parent_task':next_code['task_id']}})
+        self.assertIn('EXACT_H3_V1', page['text'])
+        self.assertEqual(page['sha256'], artifact['source_sha256'])
+        self.assertEqual(page['edit_base'], handle['edit_base'])
         self.assertIn(artifact['id'],next_code['result']['parent_code_ids'])
         self.assertEqual(next_request['inputs']['inspiration_id'],identifier)
         self.assertEqual(len(wf.inspirations.snapshot()),1)

@@ -58,3 +58,5 @@ description: >-
 - 已取得候选结果，想判断是否升级正式评价或暂停：用 [候选评价](../evaluate-ptq-candidate/SKILL.md)。
 
 H1/H2 的成熟起点与 H3 的新机制都可以获得有价值的实验机会。B 独立保存已有成果；不因 B 已可运行就自动否定探索，也不为“创新”要求完整消融矩阵或固定实验次数。
+
+局部实验需要非零起点时，experiment_v1 的 parameters.diagnostic_view 可绑定解码前的有序子集，实际消费范围随 Evidence 回传。接口字段见 [实验输入](../../EXPERIMENT_INPUTS.md)。

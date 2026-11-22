@@ -104,3 +104,7 @@ PYTHONDONTWRITEBYTECODE=1 CUDA_VISIBLE_DEVICES='' OMP_NUM_THREADS=2 MKL_NUM_THRE
 新 prepare/rules 默认采用仓库派生 gonly_v0_3：新增 focus 标准，区分 H3 首次提出与已有灵感的修复、调参、组合、解释和简化，plan_l3 对应 Generation。v0.2 保留当时 select/H1/H2/B 与三候选 L3 标准及原哈希。未经人工校准，不声称专家真值。`--rules-version v0_1`可明确选择旧包；judge/report/verify默认按已冻结manifest恢复版本。原v0_1与历史评分不变。新case标记精确重复正文和大型样本ID投影，仅减少重复传输，完整原件与引用位置保留。
 
 每个包按自身 Schema 的 purpose/role 与 Rubric 验证覆盖，不读取当前 TASKS 来判定历史包是否失效。`rules` 另列当前任务 covered/not_covered；prepare 对没有 Rubric 的任务记录明确未覆盖原因，仍处理其他任务。旧评分、逐任务回执和 rubric_id 不改写；若需要按 v0.3 重新评价，必须准备新的评价目录。
+
+## 来自真实运行的行为断点
+
+开发者可从同一 Eval-L0 manifest 的原始 worker request 开始，选用当前角色提示词和工具定义。新调用在独立评价目录记录实际决策、回包、用量和耗时。读权限及父卡版本来自原调用的 read view。只读已授权且哈希匹配的文本，修订与提交进入本次回放目录。无法执行的新动作记为 unmeasured；离线评分材料只供评阅。保留案例须显式选择独立评测模式。断点输入、局部 CPU 命令、真实短链路和覆盖缺口见[集合说明](../../EXP/validation/engineering_replay_20261122/REPORT.md)与[覆盖矩阵](../../EXP/validation/engineering_replay_20261122/COVERAGE.md)。

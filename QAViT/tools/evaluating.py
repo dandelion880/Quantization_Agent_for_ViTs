@@ -6,10 +6,11 @@ from runtime.files import read, file_hash
 
 
 class DataView:
-    def __init__(self, data, split, count=None, shard=None):
+    def __init__(self, data, split, count=None, shard=None, *, offset=0):
         self.data, self.split, self.labels = data, split, data.labels
         self.shape_observation_splits = getattr(data, "shape_observation_splits", ())
         ids = data.ids(split)
+        ids = ids[offset:]
         if count is not None:
             if not 0 < count <= len(ids):
                 raise ValueError("评价样本范围越界")
@@ -28,10 +29,9 @@ class DataView:
         if split != self.split:
             yield from self.data.batches(split)
             return
-        selected = set(self.selected)
-        for row in self.data.rows[split]:
-            if row["sample_id"] in selected:
-                yield self.data.backend.data_adapter.load_image(row).to(self.data.backend.device), row["sample_id"]
+        rows = {row["sample_id"]: row for row in self.data.rows[split]}
+        for sid in self.selected:
+            yield self.data.backend.data_adapter.load_image(rows[sid]).to(self.data.backend.device), sid
 
 
 def evaluate(backend, cfg, data, model, plan, split, count=None, shard=None, *, native=True, sites=()):

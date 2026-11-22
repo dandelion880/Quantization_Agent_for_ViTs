@@ -107,12 +107,12 @@ class L3Regression(TempCase):
                     if plan_state:
                         wf.queue.change(task["task_id"], plan_state, patch={"error": {"message": "fixture plan failure"}})
                         return wf, task
-                    draft = experiment_payload("L3")
-                    draft["execution"].update(service="evaluate_artifact", parameters={}, evaluations=[{
-                        "kind": "classification", "split": "final", "count": 2}])
+                    from tests.support import scheduler_l3_draft
+                    draft = scheduler_l3_draft()
                     if estimated_seconds is not None:
                         draft['resources']['estimated_seconds'] = estimated_seconds
                     if requires_code:
+                        draft['execution'].pop('plan')
                         draft['execution'].update(service='custom_experiment', requires_code=True, interface='experiment_v1')
                     wf.submit(task, draft, "fixture")
                     advance_with_topic_fixture(wf)

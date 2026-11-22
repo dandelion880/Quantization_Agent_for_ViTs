@@ -112,7 +112,9 @@ def call_once(spec, directory, deadline):
             transport = asdict(request)
             # system_prompt 已作为 CLI instructions 完整传输，stdin 不再重复。
             transport.pop('system_prompt')
-            code, stdout, stderr = cli.run(client.command(working, native=native) if native else client.command(working), working, remaining(), transport_input(transport), **({'event_path': working / 'events.jsonl'} if native else {}))
+            event_path = working / 'events.jsonl' if native or spec['settings'].get('record_live_events') else None
+            code, stdout, stderr = cli.run(client.command(working, native=native) if native else client.command(working),
+                working, remaining(), transport_input(transport), **({'event_path': event_path} if event_path else {}))
             audit["exit_code"] = code
             audit["stderr"] = {"bytes": len(stderr.encode()), "sha256": hashlib.sha256(stderr.encode()).hexdigest(),
                                "category": cli.failure_category(stderr)}

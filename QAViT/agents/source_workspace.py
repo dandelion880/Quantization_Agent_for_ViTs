@@ -21,10 +21,15 @@ def revision(directory, digest):
 def edit(directory, args, allowed):
     if 'asset' in args:
         path = Path(args['asset']).resolve()
-        if path.suffix != '.py' or allowed.get(str(path)) != args.get('base') or not args.get('base'):
+        if path.suffix != '.py' or not allowed.get(str(path)):
             raise ContractError('source edit base must be an authorized pinned Python file')
-        source = path.read_text()
-        if sha256(source.encode()).hexdigest() != args['base']:
+        if not args.get('base'):
+            raise ContractError('edit_source.asset requires base from read_asset.sha256')
+        if args['base'] != allowed[str(path)]:
+            raise ContractError('edit_source.base differs from pinned file sha256; use read_asset edit_base')
+        raw = path.read_bytes()
+        source = raw.decode('utf-8')
+        if sha256(raw).hexdigest() != args['base']:
             raise ContractError('source edit base changed')
     else:
         source = revision(directory, args['base']) if 'base' in args else ''
@@ -55,6 +60,18 @@ def locate(text, args):
     return start
 
 
+def asset_text_page(text, args, default_limit):
+    start = locate(text, args)
+    stop = start + args.get('limit', default_limit)
+    page = {'offset': start, 'text': text[start:stop], 'total_characters': len(text),
+            'next_offset': stop if stop < len(text) else None}
+    if 'find' in args or 'symbol' in args:
+        page['matched'] = start < len(text)
+        if not page['matched']:
+            page['read_asset'] = {k: args[k] for k in ('asset', 'snapshot_field', 'member') if k in args}
+    return page
+
+
 def engineering_context(context):
     """Keep the scientific request and current evidence. Older bodies stay addressable."""
     from difflib import unified_diff
@@ -78,10 +95,6 @@ def engineering_context(context):
     task = ctx.get('task', {})
     history = task.get('implementation_history', [])
     history = history if isinstance(history, list) else []
-    for index, row in enumerate(history):
-        artifact = row['candidate']
-        ctx['prior_implementation_' + str(index)] = {'sha256': artifact['source_sha256'],
-                                                     'read_asset': {'asset': artifact['path']}}
     current = task.get('candidate', {})
     previous = next((row['candidate'] for row in reversed(history)
                      if row['candidate']['source_sha256'] != current.get('source_sha256')), None)

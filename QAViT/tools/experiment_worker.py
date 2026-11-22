@@ -122,29 +122,13 @@ def data_view(data, selection, split=None):
     offset = selection.get("offset", 0)
     # 原数据清单保持不变；只在显式视图中取样，避免改变重载身份。
     ids = data.ids(name)
+    if type(offset) is not int:
+        raise ContractError("样本 offset 必须是整数")
     if count is None:
         count = len(ids) - offset
-    if not 0 <= offset < len(ids) or not 0 < count <= len(ids) - offset:
+    if type(count) is not int or not 0 <= offset < len(ids) or not 0 < count <= len(ids) - offset:
         raise ContractError("样本视图越界；不能静默缩小样本数")
-    if offset:
-        # 原DataView支持精确shard索引；该索引仅是显式子集，不修改原manifest。
-        class Selection:
-            def __init__(self):
-                self.labels, self.identity = data.labels, data.identity
-                self.shape_observation_splits = getattr(data, "shape_observation_splits", ())
-                self.selected = ids[offset:offset + count]
-            def ids(self, split):
-                return self.selected if split == name else data.ids(split)
-            def batches(self, split):
-                wanted = set(self.ids(split))
-                for x, sid in data.batches(split):
-                    if sid in wanted:
-                        wanted.remove(sid)
-                        yield x, sid
-                        if not wanted:
-                            break
-        return Selection()
-    return DataView(data, name, count=count)
+    return DataView(data, name, count=count, offset=offset)
 
 
 def profile_service(experiment, backend, cfg, data, directory):
@@ -532,7 +516,8 @@ def evaluate_services(experiment, backend, cfg, data, directory, approval, gpus=
         verifier = executor
         model_dir = Path(spec["model_dir"])
         model, manifest = executor.load(model_dir)
-        if spec.get('result_protocol', {}).get('final_training') is False and manifest.get('preparation_training') is not False:
+        if (experiment['payload']['level'] == 'L3' and spec.get('result_protocol', {}).get('final_training') is False
+                and manifest.get('preparation_training') is not False):
             raise ContractError('当前终评要求独立 training-free 冻结包；来源未记录或使用了训练式参考')
         plan = manifest["plan"]
         coverage = plan_constraints(plan, choices, backend, cfg, spec.get("quantization_contract"))

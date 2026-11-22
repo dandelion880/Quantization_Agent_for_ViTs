@@ -24,6 +24,8 @@ def data_receipt(brief, execution=None, *, evidence=()):
     if execution.get("service") == "profile":
         result["selected_data"]["profile_arguments"] = {
             k: execution.get("arguments", {}).get(k) for k in ("count", "offset", "seed")}
+    if execution.get('service') == 'custom_experiment' and 'diagnostic_view' in execution.get('parameters', {}):
+        result['selected_data']['diagnostic_view'] = deepcopy(execution['parameters']['diagnostic_view'])
     backend = {}
     try:
         from ptq_agent.configuration import load_config, resolve_backend_paths
