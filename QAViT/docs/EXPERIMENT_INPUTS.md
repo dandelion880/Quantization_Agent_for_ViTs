@@ -2,7 +2,7 @@
 
 新运行的 `context.model_metadata` 摘要来自当前模型、实际模块/位点目录、任务资产及 FP 结构 profile。通过其中的 read_asset 入口读取完整目录。形状示例保留采样 ID 和 block 的实际参数结构。校准池、实验所选视图和正式评测条件分别以数据收据、请求和冻结 Brief 为准。显式 `evaluation_protocol.final_training` 只约束 L3；全程训练限制仍以 hard_constraints 为准。
 
-Generation/Evolution 可在 H 正式提交前直接 request_experiment，多次实验后继续分析，也可不实验直接形成 H。程序检查后执行，结果回原任务，无常规 Judger 审批/解释。可选 research_note 保存当前认识、缺口和下一步判据；失败/预算拒绝不等于测量。需要新代码时使用 Coding 单实现与 Safeguard 科学审查。
+Generation 可在共同选题、分支研究及综合时直接 request_experiment，多次实验后继续分析，也可不实验直接形成 H。程序检查后执行，结果回原任务，由 Generation 决定继续或提交。可选 research_note 保存当前认识、缺口和下一步判据；失败/预算拒绝不等于测量。需要新代码时使用 Coding 单实现与 Safeguard 科学审查。
 
 使用唯一 request_experiment(experiment)，或 plan_l3 直接提交同一草案。所有研究角色均直接接收有效 Evidence 或失败反馈；已提交的最终 L3 计划需要修订时，程序创建同角色新计划任务并保留旧版本。无法继续完成规定协议时可仅提交 defer_reason，不伪称验证完成。
 
@@ -13,9 +13,9 @@ Generation/Evolution 可在 H 正式提交前直接 request_experiment，多次�
 | service | 科学执行参数与能力 |
 |---|---|
 | profile（L1） | tool、arguments；接口参数见下表。查询结构不等于测得性能。 |
-| frozen_helper（L1/L2） | tool=profile_frozen_propagation/search_frozen_scales、arguments、source_ref；顶层 evidence_refs/solution_refs 绑定冻结来源，原 helper 观测返回 Evidence。传播不改状态；搜索只修改作业内副本并返回选中参数，不默认导出模型。 |
+| frozen_helper（L1/L2） | tool=profile_frozen_propagation/search_frozen_scales/score_frozen_candidates、arguments、source_ref；顶层 evidence_refs/solution_refs 绑定冻结来源，原 helper 观测返回 Evidence。传播不改状态；搜索只修改作业内副本并返回选中参数，不默认导出模型。 |
 | tensor_probe（L1/L2） | site、method、parameters={bits,signed,granularity,axis,group_size}、calibration={count,offset?}；L2 另给 evaluation={split,count}。L1 只在校准输入测局部误差，L2 额外单点替换整网回放。 |
-| quantize_evaluate（L2/L3） | calibration={count,offset?}、evaluations=[{kind,split,count}]、plan。现有方法直接使用数值计划；相同设置的 layer 可用 modules 数组代替单个 module，宿主逐位点展开。没有 plan 表示需新增 executor_v1 实现。 |
+| quantize_evaluate（L2/L3） | evaluations、计划来源及所需 calibration。可提交 plan 或从 parent_ref 接受有评分 Evidence 的 accept_trial。现有方法直接使用数值计划；相同设置的 layer 可用 modules 数组代替单个 module，宿主逐位点展开。自定义构造可使用经审查的 executor_v1。接受候选时可省略 calibration；如显式给出，须与评分 Evidence 的原图选择一致。manifest 另记继承的累计样本。 |
 | evaluate_artifact（L2/L3） | model_dir、evaluations；实际加载标准 plan v2/package v1 或 plan v3/package v2 模型包并评测；不通用加载自定义包。 |
 | custom_experiment（L1/L2/L3） | 新方法/统计的目的、所需结果和科学约束；Coding 完成单份源码与必要执行选择，再由 Safeguard 对照原始需求审查。 |
 
@@ -58,3 +58,5 @@ H1/H2 可引用 context.complete_solutions 的完整起点，局部改动不覆�
 ### 固定开发视图
 
 可在 execution_guidance.development 绑定 manifest（path、sha256、bytes）和 evaluations。完整候选以 L3 请求双任务 classification/dev 和 ade_frozen/ade_dev，两个 count 对应固定清单的全长。可在 Generation 取证或三候选规划时使用。result_protocol 区分此次开发评价和 evaluation_protocol 中保留的官方评价。complete_view 表示当前视图遍历完成，full_dataset 表示官方全量。开发记录随模型身份保存在方案库 development 字段；官方 Top-3 和 B 单独维护。相同冻结包可以有多个评价记录。
+
+同任务续调中，research_note 记录作者当前理解。最近成对实验与刚读的材料可直接使用。可随请求以 `active_materials` 列出现阶段仍需保留的调用 ID 或 Evidence 版本，空数组取消保留。历史结果附原始 TaskCard；已读页面省略正文时可按 read_card 或带摘要哈希的 version_read 重新展开。初次共同选题会交付 Brief 中明确绑定的父方案片段与测量出处，取证与直接决定共用现有预算。已有 STE 等训练参考记录独立来源、投入与比较用途，最终 training-free 构造须能从许可数据独立重建。

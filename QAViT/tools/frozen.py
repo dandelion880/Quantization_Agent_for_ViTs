@@ -21,6 +21,8 @@ class FrozenData:
     def batches(self, split):
         raise ContractError('frozen load cannot read data or recalibrate')
 
+    source_rows = batches
+
 
 def completed_package(payload, experiment):
     """A diagnostic export alone cannot confer full-model W4A4 status."""
@@ -103,6 +105,10 @@ def bind_sources(journal, refs, *, training_free_only=False):
             'candidate': deepcopy(approval['candidate']) if approval and verified else None,
             **({'source_reload': 'native_loader_required'} if not verified else {}),
             **completed_package(p, experiment),
+            **({'verified_increment': p['observations']['refinement']['child_state_sha256']}
+               if verified and p['measurement_source'] == 'real' and experiment['payload']['execution'].get('parent_ref')
+               and p['provenance'].get('training_declared') is False and
+               p['observations'].get('refinement', {}).get('initialization') == 'verified_parent' else {}),
             **deepcopy(source),
             'source_cache': str(journal.root / 'solution_library' / 'source' / source['source_version'])}
         _materialize_source(binding)
@@ -414,3 +420,82 @@ def load_frozen(binding, backend, cfg, data):
                    **({'source_reload': binding['source_reload']} if 'source_reload' in binding else {}),
                    **({'protocol_compatibility': binding['protocol_compatibility']} if binding.get('protocol_compatibility') else {}),
                    'measurement_origin': binding.get('measurement_origin', 'current_run'), 'new_measurement': False}
+
+
+def bind_parent_initialization(journal, payload):
+    """Only a host-scored calibration receipt can be accepted by the built-in path."""
+    from tools.runtime_interface import select_frozen_source
+    execution = payload['execution']
+    execution.pop('accepted_receipt', None)
+    execution.pop('scored_calibration_ids', None)
+    if 'parent_ref' not in execution:
+        if 'accept_trial' in execution:
+            raise ContractError('accept_trial requires an explicit parent_ref')
+        return
+    parent = select_frozen_source(execution.get('frozen_sources', []), execution['parent_ref'])
+    if not (parent.get('verified_segmentation') or parent.get('verified_increment')):
+        raise ContractError('parent initialization requires an evaluated complete or verified incremental package')
+    if 'accept_trial' not in execution:
+        return
+    choice = execution['accept_trial']
+    ref = choice['evidence_ref']
+    if ref not in payload.get('evidence_refs', []):
+        raise ContractError('cite the scored Evidence for the accepted candidate')
+    card = journal.card(ref)
+    p = card['payload']
+    source = journal.card(p['experiment_ref'])['payload']['execution']
+    report = p['observations'].get('result', {})
+    if (card['kind'] != 'EvidenceCard' or card['author'] != 'program' or p['status'] != 'completed'
+            or p['measurement_source'] != 'real' or p['provenance'].get('training_declared') is not False
+            or source.get('service') != 'frozen_helper' or source.get('tool') != 'score_frozen_candidates'
+            or report.get('api') != 'frozen_candidate_scores/1' or report['split'] != 'calibration'
+            or report['parent_model_ref'] != parent['model_ref']):
+        raise ContractError('accepted candidate lacks paired training-free calibration Evidence on this parent')
+    row = next((r for r in report['candidates'] if r['id'] == choice['candidate_id']), None)
+    if not row:
+        raise ContractError('candidate_id was not measured in the cited pool')
+    execution['accepted_receipt'] = deepcopy(row['receipt'])
+    execution['scored_calibration_ids'] = list(report['sample_ids'])
+
+
+def load_refinement_parent(binding, backend, cfg, data):
+    from ptq_agent.execution.frozen_trials import state_identity
+    if binding.get('verified_segmentation'):
+        model, manifest = reload_complete(binding, backend, cfg, data)
+    else:
+        model, receipt = load_frozen(binding, backend, cfg, data)
+        manifest = receipt['manifest']
+        if not binding.get('verified_increment') or state_identity(model) != binding['verified_increment']:
+            raise ContractError('cold incremental parent differs from its host-verified receipt')
+    if manifest.get('preparation_training') is not False:
+        raise ContractError('exact parent refinement needs independent training-free preparation provenance')
+    return model, manifest
+
+
+def native_parent(backend, cfg, data, model, manifest):
+    """Rebind audited v3 native classes across source namespaces, without refitting any grid."""
+    from ptq_agent.execution.calibration_search import _quantizers, state_identity
+    from ptq_agent.execution.pipeline import QuantizationExecutor, build_model, quantizers, bind_operators, PLUGIN_VERSION
+    plan = manifest['plan']
+    if manifest.get('implementation') != PLUGIN_VERSION or plan['schema_version'] != 3:
+        raise ContractError('custom parent format needs its approved exporter and prepare_from_parent')
+    executor = QuantizationExecutor(backend, cfg, data)
+    executor.input_shapes = deepcopy(manifest['input_shapes'])
+    if not quantizers(model):
+        old = _quantizers(model)
+        native = build_model(backend, plan,
+            {p['module']: {'scale': old[p['module']].input_scale, 'shift': old[p['module']].input_shift}
+             for p in plan['preprocess']},
+            {q.layer['module']: q.weight_record for q in old.values() if q.layer['weight']},
+            {k:q.params() for k,q in old.items() if q.layer['activation']})
+        qmap = quantizers(native)
+        for sid, q in qmap.items():
+            q.enabled = old[sid].enabled
+            if hasattr(q, 'weight_enabled'):
+                q.weight_enabled = old[sid].weight_enabled
+        bind_operators(native, plan, qmap)
+        if state_identity(native) != state_identity(model):
+            raise ContractError('native exporter cannot represent this exact parent state')
+        model = native
+    executor.audit(model, plan)
+    return executor, model

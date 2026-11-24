@@ -144,16 +144,23 @@ class DeliveryRegression(TempCase):
                 chosen = next(c for c in cards if c['kind'] == kind)
                 self.assertEqual(self.full_card(wf, task, chosen['id']), chosen)
 
-    def test_optional_reads_are_retained_once_across_more_than_four_tools(self):
+    def test_optional_read_batch_is_delivered_once_and_prior_cards_can_be_reopened(self):
         wf = self.workflow(1)
         cards = self.science(wf, 'optional', count=3)
         task, context = self.begin(wf, self.task(wf, 'generate', refs=[wf.brief['id']], round=1, slot='H1', hypothesis_type='existing_method'))
         targets = [cards[i]['id'] for i in (0,2,3,4,6,7)]
         task, context = self.tools(wf, task, [('read_card', {'ref': ref}) for ref in targets])
-        task, context = self.tools(wf, task, [('read_card', {'ref': targets[0]})])
         full = [row['result'] for row in context['tool_results'] if 'id' in (row.get('result') or {})]
         self.assertEqual({c['id'] for c in full}, set(targets))
-        self.assertEqual(sum(c['id'] == targets[0] for c in full), 1)
+        task, context = self.tools(wf, task, [('read_card', {'ref': targets[0]})])
+        rows = [item['result'] for item in context['tool_results']]
+        self.assertEqual([r['id'] for r in rows if 'id' in r], [targets[0]])
+        omitted = [r for r in rows if r.get('delivery') == 'previously_delivered_body_omitted']
+        self.assertEqual({r['source_ref'] for r in omitted}, set(targets))
+        recovered = wf.host_tool({'inputs': {'parent_task':task['task_id'], 'name':'read_card',
+                                             'arguments':omitted[-1]['read_card']}})
+        from core.cards import fingerprint
+        self.assertEqual(recovered['sha256'], fingerprint(wf.journal.card(targets[-1])))
 
     def recorder(self, wf, key='fixture/record'):
         tid = wf.enqueue_recorder(1, incomplete=True, key=key)

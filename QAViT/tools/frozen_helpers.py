@@ -1,12 +1,12 @@
 """Thin request adapters over the existing frozen numerical helpers.
 
 Loading, source verification, observed reads and Evidence remain host owned.
-The search changes only this job's loaded instance, never the cited package.
+Scientific decisions and publication of a new child belong to separate calls.
 """
 from copy import deepcopy
 from core.cards import ContractError
 
-HELPER_NAMES = ('profile_frozen_propagation', 'search_frozen_scales')
+HELPER_NAMES = ('profile_frozen_propagation', 'search_frozen_scales', 'score_frozen_candidates')
 
 
 def normalize_helper(execution):
@@ -14,9 +14,11 @@ def normalize_helper(execution):
     name, args = execution.get('tool'), execution.get('arguments')
     if name not in HELPER_NAMES or not isinstance(args, dict):
         raise ContractError('frozen_helper requires tool and arguments: ' + ', '.join(HELPER_NAMES))
-    allowed = ({'blocks', 'interventions', 'token_layout', 'classification_output'}
-               if name == HELPER_NAMES[0] else
-               {'candidates', 'metric', 'block', 'reference', 'context', 'token_scope', 'cache_mib'})
+    allowed = {
+        'profile_frozen_propagation': {'blocks', 'interventions', 'token_layout', 'classification_output', 'view', 'output'},
+        'search_frozen_scales': {'candidates', 'metric', 'block', 'reference', 'context', 'token_scope', 'cache_mib'},
+        'score_frozen_candidates': {'candidates', 'observations_spec', 'objectives'},
+    }[name]
     if set(args) - allowed - {'split', 'count', 'offset'}:
         raise ContractError('unsupported frozen_helper arguments: ' + str(sorted(set(args) - allowed - {'split', 'count', 'offset'})))
     if execution.get('parameters') or execution.get('evaluations'):
@@ -26,6 +28,15 @@ def normalize_helper(execution):
     split = args.get('split', execution.get('evaluation', execution.get('calibration', {})).get('split', 'calibration'))
     if split not in ('calibration', 'search') or (name == HELPER_NAMES[1] and split != 'calibration'):
         raise ContractError('frozen propagation accepts calibration/search; scale selection accepts calibration only')
+    if name == 'score_frozen_candidates':
+        from ptq_agent.execution.frozen_trials import _validate
+        from ptq_agent.schemas import PTQError
+        try:
+            _validate(args.get('observations_spec', []))
+        except (KeyError, TypeError, PTQError) as exc:
+            raise ContractError('invalid observations_spec: ' + str(exc)) from exc
+        if split == 'search' and args.get('objectives'):
+            raise ContractError('use calibration for selection; confirm declared candidates on search')
     key = 'calibration' if split == 'calibration' else 'evaluation'
     other = 'evaluation' if key == 'calibration' else 'calibration'
     if other in execution:
@@ -54,6 +65,11 @@ class FrozenHelper:
             from ptq_agent.execution.propagation import profile_frozen_propagation
             report = profile_frozen_propagation(context['backend'], model, context['data'],
                 split=split, source={k: v for k, v in source.items() if k != 'manifest'}, **args)
+        elif spec['tool'] == 'score_frozen_candidates':
+            from ptq_agent.execution.frozen_trials import score_frozen_candidates
+            report = score_frozen_candidates(context['backend'], model, context['data'], split=split,
+                source_ref=source['model_ref'], input_shapes=source['manifest'].get('input_shapes'), **args)
+            report['source'] = {k: v for k, v in source.items() if k != 'manifest'}
         else:
             from ptq_agent.execution.calibration_search import search_frozen_scales
             report = search_frozen_scales(context['backend'], model, context['data'], **args)
@@ -67,11 +83,12 @@ def frozen_helper_service(experiment, backend, cfg, data, directory):
     from tools.runtime_interface import execute_custom
     spec = experiment['payload']['execution']
     result = execute_custom(FrozenHelper, experiment['payload'], backend, cfg, data, directory)
-    result['execution_facts']['measurement_kind'] = ('frozen_propagation' if spec['tool'] == HELPER_NAMES[0]
-                                                     else 'calibration_scale_selection')
+    kind = {'profile_frozen_propagation': 'frozen_propagation', 'search_frozen_scales': 'calibration_scale_selection',
+            'score_frozen_candidates': 'paired_frozen_candidate_scores'}
+    result['execution_facts']['measurement_kind'] = kind[spec['tool']]
     report = result['observations']['result']
     result['execution_facts']['parameters'] = {'tool': spec['tool'], 'arguments': deepcopy(spec['arguments']),
                                               'source': deepcopy(report['source'])}
     result['execution_facts']['sites'] = (list(report['boundaries']) if spec['tool'] == HELPER_NAMES[0]
-        else sorted({site for row in report['candidates'] for site in row['scales']}))
+        else sorted({site for row in report['candidates'] for site in row.get('receipt', row)['scales']}))
     return result

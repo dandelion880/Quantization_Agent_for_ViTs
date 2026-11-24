@@ -82,6 +82,24 @@ class GenerationLoop(TempCase):
         wf.queue.ready(); wf.progress_request(wf.queue.claim(request['task_id']))
         return evidence
 
+    def test_focus_measurement_resumes_the_common_decision(self):
+        from tests.support import topic_decision
+        from agents.roles import tools_for
+        wf = self.workflow(1)
+        wf.advance()
+        task, _ = self.begin(wf, wf.tasks()['r001/focus'])
+        self.assertIn('request_experiment', [tool['name'] for tool in tools_for('focus')])
+        evidence = self.measured(wf, self.ask(wf, task), 4)
+        wf = Workflow(wf.run_dir)
+        resumed, context = self.begin(wf, wf.queue.get(task['task_id']))
+        self.assertIn(evidence['id'], wf.required_refs(resumed))
+        self.assertIn(evidence['id'], canonical(context['tool_results']))
+        self.assertFalse(wf.round_hypotheses(1))
+        wf.submit(resumed, {**topic_decision(wf), 'source_refs':[evidence['id']]}, 'scripted')
+        wf.advance()
+        for slot in ('H1','H2','H3'):
+            self.assertEqual(wf.tasks()['r001/generate/'+slot]['inputs']['context']['topic_ref'], wf.topics.round_ref(1))
+
     def test_direct_submission_needs_no_experiment_or_judger(self):
         wf = self.workflow(1)
         task, _ = self.start(wf)

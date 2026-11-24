@@ -32,3 +32,5 @@ H1/H2 可使用 context.complete_solutions 或其他来源清楚的完整方案�
 有库内完整父方案时，solution_derivation 用 base_solution_id、changes、rollback 简记父方案身份、实质增量和回退依据。H3 的 inspiration_id 由宿主绑定当前灵感；若需切换先 update_inspiration，不在提交时偷偷更换身份。
 
 本轮主题由共同 focus 决定，先沿 context.research_topic 恢复研究，不重新选题；必要扩围或目标变化用 revise_topic 显式记录。沿同一算法迭代时带已有 method_id；新派生算法省略 ID，以 method_lineage.name/change/parent_method_ids 说明沿革。主题范围不限制全局诊断、对照或完整历史父方案读取。
+
+比较增量时可在同一父包和候选池中同时测多个目标，包括原状态。依据独立确认或任务反馈决定是否接受、暂存或回退。需要继承时引用确切父包和候选收据；完整配方重建后重新选择。H2 可按局部与下游响应比较原状、两个单项及联合修改；H1 可继续改善原完整方法的局部规则或校准。FP 旁路与训练参考可定位缺口，记录其成本和用途。按需查阅能力目录及当前有用的策略页。

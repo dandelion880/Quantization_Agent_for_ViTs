@@ -3,7 +3,7 @@
 新增任务时先在此登记，再实现 Workflow 阶段和 interaction 的提交处理。
 """
 TASKS = {'focus': {'role': 'generation', 'output': 'ReviewDecisionCard',
-          'tools': ['read_topic', 'read_method', 'read_inspiration', 'update_inspiration', 'read_card', 'read_asset', 'retrieve_memory'],
+          'tools': ['read_topic', 'read_method', 'read_inspiration', 'update_inspiration', 'read_card', 'read_asset', 'retrieve_memory', 'request_experiment'],
           'prompt': 'tasks/focus.md', 'phase': 'research_direction'},
  'generate': {'role': 'generation',
               'output': 'HypothesisCard',

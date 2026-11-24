@@ -70,6 +70,11 @@ class ObservedData:
             raise ContractError("数据 split 未注册: " + split)
         return self._views.get(split, self._data).ids(split)
 
+    def source_rows(self, split):
+        self.ids(split)
+        # Looking up a path alone is not an observed forward or image decode.
+        return self._views.get(split, self._data).source_rows(split)
+
     def batches(self, split):
         self.ids(split)
         for inputs, sid in self._views.get(split, self._data).batches(split):

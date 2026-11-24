@@ -80,12 +80,12 @@ TOOLS = {t["name"]: t for t in [
         {"asset": TEXT, "base": TEXT, "old": {"type":"string"}, "new": {"type":"string"}}, ["old","new"]), "dependentRequired": {"asset": ["base"]}}),
     tool("read_asset", (
         "按已授权来源读取 UTF-8 文本；offset/limit 是字符数，单页最多12000。"
-        "返回 text、sha256、total_characters、next_offset；按需继续分页核实具体论据。"
+        "返回 text、sha256、total_characters、next_offset；version_read 可按首次读取的确切版本继续分页。"
         "find 定位字面串，symbol 定位 Python 函数或类，offset 指定查找起点。只允许本调用快照中卡片/工具/任务明确关联的资产及项目接口资料，不能遍历运行日志绕过权限。"
         "恢复宿主原件时，asset 使用 source_snapshot.path 并提供 snapshot_field=source_snapshot.field；"
         "省略 member 返回可读成员目录，指定 member 返回该成员的原始字节文本及归档身份。完整快照不直接授权。"
     ), object_schema({"asset": TEXT, "offset": {"type": "integer", "minimum": 0},
-                       'snapshot_field': TEXT, 'member': TEXT, 'find': TEXT, 'symbol': TEXT,
+                       'snapshot_field': TEXT, 'member': TEXT, 'find': TEXT, 'symbol': TEXT, 'sha256':TEXT,
                        "limit": {"type": "integer", "minimum": 1, "maximum": 12000}}, ["asset"])),
     tool("literature_search", (
         "按 query 检索 Crossref 公开文献元数据，返回至多 5 条标题、DOI、URL 和可用链接。"
@@ -109,11 +109,11 @@ TOOLS = {t["name"]: t for t in [
         "唯一科研执行入口。给出实验目的、所需结果和科学约束；预测及决策影响可以省略。已有条件在 context.experiment_interface。L1/L2 的局部自定义统计用 parameters.diagnostic_view 声明有序 split、count、offset，可附 ordering_seed 校验；不需要分类分数时省略 evaluations。"
         "宿主补全固定身份、资源、执行镜像；冻结来源须由请求 evidence_refs/solution_refs 明确声明（无歧义的 controls 同名来源兼容规范化）。缺失或选择歧义返回 Generation 修订，不交 Coding 猜测。已有算法直接传 plan，相同设置可用 layers[].modules 展开。"
         "新增代码先保存原始需求，再由 Coding 交付单份实现和必要执行选择，程序绑定后交 Safeguard 科学审查。"
-        "Generation 可在形成 H、候选综合和 L3 规划时自主取证；常规实验直接返回原任务。"
-        "真实结果或失败返回原研究任务，由该任务解释并决定继续研究或提交。research_note 可保存当前解释/下一步理由。"
+        "Generation 可在共同选题、形成 H、候选综合和 L3 规划时自主取证；常规实验直接返回原任务。"
+        "真实结果或失败返回原研究任务，由该任务解释并决定继续研究或提交。research_note 保存当前解释；可选 active_materials 列出本任务需继续携带的既有调用 ID 或证据版本，空数组解除保留。"
         "H3 自动绑定当前灵感；综合任务围绕某灵感取证时用 experiment.inspiration_id 显式关联，保存代码和失败以便接续。"
         "只有有效 Evidence 是实测；缓存不算独立重复，数据范围和预算仍严格核验。"
-    ), object_schema({"experiment": EXPERIMENT_SUBMISSION_SCHEMA, "research_note": TEXT}, ["experiment"]))
+    ), object_schema({"experiment": EXPERIMENT_SUBMISSION_SCHEMA, "research_note": TEXT, "active_materials": {"type": "array", "items": TEXT, "uniqueItems": True}}, ["experiment"]))
 ]}
 
 

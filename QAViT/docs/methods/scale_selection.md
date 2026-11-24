@@ -28,17 +28,17 @@ factor_grid={start,stop,count}为不含stop等距倍率，可表达较密搜索�
 
 ## 完整冻结背景中的block/整网目标
 
-自定义实验可导入 `ptq_agent.execution.calibration_search.search_frozen_scales`。它复用已经由宿主来源绑定并加载的native v3完整冻结模型，真实枚举指定静态尺度候选，不训练权重或头。调用后选中参数安装在同一模型；所有非干预位点恢复原完整量化背景。失败恢复初始状态并移除hook，不发布机制反证。
+自定义实验可导入 `ptq_agent.execution.calibration_search.search_frozen_scales`。它复用已经由宿主来源绑定并加载的native v3完整冻结模型，真实枚举指定静态尺度候选，不训练权重或头。默认在隔离副本评分。只有明确传入 `install_selected=True` 才会将单目标赢家安装到调用者模型。失败恢复初始状态并移除hook，不发布机制反证。
 
 ```python
 from ptq_agent.execution.calibration_search import search_frozen_scales
 model, receipt = ctx["load_frozen"](request["evidence_refs"][0])
 selection = search_frozen_scales(
     ctx["backend"], model, ctx["data"],
-    [{"id": "base", "scales": {"blocks.0.attn::attention_query": {"activation": 1.0}}},
+    [{"id": "base", "scales": {}},
      {"id": "clip", "scales": {"blocks.0.attn::attention_query": {"activation": 0.8}}}],
     block="blocks.0", metric="mse", reference="fp_model", context="quantized",
-    token_scope="patch", count=2)
+    token_scope="patch", count=2, install_selected=True)
 # selection可放入observations；冻结request需声明相同calibration count。
 # 后续search评价应在这份选中model上另行执行，并如实交付evaluations/实际样本。
 ```
@@ -59,6 +59,6 @@ selection = search_frozen_scales(
 | top1_error | 实际校准标签argmax错误比例，离散且少样本会平分；仅整网 |
 | hessian_diag_ce | 在**初始冻结模型logits**上由真实标签CE自动微分得到grad，取mean((grad*(candidate-reference))²)，再样本平均。只是logit对角平方梯度代理，非完整Hessian，也不是原生位点梯度的同一目标 |
 
-精确平分保留声明顺序第一项。少样本任务指标噪声、FP/Q背景和CLS/patch冲突应成为后续判别对照的依据，不能预设赢家。内层拟合、外层search候选选择、最终双任务L3各自保留数据与用途；ADE迁移只重载选中冻结包，不在ADE重新拟合。选中后仍需按已有executor导出/重载审核；原生 v3 的 `executor_v1.refine_frozen(backend, model, data, parameters)` 可直接返回此次选择记录，宿主从该 model 收集生效的 W/A 及预处理，独立重载并校验。自定义执行器须在自己的 `export/load` 中保存和恢复全部生效状态。API本身不使一个诊断模型自动成为正式方案。
+精确平分保留声明顺序第一项。少样本任务指标噪声、FP/Q背景和CLS/patch冲突应成为后续判别对照的依据，不能预设赢家。内层拟合、外层search候选选择、最终双任务L3各自保留数据与用途；ADE迁移只重载选中冻结包，不在ADE重新拟合。选中后仍需按已有executor导出/重载审核；原生 v3 的 `executor_v1.refine_frozen(backend, model, data, parameters)` 可在明确安装后返回此次选择记录，宿主从该 model 收集生效的 W/A 及预处理，独立重载并校验。自定义执行器须在自己的 `export/load` 中保存和恢复全部生效状态。API本身不使一个诊断模型自动成为正式方案。
 
 已有固定区间适配可在静态 per_channel uniform_affine 行的 options 声明 token_partition，例如 {"axis":1,"prefix_ends":[1,5]} 仅表示该布局的 [0,1)、[1,5) 及尾部三组。以实际输入或模型 metadata 确定界点与 token 轴，转置 K 的 token 轴不同。每组的各个非 batch、非 token 特征坐标（可含 head）独立使用包括零的冻结 affine 网格，支持 minmax 或在声明的 percentile 候选中逐坐标按校准 MSE 选参。任务迁移可改变尾部长度。其他分组或目标可由 Coding 实现。

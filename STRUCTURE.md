@@ -50,3 +50,5 @@ Git 跟踪稳定源码、Prompt、知识、轻量配置、测试及许可证；E
 独立开发评价的数据适配位于 `QAViT/tools/development.py`，Coding 文件修订与原生通道分别位于 `QAViT/agents/source_workspace.py` 和 `QAViT/runtime/coding_native.py`。按需工程资料见 `QAViT/knowledge/coding/`。开发协议验证与数据清单生成入口位于 `EXP/validation/l3_dev_20261120/`。
 
 Eval-L0 的行为回放入口位于 `QAViT/tools/evaluation/breakpoint.py`；真实案例、按组件运行的 CPU 回归和短链路验证见[断点评测集合](EXP/validation/engineering_replay_20261122/REPORT.md)。[覆盖矩阵](EXP/validation/engineering_replay_20261122/COVERAGE.md)记录各阶段可验证的职责及缺口。
+
+同父候选与视图评分在 `QAViT/tools/ptq_agent/execution/frozen_trials.py`，绑定的分割几何在 `QAViT/tools/segmentation.py`，原包与子包的加载在 `QAViT/tools/frozen.py`。任务内材料投递在 `QAViT/agents/working_materials.py`。数值收据、局部回放及当前流程见[本轮报告](EXP/validation/frozen_trials_20261124/REPORT.md)和[伪代码](EXP/validation/frozen_trials_20261124/PSEUDOCODE.md)。

@@ -83,6 +83,9 @@ class VerifiedManifestData:
     def ids(self, split):
         return [r["sample_id"] for r in self.rows[split]]
 
+    def source_rows(self, split):
+        return iter(self.rows[split])
+
     def batches(self, split):
         for row in self.rows[split]:
             yield self.backend.data_adapter.load_image(row).to(self.backend.device), row["sample_id"]

@@ -1,8 +1,8 @@
 """Discrete, training-free selection on an already loaded frozen native plan.
 
 This is a custom-experiment numerical API, not a final evaluation or an automatic
-research policy. It consumes only the caller's calibration view and leaves the
-selected static parameters installed. Export/reload/dual-task evaluation retain
+research policy. It consumes only the caller's calibration view and scores on a private
+copy unless winner installation was explicitly requested. Export/reload/dual-task evaluation retain
 all their existing contracts.
 """
 from copy import deepcopy
@@ -60,7 +60,93 @@ def _digest(value):
     return value
 
 
-def search_frozen_scales(backend, model, data, candidates, *, metric="mse", block=None,
+def state_identity(model):
+    """Include nonpersistent buffers, packed codes, execution flags and bound recipes."""
+    from .evaluation import model_digest
+    qmap = _quantizers(model)
+    return fingerprint({"parameters_and_buffers": model_digest(model), "sites": {
+        sid: {"layer": q.layer, "execution": q.execution, "record": _digest(getattr(q, "weight_record", None)),
+              "flags": {key: getattr(q, key) for key in ("enabled", "weight_enabled", "gradient_probe",
+                                                         "bias_uses_decoded_weight") if hasattr(q, key)}}
+        for sid, q in qmap.items()}, "operators": {
+        name: {k: getattr(m, k) for k in ("integer_enabled", "_ptq_integer_enabled") if hasattr(m, k)}
+        for name, m in model.named_modules() if hasattr(m, "integer_enabled") or hasattr(m, "_ptq_integer_enabled")}})
+
+
+def _candidate_params(params, edit, method):
+    if isinstance(edit, dict):
+        require(edit and set(edit) <= {"factor", "indices", "zero"} and ("factor" in edit or "zero" in edit),
+                "grid edit needs a factor or zero")
+        factor, indices, zero = edit.get("factor", 1), edit.get("indices"), edit.get("zero")
+    else:
+        factor, indices, zero = edit, None, None
+    require(type(factor) in (float, int) and math.isfinite(factor) and factor > 0, "invalid scale factor")
+    if indices is None and zero is None:
+        return adjusted_params(params, factor, method)
+    require(method in ("uniform_affine", "uniform_full", "uniform_minmax", "rtn") and
+            "scale" in params and "repq_affine" not in params, "local edits require independent uniform grid parameters")
+    p = {k: v.clone() for k, v in params.items()}
+    if indices is not None:
+        require(isinstance(indices, list) and indices and all(type(i) is int and 0 <= i < p['scale'].numel()
+                for i in indices) and len(indices) == len(set(indices)), "indices must identify existing grid elements")
+    index = slice(None) if indices is None else indices
+    p["scale"].view(-1)[index] *= factor
+    if zero is not None:
+        require(type(zero) is int and "zero" in p and p["zero"].shape == p["scale"].shape,
+                "zero requires an integer on an existing affine grid")
+        # uniform_affine permits out-of-code-range offsets by construction. The
+        # method validator below enforces each codec's own signed/minmax rules.
+        p["zero"].view(-1)[index] = zero
+    return p
+
+
+def apply_grid_changes(model, scales, input_shapes):
+    """Validate the complete edit before installing it. An empty edit calls no fitter or setter."""
+    qmap = _quantizers(model)
+    require(isinstance(scales, dict) and scales.keys() <= qmap.keys(), "unknown frozen grid site")
+    if scales:
+        require(not any(getattr(m, "integer_enabled", False) or getattr(m, "_ptq_integer_enabled", False)
+                        for m in model.modules()), "integer compound operators need explicit rebinding")
+    pending, changes = [], {}
+    for sid, targets in scales.items():
+        q = qmap[sid]
+        require(isinstance(targets, dict) and targets and targets.keys() <= {"weight", "activation"}, "invalid grid target")
+        require(q.execution["activation_calibration"] == "static", "requires static state")
+        for target, edit in targets.items():
+            spec, method = q.layer[target], q.layer[target + "_method"]
+            require(spec is not None, "cannot enable an absent target")
+            if target == "weight":
+                require(_weight_site(q) and q.weight_enabled and method in ("rtn", "uniform_full", "uniform_affine", "uniform_minmax"),
+                        "weight edits require an active independent RTN/uniform grid")
+                old = q.weight_record["params"]
+            else:
+                require(q.enabled and q.quantize.__func__.__qualname__ == "ActivationQuantizer.quantize",
+                        "custom activation arithmetic needs its own approved grid edit")
+                old = q.params()
+            new = _candidate_params(old, edit, method)
+            if all(torch.equal(old[k], new[k]) for k in old):
+                continue
+            if target == "activation":
+                shape = input_shapes.get(sid, getattr(q, "last_input_shape", None))
+                require(shape is not None, "missing bound input shape for " + sid)
+                validate_activation(new, q.layer, shape)
+                pending.append((q, target, new))
+                before, after = old, new
+            else:
+                record = get_target_method("weight", method).fit(q.reference_weight, spec, new)
+                validate_weight(record, spec, list(q.reference_weight.shape))
+                pending.append((q, target, (record, decode_weight(record, q.reference_weight.device))))
+                before, after = q.weight_record, record
+            changes.setdefault(sid, {})[target] = {"before": fingerprint(_digest(before)), "after": fingerprint(_digest(after))}
+    for q, target, value in pending:
+        if target == "activation":
+            q.set_params(value)
+        else:
+            q.weight_record, q.decoded_weight = value
+    return changes
+
+
+def _select_scales(backend, model, data, candidates, *, metric="mse", block=None,
                          reference="fp_model", context="quantized", token_scope="all",
                          count=None, cache_mib=256):
     """Evaluate explicit scale-factor candidates and install the minimum-score one.
@@ -82,8 +168,8 @@ def search_frozen_scales(backend, model, data, candidates, *, metric="mse", bloc
             "local_fp and CLS/patch selection require an explicit block")
     require(block is None or metric in ("mse", "cosine"), "logit/task metrics require whole-model outputs")
     require(reference == "fp_model" or context == "quantized", "local_fp reference uses the actual quantized block input")
-    require(candidates and all(set(c) == {"id", "scales"} and isinstance(c["id"], str) and c["id"] and c["scales"] for c in candidates),
-            "each candidate needs id and nonempty scales")
+    require(candidates and all(set(c) == {"id", "scales"} and isinstance(c["id"], str) and c["id"] and isinstance(c["scales"], dict) for c in candidates),
+            "each candidate needs id and scales ({} is a no-op)")
     require(len({c["id"] for c in candidates}) == len(candidates), "candidate ids must be unique")
     require(count is None or type(count) is int and count > 0, "invalid calibration count")
     ids = data.ids("calibration")[:count]
@@ -124,25 +210,7 @@ def search_frozen_scales(backend, model, data, candidates, *, metric="mse", bloc
                     q.enabled = False
                     if _weight_site(q):
                         q.weight_enabled = False
-        for sid, changes in candidate["scales"].items():
-            q = qmap[sid]
-            require(changes and set(changes) <= {"weight", "activation"}, "scale targets are weight/activation")
-            for target, factor in changes.items():
-                require(type(factor) in (int, float) and math.isfinite(factor) and factor > 0, "scale factor must be finite and positive")
-                require(q.layer[target] is not None, "cannot enable an absent quantization target")
-                method = q.layer[target + "_method"]
-                if target == "activation":
-                    require(q.enabled, "candidate activation target must already be enabled")
-                    params = adjusted_params(baseline[sid]["params"], factor, method)
-                    validate_activation(params, q.layer, q.last_input_shape)
-                    q.set_params(params)
-                else:
-                    require(_weight_site(q) and q.weight_enabled and method in ("rtn", "uniform_full", "uniform_affine", "uniform_minmax"),
-                            "weight scale search supports frozen RTN/uniform grids; other solvers need explicit custom refit")
-                    params = adjusted_params(baseline[sid]["weight"]["params"], factor, method)
-                    record = get_target_method("weight", method).fit(q.reference_weight, q.layer["weight"], params)
-                    validate_weight(record, q.layer["weight"], list(q.reference_weight.shape))
-                    q.weight_record, q.decoded_weight = record, decode_weight(record, q.reference_weight.device)
+        apply_grid_changes(model, candidate["scales"], {})
 
     def selected_tensor(t, x):
         if block:
@@ -247,3 +315,14 @@ def search_frozen_scales(backend, model, data, candidates, *, metric="mse", bloc
         for handle in handles:
             handle.remove()
         backend.reset()
+
+
+def search_frozen_scales(backend, model, data, candidates, *, install_selected=False, **options):
+    """Single-objective compatibility API. Explicitly opt in to legacy winner installation."""
+    trial = deepcopy(model)
+    report = _select_scales(backend, trial, data, candidates, **options)
+    if install_selected:
+        shapes = {s: q.last_input_shape for s, q in _quantizers(trial).items() if hasattr(q, "last_input_shape")}
+        apply_grid_changes(model, report["selected_scales"], shapes)
+    report["parameters_installed"] = install_selected
+    return report

@@ -404,12 +404,20 @@ def evaluate_services(experiment, backend, cfg, data, directory, approval, gpus=
     refinement = None
     from tools.frozen import FrozenData
     if spec["service"] == "quantize_evaluate":
+        parent_binding = None
+        if spec.get('parent_ref'):
+            from tools.runtime_interface import select_frozen_source
+            from tools.frozen import load_refinement_parent
+            parent_binding = select_frozen_source(spec.get('frozen_sources', []), spec['parent_ref'])
+            # Trusted loader uses the immutable original assets before the dev
+            # preparation thread loses access to evaluator-owned files.
+            parent_model, parent_manifest = load_refinement_parent(parent_binding, backend, cfg, data)
         def prepare(backend, cfg, data, visible_payload, preselected=False):
             from tools.runtime_interface import ObservedData
             refinement = None
             plugin = module_from_approval(approval, experiment) if spec.get('requires_code') else None
             plan = (plugin.build_plan(backend, deepcopy(cfg), deepcopy(visible_payload), deepcopy(spec.get("parameters", {})))
-                    if plugin else deepcopy(spec['plan']))
+                    if plugin else deepcopy(parent_manifest['plan'] if parent_binding else spec['plan']))
             selection = data
             if not preselected and spec.get('calibration'):
                 selection = data_view(data, spec['calibration'], 'calibration')
@@ -428,9 +436,43 @@ def evaluate_services(experiment, backend, cfg, data, directory, approval, gpus=
             coverage = plan_constraints(plan, choices, backend, cfg, spec.get("quantization_contract"), native=native)
             if native:
                 validate_plan(backend, plan, cfg, detect(backend), {}, allow_unknown_shapes=True)
-                if plan_uses_calibration(plan) and not spec.get('calibration'):
+                if not parent_binding and plan_uses_calibration(plan) and not spec.get('calibration'):
                     raise ContractError("原生量化执行器需要明确 calibration 数据视图")
-            model, weights, activations, audit = executor.prepare(plan, {})
+            from ptq_agent.execution.calibration_search import state_identity
+            if parent_binding:
+                origin = {'initialization': 'verified_parent', 'parent_model_ref': parent_binding['model_ref'],
+                          'parent_evidence_ref': parent_binding['evidence_ref'], 'parent_state_sha256': state_identity(parent_model)}
+                accept = spec.get('accept_trial')
+                if accept and plugin and hasattr(plugin, 'refine_frozen'):
+                    raise ContractError('accept_trial commits only the measured change')
+                if native:
+                    from tools.frozen import native_parent
+                    if plan != parent_manifest['plan']:
+                        raise ContractError('native incremental grids must retain the entire parent plan')
+                    executor, model = native_parent(backend, cfg, observed, parent_model, parent_manifest)
+                    factory = QuantizationExecutor
+                    if spec.get('accept_trial'):
+                        from ptq_agent.execution.frozen_trials import accepted_copy
+                        model, refinement = accepted_copy(model, spec['accepted_receipt'],
+                            source_ref=parent_binding['model_ref'], input_shapes=executor.input_shapes)
+                    elif not (plugin and hasattr(plugin, 'refine_frozen')):
+                        raise ContractError('parent_ref needs an accepted receipt or approved refinement')
+                    weights, activations, audit = {}, {}, executor.audit(model, plan)
+                else:
+                    if not hasattr(executor, 'prepare_from_parent'):
+                        raise ContractError('custom executor must implement prepare_from_parent for parent_ref')
+                    initial = parent_model
+                    if accept:
+                        from ptq_agent.execution.frozen_trials import accepted_copy
+                        initial, refinement = accepted_copy(initial, spec['accepted_receipt'],
+                            source_ref=parent_binding['model_ref'], input_shapes=parent_manifest.get('input_shapes', {}))
+                    model, weights, activations, audit = executor.prepare_from_parent(plan, initial, deepcopy(parent_manifest))
+                    if accept and state_identity(model) != refinement['child_state_sha256']:
+                        raise ContractError('custom exporter changed the explicitly accepted trial')
+            else:
+                model, weights, activations, audit = executor.prepare(plan, {})
+                origin = ({'initialization': 'rebuilt_recipe', 'parent_state_sha256': state_identity(model)}
+                          if plugin and hasattr(plugin, 'refine_frozen') else None)
             if plugin and hasattr(plugin, 'refine_frozen'):
                 if not native or plan['schema_version'] != 3 or not spec.get('calibration'):
                     raise ContractError('refine_frozen requires a native v3 plan and explicit calibration view; custom executors refine during prepare')
@@ -439,6 +481,10 @@ def evaluate_services(experiment, backend, cfg, data, directory, approval, gpus=
                     raise ContractError('refine_frozen must return a JSON object describing the applied selection')
                 if any(split != 'calibration' for split in observed.reads):
                     raise ContractError('frozen refinement must fit only on its selected calibration view')
+            if origin:
+                refinement = {**(refinement or {}), **origin, 'child_state_sha256': state_identity(model)}
+                if parent_binding:
+                    refinement['selection_source'] = deepcopy(spec.get('accept_trial'))
             verifier = factory(backend, deepcopy(cfg), FrozenData(selection))
             if native:
                 verifier.input_shapes = executor.input_shapes
@@ -449,13 +495,18 @@ def evaluate_services(experiment, backend, cfg, data, directory, approval, gpus=
             if not model_files:
                 raise ContractError("执行器未生成可重载的实际模型资产")
             calibration_ids = list(dict.fromkeys(observed.reads.get('calibration', [])))
+            if parent_binding:
+                incremental_ids = list(dict.fromkeys([*spec.get('scored_calibration_ids', []), *calibration_ids]))
+                calibration_ids = list(dict.fromkeys([*parent_manifest['calibration_ids'], *incremental_ids]))
+                refinement.update(inherited_calibration_ids=parent_manifest['calibration_ids'],
+                                  incremental_calibration_ids=incremental_ids, job_calibration_reads=deepcopy(observed.reads))
             # 原生 manifest 的 calibration_ids 记录真实捕获，而非可用数据池。
             if native:
                 exported_manifest = read_json(model_dir / 'manifest.json')
                 exported_manifest['calibration_ids'] = calibration_ids
                 if refinement is not None:
                     exported_manifest['refinement'] = refinement
-                if spec.get('research_protocol_sha256'):
+                if spec.get('research_protocol_sha256') or parent_binding:
                     exported_manifest['preparation_training'] = choices['training']
                 exported_manifest.pop('content_sha256', None)
                 exported_manifest['content_sha256'] = fingerprint(exported_manifest)
@@ -466,8 +517,13 @@ def evaluate_services(experiment, backend, cfg, data, directory, approval, gpus=
                 "sample_count": len(set(ids)), "full_dataset": split == "final" and list(dict.fromkeys(ids)) == data.ids(split)
                     and data.identity.get("full_validation") is True}
                 for split, ids in observed.reads.items()}
-            if not native:
+            if not native and not parent_binding:
                 calibration_ids = list(dict.fromkeys(observed.reads.get('calibration', [])))
+            if origin and state_identity(loaded) != refinement['child_state_sha256']:
+                raise ContractError('cold child differs in its complete numerical/grid state')
+            if parent_binding and not native and (manifest.get('calibration_ids') != calibration_ids
+                    or manifest.get('preparation_training') is not False):
+                raise ContractError('custom child exporter must preserve full calibration and independent training-free provenance')
             if loaded is model:
                 raise ContractError("执行器 load 必须返回实际重建实例，不能复用导出前模型")
             if frozen_files != {str(p.relative_to(model_dir)): file_sha256(p)
@@ -498,6 +554,8 @@ def evaluate_services(experiment, backend, cfg, data, directory, approval, gpus=
             prepared = prepare(backend, cfg, data, experiment['payload'])
         (model, model_dir, verifier, plan, coverage, calibration_ids, reload_check, plugin,
          native, preparation_reads, model_files, refinement, host_probe_model) = prepared
+        if parent_binding:
+            del parent_model
         if host_probe_model is not None:
             reload_check.update(Evaluator(backend, cfg, data).reload_check(host_probe_model, model, split='calibration'))
         del prepared, host_probe_model
@@ -527,7 +585,11 @@ def evaluate_services(experiment, backend, cfg, data, directory, approval, gpus=
     check_fp_state(model, backend, spec.get("quantization_contract", {}))
     reload_check.update(host_verified=True, evaluated_instance="reloaded")
     if spec.get("calibration"):
-        if calibration_ids != data_view(data, spec["calibration"], "calibration").ids("calibration"):
+        actual_selection = calibration_ids
+        if refinement and refinement.get('initialization') == 'verified_parent':
+            actual_selection = (spec['scored_calibration_ids'] if spec.get('accept_trial')
+                                else refinement['job_calibration_reads'].get('calibration', []))
+        if list(dict.fromkeys(actual_selection)) != data_view(data, spec["calibration"], "calibration").ids("calibration"):
             raise ContractError("导出包实际校准样本与冻结 calibration 视图不一致")
     static_receipt = {}
     if spec.get('quantization_contract', {}).get('protocol'):
@@ -611,7 +673,10 @@ def evaluate_services(experiment, backend, cfg, data, directory, approval, gpus=
             "model_dir": str(model_dir), "sample_selection": {k: v["sample_ids"] for k, v in evaluations.items()},
             "execution_facts": {"measurement_kind": "full_model", "quantization": deepcopy(coverage["quantization"]),
                 "data": {**preparation_reads, **({"calibration": {"split": "calibration", "sample_count": len(calibration_ids),
-                                          "sample_ids": calibration_ids, "full_dataset": False}} if calibration_ids else {}),
+                                          "sample_ids": calibration_ids, "full_dataset": False,
+                                          **({"origin": "parent plus incremental calibration identities",
+                                              "job_read_count": len(refinement['job_calibration_reads'].get('calibration', []))}
+                                             if refinement and refinement.get('initialization') == 'verified_parent' else {})}} if calibration_ids else {}),
                          **{name: {k: deepcopy(row[k]) for k in ("split", "sample_count", "sample_ids", "full_dataset")}
                             for name, row in evaluations.items()}}, "plan_sha256": fingerprint(plan)}}
 

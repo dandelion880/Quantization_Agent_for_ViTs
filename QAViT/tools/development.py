@@ -114,6 +114,10 @@ def prepare_with_calibration(run, backend, cfg, data, experiment, directory, app
     paths.extend(p for p in (Path('/usr/lib'), Path('/etc/ld.so.cache'),
                               QAVIT/'.runtime_pkgs/common', QAVIT/'.runtime_pkgs/classification') if p.exists())
     paths.extend(Path(r['path']) for r in rows if r.get('path'))
+    # Permit the same frozen head/config used by the evaluator, never its image or label directories.
+    paths.extend(Path(a['path']) for a in spec.get('backend', {}).get('segmentation_assets', []))
+    if spec.get('backend', {}).get('segmentation_assets'):
+        paths.append(QAVIT/'.runtime_pkgs/segmentation')
     if approval:
         paths.append(Path(approval['candidate']['path']))
     for binding in spec.get('frozen_sources', []):

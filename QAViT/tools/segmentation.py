@@ -41,6 +41,62 @@ def segmentation_dependencies(seed=42):
         sys.path[:] = paths
 
 
+def task_pipeline(settings, *, annotations=True):
+    from mmengine.dataset import Compose
+    return Compose([{**row, 'scale': tuple(row['scale'])} if isinstance(row.get('scale'), list) else row
+                    for row in settings['pipeline'] if annotations or row['type'] != 'LoadAnnotations'])
+
+
+class DenseTask:
+    """Original image -> bound MMSeg preprocessing -> individual inference calls."""
+    def __init__(self, backend):
+        from tools.vision_models import build_ade, segmentation_assets
+        path, settings, head, receipt = segmentation_assets(backend.config)
+        with segmentation_dependencies(backend.config['seed']):
+            wrapped, self.features, _ = build_ade(backend, settings, head, receipt)
+            self.pipeline = task_pipeline(settings, annotations=False)
+        self.segmentor = wrapped.segmentor
+        self.indices = tuple(settings['model']['backbone']['out_indices'])
+        self.test_cfg = settings['model']['test_cfg']
+        self.identity = {'settings_sha256': file_hash(path), 'head_sha256': receipt['checkpoint_sha256'],
+                         'feature_layers': list(self.indices), 'test_cfg': self.test_cfg,
+                         'pipeline': [r for r in settings['pipeline'] if r['type'] != 'LoadAnnotations'],
+                         'data_preprocessor': settings['model']['data_preprocessor']}
+
+    def windows(self, row):
+        from mmengine.dataset import pseudo_collate
+        path = Path(row['path'])
+        if file_hash(path) != row['file_sha256']:
+            raise ValueError('dense view original differs from the selected manifest')
+        packed = self.pipeline(dict(img_path=str(path), seg_fields=[]))
+        prepared = self.segmentor.data_preprocessor(pseudo_collate([packed]), training=False)
+        meta = prepared['data_samples'][0].metainfo
+        image = prepared['inputs']
+        h, w = image.shape[-2:]
+        mode = self.test_cfg.get('mode', 'whole')
+        if mode not in ('slide', 'whole'):
+            raise ValueError('unsupported bound segmentation inference mode ' + mode)
+        ch, cw = self.test_cfg['crop_size'] if mode == 'slide' else (h, w)
+        sh, sw = self.test_cfg['stride'] if mode == 'slide' else (h, w)
+        for iy in range(1 + max(0, h - ch + sh - 1) // sh):
+            for ix in range(1 + max(0, w - cw + sw - 1) // sw):
+                bottom, right = min(iy * sh + ch, h), min(ix * sw + cw, w)
+                top, left = max(bottom - ch, 0), max(right - cw, 0)
+                crop = image[:, :, top:bottom, left:right]
+                yield crop, {**meta, 'img_shape': tuple(crop.shape[-2:])}, {
+                    'original_hw': list(meta['ori_shape']), 'resized_hw': list(meta['img_shape']),
+                    'prepared_shape': list(image.shape), 'box_yxyx': [top, left, bottom, right]}
+
+    def observe(self, model, x, meta, *, logits):
+        # Features are exactly the tensors passed to the frozen neck by extract_feat.
+        features = self.features(model)(x)
+        result = {str(i): t for i, t in zip(self.indices, features)}
+        if logits:
+            neck = self.segmentor.neck(features) if self.segmentor.with_neck else features
+            result['logits'] = self.segmentor.decode_head.predict(neck, [meta], self.segmentor.test_cfg)
+        return result
+
+
 def _fp_identity(backend, files, annotation_dir, *, settings, head, weights, classes, ignore):
     from importlib import import_module
     import torch
@@ -72,13 +128,11 @@ def evaluate(backbone, backend, directory, count=None, *, fp_reference=None, dev
         segmentor, features, heads = build_ade(backend, settings, head_path, receipt)
     fp_adapter, q_adapter = features(reference), features(backbone)
     frozen = [state_sha(h) for h in heads]
-    from mmengine.dataset import Compose
     from tools.vision_models import checked_segmentation_step
     ADE = Path(settings['data_root'])
     modern = segmentor.segmentor.backbone
     # JSON将原配置tuple保存为list；MMSeg Resize要求tuple，恢复容器类型而不改数值。
-    pipeline = Compose([{**row, 'scale':tuple(row['scale'])} if isinstance(row.get('scale'), list)
-                        else row for row in settings['pipeline']])
+    pipeline = task_pipeline(settings)
     expected_images = settings.get('expected_images')
     if development is None:
         files = sorted((ADE / 'images/validation').glob('*.jpg'))

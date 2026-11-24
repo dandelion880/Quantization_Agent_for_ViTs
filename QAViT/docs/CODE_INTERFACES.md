@@ -8,7 +8,7 @@ Coding 无须等待完整执行规格冻结。原始请求与最终执行 Experi
 
 Coding 必须返回完整 source；interface 可由已知执行条件绑定，explanation 和 execution_choices 按需提供。当前接口为：
 - quantizer_v1：fit(x, parameters)、apply(x, state, parameters)。fit 使用声明的校准数据，apply 不修改输入或冻结状态。
-- executor_v1：build_plan(backend, cfg, experiment_payload, parameters)，原生 v3 可选 refine_frozen(backend, model, data, parameters)，在 prepare 后对已经安装的 W/A 做本次校准视图内的选择，返回 JSON 选择记录。宿主审计并导出实际选中状态，核对重载模型全部参数、buffer 和同图输出。独立加载和迁移只使用 load。其他表示可提供 make_executor(backend, cfg, data)，自行实现配套 prepare/audit/export/load。
+- executor_v1：build_plan(backend, cfg, experiment_payload, parameters)，原生 v3 可选 refine_frozen(backend, model, data, parameters)，在本次准备的完整状态上校准选择并明确安装 W/A，返回 JSON 选择记录。宿主审计并导出实际选中状态，核对重载模型全部参数、buffer 和同图输出。独立加载和迁移只使用 load。其他表示可提供 make_executor(backend, cfg, data)，自行实现配套 prepare/audit/export/load。
 - experiment_v1：execute(experiment_payload, context)。context 提供 candidate_model、reference_model、data、backend、configuration、parameters、directory；reference_model 是受保护的浮点基准模型。返回 observations 及需要的 artifacts；artifacts 可省略，空 `{}` 兼容归一为 `[]`，非空使用 `[{"path":"文件路径","sha256":"64位小写十六进制SHA256","bytes":非负整数字节数}]`。sample_selection 由宿主按真实读取生成，实现可省略，显式提供时须与实际一致。
 
 实施错误携带当前源码与具体反馈返回 Coding，就地修订同一实验；每版重新绑定执行条件及审批。不得重跑未修改的失败代码。NameError、UnboundLocalError 等实际发生在提交实现中的异常同样进入修订；预算、资产与宿主接口问题单独保留工程原因；原始科学定义有实质歧义时才回到原研究者。修订共享现有有界额度，错误和旧版本保持可追溯。
@@ -83,3 +83,5 @@ Coding 可用 edit_source 从授权的 Python 父版本精确替换一段，后�
 已有完整包复测时，在实验需求的 solution_refs 指定库内模型身份，execution 使用 evaluate_artifact 和当前阶段的 evaluations；同时绑定多个包时用 execution.source_ref 明选一份。宿主解析原始执行器、源版本和模型文件。不传新的 calibration，也无需 Coding 重写加载逻辑。新算法只需更改原生数值计划时实现 build_plan；如需在校准集上改动已构建的量化参数，可在同一模块实现 refine_frozen(backend, model, data, parameters)，返回实际选择的诊断字典。完整自定义执行器继续支持同一份源码的导出、独立重载和审计。
 
 对资产或已绑定快照成员使用 `find` 或 `symbol` 时，`matched=false` 表示该次检索没有交付正文。可使用回包的 `read_asset` 参数打开同一授权正文首页，再按需翻页。
+
+`parent_ref` 使宿主从已验证的完整包或增量子包加载。原生 v3 保留父计划和全部网格。缺少 parent_ref 的 `refine_frozen` 从本次 prepare 的重建状态开始。独立自定义执行器可实现 `prepare_from_parent(plan, model, manifest)` 并沿原 `audit/export/load` 接口返回一致的完整子包。若配合已评分的 `accept_trial` 和 `requires_code=true`，传入的 model 已含所选修改，宿主逐一核验准备后的状态、冷载状态和实际输出。自定义 exporter 须封存原父校准身份与新增身份的有序并集，并声明 preparation_training。可用独立原生成员的倍率、按现有网格扁平索引的 `{"indices":[0],"factor":0.9,"zero":0}`（按需指定 factor/zero）；整数 zero 受当前 codec 验证。自定义码本、PTF 和复合整数算子遵从各自的数学与重绑定规则。多视图数值调用及评分 Evidence 的正式接受示例见 [能力目录](CAPABILITIES.md)。

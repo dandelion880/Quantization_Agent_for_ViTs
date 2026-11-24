@@ -25,13 +25,19 @@ class DataView:
     def ids(self, split):
         return self.selected if split == self.split else self.data.ids(split)
 
+    def source_rows(self, split):
+        if split != self.split:
+            yield from self.data.source_rows(split)
+            return
+        rows = {r["sample_id"]: r for r in self.data.rows[split]}
+        yield from (rows[sid] for sid in self.selected)
+
     def batches(self, split):
         if split != self.split:
             yield from self.data.batches(split)
             return
-        rows = {row["sample_id"]: row for row in self.data.rows[split]}
-        for sid in self.selected:
-            yield self.data.backend.data_adapter.load_image(rows[sid]).to(self.data.backend.device), sid
+        for row in self.source_rows(split):
+            yield self.data.backend.data_adapter.load_image(row).to(self.data.backend.device), row["sample_id"]
 
 
 def evaluate(backend, cfg, data, model, plan, split, count=None, shard=None, *, native=True, sites=()):

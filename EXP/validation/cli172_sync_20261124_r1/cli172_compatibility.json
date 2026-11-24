@@ -1,0 +1,236 @@
+{
+  "checked_at_utc": "2026-11-24T03:39:47.469533+00:00",
+  "cli_version": "codex-cli 0.172.0",
+  "cli_sha256": "ad83b94c093f0cdd8176a6bc8005a461bdf23a759863e157d40f562b8a9d664d",
+  "release": "https://github.com/openai/codex/releases/tag/rust-v0.172.0",
+  "release_archive_sha256": "63e3b00065ed7f62166d0522e17f663cb866a31d80d03e63365482ed34a1d991",
+  "base_commit": "fad46577ac9484ed81715d23d11cb691c8fa506e",
+  "models_config_sha256": "34ff34b8b908b4fef177888fb4fded360b512d553ce400c3eadea7e49aa0f6ad",
+  "provider": "codex_subscription",
+  "scope": "Account/catalog preflight and live schema-only probes for each model/effort route, including Eval-L0 judge configurations.",
+  "account_auth_type": "chatgpt",
+  "disabled_features_missing_or_on": [
+    "unified_exec"
+  ],
+  "role_routes": [
+    {
+      "status": "passed",
+      "requested": {
+        "model": "gpt-6-luna",
+        "reasoning_effort": "high"
+      },
+      "actual": {
+        "model": null,
+        "reasoning_effort": null,
+        "source": "not_reported_by_cli"
+      },
+      "decision": {
+        "ok": true
+      },
+      "usage": {
+        "input_tokens": 4667,
+        "cached_input_tokens": 0,
+        "cache_write_input_tokens": 0,
+        "output_tokens": 63,
+        "reasoning_output_tokens": 33
+      },
+      "tool_calls": [],
+      "tool_host_disabled_verified": true,
+      "event_types": [
+        "item.completed",
+        "thread.started",
+        "turn.completed",
+        "turn.started"
+      ],
+      "roles": [
+        "recorder"
+      ],
+      "context_window": 272000,
+      "tool_mode": "code_mode_only",
+      "supported_efforts": [
+        "low",
+        "medium",
+        "high",
+        "xhigh",
+        "max"
+      ]
+    },
+    {
+      "status": "passed",
+      "requested": {
+        "model": "gpt-6-luna",
+        "reasoning_effort": "low"
+      },
+      "actual": {
+        "model": null,
+        "reasoning_effort": null,
+        "source": "not_reported_by_cli"
+      },
+      "decision": {
+        "ok": true
+      },
+      "usage": {
+        "input_tokens": 4667,
+        "cached_input_tokens": 0,
+        "cache_write_input_tokens": 0,
+        "output_tokens": 28,
+        "reasoning_output_tokens": 0
+      },
+      "tool_calls": [],
+      "tool_host_disabled_verified": true,
+      "event_types": [
+        "item.completed",
+        "thread.started",
+        "turn.completed",
+        "turn.started"
+      ],
+      "roles": [
+        "supervisor"
+      ],
+      "context_window": 272000,
+      "tool_mode": "code_mode_only",
+      "supported_efforts": [
+        "low",
+        "medium",
+        "high",
+        "xhigh",
+        "max"
+      ]
+    },
+    {
+      "status": "passed",
+      "requested": {
+        "model": "gpt-6.1-sol",
+        "reasoning_effort": "medium"
+      },
+      "actual": {
+        "model": null,
+        "reasoning_effort": null,
+        "source": "not_reported_by_cli"
+      },
+      "decision": {
+        "ok": true
+      },
+      "usage": {
+        "input_tokens": 4672,
+        "cached_input_tokens": 0,
+        "cache_write_input_tokens": 0,
+        "output_tokens": 28,
+        "reasoning_output_tokens": 0
+      },
+      "tool_calls": [],
+      "tool_host_disabled_verified": true,
+      "event_types": [
+        "item.completed",
+        "thread.started",
+        "turn.completed",
+        "turn.started"
+      ],
+      "roles": [
+        "independent_judge_previous"
+      ],
+      "context_window": 500000,
+      "tool_mode": "code_mode_only",
+      "supported_efforts": [
+        "low",
+        "medium",
+        "high",
+        "xhigh",
+        "max",
+        "ultra"
+      ]
+    },
+    {
+      "status": "passed",
+      "requested": {
+        "model": "gpt-6.2-astra",
+        "reasoning_effort": "high"
+      },
+      "actual": {
+        "model": null,
+        "reasoning_effort": null,
+        "source": "not_reported_by_cli"
+      },
+      "decision": {
+        "ok": true
+      },
+      "usage": {
+        "input_tokens": 4765,
+        "cached_input_tokens": 0,
+        "cache_write_input_tokens": 0,
+        "output_tokens": 28,
+        "reasoning_output_tokens": 0
+      },
+      "tool_calls": [],
+      "tool_host_disabled_verified": true,
+      "event_types": [
+        "item.completed",
+        "thread.started",
+        "turn.completed",
+        "turn.started"
+      ],
+      "roles": [
+        "generation"
+      ],
+      "context_window": 272000,
+      "tool_mode": "code_mode_only",
+      "supported_efforts": [
+        "low",
+        "medium",
+        "high",
+        "xhigh",
+        "max",
+        "ultra"
+      ]
+    },
+    {
+      "status": "passed",
+      "requested": {
+        "model": "gpt-6.2-sol",
+        "reasoning_effort": "medium"
+      },
+      "actual": {
+        "model": null,
+        "reasoning_effort": null,
+        "source": "not_reported_by_cli"
+      },
+      "decision": {
+        "ok": true
+      },
+      "usage": {
+        "input_tokens": 4763,
+        "cached_input_tokens": 0,
+        "cache_write_input_tokens": 0,
+        "output_tokens": 28,
+        "reasoning_output_tokens": 0
+      },
+      "tool_calls": [],
+      "tool_host_disabled_verified": true,
+      "event_types": [
+        "item.completed",
+        "thread.started",
+        "turn.completed",
+        "turn.started"
+      ],
+      "roles": [
+        "coding",
+        "safeguard",
+        "independent_judge"
+      ],
+      "context_window": 500000,
+      "tool_mode": "code_mode_only",
+      "supported_efforts": [
+        "low",
+        "medium",
+        "high",
+        "xhigh",
+        "max",
+        "ultra"
+      ]
+    }
+  ],
+  "optional_native_coding": {
+    "status": "fallback",
+    "reason": "bwrap: No permissions to create a new namespace, likely because the kernel does not allow non-privileged user namespaces. On e.g. debian this can be enabled with 'sysctl kernel.unprivileged_userns_clone=1'."
+  }
+}

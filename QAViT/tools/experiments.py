@@ -21,7 +21,7 @@ from core.evidence_scope import canonical_scope
 SERVICE_VERSION = "qavit.experiments/2.1"
 SERVICES = {
     "profile": {"levels": ["L1"], "description": "已有15个真实 Profiling 接口；v2独立会话和全局预算，无measurement次数上限"},
-    "frozen_helper": {"levels": ["L1", "L2"], "description": "已绑定冻结来源的传播诊断/离散尺度搜索；直接调用原数值 helper，返回 Evidence，不需 Coding；搜索只修改作业内实例"},
+    "frozen_helper": {"levels": ["L1", "L2"], "description": "已绑定冻结来源的传播诊断/离散尺度搜索；直接调用原数值 helper，返回 Evidence，不需 Coding；同一冻结父包在许可视图上评分，接受后通过 quantize_evaluate 导出子包"},
     "tensor_probe": {"levels": ["L1", "L2"], "description": "真实ViT位点输入、局部输出及小样本整网回放；可挂载经批准的quantizer_v1实现"},
     "evaluate_artifact": {"levels": ["L2", "L3"], "description": "加载标准 plan v2/package v1 或 plan v3/package v2 冻结模型包，使用显式数据视图进行分类/分割；不继承历史指标。自定义包须由对应批准的 executor_v1 加载"},
     "quantize_evaluate": {"levels": ["L2", "L3"], "description": "已有数值算法直接提供 execution.plan；新增算法才经批准 executor_v1 生成计划/执行器。两路共用冻结合同、覆盖审计、导出重载及评测"},
@@ -38,9 +38,11 @@ EXPERIMENT_DRAFT_SCHEMA['properties']['execution']['required'] = []
 EXPERIMENT_DRAFT_SCHEMA['properties']['execution']['properties'] = {
     **{key: deepcopy(OBJECT) for key in ('backend', 'resolved_choices', 'parameters',
         'quantization_contract', 'method_options', 'arguments')},
+    'accept_trial': {'type': 'object', 'additionalProperties': False, 'required': ['evidence_ref', 'candidate_id'],
+                     'properties': {'evidence_ref': TEXT, 'candidate_id': TEXT}},
     'requires_code': {'type': 'boolean'}, 'training': {'type': 'boolean'},
     'seed': {'type': 'integer', 'minimum': 0, 'maximum': 2 ** 63 - 1},
-    **{key: TEXT for key in ('service', 'interface', 'site', 'method', 'model_dir')},
+    **{key: TEXT for key in ('service', 'interface', 'site', 'method', 'model_dir', 'parent_ref', 'source_ref', 'tool')},
     'calibration': {'type': 'object', 'additionalProperties': True, 'properties': {
         'split': TEXT, 'count': {'anyOf': [{'type': 'integer', 'minimum': 1}, {'type': 'null'}]},
         'offset': {'type': 'integer', 'minimum': 0}}},
@@ -134,7 +136,7 @@ def prepare_request(payload, brief, runtime=None):
     if any(k.startswith('required_') for k in value):
         raise ContractError('ExperimentCard 必需执行约束须放入 execution.quantization_contract')
     execution.setdefault('requires_code', service == 'custom_experiment' or
-                         (service == 'quantize_evaluate' and 'plan' not in execution))
+                         (service == 'quantize_evaluate' and 'plan' not in execution and 'accept_trial' not in execution))
     if service == 'quantize_evaluate' and 'plan' in execution and (execution['requires_code'] or 'interface' in execution):
         raise ContractError('execution.plan 使用现有执行器，不能同时请求新增代码/interface；明确选择实现来源')
     if execution['requires_code']:
@@ -346,12 +348,20 @@ def normalize_execution(execution, brief, *, level=None):
         raise ContractError("execution.seed 必须是明确的非负64位整数")
     if "requires_code" in value and type(value["requires_code"]) is not bool:
         raise ContractError("execution.requires_code 必须为 boolean")
-    builtin_plan = service == 'quantize_evaluate' and 'plan' in value
+    if 'parent_ref' in value and (service != 'quantize_evaluate' or not isinstance(value['parent_ref'], str)
+            or not value['parent_ref'].strip() or choices.get('training') is not False):
+        raise ContractError('parent_ref requires training-free quantize_evaluate and an exact parent identifier')
+    if 'accept_trial' in value and ('parent_ref' not in value or 'plan' in value):
+        raise ContractError('accept_trial inherits the named parent plan; use its measured candidate_id')
+    builtin_plan = service == 'quantize_evaluate' and ('plan' in value or ('accept_trial' in value and not value.get('requires_code')))
     value.setdefault('requires_code', service == 'custom_experiment' or (service == 'quantize_evaluate' and not builtin_plan))
     if service == 'custom_experiment' and not value['requires_code']:
         raise ContractError('custom_experiment.requires_code 必须为 true；新增实现先经 Coding 和 Safeguard')
     if service == 'quantize_evaluate':
-        if builtin_plan:
+        if 'accept_trial' in value:
+            if not value['requires_code'] and 'interface' in value:
+                raise ContractError('built-in accept_trial does not take an implementation interface')
+        elif builtin_plan:
             if value['requires_code'] or 'interface' in value:
                 raise ContractError('execution.plan 使用现有执行器，不能同时请求新增代码/interface；明确选择实现来源')
             value['plan'] = expand_plan(value['plan'])
@@ -556,7 +566,10 @@ def resolve_execution(execution, brief, *, level=None):
     value = normalize_execution(execution, brief, level=level)
     input_adapter = value["backend"]
     selected = input_adapter == brief["model"].get("adapter")
-    segmentation = any(e.get('kind') == 'ade_frozen' for e in value.get('evaluations', []))
+    args = value.get('arguments', {})
+    dense_helper = value['service'] == 'frozen_helper' and (args.get('view') == 'dense'
+        or any(o.get('view') == 'dense' for o in args.get('observations_spec', [])))
+    segmentation = dense_helper or any(e.get('kind') == 'ade_frozen' for e in value.get('evaluations', []))
     bound = brief["model"].get("binding")
     adapter = bind_backend(input_adapter, segmentation=segmentation or bool(selected and bound and bound['segmentation']))
     value.pop('expected_model_identity', None)
@@ -707,6 +720,8 @@ class ExperimentBroker:
         except (ContractError, OSError) as exc:
             from runtime.failures import FrozenSourceError
             raise FrozenSourceError(str(exc)) from exc
+        from tools.frozen import bind_parent_initialization
+        bind_parent_initialization(self.journal, payload)
         execution.pop('evaluation_package', None)
         if execution['service'] == 'evaluate_artifact' and execution.get('frozen_sources') and not execution.get('model_dir'):
             from tools.runtime_interface import select_frozen_source

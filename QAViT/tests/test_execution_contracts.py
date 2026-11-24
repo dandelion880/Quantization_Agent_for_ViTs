@@ -156,7 +156,7 @@ class ReloadAndInterfaceTests(TempCase):
         sid = plan["layers"][0]["module"]
         def refine(backend, model, observed, parameters):
             return search_frozen_scales(backend, model, observed, [
-                {"id":"mechanical_selection", "scales":{sid:{"activation":.75, "weight":.8}}}])
+                {"id":"mechanical_selection", "scales":{sid:{"activation":.75, "weight":.8}}}], install_selected=True)
         plugin = SimpleNamespace(build_plan=lambda *args: deepcopy(plan), refine_frozen=refine)
         directory=self.root / 'refinement'
         directory.mkdir()
@@ -164,6 +164,8 @@ class ReloadAndInterfaceTests(TempCase):
             result=evaluate_services({'payload':payload},backend,cfg,data,directory,None)
         selected=result['observations']['refinement']
         self.assertEqual(selected, read_json(directory/'model/manifest.json')['refinement'])
+        self.assertNotEqual(selected['parent_state_sha256'], selected['child_state_sha256'])
+        self.assertEqual(selected['initialization'], 'rebuilt_recipe')
         self.assertNotEqual(selected['baseline_state_sha256'], selected['selected_state_sha256'])
         self.assertEqual(result['observations']['reload']['evaluated_instance'],'reloaded')
         self.assertEqual(result['observations']['evaluations']['classification']['sample_count'],4)

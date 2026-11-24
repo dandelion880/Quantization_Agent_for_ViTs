@@ -51,7 +51,7 @@ class CalibrationSearchTests(unittest.TestCase):
         for reference in ("fp_model", "local_fp"):
             model = deepcopy(self.model)
             report = search_frozen_scales(self.backend, model, self.data, self.candidates,
-                                           block="blocks.0", reference=reference, token_scope="patch")
+                                           block="blocks.0", reference=reference, token_scope="patch", install_selected=True)
             self.assertEqual(report["selected_score"], min(row["score"] for row in report["candidates"]))
             self.assertGreater(len({row["score"] for row in report["candidates"]}), 1)
             factor = report["selected_scales"]["blocks.0.attn.qkv"]["activation"]
@@ -66,7 +66,7 @@ class CalibrationSearchTests(unittest.TestCase):
         from ptq_agent.execution.evaluation import model_digest
         scales = {"blocks.0.attn.qkv": {"activation": .75, "weight": .8}}
         result = search_frozen_scales(self.backend, self.model_copy, self.data,
-                                      [{"id":"selected", "scales":scales}])
+                                      [{"id":"selected", "scales":scales}], install_selected=True)
         self.assertNotEqual(result["baseline_state_sha256"], result["selected_state_sha256"])
         self.assertEqual(len(result["candidates"][0]["per_sample_scores"]), len(result["sample_ids"]))
         with tempfile.TemporaryDirectory() as directory:
@@ -135,7 +135,7 @@ class CalibrationSearchTests(unittest.TestCase):
                 if hasattr(q, "weight_enabled"):
                     q.weight_enabled = q.layer["weight"] is not None
             self.assertEqual(quantizers(isolated), {})
-            report = search_frozen_scales(self.backend, isolated, self.data, self.candidates, metric="teacher_kl")
+            report = search_frozen_scales(self.backend, isolated, self.data, self.candidates, metric="teacher_kl", install_selected=True)
             self.assertTrue(report["parameters_installed"])
             self.assertEqual(len(report["candidates"]), 3)
         finally:
@@ -144,7 +144,7 @@ class CalibrationSearchTests(unittest.TestCase):
     def test_weight_selection_and_selected_package_reload(self):
         candidates = [{"id": str(f), "scales": {"blocks.0.attn.qkv": {"weight": f}}} for f in (.8, 1., 1.2)]
         model = self.model_copy
-        report = search_frozen_scales(self.backend, model, self.data, candidates, metric="teacher_kl")
+        report = search_frozen_scales(self.backend, model, self.data, candidates, metric="teacher_kl", install_selected=True)
         qmap = quantizers(model)
         weights = {q.layer["module"]: q.weight_record for q in qmap.values() if getattr(q, "weight_record", None) is not None}
         params = {s: q.params() for s, q in qmap.items() if q.layer["activation"]}

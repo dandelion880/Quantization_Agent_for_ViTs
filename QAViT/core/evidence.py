@@ -293,6 +293,52 @@ def evidence_facts(card, root=None):
               'identity': {k: deepcopy(provenance[k]) for k in
                   ('baseline_state_sha256', 'model_ref', 'model_unchanged') if k in provenance},
               'evaluations': {}}
+    trial = observations.get('result', {})
+    if (observations.get('tool') == 'profile_frozen_propagation' and isinstance(trial, dict)
+            and all(isinstance(trial.get(k), dict) for k in ('source','boundaries','interventions','semantics'))
+            and {'baseline_output_error','numeric_state_sha256','split','sample_count'} <= trial.keys()):
+        args = provenance.get('execution_facts', {}).get('parameters', {}).get('arguments', {})
+        blocks = args.get('blocks', [])
+        endpoint = blocks[-1] if blocks else None
+        def token_nmse(error):
+            return {group:row['relative_mse'] for group,row in error.get('outputs', {}).items()
+                    if 'relative_mse' in row}
+        def table(name, body):
+            handle = {'ref':ref,'field':'/payload/observations/result/' + name}
+            return body if len(canonical(body)) <= 4000 else {'read_card':handle,'count':len(body)}
+        boundary = {name:{key:token_nmse(row[key]) for key in ('input_total','local_added','upstream_mapped','output_total')
+                          if key in row} for name,row in trial['boundaries'].items()}
+        arms = {}
+        for name, row in trial['interventions'].items():
+            arms[name] = {'intervention':row['intervention'], 'output_nmse':token_nmse(row['output_error']),
+                          'last_requested_block_nmse':token_nmse(row['boundaries'].get(endpoint, {}).get('error_to_fp', {}))}
+        baseline = trial['boundaries'].get(endpoint, {}).get('output_total', {})
+        result['propagation'] = {'parent_model_ref':trial['source'].get('model_ref'),
+            'state':trial['numeric_state_sha256'],'split':trial['split'],'originals':trial['sample_count'],
+            'view':trial.get('view','classification'),'endpoint':trial.get('endpoint',args.get('classification_output')),
+            'last_requested_block':endpoint,'baseline_at_last_block_nmse':token_nmse(baseline),
+            'boundary_nmse':table('boundaries',boundary),'arms':table('interventions',arms),
+            'classification':table('classification_diagnostic', {name:{k:r[k] for k in ('teacher_kl','top1','correct','samples') if k in r}
+                              for name,r in trial.get('classification_diagnostic',{}).items()}),
+            'semantics':trial['semantics'],'cross_term':{'read_card':{'ref':ref,'field':'/payload/observations/result/decomposition_cross_term'}},
+            'read_card':{'ref':ref,'field':'/payload/observations/result'}}
+    if (isinstance(trial, dict) and trial.get('api') == 'frozen_candidate_scores/1'
+            and all(isinstance(trial.get(k), list) for k in ('sample_ids','views','candidates'))
+            and all(isinstance(r, dict) and {'id','scores','objectives'} <= r.keys() for r in trial['candidates'])):
+        field = '/payload/observations/result'
+        result['frozen_trials'] = {k: deepcopy(trial[k]) for k in ('parent_state_sha256','parent_model_ref',
+            'split','reduction','winners','parameters_installed') if k in trial}
+        result['frozen_trials'].update(originals=len(trial['sample_ids']), view_units=len(trial['views']),
+            candidates=len(trial['candidates']), read_card={'ref':ref,'field':field},
+            scores_source={'read_card': {'ref':ref,'field':field+'/candidates'}})
+        pool = [{k:r[k] for k in ('id','scores','objectives')} for r in trial['candidates']]
+        if len(canonical(pool)) <= 2600:
+            result['frozen_trials']['pool'] = pool
+    if isinstance(observations.get('refinement'), dict):
+        r = observations['refinement']
+        result['refinement'] = {k:r[k] for k in ('parent_model_ref','parent_state_sha256','child_state_sha256',
+            'initialization','selection_source','candidate_sha256') if k in r}
+        result['refinement']['read_card'] = {'ref':ref, 'field':'/payload/observations/refinement'}
     for key in ('model_identity', 'data_identity'):
         if key in provenance:
             original = provenance[key]

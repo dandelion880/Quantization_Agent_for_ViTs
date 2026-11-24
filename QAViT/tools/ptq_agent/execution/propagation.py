@@ -91,7 +91,7 @@ def _intervene(reference, candidate, item):
 
 def profile_frozen_propagation(backend, model, data, *, blocks, split="calibration",
                                interventions=(), token_layout=None, classification_output=None,
-                               forward_fn=None, source=None):
+                               forward_fn=None, source=None, view=None, output=None):
     """Measure selected block boundaries and optional interventions on frozen state.
 
     `model` must be obtained via the host's context['load_frozen'] for historical
@@ -102,6 +102,42 @@ def profile_frozen_propagation(backend, model, data, *, blocks, split="calibrati
     avoids treating arbitrary embeddings as logits. Known block layouts come from the model adapter.
     Other boundaries use an explicit layout or only the complete tensor.
     """
+    if view is not None or output is not None:
+        from .frozen_trials import image_views
+        view = view or 'classification'
+        endpoint = output or ('head_features' if view == 'dense' else 'classification_logits')
+        require((view, endpoint) in (('dense', 'head_features'), ('dense', 'segmentation_logits'),
+                ('classification', 'classification_logits')) and forward_fn is None, 'unsupported bound diagnostic path')
+        require(classification_output is None or view == 'classification', 'dense windows have no classification labels')
+        task = None
+        if view == 'dense':
+            from tools.segmentation import DenseTask
+            task = DenseTask(backend)
+        receipts, active = [], {}
+        class Windows:
+            labels = {}
+            def ids(self, _split):
+                return [r['unit_id'] for r in receipts]
+            def batches(self, _split):
+                for x, meta, row in image_views(backend, data, _split, [view], task):
+                    unit = row['sample_id'] if view == 'classification' else row['sample_id'] + '#' + str(row['index'])
+                    if row['sample_id'] in data.labels:
+                        self.labels[unit] = data.labels[row['sample_id']]
+                    receipts.append({**row, 'unit_id': unit})
+                    active['meta'] = meta
+                    yield x, unit
+        def run(m, x):
+            if task is None:
+                return forward(backend, m, x)
+            values = task.observe(m, x, active['meta'], logits=endpoint == 'segmentation_logits')
+            return values['logits'] if endpoint == 'segmentation_logits' else values
+        report = profile_frozen_propagation(backend, model, Windows(), blocks=blocks, split=split, interventions=interventions,
+            token_layout=token_layout, classification_output=classification_output, forward_fn=run, source=source)
+        report.update(view=view, endpoint=endpoint, view_units=receipts, unit_count=len(receipts),
+                      sample_ids=data.ids(split), sample_count=len(data.ids(split)),
+                      transform=task.identity if task else data.identity['preprocessing'],
+                      reduction='per named tensor, SSE/energy pooled across declared windows; counts include overlap')
+        return report
     require(split in ("calibration", "search"), "propagation diagnostics cannot consume final data")
     require(blocks and len(set(blocks)) == len(blocks), "provide unique block boundaries")
     stochastic = (torch.nn.modules.dropout._DropoutNd, torch.nn.modules.batchnorm._BatchNorm)

@@ -111,7 +111,11 @@ class ScientificSkills(TempCase):
         self.assertNotIn(ref_title, canonical(context))
         wf = Workflow(wf.run_dir)
         task, context = self.tools(wf, wf.queue.get(task['task_id']), [('read_asset', {'asset': reference})])
-        self.assertEqual(canonical(context).count(title), 1)
+        self.assertNotIn(title, canonical(context))
+        old = next(r['result'] for r in context['tool_results'] if r['arguments'].get('asset') == asset)
+        self.assertEqual(old['delivery'], 'previously_delivered_body_omitted')
+        self.assertEqual(self.read(wf, task, 'read_asset', **old['version_read'])['text'],
+                         wf.asset_path(asset).read_text())
         self.assertEqual(canonical(context).count(ref_title), 1)
         wf.submit(task, hypothesis(1, 'H3'), 'scripted CPU')
         self.assertEqual(wf.queue.get(task['task_id'])['state'], 'completed')
