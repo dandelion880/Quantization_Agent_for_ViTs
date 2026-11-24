@@ -1,6 +1,6 @@
 # 科研 Skill 与实际执行能力
 
-按 2026-11-18 当前源码核对。此页是按需接口说明，不是新流程或授权。包内研究建议可以超出现有实现；接口名相似不代表数学对象相同。来源与接入记录见 [Skill 说明](SCIENTIFIC_SKILLS.md)。
+按 2026-11-24 当前源码核对。此页是按需接口说明，不是新流程或授权。包内研究建议可以超出现有实现；接口名相似不代表数学对象相同。来源与接入记录见 [Skill 说明](SCIENTIFIC_SKILLS.md)。
 
 ## 研究参考与最终方法
 
@@ -18,14 +18,14 @@
 | 能力 | 实际支持 | 不能据此假定 |
 |---|---|---|
 | 原生校准调度 | `plan.execution.calibration_unit=operator/block`、层序、多 pass、`calibration_context=current/float` | block 调度仍按位点拟合，不自动联合重建 |
-| `search_frozen_scales` | native v3 冻结模型、显式候选；每 site/target 一个正标量倍率，相对本次调用初始状态；整网单 Tensor 或指定 block 输出 | 任意逐元素组、独立成员映射、zero 直接搜索、任意 lookahead、STE；多次调用仍各用自己的初始状态 |
+| `search_frozen_scales` | native v3 冻结模型、显式候选；相对调用初始状态，可用正倍率；独立原生 uniform grid 可用现有扁平 `indices` 编辑局部倍率和 codec 允许的整数 `zero`。同父多目标评分见 `score_frozen_candidates` | 新建或重分 grid、修改任意自定义算术、STE；多次调用仍各用自己的初始状态 |
 | W 重编码 | RTN/uniform；换尺度后重编码真实权重 | GPTQ/GPTAQ 补偿结果不保证保留；改用 RTN 必须报告方法身份变化 |
 | 冻结搜索背景 | `context=quantized/float`；float 关闭干预位点集合外的量化，集合内保留已启用 W/A；选定后恢复完整背景 | 不等于原生 `calibration_context`，也不把同位点未调整的另一目标变成 FP |
 | 目标 | mse/cosine；分类 logits 的 teacher_kl、task_loss、top1_error；初始冻结 logits CE 梯度平方 `hessian_diag_ce` | 不是完整 Hessian；原生位点梯度又是另一对象；同起点 teacher KL 梯度可能近零 |
 | token | 绑定 block 的 profile、冻结搜索和传播共用 CLS/special/patch 切片，核对实际网格 | 按绑定布局区分额外 token；空组不能用于拟合，任意多流或重排布局需适配 |
 | 传播 | 配对 FP/Q 边界、同 Q 输入 FP block 重放、交叉项、冻结替换与 W/A 旁路 | 仅覆盖坐标对齐和实际 forward；FP 替换收益不是合法 W4A4 可达保证，helper 默认观测绑定的分类前向；ADE 冻结评价使用独立任务适配层，自定义 dense 输出需验证其前向 |
 
-参数与状态细节见 [尺度选择](methods/scale_selection.md)、[校准顺序](methods/calibration_order.md)、[冻结传播 API](skills/diagnose-ptq-failure/references/frozen-propagation.md) 和 [代码接口](CODE_INTERFACES.md)。无接口的设计沿原 Coding 扩展，不能把上述建议直接塞入标量倍率参数。相同整数 code 不保证相同解码输出；当前 frozen search 枚举全部显式候选，没有按 code 去重优化。
+参数与状态细节见 [尺度选择](methods/scale_selection.md)、[校准顺序](methods/calibration_order.md)、[冻结传播 API](skills/diagnose-ptq-failure/references/frozen-propagation.md) 和 [代码接口](CODE_INTERFACES.md)。无接口的设计沿原 Coding 扩展，需区分现有 grid 单元与新的部署粒度。相同整数 code 不保证相同解码输出；当前 frozen search 枚举全部显式候选，没有按 code 去重优化。
 
 ## 来源、执行及记忆
 
