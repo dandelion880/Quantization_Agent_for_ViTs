@@ -3,6 +3,7 @@
     "gpt-6-luna",
     "low"
   ],
+  "critic": ["gpt-6.2-astra", "medium"],
   "generation": [
     "gpt-6.2-astra",
     "high"

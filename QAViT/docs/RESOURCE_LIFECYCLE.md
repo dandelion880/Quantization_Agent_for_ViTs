@@ -6,7 +6,7 @@
 
 `runtime/driver.py:request_body()` 调用 `agents/interaction.py:context()`，再由 `agents/roles.py:role_spec()` 拼接 common、当前角色和任务片段、提交视图与工具 Schema。ResearchBrief、当前任务、预算、必需短证据/反馈进入上下文；长正文给分页入口。角色不会自动读取全部 Prompt 或全部历史。
 
-所有角色只获得 `context.knowledge_index.read_asset` 这一导航指针。科研角色额外获得与当前问题相关的 Skill 短描述；允许 request_experiment 的任务获得 method_catalog 与 EXPERIMENT_INPUTS 正文；generate/select/code/safeguard/record/plan_l3 获得 complete_solutions；Coding/Safeguard 获得 CODE_INTERFACES 正文。其余资源自主读取，目录不是阅读证明。
+所有角色只获得 `context.knowledge_index.read_asset` 这一导航指针。科研角色额外获得与当前问题相关的 Skill 短描述；允许 request_experiment 的任务获得 method_catalog 与 EXPERIMENT_INPUTS 正文；generate/select/code/safeguard/record/plan_l3 获得 complete_solutions，critique 获得候选实际引用的父方案；Coding/Safeguard 获得 CODE_INTERFACES 正文。其余资源自主读取，目录不是阅读证明。
 
 `authorized_assets()` 从 docs/ 与 knowledge/ 发现文本、合入 Brief 明确列出的 reference/ 来源和当前可见任务产物；`request_body()` 冻结路径/哈希及 Journal 序号。read_asset 使用同一授权快照，核验当前字节并返回 UTF-8 字符页、sha256、offset/next_offset。旧 skills/、methods/、solutions/ 别名不变，knowledge/ 别名与项目相对路径均可用。新增目录没有开放任意文件或同回合私有子任务。
 
@@ -108,3 +108,11 @@ Recorder 通过可选 Metareview.topic_notes（topic_ref、progress、reconsider
 同一 Metareview 的可选 `skill_updates` 随 `recording_submissions`、科学分析、知识修订及批次游标一起提交。每项保留原稿，来源由宿主解析到本批可见卡的精确字段。失效条目记录 `invalid` 和原因。有效提案先记 `queued`。提交后按 Metareview 哈希及条目位置发布，在共享锁下核对当前父版本。`EXP/skills/versions/<sha>/<name>/SKILL.md` 与 `references/origin.json` 保存包和出处，`releases/` 中的原子回执确认发布；可重建目录。Journal 的 `skill_update_result` 记录 published 或 conflict，暂时写入失败保留待办，下次启动或 Recorder 提交重新处理。一次运行的模型、数据、协议记入来源与范围。
 
 新运行固定共享头与人工包版本。后续模型调用只加入本运行已发布版本，已经发出的调用使用原 Journal 截点。`context.skill_catalog` 给出最多七条相关简介；`read_asset skills/INDEX.md` 支持 find 与分页。`skills/<name>/SKILL.md` 读取当前版本，`skills/<name>@<sha>/…` 精确读取可见祖先、退役版本或来源附件。源码里的人工原件仍进入 core_sha256；显式修订和停用需绑定包哈希。不同血缘同名在目录标为冲突。流程提案、已发表经验和实际测量各保留自己的身份。
+
+## 候选批量审阅
+
+新研究模板启用 `enable_critic`。H1/H2/H3 生成任务全部终止后，`rNNN/critique` 保存已提交候选的确切版本和各分支最近的测量入口。Critic 独立调用 `llm.agent_models.critic`，共享原有预算、LLM 和实验资源。任务携带 Brief、主题、父方案、条件和关键数字。先前的读取按科研工作材料压缩，原件可按引用恢复。
+
+Critic 在 `request_experiment` 的顶层给出 `hypothesis_ref`。宿主从该版本绑定方法、主题及已有灵感，沿同一实现、Safeguard、执行、Evidence 和原任务续调链传递结果。L1/L2 支持诊断。L3 请求与执行绑定都核验 Brief 的双任务开发协议。正式候选 L3 仍由 Generation 在 select 后按版本分别规划。批评意见、条件与测量来源进入 Generation 和 Recorder。Generation 用 `revise_candidate` 发布改变，后续综合同时保存旧审阅与新候选的身份。未完成的独立审阅交付实际原因，允许按预算继续综合。
+
+设置 `"enable_critic": false` 将直接使用 gonly 综合路径。历史 gonly 配置缺少该字段时沿用原指纹和路径。旧 Full 的可执行历史由 `full-retired-20261124` 保存。已有运行更换宿主代码仍须走显式 intervention。

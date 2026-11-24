@@ -267,12 +267,14 @@ class WorkflowDriver:
             before_call = task["kind"] == "llm" and audit.exists() and read_json(audit).get("model_call_started") is False
             # A transport/timeout failure is recoverable on either side of the
             # preflight boundary. Every retry launches a fresh, genuine preflight.
-            if before_call and not retry:
+            optional_route = task['role'] == 'critic' and code in (
+                'llm_model_mismatch', 'llm_unsupported_model', 'llm_unsupported_effort', 'llm_model_catalog')
+            if before_call and not retry and not optional_route:
                 self.transport_blocked, retry = error, False
             if retry and self.budget.snapshot()["worker_deadline_unix"] <= time.time():
                 retry = False
             self.queue.fail(task["task_id"], error, retryable=retry)
-            if code in ("llm_preflight_failed", "llm_authentication", "llm_quota_unknown", "llm_quota_exhausted", "llm_credit_policy",
+            if not optional_route and code in ("llm_preflight_failed", "llm_authentication", "llm_quota_unknown", "llm_quota_exhausted", "llm_credit_policy",
                         "llm_model_mismatch", "llm_unsupported_model", "llm_unsupported_effort", "llm_cli_version", "llm_tool_isolation",
                         "llm_model_catalog", "llm_not_configured"):
                 self.transport_blocked = error
@@ -404,6 +406,8 @@ class WorkflowDriver:
         settled = {t['task_id'] for t in tasks.values()
                    if t['inputs'].get('context', {}).get('round') in finished_rounds
                    and t['inputs'].get('purpose') != 'record'}
+        settled.update(t['task_id'] for t in tasks.values() if t['inputs'].get('purpose') == 'critique'
+                       and self.queue.get_by_key(f"r{t['inputs']['context']['round']:03d}/select"))
         settled.update(row['task'] for task in tasks.values() for row in task.get('tool_results', []))
         settled.update(self.journal.card(e['failed_task_ref'])['payload']['task_id']
                        for e in self.journal.events if e['type'] == 'selection_fallback')

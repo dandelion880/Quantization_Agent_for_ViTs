@@ -31,6 +31,10 @@ class TempCase(unittest.TestCase):
         self.tmp = tempfile.TemporaryDirectory(prefix="v2-test-", dir=parent)
         self.root = Path(self.tmp.name)
         self.addCleanup(self.tmp.cleanup)
+        from unittest.mock import patch
+        shared = patch('core.skills.SHARED_ROOT', self.root / 'shared-skills')
+        shared.start()
+        self.addCleanup(shared.stop)
 
     def journal(self, name="run"):
         return Journal(self.root / name, name)

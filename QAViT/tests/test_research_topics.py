@@ -61,7 +61,9 @@ class TopicTests(TempCase):
         tid=wf.enqueue_role('next/focus','focus',context={'round':2});wf.queue.ready();next_task=wf.queue.claim(tid)
         context=wf.context(next_task)
         self.assertEqual(context['research_topic']['actions'][0]['id'],first['actions'][0]['id'])
-        self.assertEqual(context['research_topic']['implementation_history'][0]['candidate'],artifact)
+        self.assertEqual(context['research_topic']['implementation_history'][0]['candidate'],
+                         {'body_location':'context.inspiration_continuation.implementation_history[0].candidate'})
+        self.assertEqual(context['inspiration_continuation']['implementation_history'][0]['candidate'],artifact)
         wf.submit(next_task,{
             **{k:v for k,v in topic_decision(wf).items() if k!='topic_id'},'decision':'switch',
             'question':'Explain the gain with a simpler mechanism','objective':'explanation and simplification',

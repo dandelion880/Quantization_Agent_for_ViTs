@@ -16,8 +16,11 @@ def numeric_task_timeout(runtime, level="L1"):
         level, NUMERIC_TASK_TIMEOUT_SECONDS[level])
 
 
-def model_defaults():
-    return read_json(QAVIT / "configs/models.json")
+def model_defaults(*, critic=False):
+    routes = read_json(QAVIT / 'configs/models.json')
+    if not critic:
+        routes.pop('critic', None)
+    return routes
 
 
 def config_check(config, *, resolve_resources=False, historical=False):
@@ -30,7 +33,12 @@ def config_check(config, *, resolve_resources=False, historical=False):
         raise ContractError("必须明确本次运行用途")
     settings = config.setdefault("llm", {})
     settings.setdefault("provider", "codex_subscription")
-    settings.setdefault("agent_models", model_defaults())
+    enabled = config.get("enable_critic", False)
+    if type(enabled) is not bool:
+        raise ContractError("enable_critic 必须是布尔值")
+    settings.setdefault("agent_models", model_defaults(critic=enabled))
+    if enabled:
+        settings["agent_models"].setdefault("critic", model_defaults(critic=True)["critic"])
     if not set(ACTIVE_ROLES) <= set(settings["agent_models"]) <= set(ROLES):
         raise ContractError("需配置 G-only 的 Generation、Coding、Safeguard、Recorder、Supervisor 模型路由")
     for value in settings["agent_models"].values():

@@ -36,9 +36,12 @@ class Workflow(RoleInteraction, ExperimentRequests, WorkflowDriver):
             if self.run_dir.exists():
                 raise ContractError("新运行目录已存在，不覆盖历史")
             config = deepcopy(config)
-            config.setdefault("architecture", "gonly")
-            if config["architecture"] != "gonly":
-                raise ContractError("此分支只启动 G-only；Full 使用 main 或基线 tag")
+            architecture = config.get("architecture")
+            if architecture not in (None, "gonly", "generation_critic"):
+                raise ContractError("Full 运行请从 full-retired-20261124 恢复")
+            if "enable_critic" not in config and architecture != "gonly":
+                config["enable_critic"] = True
+            config["architecture"] = "generation_critic" if config.get("enable_critic") else "gonly"
             config = config_check(config, resolve_resources=True)
             from tools.profiling import inspect_run_model
             metadata = inspect_run_model(config["research_brief"], config["runtime"]["cpu_threads"])
@@ -57,8 +60,8 @@ class Workflow(RoleInteraction, ExperimentRequests, WorkflowDriver):
                                    "created_at": datetime.now(timezone.utc).isoformat(),
                                    "legacy_memory_imported": False, "legacy_incumbent_imported": False, **model_info})
         saved = read_json(manifest)
-        if not read_only and saved["config"].get("architecture") != "gonly":
-            raise ContractError("不能将 Full 历史运行静默恢复为 G-only；请使用 main 或基线 tag")
+        if not read_only and saved["config"].get("architecture") not in ("gonly", "generation_critic"):
+            raise ContractError("不能将 Full 历史运行静默恢复为新科研路径；请使用 full-retired-20261124")
         self.model_metadata = saved.get("model_metadata")
         self.config = config_check(saved["config"], historical=read_only)
         if fingerprint(self.config) != saved["config_sha256"]:
@@ -196,7 +199,44 @@ class Workflow(RoleInteraction, ExperimentRequests, WorkflowDriver):
                      if e['type'] == 'selection_fallback' and e['round'] == number
                      and self.journal.card(e['selection_ref'])['payload'].get('candidate_refs') == self.candidate_refs(number)), None)
 
-    def progress_preselection(self, number, hypotheses, failures):
+    def critique_task(self, number, generators):
+        key = f'r{number:03d}/critique'
+        task = self.queue.get_by_key(key)
+        if task:
+            return task
+        candidates = {task['inputs']['context']['slot']:task['outputs'][0] for task in generators
+                      if task['state'] == 'completed' and task['outputs']}
+        if not candidates:
+            return None
+        # Include exploratory results even if Generation chose not to cite them.
+        recent = {}
+        requests = self.queue.snapshot(kinds={'experiment_request'}).values()
+        for slot in candidates:
+            prefix = f'r{number:03d}/generate/{slot}/'
+            refs = {ref for child in requests
+                    if child['key'].startswith(prefix) for ref in child['outputs']
+                    if self.journal.cards[ref]['kind'] == 'EvidenceCard'}
+            recent[slot] = sorted(refs, key=lambda ref:self.journal.cards[ref]['sequence'])[-2:]
+        identifier = self.enqueue_role(key, 'critique', refs=[self.brief['id'], *candidates.values(),
+            *(r for refs in recent.values() for r in refs)], context={'round':number,
+                'candidate_refs':candidates, 'recent_branch_evidence':recent})
+        return self.queue.get(identifier)
+
+    def critique_feedback(self, task):
+        card = self.result_card(task)
+        trials = []
+        for child in self.queue.snapshot(kinds={'experiment_request'}).values():
+            if child['inputs'].get('parent_task') == task['task_id']:
+                trials.append({'hypothesis_ref':child['inputs']['hypothesis_ref'],
+                    'request_ref':child.get('request_ref'), 'experiment_ref':child.get('experiment_ref'),
+                    'state':child['state'], 'cache_reused':bool((child.get('result') or {}).get('cache_reused')),
+                    'evidence_refs':[ref for ref in child['outputs'] if self.journal.cards[ref]['kind']=='EvidenceCard']})
+        return {'status':task['state'] if card or task['state'] != 'completed' else 'no_review',
+                'review_ref':card['id'] if card else None, 'task_ref':task['task_card'],
+                **({'failure':str(task.get('error') or task.get('result'))[:700]} if not card else {}),
+                'candidate_refs':task['inputs']['context']['candidate_refs'], 'trials':trials}
+
+    def progress_preselection(self, number, hypotheses, failures, critique=None):
         """Pin a fresh decision to every candidate version; B is retained separately."""
         candidates = self.candidate_refs(number)
         for task in self.queue.snapshot(kinds={'llm'}).values():
@@ -210,9 +250,11 @@ class Workflow(RoleInteraction, ExperimentRequests, WorkflowDriver):
             return selected
         identifier = self.enqueue_role(self.selection_key(number), 'select',
             refs=[self.brief['id'], *self.round_refs(number), *candidates.values(),
+                  *([critique['task_card']] if critique and not self.result_card(critique) else []),
                   *[t['task_card'] for t in failures]], context={
                 'round': number, 'selection_stage': 'gonly_synthesis',
                 'candidate_refs': candidates,
+                **({'critic_feedback':self.critique_feedback(critique)} if critique else {}),
                 'revision_context': [{k: e[k] for k in ('parent_ref', 'candidate_ref', 'reason', 'change_type',
                     'validation_status', 'basis_evidence_refs')} for e in self.journal.events
                     if e['type'] == 'candidate_revised' and e['candidate_ref'] in candidates.values()],
@@ -351,7 +393,17 @@ class Workflow(RoleInteraction, ExperimentRequests, WorkflowDriver):
         # Keep exactly the submitted task outputs, including their version IDs.
         hypotheses = self.round_hypotheses(number)
         failures = [t for t in generators if not self.result_card(t)]
-        ranking = self.progress_preselection(number, hypotheses, failures)
+        critique = None
+        if hypotheses and self.config.get('enable_critic'):
+            critique = self.critique_task(number, generators)
+        if critique:
+            if critique['state'] == 'needs_clarification':
+                self.queue.change(critique['task_id'], 'cancelled', patch={'error': {
+                    'code':'critique_needs_clarification', 'message':str(critique.get('clarification'))}})
+                critique = self.queue.get(critique['task_id'])
+            if critique['state'] not in TERMINAL:
+                return False
+        ranking = self.progress_preselection(number, hypotheses, failures, critique)
         selection_task = self.queue.get_by_key(self.selection_key(number))
         if selection_task and selection_task['state'] not in TERMINAL:
             return False

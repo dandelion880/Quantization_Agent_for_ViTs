@@ -1,6 +1,6 @@
 # QAViT V2
 
-QAViT 让 LLM 负责量化科研推理，程序负责数值执行、身份与来源、状态和归档。科研运行入口 run.py，研究配置协议 qavit.research/2。本分支为 G-only：Generation 统一承担科研任务（gpt-6.2-astra/high），保留 Coding 单实现→Safeguard→执行、Recorder、Supervisor 及既有预算/GPU 调度。稳定 Full 位于 main / full-baseline-20261110-8800006。
+QAViT 让 LLM 负责量化科研推理，程序负责数值执行、身份与来源、状态和归档。科研运行入口 run.py，研究配置协议 qavit.research/2。main 的 Generation（gpt-6.2-astra/high）负责主题、候选版本和最终 L3，Critic（gpt-6.2-astra/medium）对当轮提交的候选做一次可恢复的批量审阅。`enable_critic: false` 可关闭审阅。A/B 对照位于 `gonly-skills-20261124`，旧 Full 位于 `full-retired-20261124`。
 
 ## 阅读与修改入口
 
@@ -13,7 +13,7 @@ QAViT 让 LLM 负责量化科研推理，程序负责数值执行、身份与来
 
 ## 主调用链
 
-core/workflow.py 的 advance/progress_preselection 组织 Generation 共同主题恢复/决定→H1/H2/H3 自主实验与修订→Generation 横向综合与科学修订→H1/H2/H3 各自绑定确切版本的 L3 规划与执行→Recorder→下一轮。不发布 Judger、Evolution 或 H4。L1/L2 不代替正式评价；有效 ImageNet + ADE20K L3 由程序按原协议更新 Top-3。局部失败保留已完成候选，综合失败保存确切候选和待做 L3，本轮保持未完成，允许原任务按原预算恢复；独立 B 保留；单候选执行失败不阻断其他候选，部分成功不算全轮完成；复盘失败保留原始证据并允许继续。
+core/workflow.py 的 advance/progress_preselection 组织 Generation 共同主题恢复/决定→H1/H2/H3 自主实验与修订→可选 Critic 批量审阅→Generation 横向综合与科学修订→H1/H2/H3 各自绑定确切版本的 L3 规划与执行→Recorder→下一轮。不发布 Judger、Evolution 或 H4。L1/L2 不代替正式评价；有效 ImageNet + ADE20K L3 由程序按原协议更新 Top-3。局部失败保留已完成候选，综合失败保存确切候选和待做 L3，本轮保持未完成，允许原任务按原预算恢复；独立 B 保留；单候选执行失败不阻断其他候选，部分成功不算全轮完成；复盘失败保留原始证据并允许继续。
 
 core/experiment_requests.py 保存研究者原始实验需求，必要时交给 Coding 单实现，再绑定执行选择、Safeguard 审查并执行；证据返回原研究者继续判断。无需新增测量时可以直接提交。Skill、文档和方案种子仅辅助选择，不改变流程或限制 H3。
 
@@ -46,7 +46,7 @@ CUDA_VISIBLE_DEVICES='' OMP_NUM_THREADS=2 MKL_NUM_THREADS=2 python -B QAViT/test
 
 测试临时文件写 EXP/cache/tmp 并自动清理；报告/快照须用新的 EXP 路径。更新 Skill frontmatter 后用 audit_knowledge.py --write-skill-index 生成触发目录，普通检查不写文件。Prompt 修改需更新 tests/data/prompt_readiness_baseline.json 的明确差异。
 
-validate_code_service.py、validate_memory_service.py 会调用真实 LLM；validate_numeric.py 会加载真实模型资产，均须按当次任务范围与预算使用。历史验证不等于当前完整 GPU 科研性能基线。本轮 G-only 验证见 [交付报告](../EXP/validation/gonly_20261110_r1/REPORT.md)。
+validate_code_service.py、validate_memory_service.py 会调用真实 LLM；validate_numeric.py 会加载真实模型资产，均须按当次任务范围与预算使用。历史验证不等于当前完整 GPU 科研性能基线。初版 G-only 验证见 [交付报告](../EXP/validation/gonly_20261110_r1/REPORT.md)。
 
 H3 默认持续发展一条活跃灵感，按确切代码、配置、结果和未完成事项接续；低分或未入 Top-3 不自动结束方向。Generation 决定继续/暂停/切换，Recorder 更新进展与引用；H1/H2 保留各自完整父方案及可回退增量，独立 B 和三候选 L3 不变。接口与边界见 [资源生命周期](docs/RESOURCE_LIFECYCLE.md#独立灵感库与跨轮接续)。当前离线检查和伪代码见 [本轮报告](../EXP/validation/inspiration_continuity_20261117_r1/REPORT.md)。
 

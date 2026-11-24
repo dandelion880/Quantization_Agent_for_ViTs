@@ -505,6 +505,26 @@ class ExperimentRequests:
                 'numerical_validation_status': 'validated' if success else 'partial' if valid else 'not_validated',
                 'formal_validation_success': success}
 
+    def critique_experiment(self, task, draft, ref):
+        candidate = self.require_visible(task, ref)
+        ref = candidate['id']
+        if ref not in task['inputs']['context']['candidate_refs'].values():
+            raise ContractError('Critic 实验必须绑定被审阅的确切候选')
+        source = candidate['payload']
+        sequence = self.read_view(task)['sequence']
+        scoped = {**task, 'inputs':{**task['inputs'], 'context':{'hypothesis_ref':ref}}}
+        binding = {'hypothesis_ref':ref, **self.topics.binding(scoped, sequence)}
+        inspiration = self.inspirations.bound_id(scoped, sequence) or source.get('inspiration_id')
+        if inspiration:
+            binding['inspiration_id'] = inspiration
+        for key in ('hypothesis_ref','topic_ref','method_id','inspiration_id'):
+            if key in draft and draft[key] != binding.get(key):
+                raise ContractError('Critic 请求与候选身份冲突: ' + key)
+        if 'candidate_binding' in draft:
+            raise ContractError('candidate_binding 属于最终候选 L3；批量审阅由 hypothesis_ref 绑定')
+        self.broker.check_critic_stage(draft, 'critic')
+        return binding
+
     def research_request_binding(self, author, draft=None):
         binding = self.topics.binding(author, self.read_view(author)['sequence'])
         for field in ('topic_ref','method_id'):

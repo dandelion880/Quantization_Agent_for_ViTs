@@ -17,6 +17,7 @@ KNOWLEDGE_STATUSES = {"hypothesis", "observed_once", "replicated", "refuted", "c
 ROLE_KINDS = {
     "supervisor": {"ResearchBrief", "MetareviewCard"},
     "generation": {"HypothesisCard", "ExperimentCard", "ReviewDecisionCard", "EvidenceCard", "MetareviewCard"},
+    "critic": {"HypothesisCard", "ExperimentCard", "ReviewDecisionCard", "EvidenceCard", "MetareviewCard"},
     "judger": {"HypothesisCard", "ExperimentCard", "ReviewDecisionCard", "EvidenceCard", "MetareviewCard"},
     "evolution": {"HypothesisCard", "ExperimentCard", "ReviewDecisionCard", "EvidenceCard", "MetareviewCard"},
     "recorder": {"HypothesisCard", "ExperimentCard", "ReviewDecisionCard", "EvidenceCard", "MetareviewCard"},
@@ -115,9 +116,9 @@ class ResearchMemory:
         for task in latest_tasks.values():
             relevant = (task["kind"] in {"experiment", "experiment_request", "literature"}
                         or task["inputs"].get("purpose") in {"code", "safeguard", "plan_l3"}
-                        or (task["inputs"].get("purpose") in {"generate", "select"}
+                        or (task["inputs"].get("purpose") in {"generate", "select", "critique"}
                             and task["state"] in {"failed", "cancelled", "ineligible"}
-                            and task["attempt"] > 0))
+                            and (task["attempt"] > 0 or task["inputs"].get("purpose") == "critique")))
             if relevant and task["state"] in {"completed", "failed", "cancelled", "ineligible"} and task["task_card"] not in covered:
                 engineering.append(task["task_card"])
                 result = task.get('result') or {}
@@ -746,7 +747,7 @@ class MemoryRetriever:
         if query.get('layer') == 'L2':
             pending = self.memory.recording_status(sequence, visible=visible, pending_offset=offset, pending_limit=limit)
             result.update({key: pending[key] for key in ('pending_knowledge_updates', 'pending_knowledge_count', 'pending_knowledge_more')})
-        if (include_body and role in {'generation', 'evolution', 'judger', 'recorder'}
+        if (include_body and role in {'generation', 'critic', 'evolution', 'judger', 'recorder'}
                 and query.get('layer') not in ('L1', 'L2') and not query.get('kind') and not explicit):
             result['method_documents'] = self.method_documents(query.get('text', ''))
         return result

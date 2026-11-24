@@ -46,5 +46,6 @@
     "provider": "codex_subscription",
     "max_transport_retries": 2
   },
-  "architecture": "gonly"
+  "architecture": "generation_critic",
+  "enable_critic": true
 }

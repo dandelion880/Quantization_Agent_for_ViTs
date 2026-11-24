@@ -1,7 +1,7 @@
 """Within-task delivery views. Exact cards, immutable tool results and asset permissions remain authoritative."""
 from core.cards import canonical
 
-RESEARCH = ('focus', 'generate', 'select', 'plan_l3')
+RESEARCH = ('focus', 'generate', 'critique', 'select', 'plan_l3')
 READ_TOOLS = ('read_card', 'read_asset', 'retrieve_memory', 'read_topic', 'read_method', 'read_inspiration')
 
 
@@ -55,6 +55,38 @@ def material_selection(task, values):
             keep.add(i)
     keep.update(i for i, (_,_,result) in enumerate(values) if page(result) in open_pages)
     return keep, pins
+
+
+def review_subject(card):
+    """Bound decision-relevant fields while preserving each immutable source pointer."""
+    from core.memory import short_field
+    body, ref = card['payload'], card['id']
+    value = {k:card[k] for k in ('id','kind','version','content_sha256')}
+    if card['kind'] == 'HypothesisCard':
+        fields = ('slot','title','mechanism','intervention','predictions','solution_derivation',
+                  'topic_ref','method_id','inspiration_id','evidence_refs','scope',
+                  'research_question','evidence_interpretation','validation_design')
+    else:
+        fields = ('phase','rationale','candidate_refs','evidence_refs','uncertainties')
+    payload = {k:short_field(body[k], ref, '/payload/'+k, 800) for k in fields if k in body}
+    if card['kind'] == 'HypothesisCard' and isinstance(body.get('intervention'), dict):
+        intervention = body['intervention']
+        projected = payload['intervention']
+        if projected.get('complete') is False and 'read_card' in projected:
+            projected['fields'] = {k: short_field(v, ref, '/payload/intervention/' +
+                k.replace('~', '~0').replace('/', '~1'), 350) for k,v in list(intervention.items())[:4]}
+    if 'candidate_notes' in body:
+        notes = body['candidate_notes']
+        chosen = {}
+        for i, note in enumerate(notes):
+            if note['hypothesis_ref'] not in chosen:
+                chosen[note['hypothesis_ref']] = {k:short_field(note[k], ref,
+                    f'/payload/candidate_notes/{i}/{k}', 550) for k in
+                    ('hypothesis_ref','preserve','assumption','suggestion','evidence_refs') if k in note}
+        payload['candidate_notes'] = list(chosen.values())
+        if len(chosen) < len(notes):
+            payload['all_notes'] = {'count':len(notes),'read_card':{'ref':ref,'field':'/payload/candidate_notes'}}
+    return {**value, 'payload':payload, 'read_card':{'ref':ref}}
 
 
 def research_card(view):

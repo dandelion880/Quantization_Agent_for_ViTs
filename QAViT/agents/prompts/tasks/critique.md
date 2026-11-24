@@ -1,0 +1,1 @@
+按 context.task.candidate_refs 绑定到具体版本。提交 rationale，可选 candidate_notes，每项给 hypothesis_ref、preserve、assumption、suggestion 及实际 evidence_refs。自由选择有内容的字段。区分实验若能改变建议，写明不同结果会怎样影响方案，通过 request_experiment 顶层 hypothesis_ref 选择其确切对象。沿原预算和研究者续调，可用已有 L1/L2 诊断及 Brief 绑定的双任务开发反馈。正式 L3 计划留给 Generation。

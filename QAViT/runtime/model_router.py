@@ -23,7 +23,7 @@ from core.journal import atomic_json, file_lock
 def client_for(role, settings):
     if settings.get("provider", "codex_subscription") != "codex_subscription":
         raise ContractError("本版仅核验过订阅通道；变更 provider 需要显式适配与验证")
-    model, effort = settings.get("agent_models", model_defaults())[role]
+    model, effort = settings.get("agent_models", model_defaults(critic=role == "critic"))[role]
     if role == "generation" and (model, effort) not in GENERATION_ROUTES:
         raise ContractError("G-only Generation 需使用已核验的 Astra / high 路由；禁止静默降级")
     return SubscriptionTransport(model, effort, settings)

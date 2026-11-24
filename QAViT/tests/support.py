@@ -9,7 +9,7 @@ from core.journal import read_json
 
 def validation_config():
     config = read_json(ROOT / "QAViT/configs/research.json")
-    config.update(name="qavit_v2_tiny", purpose="validation", enable_l3=False)
+    config.update(name="qavit_v2_tiny", purpose="validation", architecture="gonly", enable_critic=False, enable_l3=False)
     config["budget"] = {"max_rounds": 2, "wall_seconds": 7200, "min_free_bytes": 1024 ** 3, "max_artifact_bytes": 2 * 1024 ** 3}
     config["runtime"]["allowed_gpus"] = []
     config["runtime"]["experiment_concurrency"] = 1

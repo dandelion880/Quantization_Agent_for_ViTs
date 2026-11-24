@@ -15,8 +15,8 @@ from jsonschema import Draft202012Validator
 
 KINDS = ("ResearchBrief", "HypothesisCard", "ReviewDecisionCard", "ExperimentCard",
          "EvidenceCard", "MetareviewCard", "TaskCard")
-ROLES = ("supervisor", "generation", "judger", "evolution", "recorder", "coding", "safeguard")
-ACTIVE_ROLES = tuple(role for role in ROLES if role not in ("judger", "evolution"))
+ROLES = ("supervisor", "generation", "judger", "evolution", "recorder", "coding", "safeguard", "critic")
+ACTIVE_ROLES = tuple(role for role in ROLES if role not in ("judger", "evolution", "critic"))
 TEXT = {"type": "string", "minLength": 1, "pattern": r"\S"}
 STRINGS = {"type": "array", "items": TEXT}
 OBJECT = {"type": "object", "additionalProperties": True}
@@ -84,7 +84,7 @@ PAYLOAD_SCHEMAS = {
         "intervention", "predictions", "sources", "mechanism_relations", "feedback_used", "scope"]),
     "ReviewDecisionCard": object_schema({
         "phase": {"enum": ["screening", "position", "verdict", "ranking", "interpretation",
-                            "experiment_approval", "safeguard", "reference_design", "revision", "research_direction"]},
+                            "experiment_approval", "safeguard", "reference_design", "revision", "research_direction", "critique"]},
         "rationale": TEXT, "evidence_refs": STRINGS, "uncertainties": STRINGS,
     }, ["phase", "rationale", "evidence_refs", "uncertainties"]),
     "ExperimentCard": object_schema({

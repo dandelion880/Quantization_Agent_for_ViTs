@@ -37,7 +37,7 @@ class StructureContracts(unittest.TestCase):
         expected_prompts = {**baseline['assembled_prompts'], **baseline.get('explicit_prompt_fixes', {})}
         config = config_check(validation_config())
         # The historical golden includes the removed routine scientific approval task.
-        self.assertEqual(set(TASKS), (set(golden['prompts']) - {'experiment_approval', 'reference'}) | {'select', 'focus'})
+        self.assertEqual(set(TASKS), (set(golden['prompts']) - {'experiment_approval', 'reference'}) | {'select', 'focus', 'critique'})
         self.assertEqual(config['llm']['agent_models'], model_defaults())
         self.assertNotIn('agent_models', read_json(QAVIT / 'configs/research.json')['llm'])
         self.assertNotIn('llm', read_json(QAVIT / 'configs/deitb_backend.json'))

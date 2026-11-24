@@ -3,7 +3,7 @@
 这是 Workflow 的职责分区，不独立实例化；状态和生命周期统一由 Workflow 拥有。
 """
 from agents.tasks import TASKS
-from agents.working_materials import RESEARCH, material_selection, research_card, research_recovery
+from agents.working_materials import RESEARCH, material_selection, research_card, research_recovery, review_subject
 from copy import deepcopy
 from pathlib import Path
 from importlib.util import find_spec
@@ -651,7 +651,7 @@ class RoleInteraction:
                 if (kind in ('HypothesisCard', 'EvidenceCard') or
                     (kind == 'ExperimentCard' and ref not in measured and ref not in paired_requests) or
                     (kind == 'ReviewDecisionCard' and self.journal.card(ref)['payload']['phase'] in
-                     ('position', 'verdict', 'ranking', 'interpretation'))):
+                     ('position', 'verdict', 'ranking', 'interpretation', 'critique'))):
                     refs.append(ref)
         elif purpose == 'evolve':
             refs = [r for r in refs if self.journal.card(r, field=('kind',)) != 'MetareviewCard']
@@ -701,6 +701,9 @@ class RoleInteraction:
             return value if isinstance(value, list) else []
         for payload, is_experiment in payloads:
             refs.extend(rows(payload.get('evidence_refs')))
+            if payload.get('phase') == 'critique':
+                for note in rows(payload.get('candidate_notes')):
+                    refs.extend(rows(note.get('evidence_refs')))
             refs.extend(row.get('ref') for row in rows(payload.get('sources')) if isinstance(row, dict))
             # Research cards permit free scientific extensions named execution.
             # Only a real experiment's structured fields declare execution inputs.
@@ -1076,6 +1079,10 @@ class RoleInteraction:
                 return
             card = self.require_visible(task, ref)
             view = self.recorder_card(card) if purpose == 'record' else self.present_card(card)
+            reviewed = card['kind'] == 'ReviewDecisionCard' and card['payload']['phase'] == 'critique'
+            review_view = reviewed or (purpose == 'critique' and card['kind'] == 'HypothesisCard')
+            if review_view:
+                view = review_subject(card)
             if purpose in RESEARCH and card['kind'] in ('ExperimentCard', 'EvidenceCard'):
                 view = research_card(view)
             if card['kind'] == 'EvidenceCard':
@@ -1126,7 +1133,7 @@ class RoleInteraction:
                 view['payload'] = required_text(body, '/payload')
             # Objective statistics are bounded too; coverage and exact source selectors
             # remain visible. Display allowances never become reading/submission gates.
-            if card['kind'] != 'EvidenceCard' and len(canonical(body)) > direct_limit:
+            if card['kind'] != 'EvidenceCard' and not review_view and len(canonical(body)) > direct_limit:
                 text = canonical(card['payload'])
                 digest = fingerprint(card['payload'])
                 stop = 0
@@ -1202,12 +1209,12 @@ class RoleInteraction:
             entry.pop('body', None)
         memory['directory'] = page
         state = self.memory.snapshot(sequence)
-        if state['L2'] and purpose in ('focus', 'generate', 'select', 'plan_l3', 'evolve', 'screen', 'position', 'arbitrate', 'rank', 'record'):
+        if state['L2'] and purpose in ('focus', 'generate', 'select', 'critique', 'plan_l3', 'evolve', 'screen', 'position', 'arbitrate', 'rank', 'record'):
             memory['knowledge_directory'] = {'retrieve_memory': {'query': {'layer': 'L2'}, 'limit': 8},
                 'meaning': '按需查询可见知识状态、复盘时点和后续证据；明确绑定的旧知识保持原版本，不自动替换或注入无关结论。'}
         latest = page['latest_metareview_ref']
         self.deliver_bound_feedback(task, memory, state, latest, deliver)
-        if purpose in ('focus', 'generate', 'select', 'plan_l3', 'evolve', 'screen', 'position', 'arbitrate', 'rank', 'record', 'supervise'):
+        if purpose in ('focus', 'generate', 'select', 'critique', 'plan_l3', 'evolve', 'screen', 'position', 'arbitrate', 'rank', 'record', 'supervise'):
             memory['current_research_state'] = self.memory.current_research_state(
                 sequence, visible=lambda c: self.can_read_card(task, c), excluded_refs=delivered, compact=True,
                 finding_refs=delivered, visibility_card=self.visibility_card)
@@ -1226,9 +1233,13 @@ class RoleInteraction:
         if purpose in ('focus', 'record', 'generate', 'select', 'plan_l3', 'evolve', 'supervise'):
             memory['recording_status'] = self.memory.recording_status(sequence, visible=lambda c: self.can_read_card(task, c))
         budget = self.budget.input_receipt()
-        if purpose in ("focus", "generate", "select", "evolve", "code", "safeguard", "record", "plan_l3"):
+        if purpose in ("focus", "generate", "select", "critique", "evolve", "code", "safeguard", "record", "plan_l3"):
             context["complete_solutions"] = self.solutions.catalog(sequence)
             context["fallback_B"] = self.solutions.fallback(state["L1"].get("incumbent"), sequence=sequence)
+            if purpose == 'critique':
+                parents = {self.journal.card(ref)['payload'].get('solution_derivation', {}).get('base_solution_id')
+                           for ref in inputs['context']['candidate_refs'].values()}
+                context['complete_solutions'] = [row for row in context['complete_solutions'] if row['id'] in parents]
             if purpose == 'record':
                 context['B_transition'] = self.recorder_B_transition(task, sequence)
             binding = self.topics.binding(task, sequence)
@@ -1237,6 +1248,9 @@ class RoleInteraction:
                 current = next(e['entry'] for e in reversed(self.topics.events(sequence)) if e['type']=='topic_version')
             ref = binding.get('topic_ref') if purpose != 'focus' else (current or {}).get('ref')
             context['research_topic'] = self.topic_context(ref, sequence)
+            if purpose == 'critique' and context['research_topic']:
+                context['research_topic'] = {k:v for k,v in context['research_topic'].items() if k in
+                    ('ref','question','mutable_dimensions','held_conditions','objective','next_step','reconsider_when','read_topic')}
             context['topic_scope_changes'] = [{k:e[k] for k in ('topic_ref','affected_slots','impact','decision_ref')}
                 for e in self.topics.events(sequence) if e['type']=='topic_scope_binding'
                 and e['round']==inputs['context'].get('round')]
@@ -1262,7 +1276,7 @@ class RoleInteraction:
             identifier = self.inspirations.bound_id(task, sequence)
             active = self.inspirations.active(sequence)
             parent_branch = purpose == 'generate' and inputs['context'].get('slot') in ('H1', 'H2')
-            if identifier or (active and not parent_branch):
+            if purpose != 'critique' and (identifier or (active and not parent_branch)):
                 recovery = self.inspirations.recovery(identifier or active['id'], sequence)
                 context['inspiration_continuation'] = {**recovery,
                     'requests': recovery['requests'][-3:],
@@ -1300,7 +1314,7 @@ class RoleInteraction:
         if 'literature_fetch' in TASKS[purpose]['tools']:
             context['literature_capabilities'] = {'pdf_text_extraction': find_spec('pypdf') is not None,
                 'pdf_dependency': 'pypdf', 'note': 'PDF 解析依赖未安装时只能保留原件，不能声称读过正文；HTTP/解析失败保留为未核实。'}
-        if task['role'] in ('generation', 'evolution', 'judger', 'recorder'):
+        if task['role'] in ('generation', 'critic', 'evolution', 'judger', 'recorder'):
             # Only the short discovery index is resident. Bodies/references use the
             # existing read_asset snapshot, paging and result deduplication path.
             brief = self.brief['payload']['scientific_question']
@@ -2168,7 +2182,7 @@ class RoleInteraction:
         task = deepcopy(task)
         task['_read_view'] = self.read_view(task)
         allowed = {t["name"]: t["parameters"] for t in tools_for(task["inputs"]["purpose"])}
-        ids, call_ids, drafts = [], set(), {}
+        ids, call_ids, drafts, bindings = [], set(), {}, {}
         validate_schema(response["tool_calls"], {"type": "array", "minItems": 1, "items": {
             "type": "object", "required": ["id", "name", "arguments"],
             "properties": {"id": TEXT, "name": TEXT, "arguments": {"type": "object"}}}}, "tool_calls")
@@ -2182,16 +2196,22 @@ class RoleInteraction:
             validate_schema(call["arguments"], allowed[call["name"]], call["name"])
             if call["name"] == "request_experiment":
                 drafts[call["id"]] = self.broker.preflight(self.resolve_card_refs(task, call["arguments"]["experiment"]))
-                self.inspiration_request_binding(task, drafts[call["id"]])
-                self.research_request_binding(task, drafts[call["id"]])
+                draft = drafts[call['id']]
+                if task['inputs']['purpose'] == 'critique':
+                    binding = self.critique_experiment(task, draft, call['arguments']['hypothesis_ref'])
+                    draft.update(binding)
+                else:
+                    binding = {**self.inspiration_request_binding(task, draft), **self.research_request_binding(task, draft)}
+                bindings[call['id']] = binding
         for call in response["tool_calls"]:
             key = task["key"] + f"/tools/a{task['attempt']}/" + fingerprint(call["id"])[:12]
             name, args = call["name"], call["arguments"]
             if name == "request_experiment":
                 identifier = self.queue.enqueue(key, "experiment_request", role="supervisor", inputs={
-                    **self.inspiration_request_binding(task, drafts[call["id"]]),
-                    **self.research_request_binding(task, drafts[call["id"]]),
-                    "draft": drafts[call["id"]], "original_request": deepcopy(args["experiment"]), "requester": task["role"], "refs": task["inputs"]["refs"],
+                    **bindings[call['id']],
+                    "draft": drafts[call["id"]], "original_request": deepcopy(args["experiment"]), "requester": task["role"],
+                    "refs": ([self.brief["id"], bindings[call["id"]]["hypothesis_ref"]] if task["role"] == "critic"
+                             else task["inputs"]["refs"]),
                     **({'active_materials': args['active_materials']} if 'active_materials' in args else {}),
                     **({'research_note': args['research_note']} if args.get('research_note') else {}),
                     "call_id": call["id"], "parent_task": task["task_id"]})
@@ -2412,6 +2432,23 @@ class RoleInteraction:
                 refs.add(bindings["parent_selection_ref"])
             content = {**content, **bindings, "direct_results": table, "candidate_refs": context["candidate_refs"],
                        "selection_source": "existing_verdicts_and_screening" if author == "program" else "judger"}
+        if purpose == 'critique':
+            candidates = context['candidate_refs']
+            if content.get('candidate_refs', candidates) != candidates:
+                raise ContractError('Critic candidate versions differ from the assigned batch')
+            content['candidate_refs'] = candidates
+            for note in content.get('candidate_notes', []):
+                if note['hypothesis_ref'] not in candidates.values():
+                    raise ContractError('Critic 意见引用批次之外的候选')
+                for ref in note.get('evidence_refs', []):
+                    if self.journal.cards[ref]['kind'] != 'EvidenceCard':
+                        raise ContractError('Critic 论据须指向测量原件')
+                    refs.add(ref)
+            refs.update(candidates.values())
+            if self.queue.get(task['task_id'])['state'] == 'completed':
+                if self.result_card(self.queue.get(task['task_id']))['payload'] == content:
+                    return
+                raise ContractError('Critic review already committed')
         if purpose == 'select':
             selected = content.get('selected_slot')
             candidates = context['candidate_refs']
@@ -2431,14 +2468,15 @@ class RoleInteraction:
             content.setdefault('selection_basis', content['rationale'])
             refs.update(candidates.values())
         staged = None
-        if purpose == 'record':
-            staged = self.run_dir / 'recording_submissions' / (task['task_id'] + f"-{task['attempt']}-{task['step']}.json")
+        if purpose in ('record', 'critique'):
+            directory = 'recording_submissions' if purpose == 'record' else 'critique_submissions'
+            staged = self.run_dir / directory / (task['task_id'] + f"-{task['attempt']}-{task['step']}.json")
         if staged and staged.exists():
             card = read_json(staged)
             from core.cards import validate_card
             validate_card(card)
-            if card['payload'] != content or card['refs'] != sorted(refs) or card['author'] != 'recorder':
-                raise ContractError('已有通过校验但尚未发布的 Recorder 草稿；先恢复同一提交，不能覆盖原件')
+            if card['payload'] != content or card['refs'] != sorted(refs) or card['author'] != task['role']:
+                raise ContractError('已有通过校验的草稿；恢复时必须绑定同一提交')
         else:
             card = make_card(kind, self.journal.run_id, content, author=author or task["role"], parents=parents, refs=sorted(refs))
         cards.append(card)
@@ -2469,8 +2507,8 @@ class RoleInteraction:
                               if content.get('skill_updates') else {}),
                            'pending_knowledge_count': len(content.get('pending_knowledge_updates', [])),
                            'analyzed_judgment_refs': sorted({r['judgment_ref'] for r in content['judgment_audit']})})
-            if not staged.exists():
-                atomic_json(staged, card)  # 可恢复的待发布响应，不是事实/成功游标。
+        if staged and not staged.exists():
+            atomic_json(staged, card)  # Accepted draft; the Journal commit publishes it.
         self.queue.finish(task["task_id"], outputs=[card["id"]], result={"receipt": str(receipt_path) if receipt_path is not None else None}, cards=cards, events=events)
         if purpose == 'record':
             self.skills.reconcile()

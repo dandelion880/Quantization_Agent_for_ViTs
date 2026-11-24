@@ -119,7 +119,14 @@ TOOLS = {t["name"]: t for t in [
 
 def tools_for(purpose):
     names = TASKS[purpose]["tools"]
-    return [TOOLS[name] for name in names]
+    selected = [TOOLS[name] for name in names]
+    if purpose == "critique":
+        request = deepcopy(TOOLS["request_experiment"])
+        request["parameters"]["properties"]["hypothesis_ref"] = TEXT
+        request["parameters"]["required"].append("hypothesis_ref")
+        request["description"] += " Critic 在工具顶层给 hypothesis_ref，宿主绑定其确切候选及主题、方法、灵感。"
+        selected = [request if item["name"] == "request_experiment" else item for item in selected]
+    return selected
 
 
 def submission_schema(purpose):
@@ -136,6 +143,10 @@ def submission_schema(purpose):
     contract = deepcopy(PAYLOAD_SCHEMAS.get(TASKS[purpose]['output']))
     if contract is None:
         return None
+    if purpose == 'critique':
+        contract['properties']['candidate_notes'] = {'type':'array','items':object_schema({
+            'hypothesis_ref':TEXT, 'preserve':TEXT, 'assumption':TEXT, 'suggestion':TEXT,
+            'evidence_refs':{'type':'array','items':TEXT}}, ['hypothesis_ref'])}
     if purpose == 'select':
         contract['properties']['selected_slot'] = {'enum': ['H1', 'H2', 'H3', None]}
         # Legacy preference is accepted, but cannot restrict the L3 candidate set.
@@ -186,6 +197,8 @@ def role_spec(role, purpose, context, settings, *, messages=()):
     task = TASKS[purpose]
     contract = submission_schema(purpose)
     system = "\n\n".join([fragment("common.md"), fragment(role + ".md"), fragment(task["prompt"])])
+    if purpose == 'select' and (context.get('task', {}).get('critic_feedback') or {}).get('review_ref'):
+        system += '\n\n' + fragment('tasks/select_reviewed.md')
     system += (
         '\n\n内层业务决策使用 JSON 对象，例如 {"action":"submit","content":{}}；'
         '示例中的空 content 须替换为本任务完整正文。'

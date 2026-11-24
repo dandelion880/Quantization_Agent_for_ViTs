@@ -58,13 +58,15 @@ def segmentation_files(root, rows):
     return files, annotation_dir
 
 
-def stage_protocol(brief, execution, level):
+def stage_protocol(brief, execution, level, *, require_development=False):
     """Use the bound dev protocol only for a complete, frozen dual-task request."""
     protocol = brief['evaluation_protocol']
     rows = execution.get('evaluations', [])
     if not isinstance(rows, list) or any(not isinstance(r,dict) for r in rows):
         raise ContractError('evaluations must be a list of task specifications')
     if not any(r.get('split') in ('dev', 'ade_dev') for r in rows):
+        if require_development:
+            raise ContractError('该 L3 请求只允许 Brief 绑定的双任务开发评价；正式候选计划归 Generation')
         if (level == 'L3' and brief.get('execution_guidance', {}).get('development') and rows
                 and execution.get('service') != 'evaluate_artifact'):
             raise ContractError('official stage uses a previously frozen package via evaluate_artifact')

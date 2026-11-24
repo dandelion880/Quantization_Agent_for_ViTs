@@ -654,7 +654,13 @@ class ExperimentBroker:
                 raise ContractError('ExperimentCard.evidence_refs 只能引用 EvidenceCard')
         return list(dict.fromkeys([self.brief_ref, *refs, *cited]))
 
+    def check_critic_stage(self, payload, requester):
+        if requester == 'critic' and payload.get('level') == 'L3':
+            brief = self.journal.card(self.brief_ref, field=('payload',))
+            stage_protocol(brief, payload.get('execution', {}), 'L3', require_development=True)
+
     def request(self, payload, *, requester, refs=(), original_request=None):
+        self.check_critic_stage(payload, requester)
         original = deepcopy(payload if original_request is None else original_request)
         value = prepare_request(payload, self.journal.card(self.brief_ref)['payload'], self.runtime)
         value['original_request'] = original
@@ -685,6 +691,7 @@ class ExperimentBroker:
         return self.freeze(payload, requester=request['author'], refs=[request['id']])
 
     def freeze(self, payload, *, requester, refs=()):
+        self.check_critic_stage(payload, requester)
         payload = preflight_experiment(payload, self.journal.card(self.brief_ref)['payload'], self.runtime, executable=True)
         brief = self.journal.card(self.brief_ref)["payload"]
         if (self.runtime or {}).get('development_only_research') and requester != 'program':
@@ -800,6 +807,10 @@ class ExperimentBroker:
                 or payload["status"] != "completed" or payload["measurement_source"] == "test_double"):
             raise ContractError("缺少本次运行已完成的实测证据")
         original = self.journal.card(payload["experiment_ref"])
+        if experiment['author'] == 'critic' and any(
+                original['payload'].get(field) != experiment['payload'].get(field)
+                for field in ('hypothesis_ref','topic_ref','method_id','inspiration_id')):
+            raise ContractError('Critic 测量与被审阅候选的确切身份不一致')
         key = execution_fingerprint(experiment, code_artifact=code_artifact)
         provenance = payload["provenance"]
         if (payload["execution_fingerprint"] != key
