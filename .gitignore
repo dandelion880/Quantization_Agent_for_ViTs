@@ -573,3 +573,8 @@ coverage.xml
 !/EXP/validation/frozen_trials_20261124/custom_bundle.py
 !/EXP/validation/frozen_trials_20261124/custom_export.json
 !/EXP/validation/frozen_trials_20261124/verified_contracts_final.log
+
+# Isolated procedure and critic breakpoint receipts. Raw jobs and shared packs stay under EXP.
+!/EXP/validation/skill_critic_20261124/
+!/EXP/validation/skill_critic_20261124/AB.json
+!/EXP/validation/skill_critic_20261124/skill_replay.py

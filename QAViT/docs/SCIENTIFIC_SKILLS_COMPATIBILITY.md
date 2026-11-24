@@ -31,4 +31,4 @@
 
 H1/H2 可从可见 archive、Top-3 或完整待测种子改良，B 独立保留；待测种子不是 B。完整历史方案可跨运行复用，但通用 ResearchMemory 仍基于当前 Journal，不自动注入任意旧 run 的 L2。来源缺失/歧义回送 Generation；实现错误回 Coding；资源/宿主失败保留工程状态，均不算机制反证。
 
-H1/H2/H3 是交错推进的三路任务；当前 driver 对 non-judger LLM 调用互斥，数值工作可按资源并发。Skill 接入不改调度。本轮不做自主 Skill 沉淀。开发回放和 rubric 留在测试/离线评价范围，不成为生产阅读材料、实验配额或提交门禁。
+H1/H2/H3 是交错推进的三路任务；当前 driver 对 non-judger LLM 调用互斥，数值工作可按资源并发。Skill 接入不改调度。流程版本按[资源生命周期](RESOURCE_LIFECYCLE.md)发布。开发回放和 rubric 留在测试/离线评价范围，不成为生产阅读材料、实验配额或提交门禁。

@@ -133,7 +133,8 @@ class ScientificSkills(TempCase):
             return (p for p in rglob(path, pattern) if not p.is_relative_to(root))
         with patch.object(Path, 'read_bytes', without_catalog), patch.object(Path, 'rglob', without_skills):
             task, context = self.begin(wf, self.generation(wf))
-            self.assertNotIn('skill_catalog', context)
+            # Removing live source after initialization preserves the pinned package.
+            self.assertIn('skill_catalog', context)
             self.assertFalse(any('/docs/skills/' in p for p in wf.authorized_assets(task)))
             wf.submit(task, hypothesis(1, 'H3'), 'scripted CPU')
         self.assertEqual(wf.queue.get(task['task_id'])['state'], 'completed')

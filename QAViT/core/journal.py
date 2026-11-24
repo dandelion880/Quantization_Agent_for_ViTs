@@ -22,9 +22,12 @@ def read_json(path):
 
 
 def atomic_json(path, value):
+    atomic_bytes(path, (canonical(value) + "\n").encode())
+
+
+def atomic_bytes(path, raw):
     path = Path(path)
     path.parent.mkdir(parents=True, exist_ok=True)
-    raw = (canonical(value) + "\n").encode()
     fd, name = tempfile.mkstemp(prefix=".pending-", dir=path.parent)
     try:
         with os.fdopen(fd, "wb") as stream:

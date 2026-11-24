@@ -276,10 +276,14 @@ class RoleInteraction:
                 content.setdefault('hard_rejection_reasons', [])
         if purpose == 'record':
             # 知识条目单独解析引用；一条错误来源不能丢弃整份科学分析。
+            drafts = content.pop('skill_updates', [])
             claims = content.pop('knowledge_updates', [])
             issues = content.pop('submission_issues', [])
             content = self.resolve_card_refs(task, content)
             content['knowledge_updates'] = claims
+            if drafts != []:
+                content['skill_updates'] = self.skills.prepare(drafts, context['recording_batch'],
+                    self.read_view(task)['sequence'], lambda ref: self.require_visible(task, ref), self.card_field)
             if issues: content['submission_issues'] = issues
         else:
             issues = content.pop('submission_issues', [])
@@ -1299,15 +1303,22 @@ class RoleInteraction:
         if task['role'] in ('generation', 'evolution', 'judger', 'recorder'):
             # Only the short discovery index is resident. Bodies/references use the
             # existing read_asset snapshot, paging and result deduplication path.
-            catalog = ROOT / 'QAViT/docs/skills/INDEX.md'
-            try:
-                raw = catalog.read_bytes()
-                context['skill_catalog'] = raw.decode('utf-8')
-            except (OSError, UnicodeError):
-                pass  # Optional knowledge must not block the original research path.
-            else:
-                memory.setdefault('asset_locations', {})[str(catalog)] = {
-                    'sha256': sha256(raw).hexdigest(), 'location': 'context.skill_catalog'}
+            brief = self.brief['payload']['scientific_question']
+            subjects = ' '.join(str(c.get('payload', {}).get('title', '')) for c in memory['cards'])
+            query = ' '.join((purpose, brief, subjects, str((context.get('research_topic') or {}).get('question', ''))))
+            catalog = self.skills.catalog(sequence, query)
+            if purpose == 'record':
+                outcomes = [e for e in self.journal.events if e['commit_sequence'] <= sequence and
+                            e['type'] in ('skill_update_result', 'skill_update_deferred')]
+                if outcomes:
+                    context['recent_skill_publications'] = [{k:e[k] for k in ('metareview_ref','index','name',
+                        'version','status','issue') if k in e} for e in outcomes[-5:]]
+            if catalog:
+                context['skill_catalog'] = catalog
+            elif not any(e['type'] == 'skill_library_opened' for e in self.journal.events):
+                path = ROOT / 'QAViT/docs/skills/INDEX.md'
+                if path.is_file():
+                    context['skill_catalog'] = path.read_text()
         if purpose in ('code', 'safeguard'):
             if purpose == 'code':
                 context['coding_skills'] = {'read_asset': {'asset': 'knowledge/coding/INDEX.md'}}
@@ -2085,6 +2096,26 @@ class RoleInteraction:
                 offset=args.get('offset', 0), limit=args.get('limit', 12), sequence=self.read_view(parent)['sequence'],
                 visible=lambda c: self.can_read_card(parent, c))
         if name == 'read_asset':
+            sequence = self.read_view(parent)['sequence']
+            if args['asset'].startswith('skills/') and any(e['type'] == 'skill_library_opened' and
+                    e['commit_sequence'] <= sequence for e in self.journal.events):
+                asset, body = self.skills.read(args['asset'], sequence)
+                identity = sha256(body.encode()).hexdigest()
+                requested = args.get('sha256', identity)
+                cache = self.journal.root / 'asset_reads'
+                if requested != identity:
+                    previous = any(isinstance(result, dict) and result.get('asset') == asset and
+                        result.get('sha256') == requested for _, child, result in self.result_values(parent)
+                        if child['state'] == 'completed' and child['inputs'].get('name') == 'read_asset')
+                    if asset != 'skills/INDEX.md' or not previous or not re.fullmatch('[a-f0-9]{64}', requested):
+                        raise ContractError('Skill digest outside the bound version')
+                    body = read_json(cache / (requested + '.json'))
+                    if sha256(body.encode()).hexdigest() != requested:
+                        raise ContractError('Archived Skill directory hash mismatch')
+                elif asset == 'skills/INDEX.md' and not (cache / (identity + '.json')).exists():
+                    atomic_json(cache / (identity + '.json'), body)
+                return {'asset':asset, 'sha256':requested, 'version_read':{'asset':asset, 'sha256':requested},
+                        **asset_text_page(body, args, self.PAGE_CHARACTERS)}
             path = self.asset_path(args['asset'])
             private_view = self.brief['payload'].get('execution_guidance', {}).get('development', {}).get('manifest', {})
             if private_view.get('path') and path == self.asset_path(private_view['path']):
@@ -2217,7 +2248,7 @@ class RoleInteraction:
         for row in payload.get("feedback_used", []):
             if row.get("metareview_ref"):
                 refs.add(row["metareview_ref"])
-        published = {k: v for k, v in payload.items() if k not in ('pending_knowledge_updates', 'submission_issues')}
+        published = {k: v for k, v in payload.items() if k not in ('pending_knowledge_updates', 'submission_issues', 'skill_updates')}
         for claim_id, revision in self.prior_basis_pairs(published):
             self.prior_basis_field(task, claim_id, revision)
             refs.add(revision)
@@ -2433,9 +2464,14 @@ class RoleInteraction:
                     "candidate_refs": context.get("candidate_refs", {})}))
             events.append({'type': 'recorder_batch_completed', **batch, 'metareview_ref': card['id'],
                            'analysis_scope': content['analysis_scope'],
+                           **({'skill_updates_queued':sum(r['status']=='queued' for r in content['skill_updates']),
+                              'skill_update_indices':[i for i,r in enumerate(content['skill_updates']) if r['status']=='queued']}
+                              if content.get('skill_updates') else {}),
                            'pending_knowledge_count': len(content.get('pending_knowledge_updates', [])),
                            'analyzed_judgment_refs': sorted({r['judgment_ref'] for r in content['judgment_audit']})})
             if not staged.exists():
                 atomic_json(staged, card)  # 可恢复的待发布响应，不是事实/成功游标。
         self.queue.finish(task["task_id"], outputs=[card["id"]], result={"receipt": str(receipt_path) if receipt_path is not None else None}, cards=cards, events=events)
+        if purpose == 'record':
+            self.skills.reconcile()
 

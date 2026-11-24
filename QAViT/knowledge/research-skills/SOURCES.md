@@ -6,7 +6,7 @@
 
 [论文来源](research-routes/PAPER_SOURCES.md) 保留包作者核对的版本及原文 URL；[PTQ4DINO 案例](research-routes/ptq4dino.md#来源与数值账本) 保留历史人工原件位置、日期和样本范围。本次接入未重新复现实验，也未独立重新核验这些外部论文/Library 原件。公开论证、包作者研究建议、假想情境与历史测量各按正文标注，不能当作本轮 Evidence。
 
-所有安装内容进入原 source identity/hash 和源码快照机制；当前运行只读取其授权版本。本轮无自主 Skill 生成或晋升，评价样例与评阅要点只在 tests/skill_evals，不常驻交付研究角色。
+所有安装内容进入原 source identity/hash 和源码快照机制；当前运行只读取其授权版本。2026-11-16 接入时未启用自主 Skill 发布，评价样例与评阅要点只在 tests/skill_evals，不常驻交付研究角色。
 
 ## 2026-11-24 流程适配
 

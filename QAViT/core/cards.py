@@ -117,6 +117,7 @@ PAYLOAD_SCHEMAS = {
         "judgment_audit": {"type": "array", "items": OBJECT},
         "predictive_metrics": {"type": "array", "items": OBJECT},
         "knowledge_updates": {"type": "array", "items": OBJECT},
+        "skill_updates": {"type": "array", "items": OBJECT},
         "pending_knowledge_updates": {"type": "array", "items": object_schema({
             "index": {"type": "integer", "minimum": 0}, "submission": {}, "issue": TEXT,
             "status": {"const": "pending_verification"}, "claim_id": TEXT,

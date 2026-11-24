@@ -6,7 +6,7 @@
 
 `runtime/driver.py:request_body()` 调用 `agents/interaction.py:context()`，再由 `agents/roles.py:role_spec()` 拼接 common、当前角色和任务片段、提交视图与工具 Schema。ResearchBrief、当前任务、预算、必需短证据/反馈进入上下文；长正文给分页入口。角色不会自动读取全部 Prompt 或全部历史。
 
-所有角色只获得 `context.knowledge_index.read_asset` 这一导航指针。Generation/Recorder 额外获得 Skill 短 INDEX；允许 request_experiment 的任务获得 method_catalog 与 EXPERIMENT_INPUTS 正文；generate/select/code/safeguard/record/plan_l3 获得 complete_solutions；Coding/Safeguard 获得 CODE_INTERFACES 正文。其余资源自主读取，目录不是阅读证明。
+所有角色只获得 `context.knowledge_index.read_asset` 这一导航指针。科研角色额外获得与当前问题相关的 Skill 短描述；允许 request_experiment 的任务获得 method_catalog 与 EXPERIMENT_INPUTS 正文；generate/select/code/safeguard/record/plan_l3 获得 complete_solutions；Coding/Safeguard 获得 CODE_INTERFACES 正文。其余资源自主读取，目录不是阅读证明。
 
 `authorized_assets()` 从 docs/ 与 knowledge/ 发现文本、合入 Brief 明确列出的 reference/ 来源和当前可见任务产物；`request_body()` 冻结路径/哈希及 Journal 序号。read_asset 使用同一授权快照，核验当前字节并返回 UTF-8 字符页、sha256、offset/next_offset。旧 skills/、methods/、solutions/ 别名不变，knowledge/ 别名与项目相对路径均可用。新增目录没有开放任意文件或同回合私有子任务。
 
@@ -32,7 +32,7 @@ read_asset 是方法正文的普通入口，不触发实验。`MethodLibrary` �
 
 request_experiment → 原始 ExperimentCard → 必要时 Coding 单实现 → 宿主绑定 → Safeguard → 数值 worker → 程序 EvidenceCard → 原研究任务续调。已有内置服务沿其直接执行路径。Evidence 保留真实条件、执行身份、原始指标和产物；失败也是执行事实，不自动构成科学反证。Recorder 只综合，不生成测量。
 
-程序归档来源和计数；Recorder 用 Metareview 提交科学分析及可选知识更新。L2 修订绑定可见来源/范围，不同条件不自动合并；待综合材料继续 pending。运行内 incumbent 与协议 Top-3 分别维护，前者是本研究状态，后者是完整方案复用库。Skill/方法正文、README、索引不会被运行角色自动改写。
+程序归档来源和计数；Recorder 用 Metareview 提交科学分析及可选知识更新。L2 修订绑定可见来源/范围，不同条件不自动合并；待综合材料继续 pending。运行内 incumbent 与协议 Top-3 分别维护，前者是本研究状态，后者是完整方案复用库。人工 Skill 和方法原件随源码归档。
 
 可选来源示例（无需凑齐全部类型）：
 
@@ -102,3 +102,9 @@ Recorder 通过可选 Metareview.topic_notes（topic_ref、progress、reconsider
 恢复读取以 source_snapshot 的 path、sha256、field 和 source_version 保留原件身份。`read_asset({asset: path, snapshot_field: field})` 返回授权成员目录；加 `member` 和 offset/limit 读取确切原文及成员 SHA256。验证完整归档哈希后仅开放执行实现、必要配置和方法/方案成员；评价规则、测试、角色 Prompt 不在恢复视图。原 research_run.json 和 intervention commit 保持完整归档，旧回执的过宽文件授权不继续生效。跨运行完整方案仍用原归档版本，不能以当前源码替代。
 
 自动 topic_catalog、inspiration_library、method_catalog_state 各给最多八项短目录和分页入口；对应 read 工具省略身份即可浏览/按 query 查询，指定身份可读完整历史。当前主题/活跃灵感的未完成事项与复议条件继续交付，同一请求或实现正文在 context 内只保留一份，其他位置给出准确 body_location。Recorder 错误 topic_notes 逐项进入 submission_issues，原条目和原因保留；其余有效正文正常发布，不放宽身份核验。
+
+## Recorder 流程版本
+
+同一 Metareview 的可选 `skill_updates` 随 `recording_submissions`、科学分析、知识修订及批次游标一起提交。每项保留原稿，来源由宿主解析到本批可见卡的精确字段。失效条目记录 `invalid` 和原因。有效提案先记 `queued`。提交后按 Metareview 哈希及条目位置发布，在共享锁下核对当前父版本。`EXP/skills/versions/<sha>/<name>/SKILL.md` 与 `references/origin.json` 保存包和出处，`releases/` 中的原子回执确认发布；可重建目录。Journal 的 `skill_update_result` 记录 published 或 conflict，暂时写入失败保留待办，下次启动或 Recorder 提交重新处理。一次运行的模型、数据、协议记入来源与范围。
+
+新运行固定共享头与人工包版本。后续模型调用只加入本运行已发布版本，已经发出的调用使用原 Journal 截点。`context.skill_catalog` 给出最多七条相关简介；`read_asset skills/INDEX.md` 支持 find 与分页。`skills/<name>/SKILL.md` 读取当前版本，`skills/<name>@<sha>/…` 精确读取可见祖先、退役版本或来源附件。源码里的人工原件仍进入 core_sha256；显式修订和停用需绑定包哈希。不同血缘同名在目录标为冲突。流程提案、已发表经验和实际测量各保留自己的身份。

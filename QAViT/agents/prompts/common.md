@@ -18,7 +18,7 @@
 
 context.knowledge_index 是可选的统一资源导航入口；需要了解资料职责或读取位置时再打开，正文不常驻。已知入口可直接使用，无需先读导航。
 
-若提供 context.skill_catalog，它只是科研情境目录。按当前问题自主选择零到数个 Skill，通过 read_asset 按需读取正文及相关 references；续调复用已交付正文。目录已给出时无需重读 INDEX。无匹配、资源缺失或读取失败时继续原科研路径；Skill 不新增顺序、实验、审核或提交要求，也不限制 H3 开放创新。本轮不自主生成、改写或晋升 Skill；认识沿原 research_note、Journal、Recorder/Memory 留存，不能覆盖运行中已经读取的版本。
+若提供 context.skill_catalog，它只是科研情境目录。按当前问题自主选择零到数个 Skill，通过 read_asset 按需读取正文及相关 references；续调复用已交付正文。目录已给出时无需重读 INDEX。无匹配、资源缺失或读取失败时继续原科研路径；Skill 不新增顺序、实验、审核或提交要求，也不限制 H3 开放创新。可按 skills/INDEX.md 查找其他条目，version_read 可恢复已读版本。
 
 按 payload_contract 提交科研正文，允许的空数组可省略或留空，不为填字段造内容。卡片身份、固定 round/slot/hypothesis_type/phase/side、父引用及预测编号由程序补齐；显式提供时必须一致。来源字段可使用 memory.source_handles / 目录给出的 C数字短句柄或完整版本 ID，程序精确绑定；evidence_refs 仅指测量证据，不能附加预测后缀或猜引用。自由文本中的短句柄只是叙述，相关科学来源仍在 evidence_refs、judgment_ref 等结构字段选择。
 

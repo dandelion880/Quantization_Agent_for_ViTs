@@ -14,11 +14,11 @@
 | [select-calibration-objective](select-calibration-objective/SKILL.md) | 在需要选择或修订 PTQ 校准 metric、重建目标、参考输入、token 权重或 lookahead， 或候选局部误差排序与真实后缀/任务效果不一致时使用。 负责定义“什么叫选得好”并检验排序可信度，不负责设计 scale 候选族、分组和执行顺序。 已有固定目标的普通执行、仅评价完成的结果或纯实现错误无需使用。 |
 <!-- SKILL_CATALOG_END -->
 
-读取方式：`read_asset({"asset":"skills/<Skill名称>/SKILL.md"})`；正文中的相对参考链接使用 `skills/<Skill名称>/references/<文件名>.md`。本目录随 context.skill_catalog 交付时无需再次读取；角色可按科研职责自行选择，不增读取权限限制。
+读取方式：`read_asset({"asset":"skills/<Skill名称>/SKILL.md"})`；正文中的相对参考链接使用 `skills/<Skill名称>/references/<文件名>.md`。运行入口 skills/INDEX.md 汇合当前可见版本，context.skill_catalog 给出相关短描述；角色可按科研职责自行选择，不增读取权限限制。
 
 正文中 `query_*` / `profile_*` / `read_profile_evidence` 是既有 `profile` 服务内的工具名，并非新的角色工具；科学请求沿 `request_experiment`，实际参数查 `context.experiment_interface`。方法说明直接从 `context.method_catalog` 的 `read_asset` 读取；完整方案用 `context.complete_solutions`（若本任务未交付则按需读 `solutions/README.md`）；历史证据沿 `retrieve_memory` / `read_card`。合成/单元数值证据使用语义名称，不与 Eval-L0 离线评价混称。
 
-触发可组合，也可跳过；没有固定调用顺序。共同术语按需读 [科研约定](../../knowledge/research-skills/RESEARCH_CONVENTIONS.md)，完整案例见 [研究路线](../../knowledge/research-skills/research-routes/INDEX.md)，接口边界见 [源码兼容说明](../SCIENTIFIC_SKILLS_COMPATIBILITY.md)。本轮暂缓自主 Skill 沉淀。
+触发可组合，也可跳过；没有固定调用顺序。共同术语按需读 [科研约定](../../knowledge/research-skills/RESEARCH_CONVENTIONS.md)，完整案例见 [研究路线](../../knowledge/research-skills/research-routes/INDEX.md)，接口边界见 [源码兼容说明](../SCIENTIFIC_SKILLS_COMPATIBILITY.md)。
 
 科学输入以 ResearchBrief 和已绑定的 Evidence 为准。具体 Tool 参数、方法 ID、可访问完整方案 ID 与 Memory 引用由已有接口返回，避免 Skill 猜测路径或硬编码。
 

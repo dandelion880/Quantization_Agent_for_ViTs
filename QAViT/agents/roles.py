@@ -156,6 +156,7 @@ def submission_schema(purpose):
         omitted = set(contract['required']) - {'scientific_analysis', 'generation_guidance', 'next_questions'}
         contract['properties'].pop('reviewed_refs', None)
         contract['properties']['knowledge_updates'] = {}
+        contract['properties']['skill_updates'] = {'description': 'Optional procedure drafts. Each item is bound separately; see Recorder task.'}
         contract['properties'].pop('pending_knowledge_updates', None)
     contract['required'] = [k for k in contract['required'] if k not in omitted]
     hidden = omitted

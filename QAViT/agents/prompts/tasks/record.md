@@ -23,3 +23,5 @@ key_facts 在 Generation、Recorder、Memory 使用同一客观投影，优先�
 可选 topic_notes：每项 topic_ref、progress、可选 reconsideration/source_refs，整理行动与复议建议；主题状态及范围由下一次 Generation 决定，Recorder 不改写。
 
 双任务开发结果按 manifest 身份记下各自 FP、候选、保持率和样本范围。记录已完成开发评价和官方评价的确切阶段、冻结包及来源条件，让下一轮 Generation 可以复用父包和未决问题。
+
+同批可选 skill_updates 数组。能从本批经历提炼到下一任务可用的判断办法时，给 action=create/revise/retire、name、rationale、sources（每项 ref 与精确 /payload/... 字段）。创建/修订给 description（何时用）、scope（观察条件与可迁移范围）、procedure（可操作步骤及结果分支）、counterexamples（反例与局限）。优先修订同义流程，从 skills/INDEX.md 或正文读取回执的 @版本取得 base_sha256；修订/停用必须绑定它。用窄字段作便携来源，必要时把数字及条件各指向一个原件字段。局部最佳参数、一次成绩、未执行建议留在当前复盘。含信息的失败可以产出流程；没有值得蒸馏的经验可省略整个字段。需要新实验时记入 generation_guidance。

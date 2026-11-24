@@ -12,6 +12,7 @@ from core.journal import Journal, atomic_json, file_lock, read_json
 from runtime.task_queue import GlobalTaskQueue, TERMINAL
 from runtime.budget import BudgetLedger
 from core.memory import ResearchMemory, MemoryRetriever
+from core.skills import SkillLibrary
 from core.debate import selection_pairs  # Historical card inspection only.
 from runtime.task_runtime import TaskRuntime
 from tools.experiments import ExperimentBroker
@@ -85,6 +86,10 @@ class Workflow(RoleInteraction, ExperimentRequests, WorkflowDriver):
             brief = make_card("ResearchBrief", self.journal.run_id, self.config["research_brief"], author="user")
             self.journal.commit("research/brief", cards=[brief])
         self.brief = self.journal.find_cards("ResearchBrief")[-1]
+        self.skills = SkillLibrary(self.journal)
+        if not read_only:
+            self.skills.initialize(saved['source_snapshot'])
+            self.skills.reconcile()
         self.queue = GlobalTaskQueue(self.journal)
         self.budget = BudgetLedger(self.journal, None if read_only else self.config.get("budget", {}),
                                    started_unix=datetime.fromisoformat(saved["created_at"]).timestamp())
@@ -281,6 +286,7 @@ class Workflow(RoleInteraction, ExperimentRequests, WorkflowDriver):
         """依已提交状态推进 G-only；恢复不改写候选或重复预选。"""
         if self.config['purpose'] == 'baseline_measurement':
             raise ContractError('基线测量使用程序实验入口，不能启动科研轮次')
+        self.skills.reconcile()
         if self.scope_target_reached():
             return True
         self.release_scope_closeout_reserve()

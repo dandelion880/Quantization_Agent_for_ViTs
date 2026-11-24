@@ -129,7 +129,7 @@ class KnowledgeResources(TempCase):
         with patch.object(Path, 'read_text', no_method_index), patch.object(Path, 'read_bytes', no_skill_index), \
                 patch.object(Path, 'is_file', no_navigation):
             task, context = self.begin(wf, self.generation(wf))
-            for key in ('knowledge_index', 'skill_catalog', 'method_catalog'):
+            for key in ('knowledge_index', 'method_catalog'):
                 self.assertNotIn(key, context)
             found = self.read(wf, task, 'retrieve_memory', query={})
             self.assertEqual(found['method_documents']['entries'], [])

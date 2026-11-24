@@ -32,7 +32,7 @@ def material_selection(task, values):
     elif values:
         batch.add(len(values) - 1)
     purpose = task.get('inputs', {}).get('purpose')
-    if purpose and purpose not in RESEARCH:
+    if purpose and purpose not in (*RESEARCH, 'record'):
         return set(range(len(values))), pins
     recent_trials = [i for i, (_,child,_) in enumerate(values) if child['kind'] == 'experiment_request'][-2:]
     def page(result):
