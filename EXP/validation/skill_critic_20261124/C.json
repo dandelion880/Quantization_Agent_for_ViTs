@@ -1,0 +1,1005 @@
+{
+  "date": "2026-11-24",
+  "origin_run": "dinov3b_static_w4a4_independent_20261121_r1",
+  "manifest_sha256": "407a2834fe50375e61e09ee4ba849cc933dd28283893f553bbc8a1e5f75e311f",
+  "cost_definition": "input includes cache reads; seconds are wall time around each call including slot/preflight; read_chars counts returned text; USD not reported by subscription",
+  "breakpoints": {
+    "1": {
+      "execution_id": "task-87ffe1c667e8f45d883c542f-a0001",
+      "request_sha256": "eb131849357124ff1cfb5c032a52800f468f56385e2deb7dbbffb137bcbe5869",
+      "read_view": {
+        "memory_version": 38,
+        "sequence": 3305
+      },
+      "candidates": {
+        "H1": {
+          "ref": "HypothesisCard-f53b4fa3249c4ae3bb1db2f4c6d2242b@1",
+          "content_sha256": "600f29cc30d72d7600c7764e23baf49c54804b1c54b67f21d245b3a7c6732755"
+        },
+        "H2": {
+          "ref": "HypothesisCard-eec98e1754834668b73b9f096e404813@1",
+          "content_sha256": "85f745ca026f70977c9da90e96f06a160c5d5222f9517a5f3f5994f465155555"
+        },
+        "H3": {
+          "ref": "HypothesisCard-a95e5c969f5944349d44025a56cebb73@1",
+          "content_sha256": "14582de0034c46f521786544dce6da651abfd547d162ebe963b433823dba782f"
+        }
+      }
+    },
+    "2": {
+      "execution_id": "task-4ff788d001afd07fbd69c8af-a0001",
+      "request_sha256": "05c804f40accc39f08ddf9615bc7cb0112a60554cc6a131eaa368d2f9b7faf86",
+      "read_view": {
+        "memory_version": 85,
+        "sequence": 8373
+      },
+      "candidates": {
+        "H1": {
+          "ref": "HypothesisCard-9c647c7ad37b4653b45006c3a23113c9@1",
+          "content_sha256": "4b6368c7c9ad58be4df3892a2e6a9dafadbf5a885daf294c265cef04a9e6203e"
+        },
+        "H2": {
+          "ref": "HypothesisCard-94d498fd914c4d01ac76ddbf94bdb333@1",
+          "content_sha256": "9e8d648d0a22920439e0cfae12470f7b4bcc6399fd0631a9212f38c480a789f1"
+        },
+        "H3": {
+          "ref": "HypothesisCard-ca8f2e1ef7a947739a462689fb92668c@1",
+          "content_sha256": "8c966e9b4071004d96f5d314a8edab0a46dea2fd2d9428b3121d596bd729ff22"
+        }
+      }
+    }
+  },
+  "arms": {
+    "r1-critic": {
+      "call_cap": 3,
+      "time_cap_seconds": 420,
+      "numerical_jobs": 0,
+      "calls": 3,
+      "total_usage": {
+        "cache_write_input_tokens": 0,
+        "cached_input_tokens": 0,
+        "input_tokens": 59504,
+        "output_tokens": 1508,
+        "reasoning_output_tokens": 30
+      },
+      "model_wall_seconds": 92.03997173346579,
+      "read_calls": {
+        "read_card": 3,
+        "retrieve_memory": 1
+      },
+      "returned_text_characters": 12933,
+      "unavailable_reads_observed_in_continuations": {
+        "retrieve_memory": 1
+      },
+      "trace_path": "r1-critic/trace.json",
+      "trace_sha256": "d263fc6ad52047608eeb3bdd46aaa35e9b83493e5d66abbf45e554005587ffdf",
+      "call_receipts": [
+        {
+          "role": "critic",
+          "route": {
+            "model": "gpt-6.2-astra",
+            "reasoning_effort": "medium"
+          },
+          "actual": {
+            "model": null,
+            "reasoning_effort": null,
+            "source": "not_reported_by_cli"
+          },
+          "seconds": 23.898140290752053,
+          "usage": {
+            "cache_write_input_tokens": 0,
+            "cached_input_tokens": 0,
+            "input_tokens": 18024,
+            "output_tokens": 165,
+            "reasoning_output_tokens": 0
+          },
+          "read_chars": 933,
+          "tools": [
+            "read_card",
+            "read_card",
+            "retrieve_memory"
+          ],
+          "context_sha256": "d4e92d6047744fdb0365bc50feefaa2482ada5d07ba89f1ed6919b8cecbd1748",
+          "audit_sha256": "43b71df661524590944b7ec8a45acbddc92908038c209a2fe1074d64af3cb55f"
+        },
+        {
+          "role": "critic",
+          "route": {
+            "model": "gpt-6.2-astra",
+            "reasoning_effort": "medium"
+          },
+          "actual": {
+            "model": null,
+            "reasoning_effort": null,
+            "source": "not_reported_by_cli"
+          },
+          "seconds": 16.080364514142275,
+          "usage": {
+            "cache_write_input_tokens": 0,
+            "cached_input_tokens": 0,
+            "input_tokens": 18795,
+            "output_tokens": 62,
+            "reasoning_output_tokens": 0
+          },
+          "read_chars": 12000,
+          "tools": [
+            "read_card"
+          ],
+          "context_sha256": "b3f09d052d45b497825a6eca51c7d58ee369752b463d89b1e0137ad36ae8b5b1",
+          "audit_sha256": "41b77fbf3d5fec56eecb07bd9f059b26fe42b21868a016bee6ea986e504718f5"
+        },
+        {
+          "role": "generation",
+          "route": {
+            "model": "gpt-6.2-astra",
+            "reasoning_effort": "high"
+          },
+          "actual": {
+            "model": null,
+            "reasoning_effort": null,
+            "source": "not_reported_by_cli"
+          },
+          "seconds": 52.06146692857146,
+          "usage": {
+            "cache_write_input_tokens": 0,
+            "cached_input_tokens": 0,
+            "input_tokens": 22685,
+            "output_tokens": 1281,
+            "reasoning_output_tokens": 30
+          },
+          "read_chars": 0,
+          "tools": [],
+          "context_sha256": "6dbfbfd4b01f1a69490ff937e81db2ba176edc8be8bcc69b6d912b459148a7a7",
+          "audit_sha256": "0f57c040dd77b6fe870f9de164c45e9c28d1896379aeda59a9d9deb759be63f8"
+        }
+      ],
+      "critic_review": null,
+      "generation_action": {
+        "action": "submit",
+        "content": {
+          "evidence_refs": [
+            "C24",
+            "C30",
+            "C37",
+            "C10",
+            "C33",
+            "C18"
+          ],
+          "rationale": "保留 H1、H2、H3 各自已提交的 @1 版本，分别进入 L3；不改主题、不合并干预，也不按代理指标排名。三者同属 topic-381e55fbccfd1b13eef0@1，但检验的是三个不同问题。现有证据最清楚地支持一个有限结论：在相同量化前缀上，更好地重建 PV，不保证经冻结后缀后更接近完整 FP。\n\nH1（method-5509fffd98269e8e557e）只在 block 2 的实际 PV 概率输入安装一个全行共享码本。CLS、storage、patch 等权仅用于选码，不是三个部署码本。C24 在 B32 的同一实际菜单上区分了目标效应：按 P 选 q19、按 PV 选 q28，32 张 search 图的等角色 PV-NMSE 分别为 0.02547、0.00625，父为 0.00874。这个对照支持按 PV 选参有局部价值，但码本也改变行和，不能把差异全部归因于 value 方向。C30 中 block 2 的早期 patch 更接近 FP 而末端 CLS 更远，不支持再叠加 block 8。C37 已在同校准父64上比较 patch-query 专用与全行替换；其 128 图 search 结果不是正式分类评价，也没有回答分割问题。保留全行方案，检验早期 patch 改善能否换来 mIoU 提升且不损失 Top-1。\n\nH2（method-e9c45325c162636d25f1）保留 block 2、5、8、11 各层内部共享的 P4 网格，按三类 query 等权的 P 误差选参。C10 的浮点列恢复定位了角色差异，但不能证明部署时应拆 key 码本。C33 在 B32 上以 16 图拟合、64 张 search 图评价：拆组/PV 相比共享/PV 在 12 个层×角色比较中有 11 个降低局部 PV-NMSE，四层同时安装后的末端 CLS NMSE 却更高（0.77799 对 0.77199）。共享/P 的 CLS 为 0.76883，父为 0.77817，四处原始 patch 输出误差也均为五臂最低。因此保留已撤下拆组的版本，而非恢复局部得分更好的方案。这不能区分单层贡献与四层误差抵消；原始 patch 输出也不等于分割头实际读取的特征。父64上若末端 CLS 不改善或实际分割输入不足三层改善，就不支持该传播预测。\n\nH3（method-8b66140f32fba66d81df；idea-dd73faab51ebe0ca0adb）固定父 log2 分箱和零码，只拟合 block 11 的共享解码值。各箱 value 向量和决定 PV 拟合中的跨箱项；同分箱、同自由度的 P 拟合表才是区分目标效应的对照。C18 在 B32 上以 16 图拟表、32 图检验，末层 patch 的局部 PV-NMSE 从父表 0.008958 降至 P 表 0.004974、PV 表 0.004775：允许逐箱调幅已解释大部分下降，不能把对父表的全部收益记给 PV 目标。PV 表使末端 CLS NMSE 从 0.762229 降至 0.760935，而 P 表为 0.762734。这个差异小，且末层是从同次三层探索中选出；较早层局部改善未稳定传至后缀，故不扩展安装范围。它只能改变四个分割抽取口中的最后一个，父64与 ADE 较长序列上的占箱和收益仍待检验。\n\n三者都从绑定 FP 副本用固定 64 张 ImageNet calibration 图独立构建完整静态 W4A4 父状态；各自恢复被替换的父码器即可回退。B32 独立保留（已有 Top-1 56.748%、mIoU 29.68484241874801%），不占槽、不重测，也不代替父64作增量对照。三候选的位点、可行码本与干预层数不同，跨候选成绩差不能单独识别 P 对 PV 的目标效应。下一步应分别重建并复核导出码器，冷载同一候选骨干配绑定冻结任务头，在固定 L3-dev 的 ImageNet 5000 图和 ADE 502 图上报告各自配对 FP/Q；无同视图父64成绩时只报告对 FP 的差距，不归因于插件。最终预冻结后再按官方 50k/2k 协议分别核对 Top-1 ≥71.2152% 与 mIoU ≥47.57202%。目前三者均待任务验证，无一可由局部 NMSE 或 search 准确率宣告达标。"
+        }
+      }
+    },
+    "r1-self": {
+      "call_cap": 3,
+      "time_cap_seconds": 420,
+      "numerical_jobs": 0,
+      "calls": 2,
+      "total_usage": {
+        "cache_write_input_tokens": 0,
+        "cached_input_tokens": 0,
+        "input_tokens": 53027,
+        "output_tokens": 1648,
+        "reasoning_output_tokens": 20
+      },
+      "model_wall_seconds": 66.18933807313442,
+      "read_calls": {
+        "read_card": 3
+      },
+      "returned_text_characters": 16176,
+      "unavailable_reads_observed_in_continuations": {},
+      "trace_path": "r1-self/trace.json",
+      "trace_sha256": "73ecaf4c80e8e503ef5935c49226f0ed62dc13c6993b5aaa1a390a4dd01eb747",
+      "call_receipts": [
+        {
+          "role": "generation",
+          "route": {
+            "model": "gpt-6.2-astra",
+            "reasoning_effort": "high"
+          },
+          "actual": {
+            "model": null,
+            "reasoning_effort": null,
+            "source": "not_reported_by_cli"
+          },
+          "seconds": 20.735036749392748,
+          "usage": {
+            "cache_write_input_tokens": 0,
+            "cached_input_tokens": 0,
+            "input_tokens": 22669,
+            "output_tokens": 181,
+            "reasoning_output_tokens": 20
+          },
+          "read_chars": 16176,
+          "tools": [
+            "read_card",
+            "read_card",
+            "read_card"
+          ],
+          "context_sha256": "d4e92d6047744fdb0365bc50feefaa2482ada5d07ba89f1ed6919b8cecbd1748",
+          "audit_sha256": "6f423883bfa0f13cf1f8d47f7fa4a5c2526f238a8b3baf96df2f3af7bbe9bd57"
+        },
+        {
+          "role": "generation",
+          "route": {
+            "model": "gpt-6.2-astra",
+            "reasoning_effort": "high"
+          },
+          "actual": {
+            "model": null,
+            "reasoning_effort": null,
+            "source": "not_reported_by_cli"
+          },
+          "seconds": 45.454301323741674,
+          "usage": {
+            "cache_write_input_tokens": 0,
+            "cached_input_tokens": 0,
+            "input_tokens": 30358,
+            "output_tokens": 1467,
+            "reasoning_output_tokens": 0
+          },
+          "read_chars": 0,
+          "tools": [],
+          "context_sha256": "c9aaed72c42829b26da8ca42cbb671f14af5905191df4c23296a19888bb0e48e",
+          "audit_sha256": "d2f0ed967359813e4bfe249dc33c79bda21943be3c93ae2641936dc0e0780abf"
+        }
+      ],
+      "critic_review": null,
+      "generation_action": {
+        "action": "submit",
+        "content": {
+          "evidence_refs": [
+            "C24",
+            "C30",
+            "C37",
+            "C10",
+            "C33",
+            "C18"
+          ],
+          "rationale": "保留 H1、H2、H3 已提交的 @1 版本，三者分别进入 L3，不合并、不排名。共同主题 topic-381e55fbccfd1b13eef0@1 的阶段性答案是：按 PV 而非 P 选码，确实能改变同一可行码表集合中的选择，并降低量化输入上的聚合误差；但更接近当前 P×V4，不等于经过后续量化层后更接近 FP，更不等于双任务精度提高。三条候选都只改实际送入 PV 的概率操作数，现有证据不要求联动修改 V。\n\nH1（method-5509fffd98269e8e557e）保留 block 2 全行共享 AdaLog，按 CLS、storage、patch 三类 query 等权的 PV 误差选码。C24 在 B32 的同一菜单上区分了选参目标：按 P 选 q19、按 PV 选 q28，32 张 search 图的等角色 PV-NMSE 分别为 0.02547、0.00625，父为 0.00874。行和偏差也随码表改变，不能把差异全归于 value 方向；C30 的早期 patch 改善也未保证末端 CLS 改善。更贴近最终条件的 C37 在同校准父64上重选得到 q28、倍率 1；128 张 search 图上，全行替换使 patch 行 PV-NMSE 从 0.01161 降到 0.00676，四个 patch 抽取口对 FP 的 NMSE 均下降，但末端 CLS 仅从 0.74616 降到 0.74579，教师 KL 反从 1.13394 升到 1.14949。仅改 patch 行在预定新增的 64 图上未同时保全 CLS 和 patch 11，故不增加第二张部署码表，也不据一张图的命中差宣称分类受益。q28 是诊断结果，不是最终构造的常量。\n\nH2（method-e9c45325c162636d25f1）保留另一种选择：在未改父64轨迹上，分别按三类 query 等权的 P-NMSE 为 block 2、5、8、11 选择父码器或幂次网格；每层内部共享，四层选定后一次安装。C10 的浮点列恢复说明不同 key 列的舍入影响有差异，不足以推出部署应拆组。C33 在 B32 上用 16 图拟合、另 64 图比较：拆组/PV 比共享/PV 在 12 项局部比较中赢了 11 项，末端 CLS NMSE 却更高（0.77799 对 0.77199）；共享/P 为 0.76883，且四个未归一化 patch 输出的误差均为五臂最低。这支持保留已提交的共享/P，而不证明 P 目标普遍优于 PV：四层同时改动可能恰好抵消误差，不能定位单层贡献，原始 patch 输出也不能替代分割适配器的实际输入。父64上能否同时改善末端 CLS 和至少三个实际分割取特征口仍待检验。\n\nH3（method-8b66140f32fba66d81df，沿用 idea-dd73faab51ebe0ca0adb）不重选分箱，只在 block 11 固定父 log2 索引，用各箱 V4 向量和做有界、单调的最小二乘解码表拟合。C18 在 B32 上用 16 图拟表、32 图留出比较：末层父表、同分箱 P 表、PV 表的 patch 行 PV-NMSE 为 0.008958、0.004974、0.004775。P 表已取得大部分局部降幅；PV 相对 P 的额外改善才是聚合目标的证据。PV 表相对父表使末端 CLS NMSE 从 0.762229 降到 0.760935、patch 11 从 0.488134 降到 0.486294。改第 0 或 5 层时，局部 CLS 聚合误差虽降，末端 CLS 却变差，故不向前层推广。末层是从同次探索中选出的，不是独立确认；其余三个分割抽取口按结构不变，父64重拟合及 ADE 较长序列上的占箱变化都可能改变结论。\n\n无需科学修订：单层全行替换、四层共享/P、末层固定分箱三项决定已经体现在各自版本中。三者的层位、可行码表和拟合自由度不同，候选之间的成绩差不能单独识别 P 与 PV 目标的因果效应。下一项能改变判断的是各自冷载后的任务评价，而不是继续在已用于方案选择的 search 图上调参。各候选须从受保护 FP 副本用绑定的 64 张 calibration 图独立重建，training=false；导出后复核实际码表、P→PV 重放及完整 static W4A4 覆盖。分别以同一冻结骨干和绑定任务头完成 5000 图分类 dev、502 图 ade_dev 的配对 FP/Q 评价，ADE 不重校准。H1 检验 mIoU 提高且 Top-1 不降；H2 检验两者均提高；H3 即使末端两类表征都改善，也须分别报告两项任务结果。增量归因只用同视图、同校准父64，缺测则留空。独立保底 B32（Top-1 56.748%，mIoU 29.68484%）原样保留，不作父64替身、不占 L3 名额。最终预冻结后一次官方 50k/2k 验证分别核对 Top-1 ≥71.2152%、mIoU ≥47.57202%；本次没有任何候选的正式达标结论。"
+        }
+      }
+    },
+    "r2-critic": {
+      "call_cap": 3,
+      "time_cap_seconds": 420,
+      "numerical_jobs": 0,
+      "calls": 3,
+      "total_usage": {
+        "cache_write_input_tokens": 0,
+        "cached_input_tokens": 0,
+        "input_tokens": 76071,
+        "output_tokens": 1491,
+        "reasoning_output_tokens": 106
+      },
+      "model_wall_seconds": 82.55070243217051,
+      "read_calls": {
+        "read_card": 4
+      },
+      "returned_text_characters": 15952,
+      "unavailable_reads_observed_in_continuations": {
+        "read_card": 1
+      },
+      "trace_path": "r2-critic/trace.json",
+      "trace_sha256": "198dfb573b2f866f95e3f83e511bd5ae1aa5c7a5a925eae075023745999bfefa",
+      "call_receipts": [
+        {
+          "role": "critic",
+          "route": {
+            "model": "gpt-6.2-astra",
+            "reasoning_effort": "medium"
+          },
+          "actual": {
+            "model": null,
+            "reasoning_effort": null,
+            "source": "not_reported_by_cli"
+          },
+          "seconds": 17.381239026784897,
+          "usage": {
+            "cache_write_input_tokens": 0,
+            "cached_input_tokens": 0,
+            "input_tokens": 22309,
+            "output_tokens": 165,
+            "reasoning_output_tokens": 0
+          },
+          "read_chars": 9818,
+          "tools": [
+            "read_card",
+            "read_card",
+            "read_card"
+          ],
+          "context_sha256": "df7825be50c221d92a0c8611086a453f310b1294c23f6c4e66d8ca4c861164dd",
+          "audit_sha256": "f2870781112e50d98f40278a5ca6bbb0a16f1309bf5a971b9823e6e7678663c3"
+        },
+        {
+          "role": "critic",
+          "route": {
+            "model": "gpt-6.2-astra",
+            "reasoning_effort": "medium"
+          },
+          "actual": {
+            "model": null,
+            "reasoning_effort": null,
+            "source": "not_reported_by_cli"
+          },
+          "seconds": 18.26210088096559,
+          "usage": {
+            "cache_write_input_tokens": 0,
+            "cached_input_tokens": 0,
+            "input_tokens": 26792,
+            "output_tokens": 65,
+            "reasoning_output_tokens": 0
+          },
+          "read_chars": 6134,
+          "tools": [
+            "read_card"
+          ],
+          "context_sha256": "06afe9cd841ed1e47d95ed11cbff8a74a814338a95a617b36d084fad1b0cd283",
+          "audit_sha256": "32b4f919c865cd8487dffe5ba5c5687491daff98c8ca373a314b6dd6e176c9c7"
+        },
+        {
+          "role": "generation",
+          "route": {
+            "model": "gpt-6.2-astra",
+            "reasoning_effort": "high"
+          },
+          "actual": {
+            "model": null,
+            "reasoning_effort": null,
+            "source": "not_reported_by_cli"
+          },
+          "seconds": 46.90736252442002,
+          "usage": {
+            "cache_write_input_tokens": 0,
+            "cached_input_tokens": 0,
+            "input_tokens": 26970,
+            "output_tokens": 1261,
+            "reasoning_output_tokens": 106
+          },
+          "read_chars": 0,
+          "tools": [],
+          "context_sha256": "77d134b7f2c451aba7777c7bcae0752bbc245a969c272872a8124a4a6393267a",
+          "audit_sha256": "ed7fcd455ca88a38fa3448bf23d3eb0c72711d99c391068e6a0dc819e3be82cb"
+        }
+      ],
+      "critic_review": null,
+      "generation_action": {
+        "action": "submit",
+        "content": {
+          "evidence_refs": [
+            "C48",
+            "C80",
+            "C84",
+            "C50",
+            "C18",
+            "C53"
+          ],
+          "rationale": "保留 H1/C85、H2/C79、H3/C76 的当前版本，三者分别进入既定 L3，不合并、不排名。三者同属 topic-381e55fbccfd1b13eef0@2，但检验的是不同问题：H1 改变选码依据，H2 检验第四处替换是否必要，H3 检验固定分箱后是否还需要 V4 参与拟合。现有证据足以区分这三个问题，不足以要求任何一项改变干预。\n\nH1（method-06b5f51f5041f5092858）：在同一 P64、同一 block 2 实际 AdaLog 菜单上，把对同次调用 P·V4 的局部拟合换成对完整 FP 的归一化 CLS 与四层 patch 读出相对误差的 minimax 选择。关键反证是旧 PV 规则 C48 的开发 Top-1/mIoU 为 60.64%/34.24682%，低于已核对的未改 P64（C80：61.22%/34.46311%）；不能用相对 B32 的分差给 AdaLog 记功。C84 是 224 图像上的无标签骨干读出诊断，当前摘要未给出赢家及误差差值，不据此声称双读出改善。新包两项都胜 C48 才支持更换选参目标；若未同时胜 C80，只能称修复旧改动。即便读出更接近 FP，也可能只改进任务头不敏感的方向。\n\nH2（method-e9c45325c162636d25f1）：四层父包 C50 相对 C80 的开发净差为 Top-1 +0.80、mIoU −1.30696 个百分点。这是四层合计的取舍，不能归因给 block 11。保留 blocks 2、5、8 在未改 P64 轨迹上的角色等权概率选码，只将实际安装了菜单 9 的末层恢复为原生 log2 P4，而非 FP 旁路。这样直接比较三层与四层包：前三处 ADE 特征应不变，否则单点对照失效；若不变而末层归一化 patch 误差未降，则不支持所提传播机制。更早的替换或滑窗几何仍可能解释分割损失。只有对 C50 的 ΔmIoU>0 且 ΔTop-1≥0 才支持任务改良；持平仅支持少做一次搜索。\n\nH3（method-caae1d2b9d70d7a5065a；延续 idea-dd73faab51ebe0ca0adb）：保持 block 11 的父 log2 索引、阈值、零码与可行域，只把 PV 联合拟合换成三类 query 等权的受限概率箱均值。C18 在 B32 上以 16 图拟合、32 图回放，末层 patch 同输入 PV-NMSE 为原表 0.008958、概率表 0.004974、PV 表 0.004775；概率表保留约 95% 的局部降幅，但该回放也参与过选层，不是 P64 上的独立确认。两张表都可能更好地复现已经偏离 FP 的 P·V4。新 P64 上仅当 PV 表确有正收益时才检验局部保留率是否≥0.90；任务上仅在父张量及原码器确切匹配后，才以 C53 的 PV 包（开发 60.88%/34.20041%）检验替代性。任一指标下降超过 0.20 个百分点即不满足预设工程容差；两项均在容差内也不等于精度提升。不能只因评测清单相同便将 C80 认作 C53 的匹配父包。\n\n三项均未由本次综合获得新任务成绩，也没有足以把误差归因于 P、V 舍入抵消的证据，不据此联改 V。分别从受保护 FP 按各卡的有序 64 图校准规则独立构造、复核导出码器并冷载；同一静态 W4A4 骨干配绑定冻结头迁移到 ADE，不再拟合。开发判据与官方目标分开：最终冻结后以 ImageNet 50k 和 ADE20K 2k 的各自配对 FP 检验 Top-1≥71.2152%、mIoU≥47.57202%，不以局部 NMSE 或开发分数替代。独立 B32 原包保留，不占槽，也不作 P64 干预对照。"
+        }
+      }
+    },
+    "r2-self": {
+      "call_cap": 3,
+      "time_cap_seconds": 420,
+      "numerical_jobs": 0,
+      "calls": 3,
+      "total_usage": {
+        "cache_write_input_tokens": 0,
+        "cached_input_tokens": 0,
+        "input_tokens": 92903,
+        "output_tokens": 1582,
+        "reasoning_output_tokens": 49
+      },
+      "model_wall_seconds": 91.33281996659935,
+      "read_calls": {
+        "read_card": 5
+      },
+      "returned_text_characters": 29680,
+      "unavailable_reads_observed_in_continuations": {},
+      "trace_path": "r2-self/trace.json",
+      "trace_sha256": "a60385b15d2ace5e51380b8d31b890452a02a75ae000c63f14334f53a4555743",
+      "call_receipts": [
+        {
+          "role": "generation",
+          "route": {
+            "model": "gpt-6.2-astra",
+            "reasoning_effort": "high"
+          },
+          "actual": {
+            "model": null,
+            "reasoning_effort": null,
+            "source": "not_reported_by_cli"
+          },
+          "seconds": 22.559154907241464,
+          "usage": {
+            "cache_write_input_tokens": 0,
+            "cached_input_tokens": 0,
+            "input_tokens": 26954,
+            "output_tokens": 197,
+            "reasoning_output_tokens": 18
+          },
+          "read_chars": 12858,
+          "tools": [
+            "read_card",
+            "read_card",
+            "read_card"
+          ],
+          "context_sha256": "df7825be50c221d92a0c8611086a453f310b1294c23f6c4e66d8ca4c861164dd",
+          "audit_sha256": "f332152a3f4eb023a41408efbe8ebd2b54c4b9e52fa91974e472ec8f76c8f0a2"
+        },
+        {
+          "role": "generation",
+          "route": {
+            "model": "gpt-6.2-astra",
+            "reasoning_effort": "high"
+          },
+          "actual": {
+            "model": null,
+            "reasoning_effort": null,
+            "source": "not_reported_by_cli"
+          },
+          "seconds": 19.498111065477133,
+          "usage": {
+            "cache_write_input_tokens": 0,
+            "cached_input_tokens": 0,
+            "input_tokens": 32616,
+            "output_tokens": 150,
+            "reasoning_output_tokens": 14
+          },
+          "read_chars": 16822,
+          "tools": [
+            "read_card",
+            "read_card"
+          ],
+          "context_sha256": "2b239e67cbeff3d9e79407a44dd4ff84f5a8b886341a5281402fd628366e8bbf",
+          "audit_sha256": "3ecff24079cb7033f9cc2d8f00d03720ed8db0531c2f00530877e04ad5e6bcd4"
+        },
+        {
+          "role": "generation",
+          "route": {
+            "model": "gpt-6.2-astra",
+            "reasoning_effort": "high"
+          },
+          "actual": {
+            "model": null,
+            "reasoning_effort": null,
+            "source": "not_reported_by_cli"
+          },
+          "seconds": 49.27555399388075,
+          "usage": {
+            "cache_write_input_tokens": 0,
+            "cached_input_tokens": 0,
+            "input_tokens": 33333,
+            "output_tokens": 1235,
+            "reasoning_output_tokens": 17
+          },
+          "read_chars": 0,
+          "tools": [],
+          "context_sha256": "6f4b2d367f9d3bde94bb5f56e18692e5ac2adab2a25f7d96e1e20eabcfd63f09",
+          "audit_sha256": "1fed65fb5c8febc026001074ed6a4afdb45bf89c8123f46a114de6c76e27370b"
+        }
+      ],
+      "critic_review": null,
+      "generation_action": {
+        "action": "submit",
+        "content": {
+          "evidence_refs": [
+            "C48",
+            "C80",
+            "C84",
+            "C50",
+            "C18",
+            "C53"
+          ],
+          "rationale": "保留 C85（H1）、C79（H2）、C76（H3）的现版本，分别进入既定 L3，不合并、不排名。三者均属 topic-381e55fbccfd1b13eef0@2，但回答不同问题：H1 改变选择码器的目标，H2 检验末层替换的必要性，H3 检验拟合末层解码表是否需要 V4。现有证据足以确定各自的对照，不足以宣布任何新候选已提高双任务精度。独立保留 B32，不把它当作 64 图校准父对照。\n\nH1（method-06b5f51f5041f5092858）：在匹配的 P64 上，旧 block 2 AdaLog 包 C48 相对未改父包 C80 的开发 Top-1/mIoU 分别低 0.58/0.21629 个百分点。C85 保留同一实际菜单，改用相对 FP 的归一化 CLS 与四层 patch 读出选参。C84 在预定的 224 像素 search[128:256) 上给出了关键反例：由 PV 选码改为读出选码后，等角色局部 PV-NMSE 从 0.00686 升至 0.04359，但以原生码器为 1 的 CLS/patch 误差比分别从 0.9915/0.9878 降至 0.9809/0.9461。这支持改变选参目标，却不能区分前缀偏差补偿与 P、V 舍入误差抵消，也不保证任务头受益。两个 search 段不是独立重复。开发评价须分别对比 C48 和 C80：双项只胜 C48 是修复旧改动，不是胜过原生 P64。\n\nH2（method-e9c45325c162636d25f1）：C50 四层包相对 C80 的开发差为 Top-1 +0.80、mIoU −1.30696 个百分点，这是四处替换的合计效果，不能归因于 block 11。C79 保留 blocks 2、5、8 的选码规则，仅将末层已安装的第 9 项幂码器恢复为原生 log2 P4，而非恢复浮点。末层原先按未修改前缀的概率误差选码，部署前缀却已改变；撤去该项既可能改善末层 patch，也可能损失有用信号。以匹配的 C50 为直接对照：前三处 patch 接口应不变，否则不能解释为单点效应；前三处不变而末层 patch 误差不降，则不支持所提传播机制。任务上仅 ΔmIoU>0 且 ΔTop-1≥0 支持预期改良；两项持平只支持少搜索一层，不证明推理加速。\n\nH3（method-caae1d2b9d70d7a5065a，延续 idea-dd73faab51ebe0ca0adb）：与 H2 不同，它在早层未改的父包上保留末层 log2 分箱、索引及零码，只用角色等权的箱内概率均值拟合受约束解码值，不再用 V4 拟合。C18 在 B32、16 图拟合和 32 图回放条件下，原表、概率表、PV 表的末层 patch PV-NMSE 分别为 0.008958、0.004974、0.004775；概率表保留约 95% 的局部降幅。但该回放也参与选层，且不是 P64 或 ADE 滑窗几何。C53 的开发 60.88%/34.20041% 属于旧 PV 表，不是概率表成绩。应在匹配父状态、固定索引和同一 V4 下比较三表：仅在 PV 表优于原表时解释 ≥90% 的局部降幅保留率。即使局部达标，与匹配 C53 的 Top-1 或 mIoU 任一低逾 0.20 个百分点，仍否定开发视图上的可替代性；两项均在容差内支持简化，不等于精度提升或统计等效。\n\n不再修改位点、码器或 V 路径。三条方法均须从受保护 FP 及规定的有序 64 张 calibration 独立重建，不复制诊断赢家；在导出冷载状态核对实际码器与未干预边界，再用同一 static W4A4 骨干和绑定的冻结头配对评价，不在 ADE 重估。历史开发结果（ImageNet 5000、ADE 502）及局部代理均不能替代最终冻结后的官方 ImageNet 50k、ADE 2k 评价；Top-1 71.2152% 与 mIoU 47.57202% 两道目标须分别核验，当前均未由本轮候选验证。"
+        }
+      }
+    },
+    "extended-closed/r2-critic": {
+      "call_cap": 5,
+      "time_cap_seconds": 420,
+      "numerical_jobs": 0,
+      "calls": 5,
+      "total_usage": {
+        "cache_write_input_tokens": 0,
+        "cached_input_tokens": 0,
+        "input_tokens": 145628,
+        "output_tokens": 2941,
+        "reasoning_output_tokens": 45
+      },
+      "model_wall_seconds": 145.39677876979113,
+      "read_calls": {
+        "read_card": 6
+      },
+      "returned_text_characters": 48459,
+      "unavailable_reads_observed_in_continuations": {},
+      "trace_path": "extended-closed/r2-critic/trace.json",
+      "trace_sha256": "2ad1e20a263b5e7ee635614d4b1dff1364c67a918cf5fc78aceb08c4272d32a1",
+      "call_receipts": [
+        {
+          "role": "critic",
+          "route": {
+            "model": "gpt-6.2-astra",
+            "reasoning_effort": "medium"
+          },
+          "actual": {
+            "model": null,
+            "reasoning_effort": null,
+            "source": "not_reported_by_cli"
+          },
+          "seconds": 18.898633752018213,
+          "usage": {
+            "cache_write_input_tokens": 0,
+            "cached_input_tokens": 0,
+            "input_tokens": 22850,
+            "output_tokens": 166,
+            "reasoning_output_tokens": 0
+          },
+          "read_chars": 34000,
+          "tools": [
+            "read_card",
+            "read_card",
+            "read_card"
+          ],
+          "context_sha256": "59931634edffdd66a3b860cf5938291b44ff74111c50bb26a7893365c3c36fad",
+          "audit_sha256": "7c61b7eeefe02639c6587d08fe83042fe98581dcf3be8bb7f73bea192f7e4396"
+        },
+        {
+          "role": "critic",
+          "route": {
+            "model": "gpt-6.2-astra",
+            "reasoning_effort": "medium"
+          },
+          "actual": {
+            "model": null,
+            "reasoning_effort": null,
+            "source": "not_reported_by_cli"
+          },
+          "seconds": 21.678705614060163,
+          "usage": {
+            "cache_write_input_tokens": 0,
+            "cached_input_tokens": 0,
+            "input_tokens": 35885,
+            "output_tokens": 65,
+            "reasoning_output_tokens": 0
+          },
+          "read_chars": 7634,
+          "tools": [
+            "read_card"
+          ],
+          "context_sha256": "5ba10acae6a68cc637baf40b57c777e5b2a1366a767f39cf4ad5af1603d9d292",
+          "audit_sha256": "7d72802feae6014ce3e4bf64e957ab8d4d8b73206e4b57a456fd232379de1b7c"
+        },
+        {
+          "role": "critic",
+          "route": {
+            "model": "gpt-6.2-astra",
+            "reasoning_effort": "medium"
+          },
+          "actual": {
+            "model": null,
+            "reasoning_effort": null,
+            "source": "not_reported_by_cli"
+          },
+          "seconds": 43.946258675307035,
+          "usage": {
+            "cache_write_input_tokens": 0,
+            "cached_input_tokens": 0,
+            "input_tokens": 26036,
+            "output_tokens": 1222,
+            "reasoning_output_tokens": 0
+          },
+          "read_chars": 0,
+          "tools": [],
+          "context_sha256": "88145dc0392658ccd546bb202e2c5c898174d1e9fcb3f5cd255e980fd447889d",
+          "audit_sha256": "76a2af7215e91362858289604941a7cd2e5a1a1ccd426d499b79c921516deac6"
+        },
+        {
+          "role": "generation",
+          "route": {
+            "model": "gpt-6.2-astra",
+            "reasoning_effort": "high"
+          },
+          "actual": {
+            "model": null,
+            "reasoning_effort": null,
+            "source": "not_reported_by_cli"
+          },
+          "seconds": 19.667926041409373,
+          "usage": {
+            "cache_write_input_tokens": 0,
+            "cached_input_tokens": 0,
+            "input_tokens": 28927,
+            "output_tokens": 178,
+            "reasoning_output_tokens": 45
+          },
+          "read_chars": 6825,
+          "tools": [
+            "read_card",
+            "read_card"
+          ],
+          "context_sha256": "c9c39e1faaeec8ea75ff4a3a1ee4549f3ba258b7ef827bc8013c12a3ea87164c",
+          "audit_sha256": "5b249946af1ffe7f0cae165eade681ec22c13a0d118df44142be8405aacb3506"
+        },
+        {
+          "role": "generation",
+          "route": {
+            "model": "gpt-6.2-astra",
+            "reasoning_effort": "high"
+          },
+          "actual": {
+            "model": null,
+            "reasoning_effort": null,
+            "source": "not_reported_by_cli"
+          },
+          "seconds": 41.20525468699634,
+          "usage": {
+            "cache_write_input_tokens": 0,
+            "cached_input_tokens": 0,
+            "input_tokens": 31930,
+            "output_tokens": 1310,
+            "reasoning_output_tokens": 0
+          },
+          "read_chars": 0,
+          "tools": [],
+          "context_sha256": "78f7c703012026169e381f797f79e172a43db22c51e08c1b15cf2bb45601110d",
+          "audit_sha256": "2fcfa6a54f6352abe1ae55cd3853a7ba0fdf2d00751f45a1ac87b97fcce08b81"
+        }
+      ],
+      "critic_review": {
+        "candidate_notes": [
+          {
+            "assumption": "最弱环节是从 224 图上的归一化特征误差推到任务头决策。事实上，C84 中 PV 赢家的 CLS 和平均 patch 误差也都低于 D0，而对应旧包 C48 在开发集反比 C80 低 0.58 个 Top-1 百分点、0.21629 个 mIoU 百分点。读出改善不是充分条件；上述结果亦不能识别是 V 舍入还是其余前缀偏差得到补偿。",
+            "evidence_refs": [
+              "C84",
+              "C48",
+              "C80"
+            ],
+            "hypothesis_ref": "HypothesisCard-9c647c7ad37b4653b45006c3a23113c9@1",
+            "preserve": "保留原菜单、D0 回退和读出 minimax。C84 的预定 search[128:256) 上，读出选出的 q19×0.75 相比 PV 选出的 q28×1，等角色 PV-NMSE 更差（0.04359 对 0.00686），但最终 CLS NMSE 更低（0.73783 对 0.74581），四个 patch 接口也逐一更低。该反转并非由四层平均掩盖某一层退化所致。",
+            "suggestion": "不再扩菜单或重复 224 代理筛选。由确切实现从原始 64 图重新选码，不硬编码 C84 赢家；冷载后在同输入核对实际送入 PV 的解码流及读出。对同一包分别报告两项开发指标相对 C48、C80 的差：两项胜 C48 只说明胜旧选参；还须两项胜 C80 才支持相对未改父包双赢。"
+          },
+          {
+            "assumption": "即使撤回有效，也只能断言末层码器在前三层已替换的条件下有净效应，不能区分是 P 误差准则失配，还是未改 P64 上选出的码器不适合部署前缀。",
+            "evidence_refs": [
+              "C50",
+              "C80"
+            ],
+            "hypothesis_ref": "HypothesisCard-94d498fd914c4d01ac76ddbf94bdb333@1",
+            "preserve": "保留三层对四层的单点撤回，不重新拟合前三层。C50 相比 C80 的开发差为 Top-1 +0.80、mIoU −1.30696 个百分点；这是四层合计效应，不能据此指定末层为分割损失来源。",
+            "suggestion": "在同一部署前缀、同一滑窗上配对原生末层表与 C50 末层码器，先核对 blocks 2、5、8 的实际接口张量相同，而不只是 NMSE 相同；不相同则停止归因。若仅末层 patch NMSE 下降而 mIoU 不升，保留读出层发现，不称任务改善。若 mIoU 升而 Top-1 降，报告交换代价；两项持平仅支持少做一次校准搜索。"
+          },
+          {
+            "assumption": "224 图上的箱均值及各箱 V4 向量和的抵消关系，未必适用于分割滑窗。即使概率表接近 C53，也不能由此推断它优于完全不换表。",
+            "evidence_refs": [
+              "C18",
+              "C53"
+            ],
+            "hypothesis_ref": "HypothesisCard-ca8f2e1ef7a947739a462689fb92668c@1",
+            "preserve": "固定编码索引、零码和可行域，只比较解码值，能直接检验拟合时是否需要 V4。C18 的 B32 末层 patch 回放中，概率表保留了约 95% 的 PV 表局部降幅；这是简化拟合的依据，不是 P64 任务等效的证据。",
+            "suggestion": "用同一经核对的 P64 前缀、同一 P 索引和 V4 比较原表、概率表、PV 表；冻结表，在未用于拟合的 224 图及滑窗几何上分别报告局部 patch PV 误差和相对 FP 的末层 patch、CLS 误差。原表到 PV 表无正降幅时不算保留率。仅在父状态匹配后，用 C53 作替代性对照，两项各自不低于其开发成绩超过 0.20 个百分点才称满足工程容差；另列与匹配原表的双任务差值。若原表不劣于两种拟合表，优先不拟合，而非宣称概率表提高精度。"
+          }
+        ],
+        "rationale": "优先保留 H1 作双任务验证：它已有同父、同菜单、未参与拟合图像上的证据，表明按局部 PV 误差和按冻结后缀读出误差选码会给出相反的排序。H2 值得保留为末层撤回试验；H3 值得保留为拟合简化试验。三者回答不同问题。目前没有本轮三个新包的成对任务成绩，不能据代理误差宣布精度提升，也不能把固定开发集结果当成官方全量结果。"
+      },
+      "generation_action": {
+        "action": "submit",
+        "content": {
+          "evidence_refs": [
+            "C48",
+            "C80",
+            "C84",
+            "C50",
+            "C18",
+            "C53"
+          ],
+          "rationale": "保留共同主题 topic-381e55fbccfd1b13eef0@2 下的三个已提交版本，分别进入既定 L3，不合并、不排序。H1 检验用什么目标选码，H2 检验已有四层替换是否需要最后一层，H3 检验固定分箱后拟合解码值是否需要 V4。采纳 Critic 关于配对对照和判定标准的建议；这些建议不改变干预，因此不发布新版本。独立保底 B32 原样保留，不占名额，也不作 P64 的因果对照。\n\nH1（C85，method-06b5f51f5041f5092858）：在 C48 的同一 P64 父状态和 block 2 共享 AdaLog 菜单上，把局部 PV 选参改为最小化最终 CLS 与四层平均 patch 相对父码器误差比中的较大者。C84 的预定 search[128:256) 已区分两种目标：读出选出的 q19×0.75 相对 PV 选出的 q28×1，等角色 PV-NMSE 更差（0.04359 对 0.00686），最终 CLS NMSE 却更低（0.73783 对 0.74581），四个 patch 接口也逐一更低。关键反证是，旧 PV 赢家的 CLS 和平均 patch 代理也优于原码器，而 C48 相对未改 P64（C80）在开发集反而低 0.58 个 Top-1 百分点和 0.21629 个 mIoU 百分点。故保留读出选参，但不把读出改善当作任务改善，亦不能据此识别是否补偿了 V 舍入。由确切实现用原 64 图重新选码，允许选回 D0，不硬编码赢家；冷载核对实际 PV 输入。两项均胜 C48 只说明胜过旧选参，两项也均胜 C80 才称相对未改父包双赢。\n\nH2（C79，method-e9c45325c162636d25f1）：C50 四层包相对 C80 的开发 Top-1 高 0.80 个百分点，mIoU 低 1.30696 个百分点。这个交换是四处改动的合计效应，不是末层有害的证据。保留 blocks 2、5、8 在未改 P64 轨迹上的原选码规则，仅将 block 11 的菜单 9 撤回到原生 log2 P4，不旁路、不重估。在相同部署前缀及滑窗逐张量核对前三处接口；不相同则不能作单点归因。若相同而末层 patch NMSE 不降，则不支持所提传播机制；若只降 NMSE 而不升 mIoU，也不支持分割改良。三层包相对匹配四层包须 ΔmIoU>0 且 ΔTop-1≥0 才支持任务预测；一升一降报告交换，两项持平只支持少做一次校准搜索。即使撤回有效，也不能区分概率误差目标失配与选码前缀不匹配。\n\nH3（C76，method-caae1d2b9d70d7a5065a；沿用 idea-dd73faab51ebe0ca0adb）：只改 block 11 的解码表，保持 log2 索引、零码与码字约束，以三类 query 等权的箱内概率均值替代依赖 V4 的拟合。C18 在 B32 上用 16 图拟合、32 图回放，原表、概率表、PV 表的末层 patch PV-NMSE 分别为 0.008958、0.004974、0.004775，概率表保留约 95% 的局部降幅。但这批回放也参与了选层，且不是 P64 或 ADE 滑窗。应在相同 P64 前缀、索引及 V4 上配对三表，冻结后分开报告未参与拟合的 224 图和滑窗上的局部误差及相对 FP 的 CLS、patch 读出。仅当 PV 表比原表误差低时才计算局部保留率，并检验预定的 90% 判据。任务上仅在父状态匹配后与 C53（开发 Top-1 60.88%、mIoU 34.20041%）比较：两项各自下降不超过 0.20 个百分点，只说明满足该清单的替代容差，不是统计等效或精度提升。另列相对匹配原表的分差；若原表两项都不劣于两种拟合表，则证据更支持不拟合。\n\n本轮三个新版本均无成对任务成绩。后续各自从受保护 FP 副本按绑定的有序 64 张 ImageNet 校准图独立构造 training-free static W4A4 状态，冷载同一骨干用于两个冻结头，ADE 不再拟合。固定开发清单上的差值用来检验上述预测，不冒充官方结果；方案冻结后的官方 ImageNet 50k 与 ADE20K 2k 分别按配对 FP 核验 Top-1≥71.2152%、mIoU≥47.57202%。本次综合不宣称任一候选已达标。"
+        }
+      }
+    },
+    "extended-closed/r2-self": {
+      "call_cap": 5,
+      "time_cap_seconds": 420,
+      "numerical_jobs": 0,
+      "calls": 5,
+      "total_usage": {
+        "cache_write_input_tokens": 0,
+        "cached_input_tokens": 0,
+        "input_tokens": 155641,
+        "output_tokens": 2181,
+        "reasoning_output_tokens": 88
+      },
+      "model_wall_seconds": 135.51564912684262,
+      "read_calls": {
+        "read_card": 13
+      },
+      "returned_text_characters": 40218,
+      "unavailable_reads_observed_in_continuations": {},
+      "trace_path": "extended-closed/r2-self/trace.json",
+      "trace_sha256": "50e9b4b13a15cec8f97c8a594990bfa3850974548bd0a12bf97b281d261e400d",
+      "call_receipts": [
+        {
+          "role": "generation",
+          "route": {
+            "model": "gpt-6.2-astra",
+            "reasoning_effort": "high"
+          },
+          "actual": {
+            "model": null,
+            "reasoning_effort": null,
+            "source": "not_reported_by_cli"
+          },
+          "seconds": 22.04394424147904,
+          "usage": {
+            "cache_write_input_tokens": 0,
+            "cached_input_tokens": 0,
+            "input_tokens": 27495,
+            "output_tokens": 187,
+            "reasoning_output_tokens": 14
+          },
+          "read_chars": 15406,
+          "tools": [
+            "read_card",
+            "read_card",
+            "read_card"
+          ],
+          "context_sha256": "f9db5261281c5e023ace661b7ffc85e955f0d6d4327d0b4e6538942e7f3eca0a",
+          "audit_sha256": "ae4d87dc1e3ec342cc1252cc0f6a2bda5594ddbb81cf8137ed916a0cce0ecc1c"
+        },
+        {
+          "role": "generation",
+          "route": {
+            "model": "gpt-6.2-astra",
+            "reasoning_effort": "high"
+          },
+          "actual": {
+            "model": null,
+            "reasoning_effort": null,
+            "source": "not_reported_by_cli"
+          },
+          "seconds": 24.1115759909153,
+          "usage": {
+            "cache_write_input_tokens": 0,
+            "cached_input_tokens": 0,
+            "input_tokens": 34839,
+            "output_tokens": 251,
+            "reasoning_output_tokens": 24
+          },
+          "read_chars": 12187,
+          "tools": [
+            "read_card",
+            "read_card",
+            "read_card",
+            "read_card"
+          ],
+          "context_sha256": "5d9aa117bfd2f9f34d649edf0d030e17d4f376ce51ed93830b672198d41b5ec6",
+          "audit_sha256": "b07f1842d2f894aa04e85a9219f557dc7b35e5819d26a11530402715391b41df"
+        },
+        {
+          "role": "generation",
+          "route": {
+            "model": "gpt-6.2-astra",
+            "reasoning_effort": "high"
+          },
+          "actual": {
+            "model": null,
+            "reasoning_effort": null,
+            "source": "not_reported_by_cli"
+          },
+          "seconds": 23.417993534356356,
+          "usage": {
+            "cache_write_input_tokens": 0,
+            "cached_input_tokens": 0,
+            "input_tokens": 32472,
+            "output_tokens": 197,
+            "reasoning_output_tokens": 21
+          },
+          "read_chars": 4217,
+          "tools": [
+            "read_card",
+            "read_card",
+            "read_card"
+          ],
+          "context_sha256": "5112bb1b5696e6c7d77d12fa45020ccb8d0fb187912483cccb7021e89362b649",
+          "audit_sha256": "d7d7a91bfd3989039832972d3ff6faeea75ae6a6600dc5433a92772c671659b9"
+        },
+        {
+          "role": "generation",
+          "route": {
+            "model": "gpt-6.2-astra",
+            "reasoning_effort": "high"
+          },
+          "actual": {
+            "model": null,
+            "reasoning_effort": null,
+            "source": "not_reported_by_cli"
+          },
+          "seconds": 20.60218925215304,
+          "usage": {
+            "cache_write_input_tokens": 0,
+            "cached_input_tokens": 0,
+            "input_tokens": 29348,
+            "output_tokens": 208,
+            "reasoning_output_tokens": 29
+          },
+          "read_chars": 8408,
+          "tools": [
+            "read_card",
+            "read_card",
+            "read_card"
+          ],
+          "context_sha256": "6c6b5b241bec83d9707520bece2fc1deb4b978c67583a9eafc0a6c89162cfb29",
+          "audit_sha256": "ed97018958ee6fd312f7956520bc34c8a281297692e4c9916213bc540b56dd47"
+        },
+        {
+          "role": "generation",
+          "route": {
+            "model": "gpt-6.2-astra",
+            "reasoning_effort": "high"
+          },
+          "actual": {
+            "model": null,
+            "reasoning_effort": null,
+            "source": "not_reported_by_cli"
+          },
+          "seconds": 45.339946107938886,
+          "usage": {
+            "cache_write_input_tokens": 0,
+            "cached_input_tokens": 0,
+            "input_tokens": 31487,
+            "output_tokens": 1338,
+            "reasoning_output_tokens": 0
+          },
+          "read_chars": 0,
+          "tools": [],
+          "context_sha256": "5aa69194b6d1bbbd60bfcb07ffd16e52e41621cab8bd7efe7a78107f2483e558",
+          "audit_sha256": "f4dc765e4e880a01f4f759a8d26d24a3e0f13850c2102c69eac47571b3dc9d51"
+        }
+      ],
+      "critic_review": null,
+      "generation_action": {
+        "action": "submit",
+        "content": {
+          "evidence_refs": [
+            "C48",
+            "C50",
+            "C53",
+            "C80",
+            "C84",
+            "C18"
+          ],
+          "rationale": "保留 H1（C85）、H2（C79）、H3（C76）的当前版本，分别进入既定 L3，不合并、不排序。三者同属 topic-381e55fbccfd1b13eef0@2，但检验的是三个不同问题：用什么目标选码、末层替换是否必要、拟合末层解码表是否需要 V4。现有证据足以确定各自的对照，不足以宣布任一新版本改善了双任务。独立 B32 原样保留，不占槽，也不代替匹配的 P64 父对照。\n\nH1（method-06b5f51f5041f5092858）保留 C48 的 block 2 共享 AdaLog 菜单，只把局部 PV 选参改为最小化最终 CLS 与四层 patch 两类相对读出误差中的较大者。改目标有实测理由：在匹配的开发视图上，旧 C48 相对未改 P64（C80，Top-1 61.22%、mIoU 34.46311%）分别低 0.58、0.21629 个百分点。C84 在相同实际菜单和 P64 上，局部目标选 (q=28, 倍率=1)，读出目标选 (19, 0.75)。在预指定 search[128:256) 上，后者相对前者使局部 PV-NMSE 从 0.00686 升至 0.04359，却使最终 CLS-NMSE 从 0.74581 降至 0.73783，四层 patch 平均相对误差从 0.98779 降至 0.94612。这支持换目标，不支持继续扩大菜单；也不能判定是补偿了前缀误差还是 P/V 舍入相消。224 输入下的读出改善不保证任务头获益。冷载新包后应分别与 C48、C80 比较：两项只胜 C48 而未同时胜 C80，至多说明修复了旧选参的损失。\n\nH2（method-e9c45325c162636d25f1）检验 C50 第四处替换的必要性。C50 的四层包为 62.02%/33.15615%，相对 C80 是 Top-1 +0.80、mIoU −1.30696 个百分点；这是四处替换的净效应，不能把分割损失归给 block 11。新版本保留 blocks 2、5、8 在未改 P64 轨迹上的三类 query 等权概率误差选码，只把 block 11 的实际菜单 9 恢复为原生 log2 P4，不是浮点旁路。与 C50 冷载配对时，前三处 patch 读出应不变；若改变，单点归因失效。前三处不变而末层 patch 对 FP 的误差不降，则不支持所提传播机制。任务判据为 ΔmIoU>0 且 ΔTop-1≥0；持平只支持少做一次搜索。预定 P/V 四臂诊断因有序 search 切片未能交付而未执行，不能据此改 V，也不能排除更早层导致权衡。\n\nH3（method-caae1d2b9d70d7a5065a，沿用 idea-dd73faab51ebe0ca0adb）与 H2 不同：在自身原生前缀上保留 block 11 的 log2 索引、阈值及零码，只用三类 query 等权的受限概率箱均值替代 V4 参与的 PV 联合拟合。C18 在 B32 上用 16 图拟合、32 图回放，末层 patch 同输入 PV-NMSE 按原表／概率表／PV 表为 0.008958／0.004974／0.004775；概率表保留约 95% 的局部降幅，但该回放也参与过选层，且不是 P64。C53 的 60.88%/34.20041% 属于旧 PV 表包，不是新概率表成绩；未核实其原生父状态与 C80 逐张量匹配前，不作相对 C80 的单点归因。保留两个独立判据：同一 P64、索引和可行域下，PV 表确有正收益时，概率表在新图上的局部收益保留率须达 90%；相对父状态匹配的 C53，两个开发任务各自下降不超过 0.20 个百分点才支持工程替代。即使两项均满足，也只说明可以简化拟合，不是精度提升。\n\n不再增加局部搜索或科学修订。下一步分别从受保护 FP 副本和绑定的有序 64 张校准图独立重建候选，不抄历史赢家；核对父张量、非干预边界及导出冷载后的实际码器。每个候选以同一冻结 static W4A4 骨干、原任务头、FP32、batch=1 完成配对 L3-dev（分类 5000、分割 502），ADE 不重校准。开发结果按任务分别解释；最终预冻结后的官方 50k/2k 评价另行核对 Top-1≥71.2152%、mIoU≥47.57202%，不以局部误差、开发 FP 或历史包成绩代替。本断点三条新候选的双任务验证均待完成。"
+        }
+      }
+    }
+  },
+  "failed_setup": [
+    {
+      "path": "extended/r2-critic/1/llm_audit.json",
+      "role": "critic",
+      "requested": {
+        "model": "gpt-6.2-astra",
+        "reasoning_effort": "medium"
+      },
+      "model_call_started": true,
+      "elapsed_seconds": 3.8944925907999277,
+      "usage": null,
+      "usage_status": {
+        "completed_turn_usage": null,
+        "interrupted_turn_usage_unknown": true,
+        "reported_turns": 0
+      },
+      "error": "llm_cli_failed",
+      "reason": "relative output path, CLI os error 2; retry used a fresh absolute output directory",
+      "sha256": "848f64d294111ed8c3452039da2f6fef2e66ffa933a78bc0cb22cce26e620b0e"
+    },
+    {
+      "path": "extended/r2-self/1/llm_audit.json",
+      "role": "generation",
+      "requested": {
+        "model": "gpt-6.2-astra",
+        "reasoning_effort": "high"
+      },
+      "model_call_started": true,
+      "elapsed_seconds": 4.569548135623336,
+      "usage": null,
+      "usage_status": {
+        "completed_turn_usage": null,
+        "interrupted_turn_usage_unknown": true,
+        "reported_turns": 0
+      },
+      "error": "llm_cli_failed",
+      "reason": "relative output path, CLI os error 2; retry used a fresh absolute output directory",
+      "sha256": "ba43f45afaa4d85c0cf37452322861f3e0ced1cb36c47c34c4a9d2de9109d5cb"
+    }
+  ],
+  "host_validation": {
+    "commit": "b2fad28b9cfbad1322dd72b413a1a5fddb540687",
+    "groups": [
+      {
+        "modules": [
+          "tests.test_critic",
+          "tests.test_frozen_trials",
+          "tests.test_single_implementation",
+          "tests.test_multi_candidate_l3",
+          "tests.test_scientific_skills",
+          "tests.test_run_readiness",
+          "tests.test_inspirations",
+          "tests.test_experiment_citation_closure",
+          "tests.test_cli_versions"
+        ],
+        "passed": 56,
+        "wall_seconds": 126.335,
+        "log": "verified-1.log",
+        "log_sha256": "fe884dfbb8a68ad01a2bf0cb61627f41f2ed803e8943da603c25f5e4ad1b7293"
+      },
+      {
+        "modules": [
+          "tests.test_gonly",
+          "tests.test_frozen_helper_service",
+          "tests.test_dual_task_evaluation",
+          "tests.test_development_view",
+          "tests.test_knowledge_resources",
+          "tests.test_generation_loop",
+          "tests.test_context_incremental",
+          "tests.test_frozen_propagation"
+        ],
+        "passed": 70,
+        "wall_seconds": 97.549,
+        "log": "verified-2.log",
+        "log_sha256": "13201f0e2b68a41ae7b644f49d1666927336ae40683886c59e1d9ec8c348c0eb"
+      },
+      {
+        "modules": [
+          "tests.test_structure",
+          "tests.test_prepared_grids",
+          "tests.test_candidate_revision",
+          "tests.test_published_skills.PublishedSkills",
+          "tests.test_recorder_poll_recovery",
+          "tests.test_research_topics",
+          "tests.test_execution_binding_recovery",
+          "tests.test_context_cost"
+        ],
+        "passed": 40,
+        "wall_seconds": 67.144,
+        "log": "verified-3.log",
+        "log_sha256": "47f406aa9e72a996a11ef3fc7a94556c8537195d7cdebf45423f3e3d32de0f24"
+      }
+    ],
+    "structure": {
+      "status": "passed",
+      "errors": [],
+      "syntax_files": 224,
+      "snapshot_file_count": 404
+    },
+    "knowledge": {
+      "status": "passed",
+      "errors": [],
+      "skill_count": 7,
+      "method_count": 21,
+      "checked_pages": 81
+    },
+    "historical_frozen_config": {
+      "origin_run": "dinov3b_static_w4a4_independent_20261121_r1",
+      "frozen_and_recomputed_sha256": "f1d79e0df05c109f954bb306faed080df837f69c0852bee854016ef7c582ddc7",
+      "modes": [
+        "normal",
+        "historical"
+      ]
+    },
+    "core_sha256": "12a08728e1d1d82563d7c5f51ac214f5e24984532119612d49c19bfc54b0a42b",
+    "cpu_feedback_sha256": "e2da474f6b6b721ff0c29ff9bd949cb63abc1cb01c7213e422f1b97fb070cacd"
+  },
+  "default_library_release": {
+    "base_sha256": null,
+    "metareview_ref": "MetareviewCard-032ccec68f5547fbb1179abb84b2d5ac@1",
+    "name": "gate-fp-block-headroom-to-static-ptq",
+    "operation": "2e51d81b509a7fcb7cf5f4146f3af53a3a28eea1e5cfa71921959fc045e821e6",
+    "origin_run": "dinov3b_static_w4a4_independent_20261121_r1",
+    "status": "published",
+    "version": "4f219ad0755ef7b2392a1a199a326da757b68e65adc980159e6550c9cbcea243",
+    "receipt": "EXP/skills/releases/2e51d81b509a7fcb7cf5f4146f3af53a3a28eea1e5cfa71921959fc045e821e6.json",
+    "receipt_sha256": "afb1f85c03c91e2cb30dc4e027334449b44c08c2048ac7c439a35122ee64cef4",
+    "verified_new_run": "EXP/validation/skill_critic_20261124/default-library-read",
+    "source_core_unchanged": "12a08728e1d1d82563d7c5f51ac214f5e24984532119612d49c19bfc54b0a42b"
+  }
+}

@@ -580,3 +580,20 @@ coverage.xml
 !/EXP/validation/skill_critic_20261124/skill_replay.py
 !/EXP/validation/cli171_sync_20261121_r1/full_compatibility.json
 !/EXP/validation/cli172_sync_20261124_r1/full_compatibility.json
+!/EXP/validation/skill_critic_20261124/REPORT.md
+!/EXP/validation/skill_critic_20261124/PSEUDOCODE.md
+!/EXP/validation/skill_critic_20261124/C.json
+!/EXP/validation/skill_critic_20261124/cpu_feedback.json
+!/EXP/validation/skill_critic_20261124/critic_replay.py
+
+# Portable, measured Recorder release migrated with the active main installation.
+!/EXP/skills/
+!/EXP/skills/releases/
+!/EXP/skills/releases/2e51d81b509a7fcb7cf5f4146f3af53a3a28eea1e5cfa71921959fc045e821e6.json
+!/EXP/skills/versions/
+!/EXP/skills/versions/4f219ad0755ef7b2392a1a199a326da757b68e65adc980159e6550c9cbcea243/
+!/EXP/skills/versions/4f219ad0755ef7b2392a1a199a326da757b68e65adc980159e6550c9cbcea243/manifest.json
+!/EXP/skills/versions/4f219ad0755ef7b2392a1a199a326da757b68e65adc980159e6550c9cbcea243/gate-fp-block-headroom-to-static-ptq/
+!/EXP/skills/versions/4f219ad0755ef7b2392a1a199a326da757b68e65adc980159e6550c9cbcea243/gate-fp-block-headroom-to-static-ptq/SKILL.md
+!/EXP/skills/versions/4f219ad0755ef7b2392a1a199a326da757b68e65adc980159e6550c9cbcea243/gate-fp-block-headroom-to-static-ptq/references/
+!/EXP/skills/versions/4f219ad0755ef7b2392a1a199a326da757b68e65adc980159e6550c9cbcea243/gate-fp-block-headroom-to-static-ptq/references/origin.json

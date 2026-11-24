@@ -1,0 +1,1 @@
+{"description":"在已取得冻结单块 FP 替换结果后，用配对响应决定是否投入一次等预算的合法 PTQ 干预；不替代故障定位或正式候选评价。","files":{"SKILL.md":"ba03373c0fd0a82d00f4542b7fd6ac7ad3ca589a9c5ce567c049b6e6195448c5","references/origin.json":"51d88cf1a515bac6e5adda461147fee212424b0cdb3288eddebf6ab4ac85a4f6"},"name":"gate-fp-block-headroom-to-static-ptq","retired":false,"supersedes":null}

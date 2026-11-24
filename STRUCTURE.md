@@ -6,6 +6,7 @@
 |---|---|
 | QAViT/run.py | 科研运行 CLI：start/resume/status/report/answer/extend-budget |
 | QAViT/agents/prompts/ | common、当前角色/任务及历史兼容 Prompt 片段；tasks.py/roles.py 映射和组装 |
+| QAViT/core/skills.py、EXP/skills/ | Recorder 可选流程更新、跨运行不可变包与发布回执，运行快照固定可见版本 |
 | QAViT/agents/interaction.py | 任务上下文、读取权限、分页/去重、来源与提交绑定 |
 | QAViT/knowledge/INDEX.md | 统一静态科研知识导航与维护入口，正文按需读取 |
 | QAViT/docs/skills/ | 七项按需 Skill、16 份包内参考及保留的冻结传播 API 参考，INDEX 触发表由 frontmatter 生成 |
@@ -53,4 +54,4 @@ Eval-L0 的行为回放入口位于 `QAViT/tools/evaluation/breakpoint.py`；真
 
 同父候选与视图评分在 `QAViT/tools/ptq_agent/execution/frozen_trials.py`，绑定的分割几何在 `QAViT/tools/segmentation.py`，原包与子包的加载在 `QAViT/tools/frozen.py`。任务内材料投递在 `QAViT/agents/working_materials.py`。数值收据、局部回放及当前流程见[本轮报告](EXP/validation/frozen_trials_20261124/REPORT.md)和[伪代码](EXP/validation/frozen_trials_20261124/PSEUDOCODE.md)。
 
-`QAViT/core/skills.py` 以 `EXP/skills/` 保存跨运行不可变流程包，发布及读取生命周期见[资源生命周期](QAViT/docs/RESOURCE_LIFECYCLE.md)。
+当前科研流程与验证见[主线伪代码](EXP/validation/skill_critic_20261124/PSEUDOCODE.md)及[变更报告](EXP/validation/skill_critic_20261124/REPORT.md)。
