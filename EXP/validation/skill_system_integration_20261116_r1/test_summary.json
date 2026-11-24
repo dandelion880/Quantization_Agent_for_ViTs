@@ -1,0 +1,37 @@
+{
+  "baseline_tests.log": {
+    "tests": 14,
+    "seconds": 15.575,
+    "result": "OK"
+  },
+  "integration_tests.log": {
+    "tests": 39,
+    "seconds": 25.817,
+    "result": "FAILED (errors=1)"
+  },
+  "reference_optimization_tests.log": {
+    "tests": 2,
+    "seconds": 14.534,
+    "result": "OK"
+  },
+  "regression_tests.log": {
+    "tests": 260,
+    "seconds": 232.068,
+    "result": "FAILED (failures=1)"
+  },
+  "preflight_isolated_attempt.log": {
+    "tests": 1,
+    "seconds": 0.044,
+    "result": "OK"
+  },
+  "state_hash_before_fix.log": {
+    "tests": 1,
+    "seconds": 2.979,
+    "result": "FAILED (failures=1)"
+  },
+  "preflight_after_replays.log": {
+    "tests": 1,
+    "seconds": 0.061,
+    "result": "OK"
+  }
+}

@@ -1,0 +1,10 @@
+Traceback (most recent call last):
+  File "/root/data-fs/projects/Quantization_Agent_for_ViTs_gonly/EXP/validation/engineering_replay_20261122/chain.py", line 127, in <module>
+    main()
+  File "/root/data-fs/projects/Quantization_Agent_for_ViTs_gonly/EXP/validation/engineering_replay_20261122/chain.py", line 65, in main
+    experiment = broker.bind_execution(journal.card(original['id']),candidate)
+  File "/root/data-fs/projects/Quantization_Agent_for_ViTs_gonly/QAViT/tools/experiments.py", line 666, in bind_execution
+    return self.freeze(payload, requester=request['author'], refs=[request['id']])
+  File "/root/data-fs/projects/Quantization_Agent_for_ViTs_gonly/QAViT/tools/experiments.py", line 746, in freeze
+    self.ledger.check(estimated_seconds=payload["resources"]["estimated_seconds"], kind='experiment')
+AttributeError: 'NoneType' object has no attribute 'check'

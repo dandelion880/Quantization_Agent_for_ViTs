@@ -1,0 +1,19 @@
+{
+  "purpose": "preparation engineering validation; not formal L3",
+  "evidence_tests": {
+    "passed": 15,
+    "new": 3,
+    "log": "evidence.log"
+  },
+  "request_recovery_and_numeric_timeout_tests": {
+    "passed": 7,
+    "new": 3,
+    "log": "request_recovery.log"
+  },
+  "gpu_result": "gpu/GPU_RESULTS.json",
+  "gpu_cleanup": "gpu/cleanup.json",
+  "gpu_overlap_seconds": 12.353677749633789,
+  "exact_quality_and_samples_equal": true,
+  "deadline_matches_actual_request": true,
+  "history_modified": false
+}

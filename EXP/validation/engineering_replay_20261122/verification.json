@@ -1,0 +1,333 @@
+{
+  "verified_utc": "2026-11-22T10:52:11.531735+00:00",
+  "base_git_head": "5662f1dd73991be3b7634eb61bfee7ad22c734d4",
+  "broad_suite_core_sha256": "06bf20d8fa93ff38703a2f18644647035bd2b362ac83d2093bb6ea4f99c4e07f",
+  "release_core_sha256": "6269c2726bf5e17ee9f92f18306999667bba2ef9ddc29a710ed99829b04ac8cb",
+  "release_delta": "After the 370-test stable run, only monitor closeout and its regression changed. Settle a confirmed stopped segment even on a transient library error; include finalization errors only from the current child or cleanup. Re-ran runtime (48) and two additional monitor integration cases.",
+  "release_source_files": [
+    {
+      "path": "QAViT/agents/interaction.py",
+      "sha256": "0aa26fabd9f13b32ac6c273c0308837f263e7db02810650b00b5c036ab0fb5da"
+    },
+    {
+      "path": "QAViT/agents/prompts/tasks/code.md",
+      "sha256": "cdbf92d0b433d7348f09ee8a3f5e85c77d8bb7e307559199d70b13de22540693"
+    },
+    {
+      "path": "QAViT/agents/roles.py",
+      "sha256": "37427fbeb7540fd3f31deb6a7539c368d697934b16c9da321bc50b8d4c8e4fae"
+    },
+    {
+      "path": "QAViT/agents/source_workspace.py",
+      "sha256": "a2a96cacaec694b1d57e2bfeb46975f20da8549ab171e63f838c9b6b90812299"
+    },
+    {
+      "path": "QAViT/core/workflow.py",
+      "sha256": "271c04d028ca08e6a9dbb134ac8211c39ceb176f2417ccdaad86415550fc28c2"
+    },
+    {
+      "path": "QAViT/docs/CODE_INTERFACES.md",
+      "sha256": "ad4a3dbc0deaac7e27da3d700116d83426ee7ccc1883dd572470559722c32002"
+    },
+    {
+      "path": "QAViT/docs/EVAL_L0.md",
+      "sha256": "4473efee6f84650004818b8e08138b06e8f816a0f1fb27ed8cc60e0292dc6fc7"
+    },
+    {
+      "path": "QAViT/docs/EXPERIMENT_INPUTS.md",
+      "sha256": "df06fcfdfb176111d8e85f85d2209a12dddc90bc480e956eeb87e4a416ef8439"
+    },
+    {
+      "path": "QAViT/docs/skills/design-discriminative-experiment/SKILL.md",
+      "sha256": "b4e104bffc02c253692a9b17cee4c0c7686f1cf6060f2a4762940c98676530a4"
+    },
+    {
+      "path": "QAViT/knowledge/coding/reuse.md",
+      "sha256": "48be407fcfca77fd54531989a266336b17bdfbc5d7cb55c96061fd514b2f9d2b"
+    },
+    {
+      "path": "QAViT/runtime/driver.py",
+      "sha256": "922fb88cf61cf97c6304f481ef9f3484cf7c2d0845f66ebf70213a831c597976"
+    },
+    {
+      "path": "QAViT/runtime/model_router.py",
+      "sha256": "e398aa79386941f799bd12dca51ff220e67d4988cbe502a0b88d1c96b350ab43"
+    },
+    {
+      "path": "QAViT/runtime/run_segments.py",
+      "sha256": "fb5ed469ab4cb01960b6eaebc2a997e916e4a10aaaf6afad6ba679b12500f1a6"
+    },
+    {
+      "path": "QAViT/tests/evaluation/test_breakpoint.py",
+      "sha256": "58409e6fb6e5cfbb7463fb9d377d8e80aeae975f8654b5e36564d9fdcf0363fa"
+    },
+    {
+      "path": "QAViT/tests/support.py",
+      "sha256": "2f70658e3c667b92b4c39a145d05c57bf1652837a5110a49ed89fe0d15427c43"
+    },
+    {
+      "path": "QAViT/tests/test_breakpoint_contracts.py",
+      "sha256": "f13a2bc387599046c6583a6633136606ba62d5e8c0e810c2d556716904f0acec"
+    },
+    {
+      "path": "QAViT/tests/test_experiment_inputs.py",
+      "sha256": "77629c8c8ecb43230aa422e47cf0916850e5c74378a325e36a4b5d9485189dc5"
+    },
+    {
+      "path": "QAViT/tests/test_inspirations.py",
+      "sha256": "accdcb880c0e58fafb308335795f76ecfa92241ed021a037a72fca8610ed1930"
+    },
+    {
+      "path": "QAViT/tests/test_minimal_fixes.py",
+      "sha256": "0eb1df163ccc500148ae8d31973c932bef0cecaa8743986dbd6e783b908cd451"
+    },
+    {
+      "path": "QAViT/tests/test_multi_candidate_l3.py",
+      "sha256": "5a5356e871eca2ffe2d7a7e60820238871f68b142522b4cecf3b4ca48ccfdd1c"
+    },
+    {
+      "path": "QAViT/tests/test_request_continuation.py",
+      "sha256": "72b5ec85ffa2e8a4cc1fdf9b616f54216b2869f1b61169e1732e49a1b6613cb2"
+    },
+    {
+      "path": "QAViT/tests/test_scientific_skills.py",
+      "sha256": "5d5b55d15cc41835e2b5ae86f846b897186a9e6fb7bf1ece53dc2367475fea36"
+    },
+    {
+      "path": "QAViT/tools/data_receipt.py",
+      "sha256": "973648850acd537fada966c6d4078d3f03858a6021838b8ff01914e3501f1fb8"
+    },
+    {
+      "path": "QAViT/tools/evaluating.py",
+      "sha256": "85d845453a533f7ef21c3bb773d5f5a521c05c36e0eba4a8eb915cda82456132"
+    },
+    {
+      "path": "QAViT/tools/evaluation/breakpoint.py",
+      "sha256": "6954fcd3e15a23c1e20f3fce0998967be007d0202e2993c4c5c2aaee04eccdee"
+    },
+    {
+      "path": "QAViT/tools/experiment_worker.py",
+      "sha256": "fcf65bb1426486c7a2b6d5128d7921f9d2bf0f4929a54ee900d04a824a708745"
+    },
+    {
+      "path": "QAViT/tools/experiments.py",
+      "sha256": "88927c51c6879380fb40ccec14f35862c6cf3516fc901c5e87ff5e0f9ff12963"
+    },
+    {
+      "path": "QAViT/tools/frozen.py",
+      "sha256": "70cb489b1bb616c3507461542e6a3d58a8d65c6f962316b483c8201584bf9200"
+    },
+    {
+      "path": "QAViT/tools/frozen_helpers.py",
+      "sha256": "3af69e6991fe99ec79a29108b8c81bbc6ab1524bc20bcea4f52088072c4b7a3f"
+    },
+    {
+      "path": "QAViT/tools/runtime_interface.py",
+      "sha256": "08c4170086b1396757a2dc6971b7ce2804ea91f72548e08d147dc303b26ea4a9"
+    }
+  ],
+  "preexisting_local_changes": [
+    "QAViT/core/workflow.py",
+    "QAViT/runtime/model_router.py",
+    "QAViT/tools/experiments.py"
+  ],
+  "passed_cpu": [
+    {
+      "path": "EXP/validation/engineering_replay_20261122/validated_cpu.log",
+      "sha256": "97bb47ee82a952ca47e0af53a030f655a51c256debf8eb4f57699cf0daaf4343",
+      "tests": 370,
+      "unittest_seconds": 534.218,
+      "final_status": "OK",
+      "runner_summary": "components=data,frozen,source,knowledge,generation,runtime,evaluation modules=36 tests=370 errors=0 failures=0 skips=0 elapsed=536.54s",
+      "model_tokens": 0
+    },
+    {
+      "path": "EXP/validation/engineering_replay_20261122/runtime_release.log",
+      "sha256": "4ddd8eb0af2463b85033847a96aad9f26311d0a23b856d85adb8e4f2c75725a9",
+      "tests": 48,
+      "unittest_seconds": 123.747,
+      "final_status": "OK",
+      "runner_summary": "components=runtime modules=7 tests=48 errors=0 failures=0 skips=0 elapsed=124.12s",
+      "model_tokens": 0
+    },
+    {
+      "path": "EXP/validation/engineering_replay_20261122/process_release.log",
+      "sha256": "e93cdc79e845e0c4958d00da36a1b978a083fb9ded1cb05b1f8cd98ae4959e29",
+      "tests": 2,
+      "unittest_seconds": 4.915,
+      "final_status": "OK",
+      "runner_summary": null,
+      "model_tokens": 0
+    }
+  ],
+  "engineering_iterations": [
+    {
+      "path": "EXP/validation/engineering_replay_20261122/focused.log",
+      "sha256": "d3e921d7c186fce2293eb7517698627eee0e7738851c3f23c7d689719267c72f",
+      "tests": 8,
+      "unittest_seconds": 6.381,
+      "final_status": "OK",
+      "runner_summary": null,
+      "model_tokens": 0
+    },
+    {
+      "path": "EXP/validation/engineering_replay_20261122/cpu.log",
+      "sha256": "f50bf480e9dc6391a531f3ee120ea6f99f0e9029fdd60d2c29b6121db1925bdc",
+      "tests": 272,
+      "unittest_seconds": 283.257,
+      "final_status": "FAILED (errors=8)",
+      "runner_summary": null,
+      "model_tokens": 0
+    },
+    {
+      "path": "EXP/validation/engineering_replay_20261122/recovery_cpu.log",
+      "sha256": "93a26ffc022209163875edd34f5916206379c78ef47fd457b7de6caf8895a79a",
+      "tests": 71,
+      "unittest_seconds": 176.656,
+      "final_status": "FAILED (failures=1, errors=1)",
+      "runner_summary": null,
+      "model_tokens": 0
+    },
+    {
+      "path": "EXP/validation/engineering_replay_20261122/focused_r2.log",
+      "sha256": "12506cec90e60fcc372abc1b878f6b5f3ef524c28b0f9c33711bb8e573adb8d5",
+      "tests": 6,
+      "unittest_seconds": 16.588,
+      "final_status": "FAILED (errors=1)",
+      "runner_summary": null,
+      "model_tokens": 0
+    },
+    {
+      "path": "EXP/validation/engineering_replay_20261122/focused_r3.log",
+      "sha256": "8e0d424088a7d63be6628e71e0038f8bc9614ae6045c04813ba99d44c70d64b2",
+      "tests": 5,
+      "unittest_seconds": 5.784,
+      "final_status": "OK",
+      "runner_summary": null,
+      "model_tokens": 0
+    },
+    {
+      "path": "EXP/validation/engineering_replay_20261122/final_cpu.log",
+      "sha256": "8dfb1646a9975fe0de02d778421020020cc29bf92c7b6e0378ac3fb8fb1cb21e",
+      "tests": 368,
+      "unittest_seconds": 459.979,
+      "final_status": "FAILED (failures=1, errors=6)",
+      "runner_summary": "components=data,frozen,source,knowledge,generation,runtime,evaluation modules=35 tests=368 errors=6 failures=1 skips=0 elapsed=462.33s",
+      "model_tokens": 0
+    },
+    {
+      "path": "EXP/validation/engineering_replay_20261122/check_failures.log",
+      "sha256": "377b27092abf8c002763fef369967b0f4c4b5b695d6ceb61d53b89e78da05754",
+      "tests": 5,
+      "unittest_seconds": 8.097,
+      "final_status": "FAILED (errors=2)",
+      "runner_summary": null,
+      "model_tokens": 0
+    },
+    {
+      "path": "EXP/validation/engineering_replay_20261122/corrected_contracts.log",
+      "sha256": "bd93c777790d05e5550208edcfad9afaa6e24d4323021afc811e08f700cae78d",
+      "tests": 11,
+      "unittest_seconds": 10.337,
+      "final_status": "OK",
+      "runner_summary": null,
+      "model_tokens": 0
+    },
+    {
+      "path": "EXP/validation/engineering_replay_20261122/monitor_final.log",
+      "sha256": "73b983a5225bf42ef7688a082d4d0893042da7f6a17ac605d0f465a9a9cbc872",
+      "tests": 48,
+      "unittest_seconds": 131.565,
+      "final_status": "OK",
+      "runner_summary": "components=runtime modules=7 tests=48 errors=0 failures=0 skips=0 elapsed=131.91s",
+      "model_tokens": 0
+    },
+    {
+      "path": "EXP/validation/engineering_replay_20261122/monitor_process.log",
+      "sha256": "d2d22a257c10b14e81aedf6e3b5ab252b9cb152cb17a5265f61d1f3655721d7b",
+      "tests": 2,
+      "unittest_seconds": 4.603,
+      "final_status": "OK",
+      "runner_summary": null,
+      "model_tokens": 0
+    },
+    {
+      "path": "EXP/validation/engineering_replay_20261122/monitor_recheck.log",
+      "sha256": "d70b30758a2aa6a9224d0c4251d7db7bcaf606ccc44f02ac7f33d2669b6c4fec",
+      "tests": 4,
+      "unittest_seconds": 15.68,
+      "final_status": "OK",
+      "runner_summary": null,
+      "model_tokens": 0
+    }
+  ],
+  "iteration_notes": [
+    "Early failures exposed invalid legacy test fixtures (unbound evaluate_artifact and assertions expecting embedded source instead of a handle).",
+    "During the 368-test development run, host-owned L3 evaluation was incorrectly checked in the exporting plugin, and a legacy evidence fixture lacked a source. Both were corrected.",
+    "Two identity-sensitive tests ran while the working source was still changing. They passed with steady source; production invalidation and review binding were retained."
+  ],
+  "structure": {
+    "status": "passed",
+    "errors": [],
+    "syntax_files": 218,
+    "snapshot_file_count": 395
+  },
+  "knowledge": {
+    "status": "passed",
+    "errors": [],
+    "skill_count": 7,
+    "method_count": 21,
+    "checked_pages": 81
+  },
+  "git_diff_check": "passed",
+  "collection_scripts_compiled": [
+    "audit.py",
+    "chain.py",
+    "evidence_index.py",
+    "package_probe.py",
+    "verify.py"
+  ],
+  "original_eval_l0_verify": {
+    "cases": 115,
+    "source_files": 26168,
+    "status": "verified"
+  },
+  "server_and_external_sources": "audit.json",
+  "component_runner": "verify.py",
+  "live": "behavior_results.json",
+  "scoring": "original frozen gonly_v0_3 release; no new LLM judge or quality score",
+  "release_index": [
+    {
+      "path": "EXP/validation/engineering_replay_20261122/collection.json",
+      "sha256": "925fe9175207800316efb6c37bb15eb4870b978861da1a9f39f111a153ffab00"
+    },
+    {
+      "path": "EXP/validation/engineering_replay_20261122/engineering_cases.json",
+      "sha256": "1777e428e4c3ad25f5f576d078262cbe167ebe0e308651258c472252c27b2543"
+    },
+    {
+      "path": "EXP/validation/engineering_replay_20261122/audit.json",
+      "sha256": "d9e6854ffa7f6dc073e48e99f0682505e839454901e6a861e71a2dee4a74a6e9"
+    },
+    {
+      "path": "EXP/validation/engineering_replay_20261122/behavior_results.json",
+      "sha256": "9bcd449b32ac1a6bdb926ca8032f8998def30d05bc0527246c75da0ff2906d95"
+    },
+    {
+      "path": "EXP/validation/engineering_replay_20261122/data_check/receipt.json",
+      "sha256": "734afa43a1c7d29b4f41e97fa72e8ef7e56cf41c90b9cb997abe5f4c5d72afb0"
+    },
+    {
+      "path": "EXP/validation/engineering_replay_20261122/package_check/receipt.json",
+      "sha256": "3ec066b98b6d0326faedf1188744205020f213e8dee12467c4e4f01e81c488ba"
+    },
+    {
+      "path": "EXP/validation/engineering_replay_20261122/REPORT.md",
+      "sha256": "4a702abb00d1824084fc6261841762d0291456c58a23809b89f7a80f1c5b00e1"
+    },
+    {
+      "path": "EXP/validation/engineering_replay_20261122/COVERAGE.md",
+      "sha256": "3211fbe4ecc1dbc143f826d29813d5b7e8022ac6cb779bc7acf1fa51a93b71e3"
+    }
+  ]
+}

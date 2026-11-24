@@ -31,11 +31,7 @@ def forward(backend, model, inputs):
     with torch.inference_mode():
         if hasattr(backend, "forward_model"):
             return backend.forward_model(model, inputs)
-        return (
-            model.forward_features(inputs)
-            if backend.spec["family"].startswith(("DINOv2", "DINOv3"))
-            else model(inputs)
-        )
+        return model(inputs)
 
 
 class QuantizedLinear(torch.nn.Module):

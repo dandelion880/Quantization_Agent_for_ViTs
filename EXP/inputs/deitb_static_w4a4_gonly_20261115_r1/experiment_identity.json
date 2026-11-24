@@ -1,0 +1,38 @@
+{
+  "run_id": "deitb_static_w4a4_gonly_20261115_r1",
+  "prepared_utc": "2026-11-15T05:15:05.121617+00:00",
+  "source_input": "/root/data-fs/projects/Quantization_Agent_for_ViTs/EXP/inputs/deitb_static_w4a4_autonomy_20261109_r1/input.json",
+  "source_input_sha256": "40df61a6cd5b2f9292b6c4e2447186d556790498cdf067b1975677e64387850b",
+  "git_commit": "b6fd75e2689e15add23611005639bcbd5f250cc6",
+  "git_branch": "ablation/gonly",
+  "git_status": "",
+  "input_sha256": "f45c2dbbaabedb0b8582d696bf17f24a1183a8c095a59f448eb969030255bd4b",
+  "external_monitor_requested_model": "gpt-6.1-sol/ultra",
+  "model_server_echo": null,
+  "numeric_timeouts_seconds": {
+    "L1": 3600,
+    "L2": 10800,
+    "L3": 86400
+  },
+  "changes_from_original": [
+    "G-only architecture and role ownership instead of Full debate/evolution",
+    "Agent active time 36000 -> 10800 seconds",
+    "Local worktree knowledge paths",
+    "Explicit existing default numeric timeout and role model values"
+  ],
+  "no_assets_or_frozen_evaluation_modified": true,
+  "cli_path": "/root/.codex/packages/standalone/releases/0.167.0-x86_64-unknown-linux-musl/bin/codex",
+  "cli_sha256": "cdcb45aaa01d0f14e298985e09465aebccd47f64ecd298aea44814af7b62bbda",
+  "preflight_resolution": "Pin installed previously reviewed CLI 0.167.0 after default 0.169.0 rejected before model call; source unchanged.",
+  "external_monitor_local_turn_context": {
+    "model": "gpt-6.1-sol",
+    "effort": "max",
+    "requested_by_user": "gpt-6.1-sol-ultra",
+    "server_echo": null
+  },
+  "frozen_config_sha256": "06676cdf3e11127510c6fc1d9ed627858034ef99e981816cdafdbb2fbc3dc29e",
+  "core_sha256": "8c76550850c9f3a29bb4898784b75c9048f0f4ea22abe304dfc72ad3885869da",
+  "numerical_library_sha256": "f00b614ad7b4d408a2468113fd83d25ee31f7c5e73725a2ebf6ca05842d60ce4",
+  "frozen_created_at": "2026-11-15T05:17:24.350325+00:00",
+  "research_run_sha256": "cf543f72de06e9a6d13cde433a55e817c443a2fa7b725cbc57b05047eb8f7af1"
+}

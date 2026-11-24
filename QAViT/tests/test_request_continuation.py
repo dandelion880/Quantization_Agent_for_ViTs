@@ -7,6 +7,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from core.cards import ContractError, canonical
 from core.workflow import Workflow
 from agents.roles import role_spec
+from tests.support import advance_with_topic_fixture
 from tests.test_infrastructure import TempCase
 from tests import test_minimal_fixes as minimal
 from tests import test_generation_loop as generation
@@ -66,7 +67,7 @@ class RequestContinuation(TempCase):
                                  'reason': 'Different axes test different mechanisms'}
                 wf.queue.change(child['task_id'], 'needs_clarification', patch={'clarification': clarification})
                 wf = Workflow(wf.run_dir)
-                wf.advance(); wf.queue.ready()
+                advance_with_topic_fixture(wf); wf.queue.ready()
                 resumed = wf.tasks()['r001/plan_l3/revision1']
                 self.assertEqual(resumed['state'], 'ready')
                 self.assertEqual(wf.queue.get(trial['task_id'])['result']['clarification'], clarification)
@@ -75,14 +76,14 @@ class RequestContinuation(TempCase):
                 self.assertNotIn('parent_task', wf.queue.get(trial['task_id'])['inputs'])
                 self.assertEqual(wf.queue.get(trial['task_id'])['inputs']['origin_task'], original_plan['task_id'])
                 self.assertIn('request_feedback', resumed['inputs']['context'])
-                before = set(wf.tasks()); wf.advance()
+                before = set(wf.tasks()); advance_with_topic_fixture(wf)
                 self.assertEqual(set(wf.tasks()), before)
                 # A revised scientist submission creates a new immutable service request.
                 revised = wf.queue.claim(resumed['task_id'])
                 draft = deepcopy(trial['inputs']['draft'])
                 draft['question'] = 'Revised question after resolving statistical axis from available sources'
                 wf.submit(revised, draft, 'scripted fixture')
-                wf.advance()
+                advance_with_topic_fixture(wf)
                 next_trial = wf.tasks()['r001/L3/revision1']
                 self.assertEqual(next_trial['inputs']['previous_request_task'], trial['task_id'])
                 self.assertEqual(next_trial['inputs']['original_request']['question'], draft['question'])
@@ -96,15 +97,15 @@ class RequestContinuation(TempCase):
                     wf.queue.finish(trial['task_id'], result={'status': 'rejected', 'reason': code})
                 else:
                     wf.queue.fail(trial['task_id'], {'code': code, 'message': 'Specific unavailable execution condition'})
-                wf.advance(); wf.queue.ready()
+                advance_with_topic_fixture(wf); wf.queue.ready()
                 wf.retry_failed('resume remaining work, retain consumed failure')
                 self.assertEqual(wf.queue.get(trial['task_id'])['state'], 'completed' if code == 'implementation_unchanged_after_failure' else 'failed')
                 author = wf.tasks()['r001/plan_l3/revision1']
                 self.assertIn(code, canonical(author['inputs']['context']['request_feedback']))
                 wf.submit(wf.queue.claim(author['task_id']), {'defer_reason': 'Current budget cannot complete the required protocol'}, 'fixture')
-                wf.advance()
+                advance_with_topic_fixture(wf)
                 self.assertIn('r001/record', wf.tasks())
-                outcome = wf.l3_outcome(1)
+                outcome = wf.l3_outcome(1)['candidates']['H1']
                 self.assertEqual(outcome['status'], 'deferred')
                 self.assertFalse(outcome['formal_validation_success'])
                 self.assertFalse(wf.journal.find_cards('EvidenceCard'))
@@ -114,7 +115,7 @@ class RequestContinuation(TempCase):
         wf.dispatch()
         self.assertEqual(wf.queue.get(trial['task_id'])['state'], 'failed')
         self.assertEqual(wf.queue.get(trial['task_id'])['error']['code'], 'RequestBudgetInsufficient')
-        wf.advance(); wf.queue.ready()
+        advance_with_topic_fixture(wf); wf.queue.ready()
         author = wf.tasks()['r001/plan_l3/revision1']
         self.assertEqual(author['state'], 'ready')
         self.assertIn('RequestBudgetInsufficient', canonical(author['inputs']['context']['request_feedback']))
@@ -144,7 +145,8 @@ class RequestContinuation(TempCase):
         self.assertEqual(wf.queue.get(cached['task_id'])['outputs'], [evidence['id']])
         self.assertEqual(len([t for t in wf.tasks().values() if t['kind'] == 'experiment']), 1)
         self.assertFalse(any(t['inputs'].get('purpose') == 'interpret' for t in wf.tasks().values()))
-        self.assertTrue(wf.summary('running')['formal_validation_success'])
+        self.assertTrue(wf.l3_outcome(1)['candidates']['H1']['formal_validation_success'])
+        self.assertFalse(wf.summary('running')['formal_validation_success'])
         self.assertFalse(wf.summary('running')['workflow_completed'])
 
     def test_legacy_waiting_interpretation_recovers_without_rerun_or_wait(self):
@@ -160,8 +162,9 @@ class RequestContinuation(TempCase):
         wf.progress_request(request)
         self.assertEqual(wf.queue.get(trial['task_id'])['outputs'], [evidence['id']])
         wf.queue.fail(interpretation, {'code': 'fixture_interpretation_failed'})
-        self.assertTrue(wf.l3_outcome(1)['formal_validation_success'])
-        self.assertEqual(wf.l3_outcome(1)['interpretation_state'], 'failed')
+        self.assertTrue(wf.l3_outcome(1)['candidates']['H1']['formal_validation_success'])
+        self.assertFalse(wf.l3_outcome(1)['formal_validation_success'])
+        self.assertEqual(wf.l3_outcome(1)['candidates']['H1']['interpretation_state'], 'failed')
         self.assertNotIn('r001/plan_l3/revision1', wf.tasks())
         self.assertEqual(len([t for t in wf.tasks().values() if t['kind'] == 'experiment']), 1)
 
@@ -174,14 +177,15 @@ class RequestContinuation(TempCase):
         wf.release_measured_requests()
         self.assertEqual(wf.queue.get(interpretation)['state'], 'cancelled')
         wf.progress_request(wf.queue.claim(trial['task_id']))
-        self.assertTrue(wf.l3_outcome(1)['formal_validation_success'])
+        self.assertTrue(wf.l3_outcome(1)['candidates']['H1']['formal_validation_success'])
+        self.assertFalse(wf.l3_outcome(1)['formal_validation_success'])
         self.assertFalse(any(t['inputs'].get('purpose') == 'interpret' for t in wf.queue.ready()))
-        wf.advance(); wf.queue.ready()
+        advance_with_topic_fixture(wf); wf.queue.ready()
         recorder = wf.tasks()['r001/record']
         wf.queue.claim(recorder['task_id'])
         wf.queue.fail(recorder['task_id'], {'code': 'fixture_recorder_failed'})
         report = wf.summary('running')
-        self.assertTrue(report['formal_validation_success'])
+        self.assertFalse(report['formal_validation_success'])  # Only H1 measured; siblings deferred.
         self.assertFalse(report['scientific_review_complete'])
         # Recorder remains independently recoverable; settled experiment children do not reopen.
         wf.retry_failed('recover deferred scientific review')
@@ -194,13 +198,16 @@ class RequestContinuation(TempCase):
         config['budget'].update(max_rounds=2, min_free_bytes=0)
         wf = Workflow(self.root / 'two-rounds', config)
         revised, restored, measurements = False, False, []
+        failed_key = plan_key = None
         for _ in range(160):
-            if wf.advance():
+            if advance_with_topic_fixture(wf):
                 break
             for ready in wf.queue.ready():
                 task = wf.queue.claim(ready['task_id'])
                 if task['kind'] == 'experiment_request':
-                    if task['key'] == 'r001/L3' and not revised:
+                    if task['key'].startswith('r001/L3/H1/') and not revised:
+                        failed_key = task['key']
+                        plan_key = wf.queue.get(task['inputs']['origin_task'])['key']
                         wf.queue.fail(task['task_id'], {'code': 'RequestBudgetInsufficient',
                             'message': 'Scripted request refusal; a revised feasible estimate is needed'})
                         revised = True
@@ -209,9 +216,8 @@ class RequestContinuation(TempCase):
                         measurements.append(evidence['id'])
                         wf.progress_request(wf.queue.get(task['task_id']))
                 elif task['inputs']['purpose'] == 'plan_l3':
-                    draft = experiment_payload('L3')
-                    draft['execution'].update(service='evaluate_artifact', parameters={}, evaluations=[{
-                        'kind': 'classification', 'split': 'final', 'count': 2}])
+                    from tests.support import scheduler_l3_draft
+                    draft = scheduler_l3_draft()
                     if task['inputs']['context'].get('plan_revision'):
                         self.assertIn('RequestBudgetInsufficient', canonical(task['inputs']['context']['request_feedback']))
                         draft['question'] += ' (revised after explicit feasibility feedback)'
@@ -219,35 +225,33 @@ class RequestContinuation(TempCase):
                 else:
                     self.assertEqual(task['kind'], 'llm')
                     wf.submit(task, infrastructure.WorkflowSimulation.scripted(self, wf, task), 'scripted fixture')
-            if revised and not restored and 'r001/plan_l3/revision1' in wf.tasks():
+            if revised and not restored and plan_key + '/revision1' in wf.tasks():
                 wf = Workflow(wf.run_dir)
                 wf.retry_failed('continue revised plan without reopening superseded failures')
-                self.assertEqual(wf.tasks()['r001/L3']['state'], 'failed')
+                self.assertEqual(wf.tasks()[failed_key]['state'], 'failed')
                 restored = True
         else:
             self.fail('two-round full structure did not finish')
         self.assertTrue(restored)
-        self.assertEqual(len(measurements), 2)
+        self.assertEqual(len(measurements), 6)
         for number in (1, 2):
             hypotheses = wf.round_hypotheses(number)
-            self.assertEqual(set(hypotheses), {'H1', 'H2', 'H3', 'H4'})
-            self.assertEqual(len(wf.matches(number)), 4)
-            parent = hypotheses['H4']['parents'][0]
-            slot = next(k for k, h in hypotheses.items() if h['id'] == parent)
-            self.assertIn('H4-' + slot, wf.matches(number))
+            self.assertEqual(set(hypotheses), {'H1', 'H2', 'H3'})
+            self.assertEqual(wf.matches(number), {})
+            self.assertEqual(wf.selection_card(number)['author'], 'generation')
             self.assertTrue(wf.l3_outcome(number)['formal_validation_success'])
         self.assertTrue(all(h['payload']['feedback_used'] for h in wf.round_hypotheses(2).values()))
         self.assertFalse(any(t['inputs'].get('purpose') == 'interpret' for t in wf.tasks().values()))
         self.assertTrue(wf.summary('completed')['scientific_review_complete'])
-        self.assertEqual(wf.tasks()['r001/L3']['state'], 'failed')
-        self.assertEqual(wf.tasks()['r001/L3/revision1']['state'], 'completed')
+        self.assertEqual(wf.tasks()[failed_key]['state'], 'failed')
+        self.assertEqual(wf.tasks()[failed_key + '/revision1']['state'], 'completed')
 
     def test_defer_is_visible_optional_and_never_mixed_with_a_fabricated_plan(self):
-        spec = role_spec('judger', 'plan_l3', {}, {})
+        spec = role_spec('generation', 'plan_l3', {}, {})
         self.assertIn('defer_reason', spec['context']['payload_contract']['alternative']['properties'])
         wf, trial = self.planned('defer-contract')
         wf.queue.fail(trial['task_id'], {'code': 'fixture_failure'})
-        wf.advance(); wf.queue.ready()
+        advance_with_topic_fixture(wf); wf.queue.ready()
         plan = wf.queue.claim(wf.tasks()['r001/plan_l3/revision1']['task_id'])
         with self.assertRaises(ContractError):
             wf.submit(plan, {'defer_reason': 'cannot execute', 'level': 'L3'}, 'fixture')

@@ -1,6 +1,6 @@
 # QAViT
 
-QAViT（Quantization Agent for ViTs）是面向视觉 Transformer 量化研究的多智能体框架，结合假设生成、讨论与演化、量化实验和记忆反馈，支持可追溯的迭代研究。
+QAViT（Quantization Agent for ViTs）是面向视觉 Transformer 量化研究的多智能体框架，当前分支沿用 G-only：Generation 提出和改良 H1/H2/H3、自主取证、横向综合与修订，并为三条最终候选分别规划正式验证，保留 Coding→Safeguard→执行、Recorder 与记忆反馈。
 
 LLM 负责科研推理，程序负责数值工具执行、预算与状态管理、证据归档。工具覆盖量化行为分析、校准、量化、评测及模型导出与重载；原始测量与科研解释分别保存。
 
@@ -19,4 +19,10 @@ python -B QAViT/run.py status EXP/runs/my_research
 python -B QAViT/run.py report EXP/runs/my_research
 ```
 
-进一步阅读：[实现与开发入口](QAViT/README.md) · [科研资源导航](QAViT/knowledge/INDEX.md) · [目录与模块说明](STRUCTURE.md) · [历史验证导航](QAViT/docs/HISTORY.md) · [当前伪代码](EXP/validation/knowledge_resources_20261108_r1/PSEUDOCODE.md)。
+进一步阅读：[实现与开发入口](QAViT/README.md) · [科研资源导航](QAViT/knowledge/INDEX.md) · [目录与模块说明](STRUCTURE.md) · [历史验证导航](QAViT/docs/HISTORY.md) · [当前伪代码](EXP/validation/l3_dev_20261120/PSEUDOCODE.md)。
+
+[七项按需科研 Skill](QAViT/docs/SCIENTIFIC_SKILLS.md) 与 [本次接入验证](EXP/validation/skill_system_integration_20261116_r1/REPORT.md)：按问题组合，保留 H1/H2 完整方案改良、H3 开放创新、独立 B 和冻结迁移。Recorder 的跨运行流程发布见[资源生命周期](QAViT/docs/RESOURCE_LIFECYCLE.md)。
+
+当前多 ViT 接入的配置与真实小样本结果见 [接入报告](EXP/validation/multi_vit_20261118_r1/REPORT.md)。
+
+DINOv3-B 的 [独立 L3-dev 单轮输入](EXP/inputs/dinov3b_static_w4a4_independent_dev/input.json) 已启用双任务开发视图和按角色工具探测。成对实测、工程回放及恢复入口见 [开发评价报告](EXP/validation/l3_dev_20261120/REPORT.md)。

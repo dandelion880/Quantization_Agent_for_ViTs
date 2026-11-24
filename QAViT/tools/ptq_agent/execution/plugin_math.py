@@ -63,6 +63,9 @@ def repq_ln(x, weight, *, bits, observer=None, channel_params=None):
 def fit_activation(x, spec, method, options=None):
     options = options or {}
     require(bool(torch.isfinite(x).all()), "校准值非有限", code="numerical_error")
+    if options.get('token_partition') and method == 'uniform_affine':
+        from .grids_partition import fit
+        return fit(x, spec, options['token_partition'])
     if method == "rtn":
         return codecs.fit(x, spec)
     if method in grids.METHODS:
@@ -105,6 +108,9 @@ def fit_activation(x, spec, method, options=None):
 
 def activation_qdq(x, spec, method, params=None, options=None):
     p = fit_activation(x, spec, method, options) if params is None else {k: v.to(x.device) for k, v in params.items()}
+    if (options or {}).get('token_partition') and method == 'uniform_affine':
+        from .grids_partition import apply
+        return apply(x, spec, options['token_partition'], p)
     if method in ("rtn", "uniform_affine") and "repq_affine" in p:
         y = ((x / p["scale"]).round() + p["zero"]).clamp(0, 2 ** spec["bits"] - 1)
         return ((y - p["zero"]) * p["scale"]).to(x.dtype)
@@ -289,6 +295,9 @@ def validate_weight(record, spec, shape):
 
 def validate_activation(params, layer, shape):
     spec, method = layer["activation"], layer["activation_method"]
+    if layer.get('options', {}).get('token_partition'):
+        from .grids_partition import validate
+        return validate(params, spec, layer['options']['token_partition'], shape)
     if method == "adalog":
         from .adalog import validate_params
         return validate_params(params, spec)

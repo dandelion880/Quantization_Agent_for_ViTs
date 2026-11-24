@@ -1,0 +1,584 @@
+{
+  "status": "passed",
+  "errors": [],
+  "package_manifest_files_verified": 41,
+  "installed_markdown_snapshot_files": 36,
+  "local_links_and_anchors_checked": 96,
+  "external_originals_reverified": false,
+  "navigation": {
+    "status": "passed",
+    "errors": [],
+    "skill_count": 7,
+    "method_count": 21,
+    "checked_pages": 76
+  },
+  "source_core_sha256": "81bfde84fbb11ffcedbd27c3627aa92eaff752373a6afb37ed73c8d6d2291058",
+  "files": [
+    {
+      "path": "docs/SCIENTIFIC_SKILLS_COMPATIBILITY.md",
+      "sha256": "a4dc0d45e6646a1b7b1a9fcd9fd0ec0d97bcb6036e249f063f3db390c1add9fb",
+      "snapshot_matches": true
+    },
+    {
+      "path": "docs/skills/INDEX.md",
+      "sha256": "3b495b1c6d9addab14a6c0b5aa860b4a0eea27c0ab69310c59cd5d094a096f05",
+      "snapshot_matches": true
+    },
+    {
+      "path": "docs/skills/adapt-quantization-method/SKILL.md",
+      "sha256": "e72d0cd92d3c0ea43888c5e95949979221f4b5dc5c6893c0eaedce50b75ba43a",
+      "snapshot_matches": true
+    },
+    {
+      "path": "docs/skills/adapt-quantization-method/references/innovation-and-failure-cases.md",
+      "sha256": "70a800e61d06d47a333108707e6ba393431820c1cf4357bb30845c9051c2ede1",
+      "snapshot_matches": true
+    },
+    {
+      "path": "docs/skills/adapt-quantization-method/references/intervention-design.md",
+      "sha256": "d7d91f890f5f939bd4e2fa1320f346158bae7a306036c46bf9f823a05175d96a",
+      "snapshot_matches": true
+    },
+    {
+      "path": "docs/skills/adapt-quantization-method/references/mechanism-patterns.md",
+      "sha256": "4eeae14e4c800f8f63e29ec987385ebf5939fc958a4d9796596d9019a9ddaaef",
+      "snapshot_matches": true
+    },
+    {
+      "path": "docs/skills/design-discriminative-experiment/SKILL.md",
+      "sha256": "b206c6e7ee278cff14e10943e4079c0c763f6e9459df4b25c5f458a900fe5b09",
+      "snapshot_matches": true
+    },
+    {
+      "path": "docs/skills/design-discriminative-experiment/references/decision-examples.md",
+      "sha256": "97b8cd8f908151247c3ab5e0e4e292e17659f58a74638880c278f1b7c29f2320",
+      "snapshot_matches": true
+    },
+    {
+      "path": "docs/skills/design-discriminative-experiment/references/experiment-patterns.md",
+      "sha256": "55509bc34d6752b706ca5a4a92a8fdd87929f7845dd6b80864913d49ba080ce3",
+      "snapshot_matches": true
+    },
+    {
+      "path": "docs/skills/design-scale-calibration/SKILL.md",
+      "sha256": "20dcf7d23553a651c85b5a3b04748719f02b8aad108a81efd2bf960aa25f27b6",
+      "snapshot_matches": true
+    },
+    {
+      "path": "docs/skills/design-scale-calibration/references/candidates-and-groups.md",
+      "sha256": "6ce7dbee2db4d6850451d507ce31697305074b1dc5a57e8b3ee590e871c6b84c",
+      "snapshot_matches": true
+    },
+    {
+      "path": "docs/skills/design-scale-calibration/references/schedule-and-state.md",
+      "sha256": "0e54961438a8b7757a948e3ed783fdff50493acf98d26f179efe0dad84a8a87c",
+      "snapshot_matches": true
+    },
+    {
+      "path": "docs/skills/diagnose-ptq-failure/SKILL.md",
+      "sha256": "e312b7a3af224702c52356266bba7b1a8a83cc0905c1a6d523c59d9a036c74bc",
+      "snapshot_matches": true
+    },
+    {
+      "path": "docs/skills/diagnose-ptq-failure/references/baseline-and-scope.md",
+      "sha256": "0f5b022670a102e5f144152f8cab5d8cef102dfcdf52d4a078e86017f53cb27e",
+      "snapshot_matches": true
+    },
+    {
+      "path": "docs/skills/diagnose-ptq-failure/references/diagnosis-cases.md",
+      "sha256": "e1c36d3fc8cc5068fc7fec5d7a3e1c47b1f75028d78b2546496ef5ac728ea3d9",
+      "snapshot_matches": true
+    },
+    {
+      "path": "docs/skills/diagnose-ptq-failure/references/error-propagation-and-intervention.md",
+      "sha256": "f2a49a76728d545d707e243c46be29850eed7fd56be9b25b4c0e593c929b13c5",
+      "snapshot_matches": true
+    },
+    {
+      "path": "docs/skills/diagnose-ptq-failure/references/frozen-propagation.md",
+      "sha256": "8021ce30a126d057b416a658364a037249fe3c54173777ad9601d9c3ed46a758",
+      "snapshot_matches": true
+    },
+    {
+      "path": "docs/skills/evaluate-ptq-candidate/SKILL.md",
+      "sha256": "293a4ffbd4c9e6882d1001ec6c3262eb8e7abc5f73686e22dd967c879fa32aa7",
+      "snapshot_matches": true
+    },
+    {
+      "path": "docs/skills/evaluate-ptq-candidate/references/evidence-and-comparison.md",
+      "sha256": "1af9a64e2c0e55e84098cdea5371a5f2444ac3d9e2abd9e4a5eb8fa763a1778e",
+      "snapshot_matches": true
+    },
+    {
+      "path": "docs/skills/evaluate-ptq-candidate/references/oracle-transfer-and-selection.md",
+      "sha256": "628771a021df5dc644159a4bf3bbd8ca98009e23c397910e67ebdf97ba9df972",
+      "snapshot_matches": true
+    },
+    {
+      "path": "docs/skills/learn-from-reference-solution/SKILL.md",
+      "sha256": "1bd06e8558ab062b22b2fd1965a2841c78e22c00c04810296f7149dc38cf8189",
+      "snapshot_matches": true
+    },
+    {
+      "path": "docs/skills/learn-from-reference-solution/references/pattern-to-method.md",
+      "sha256": "52c6eba5e1b4b2a6fffd6d23617a5f91e91e8f5f7fe69193286ab6fcaf10b444",
+      "snapshot_matches": true
+    },
+    {
+      "path": "docs/skills/learn-from-reference-solution/references/reference-construction.md",
+      "sha256": "fde136e80111e61b7d45102281f2e43e0f6bc0a9ad40eec14323c67b3cab1a2f",
+      "snapshot_matches": true
+    },
+    {
+      "path": "docs/skills/select-calibration-objective/SKILL.md",
+      "sha256": "00af6c86d5aab3a0f5e5291ee3d550c65568f14b7404837db57972354f1eb5e9",
+      "snapshot_matches": true
+    },
+    {
+      "path": "docs/skills/select-calibration-objective/references/objective-design.md",
+      "sha256": "74179a9690549b6e51a647d0357376352d679c66a3e129030359c43f3ba6818d",
+      "snapshot_matches": true
+    },
+    {
+      "path": "docs/skills/select-calibration-objective/references/ranking-validation.md",
+      "sha256": "c5d704b91c1481398bda9716f716d77f53f2f07ccd26af0ac99b6fb4d5712176",
+      "snapshot_matches": true
+    },
+    {
+      "path": "knowledge/research-skills/RESEARCH_CONVENTIONS.md",
+      "sha256": "7e8d626da849630117813e4bdf07d655a1280086098c395d30e556057b975e00",
+      "snapshot_matches": true
+    },
+    {
+      "path": "knowledge/research-skills/SOURCES.md",
+      "sha256": "37411032c97c8a81e79bb0469e475954c6c87ec8809dc50f6f9987560e84b878",
+      "snapshot_matches": true
+    },
+    {
+      "path": "knowledge/research-skills/research-routes/INDEX.md",
+      "sha256": "3bea5ef96b05afaf6eb949f19dff609219dc31c33cf603080d0c8b9459c9f970",
+      "snapshot_matches": true
+    },
+    {
+      "path": "knowledge/research-skills/research-routes/PAPER_SOURCES.md",
+      "sha256": "cd3fefed77305a2d3a610999991bf342681df103fb83a8c8e94de834e35da1b9",
+      "snapshot_matches": true
+    },
+    {
+      "path": "knowledge/research-skills/research-routes/adalog.md",
+      "sha256": "c9e198e09800f51a277a527248f33d10af601a894664574dc46213b155b4b3b7",
+      "snapshot_matches": true
+    },
+    {
+      "path": "knowledge/research-skills/research-routes/erq.md",
+      "sha256": "981cc361b1ca843624a1b99539d980d9f8561cee0c22eecaf44be5480a670711",
+      "snapshot_matches": true
+    },
+    {
+      "path": "knowledge/research-skills/research-routes/gptaq.md",
+      "sha256": "0b71e3fa9a382d8620b35e875cbbe98fe50c6dbae0c818904e90c2d1d28cbc0b",
+      "snapshot_matches": true
+    },
+    {
+      "path": "knowledge/research-skills/research-routes/ptq4dino.md",
+      "sha256": "ac7f05afdeb55bd716e84c3051cf8de85ec4ff58515f475a6358cde8e569801f",
+      "snapshot_matches": true
+    },
+    {
+      "path": "knowledge/research-skills/research-routes/ptq4vit.md",
+      "sha256": "a33e1f67dc2b8707ceb1a0d9da3b1c3ac0c9289f0e98dfaf543c0c00d63b5e08",
+      "snapshot_matches": true
+    },
+    {
+      "path": "knowledge/research-skills/research-routes/repq-vit.md",
+      "sha256": "4fd434bff0e0cc82466f9a66b913d642a84d416a8faa9b43d2cceaef9015bf18",
+      "snapshot_matches": true
+    }
+  ],
+  "links": [
+    {
+      "from": "docs/SCIENTIFIC_SKILLS_COMPATIBILITY.md",
+      "target": "SCIENTIFIC_SKILLS.md"
+    },
+    {
+      "from": "docs/SCIENTIFIC_SKILLS_COMPATIBILITY.md",
+      "target": "methods/scale_selection.md"
+    },
+    {
+      "from": "docs/SCIENTIFIC_SKILLS_COMPATIBILITY.md",
+      "target": "methods/calibration_order.md"
+    },
+    {
+      "from": "docs/SCIENTIFIC_SKILLS_COMPATIBILITY.md",
+      "target": "skills/diagnose-ptq-failure/references/frozen-propagation.md"
+    },
+    {
+      "from": "docs/SCIENTIFIC_SKILLS_COMPATIBILITY.md",
+      "target": "CODE_INTERFACES.md"
+    },
+    {
+      "from": "docs/skills/INDEX.md",
+      "target": "adapt-quantization-method/SKILL.md"
+    },
+    {
+      "from": "docs/skills/INDEX.md",
+      "target": "design-discriminative-experiment/SKILL.md"
+    },
+    {
+      "from": "docs/skills/INDEX.md",
+      "target": "design-scale-calibration/SKILL.md"
+    },
+    {
+      "from": "docs/skills/INDEX.md",
+      "target": "diagnose-ptq-failure/SKILL.md"
+    },
+    {
+      "from": "docs/skills/INDEX.md",
+      "target": "evaluate-ptq-candidate/SKILL.md"
+    },
+    {
+      "from": "docs/skills/INDEX.md",
+      "target": "learn-from-reference-solution/SKILL.md"
+    },
+    {
+      "from": "docs/skills/INDEX.md",
+      "target": "select-calibration-objective/SKILL.md"
+    },
+    {
+      "from": "docs/skills/INDEX.md",
+      "target": "../../knowledge/research-skills/RESEARCH_CONVENTIONS.md"
+    },
+    {
+      "from": "docs/skills/INDEX.md",
+      "target": "../../knowledge/research-skills/research-routes/INDEX.md"
+    },
+    {
+      "from": "docs/skills/INDEX.md",
+      "target": "../SCIENTIFIC_SKILLS_COMPATIBILITY.md"
+    },
+    {
+      "from": "docs/skills/INDEX.md",
+      "target": "../../knowledge/INDEX.md"
+    },
+    {
+      "from": "docs/skills/adapt-quantization-method/SKILL.md",
+      "target": "references/intervention-design.md"
+    },
+    {
+      "from": "docs/skills/adapt-quantization-method/SKILL.md",
+      "target": "references/mechanism-patterns.md"
+    },
+    {
+      "from": "docs/skills/adapt-quantization-method/SKILL.md",
+      "target": "references/innovation-and-failure-cases.md"
+    },
+    {
+      "from": "docs/skills/adapt-quantization-method/SKILL.md",
+      "target": "../diagnose-ptq-failure/SKILL.md"
+    },
+    {
+      "from": "docs/skills/adapt-quantization-method/SKILL.md",
+      "target": "../select-calibration-objective/SKILL.md"
+    },
+    {
+      "from": "docs/skills/adapt-quantization-method/SKILL.md",
+      "target": "../design-scale-calibration/SKILL.md"
+    },
+    {
+      "from": "docs/skills/adapt-quantization-method/SKILL.md",
+      "target": "../../../knowledge/research-skills/research-routes/INDEX.md"
+    },
+    {
+      "from": "docs/skills/adapt-quantization-method/SKILL.md",
+      "target": "../learn-from-reference-solution/SKILL.md"
+    },
+    {
+      "from": "docs/skills/adapt-quantization-method/SKILL.md",
+      "target": "../design-discriminative-experiment/SKILL.md"
+    },
+    {
+      "from": "docs/skills/adapt-quantization-method/SKILL.md",
+      "target": "../evaluate-ptq-candidate/SKILL.md"
+    },
+    {
+      "from": "docs/skills/adapt-quantization-method/references/mechanism-patterns.md",
+      "target": "../../../../knowledge/research-skills/research-routes/INDEX.md"
+    },
+    {
+      "from": "docs/skills/design-discriminative-experiment/SKILL.md",
+      "target": "references/experiment-patterns.md"
+    },
+    {
+      "from": "docs/skills/design-discriminative-experiment/SKILL.md",
+      "target": "references/decision-examples.md"
+    },
+    {
+      "from": "docs/skills/design-discriminative-experiment/SKILL.md",
+      "target": "../diagnose-ptq-failure/SKILL.md"
+    },
+    {
+      "from": "docs/skills/design-discriminative-experiment/SKILL.md",
+      "target": "../select-calibration-objective/SKILL.md"
+    },
+    {
+      "from": "docs/skills/design-discriminative-experiment/SKILL.md",
+      "target": "../design-scale-calibration/SKILL.md"
+    },
+    {
+      "from": "docs/skills/design-discriminative-experiment/SKILL.md",
+      "target": "../adapt-quantization-method/SKILL.md"
+    },
+    {
+      "from": "docs/skills/design-discriminative-experiment/SKILL.md",
+      "target": "../evaluate-ptq-candidate/SKILL.md"
+    },
+    {
+      "from": "docs/skills/design-scale-calibration/SKILL.md",
+      "target": "references/candidates-and-groups.md"
+    },
+    {
+      "from": "docs/skills/design-scale-calibration/SKILL.md",
+      "target": "references/schedule-and-state.md"
+    },
+    {
+      "from": "docs/skills/design-scale-calibration/SKILL.md",
+      "target": "../../SCIENTIFIC_SKILLS_COMPATIBILITY.md"
+    },
+    {
+      "from": "docs/skills/design-scale-calibration/SKILL.md",
+      "target": "../../../knowledge/research-skills/research-routes/ptq4dino.md"
+    },
+    {
+      "from": "docs/skills/design-scale-calibration/SKILL.md",
+      "target": "../../../knowledge/research-skills/research-routes/adalog.md"
+    },
+    {
+      "from": "docs/skills/design-scale-calibration/SKILL.md",
+      "target": "../../../knowledge/research-skills/research-routes/gptaq.md"
+    },
+    {
+      "from": "docs/skills/design-scale-calibration/SKILL.md",
+      "target": "../../../knowledge/research-skills/research-routes/erq.md"
+    },
+    {
+      "from": "docs/skills/design-scale-calibration/references/candidates-and-groups.md",
+      "target": "#候选空间与合法量化状态"
+    },
+    {
+      "from": "docs/skills/design-scale-calibration/references/candidates-and-groups.md",
+      "target": "#共享倍率共享参数和分组"
+    },
+    {
+      "from": "docs/skills/design-scale-calibration/references/candidates-and-groups.md",
+      "target": "#候选从哪里来"
+    },
+    {
+      "from": "docs/skills/design-scale-calibration/references/candidates-and-groups.md",
+      "target": "#参考解投影与前向分组"
+    },
+    {
+      "from": "docs/skills/design-scale-calibration/references/candidates-and-groups.md",
+      "target": "#联合自由度与表示缺口"
+    },
+    {
+      "from": "docs/skills/design-scale-calibration/references/candidates-and-groups.md",
+      "target": "#一个可变形的两阶段设计"
+    },
+    {
+      "from": "docs/skills/diagnose-ptq-failure/SKILL.md",
+      "target": "references/baseline-and-scope.md"
+    },
+    {
+      "from": "docs/skills/diagnose-ptq-failure/SKILL.md",
+      "target": "references/error-propagation-and-intervention.md"
+    },
+    {
+      "from": "docs/skills/diagnose-ptq-failure/SKILL.md",
+      "target": "references/diagnosis-cases.md"
+    },
+    {
+      "from": "docs/skills/diagnose-ptq-failure/SKILL.md",
+      "target": "../design-discriminative-experiment/SKILL.md"
+    },
+    {
+      "from": "docs/skills/diagnose-ptq-failure/SKILL.md",
+      "target": "../adapt-quantization-method/SKILL.md"
+    },
+    {
+      "from": "docs/skills/diagnose-ptq-failure/SKILL.md",
+      "target": "../select-calibration-objective/SKILL.md"
+    },
+    {
+      "from": "docs/skills/diagnose-ptq-failure/SKILL.md",
+      "target": "../design-scale-calibration/SKILL.md"
+    },
+    {
+      "from": "docs/skills/diagnose-ptq-failure/SKILL.md",
+      "target": "../evaluate-ptq-candidate/SKILL.md"
+    },
+    {
+      "from": "docs/skills/diagnose-ptq-failure/references/diagnosis-cases.md",
+      "target": "../../../../knowledge/research-skills/research-routes/ptq4dino.md"
+    },
+    {
+      "from": "docs/skills/diagnose-ptq-failure/references/diagnosis-cases.md",
+      "target": "../../../../knowledge/research-skills/research-routes/INDEX.md"
+    },
+    {
+      "from": "docs/skills/diagnose-ptq-failure/references/error-propagation-and-intervention.md",
+      "target": "frozen-propagation.md"
+    },
+    {
+      "from": "docs/skills/evaluate-ptq-candidate/SKILL.md",
+      "target": "references/evidence-and-comparison.md"
+    },
+    {
+      "from": "docs/skills/evaluate-ptq-candidate/SKILL.md",
+      "target": "references/oracle-transfer-and-selection.md"
+    },
+    {
+      "from": "docs/skills/learn-from-reference-solution/SKILL.md",
+      "target": "references/reference-construction.md"
+    },
+    {
+      "from": "docs/skills/learn-from-reference-solution/SKILL.md",
+      "target": "references/pattern-to-method.md"
+    },
+    {
+      "from": "docs/skills/learn-from-reference-solution/SKILL.md",
+      "target": "../../../knowledge/research-skills/research-routes/ptq4dino.md"
+    },
+    {
+      "from": "docs/skills/learn-from-reference-solution/references/reference-construction.md",
+      "target": "../../../SCIENTIFIC_SKILLS_COMPATIBILITY.md"
+    },
+    {
+      "from": "docs/skills/select-calibration-objective/SKILL.md",
+      "target": "references/objective-design.md"
+    },
+    {
+      "from": "docs/skills/select-calibration-objective/SKILL.md",
+      "target": "references/ranking-validation.md"
+    },
+    {
+      "from": "docs/skills/select-calibration-objective/SKILL.md",
+      "target": "../../../knowledge/research-skills/research-routes/ptq4dino.md"
+    },
+    {
+      "from": "docs/skills/select-calibration-objective/SKILL.md",
+      "target": "../../../knowledge/research-skills/research-routes/ptq4vit.md"
+    },
+    {
+      "from": "docs/skills/select-calibration-objective/SKILL.md",
+      "target": "../../../knowledge/research-skills/research-routes/gptaq.md"
+    },
+    {
+      "from": "docs/skills/select-calibration-objective/SKILL.md",
+      "target": "../../SCIENTIFIC_SKILLS_COMPATIBILITY.md"
+    },
+    {
+      "from": "docs/skills/select-calibration-objective/references/ranking-validation.md",
+      "target": "../../../../knowledge/research-skills/research-routes/ptq4dino.md"
+    },
+    {
+      "from": "knowledge/research-skills/SOURCES.md",
+      "target": "../../docs/SCIENTIFIC_SKILLS_COMPATIBILITY.md"
+    },
+    {
+      "from": "knowledge/research-skills/SOURCES.md",
+      "target": "research-routes/PAPER_SOURCES.md"
+    },
+    {
+      "from": "knowledge/research-skills/SOURCES.md",
+      "target": "research-routes/ptq4dino.md#来源与数值账本"
+    },
+    {
+      "from": "knowledge/research-skills/research-routes/INDEX.md",
+      "target": "ptq4dino.md"
+    },
+    {
+      "from": "knowledge/research-skills/research-routes/INDEX.md",
+      "target": "ptq4vit.md"
+    },
+    {
+      "from": "knowledge/research-skills/research-routes/INDEX.md",
+      "target": "repq-vit.md"
+    },
+    {
+      "from": "knowledge/research-skills/research-routes/INDEX.md",
+      "target": "gptaq.md"
+    },
+    {
+      "from": "knowledge/research-skills/research-routes/INDEX.md",
+      "target": "erq.md"
+    },
+    {
+      "from": "knowledge/research-skills/research-routes/INDEX.md",
+      "target": "adalog.md"
+    },
+    {
+      "from": "knowledge/research-skills/research-routes/INDEX.md",
+      "target": "PAPER_SOURCES.md"
+    },
+    {
+      "from": "knowledge/research-skills/research-routes/INDEX.md",
+      "target": "../RESEARCH_CONVENTIONS.md"
+    },
+    {
+      "from": "knowledge/research-skills/research-routes/PAPER_SOURCES.md",
+      "target": "ptq4vit.md"
+    },
+    {
+      "from": "knowledge/research-skills/research-routes/PAPER_SOURCES.md",
+      "target": "repq-vit.md"
+    },
+    {
+      "from": "knowledge/research-skills/research-routes/PAPER_SOURCES.md",
+      "target": "gptaq.md"
+    },
+    {
+      "from": "knowledge/research-skills/research-routes/PAPER_SOURCES.md",
+      "target": "erq.md"
+    },
+    {
+      "from": "knowledge/research-skills/research-routes/PAPER_SOURCES.md",
+      "target": "adalog.md"
+    },
+    {
+      "from": "knowledge/research-skills/research-routes/ptq4dino.md",
+      "target": "#问题起点与参考解"
+    },
+    {
+      "from": "knowledge/research-skills/research-routes/ptq4dino.md",
+      "target": "#从参数模式到功能假设"
+    },
+    {
+      "from": "knowledge/research-skills/research-routes/ptq4dino.md",
+      "target": "#拆开候选覆盖与选择能力"
+    },
+    {
+      "from": "knowledge/research-skills/research-routes/ptq4dino.md",
+      "target": "#让指标看见真实量化传播"
+    },
+    {
+      "from": "knowledge/research-skills/research-routes/ptq4dino.md",
+      "target": "#复杂指标失败后如何转向"
+    },
+    {
+      "from": "knowledge/research-skills/research-routes/ptq4dino.md",
+      "target": "#独立前向分组的正式实验"
+    },
+    {
+      "from": "knowledge/research-skills/research-routes/ptq4dino.md",
+      "target": "#两轮校准的后续汇报"
+    },
+    {
+      "from": "knowledge/research-skills/research-routes/ptq4dino.md",
+      "target": "#可迁移的研究方式与边界"
+    },
+    {
+      "from": "knowledge/research-skills/research-routes/ptq4dino.md",
+      "target": "#来源与数值账本"
+    }
+  ]
+}

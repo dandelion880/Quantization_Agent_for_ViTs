@@ -6,7 +6,7 @@
 
 `runtime/driver.py:request_body()` 调用 `agents/interaction.py:context()`，再由 `agents/roles.py:role_spec()` 拼接 common、当前角色和任务片段、提交视图与工具 Schema。ResearchBrief、当前任务、预算、必需短证据/反馈进入上下文；长正文给分页入口。角色不会自动读取全部 Prompt 或全部历史。
 
-所有角色只获得 `context.knowledge_index.read_asset` 这一导航指针。Generation/Evolution/Judger/Recorder 额外获得 Skill 短 INDEX；允许 request_experiment 的任务获得 method_catalog 与 EXPERIMENT_INPUTS 正文；generate/evolve/code/safeguard/record/plan_l3 获得 complete_solutions；Coding/Safeguard 获得 CODE_INTERFACES 正文。其余资源自主读取，目录不是阅读证明。
+所有角色只获得 `context.knowledge_index.read_asset` 这一导航指针。科研角色额外获得与当前问题相关的 Skill 短描述；允许 request_experiment 的任务获得 method_catalog 与 EXPERIMENT_INPUTS 正文；generate/select/code/safeguard/record/plan_l3 获得 complete_solutions；Coding/Safeguard 获得 CODE_INTERFACES 正文。其余资源自主读取，目录不是阅读证明。
 
 `authorized_assets()` 从 docs/ 与 knowledge/ 发现文本、合入 Brief 明确列出的 reference/ 来源和当前可见任务产物；`request_body()` 冻结路径/哈希及 Journal 序号。read_asset 使用同一授权快照，核验当前字节并返回 UTF-8 字符页、sha256、offset/next_offset。旧 skills/、methods/、solutions/ 别名不变，knowledge/ 别名与项目相对路径均可用。新增目录没有开放任意文件或同回合私有子任务。
 
@@ -32,7 +32,7 @@ read_asset 是方法正文的普通入口，不触发实验。`MethodLibrary` �
 
 request_experiment → 原始 ExperimentCard → 必要时 Coding 单实现 → 宿主绑定 → Safeguard → 数值 worker → 程序 EvidenceCard → 原研究任务续调。已有内置服务沿其直接执行路径。Evidence 保留真实条件、执行身份、原始指标和产物；失败也是执行事实，不自动构成科学反证。Recorder 只综合，不生成测量。
 
-程序归档来源和计数；Recorder 用 Metareview 提交科学分析及可选知识更新。L2 修订绑定可见来源/范围，不同条件不自动合并；待综合材料继续 pending。运行内 incumbent 与协议 Top-3 分别维护，前者是本研究状态，后者是完整方案复用库。Skill/方法正文、README、索引不会被运行角色自动改写。
+程序归档来源和计数；Recorder 用 Metareview 提交科学分析及可选知识更新。L2 修订绑定可见来源/范围，不同条件不自动合并；待综合材料继续 pending。运行内 incumbent 与协议 Top-3 分别维护，前者是本研究状态，后者是完整方案复用库。人工 Skill 和方法原件随源码归档。
 
 可选来源示例（无需凑齐全部类型）：
 
@@ -47,3 +47,64 @@ request_experiment → 原始 ExperimentCard → 必要时 Coding 单实现 → 
 `sources.ref` 仍按 Journal 可见性解析；`evidence_refs` 仍仅能引用真实 EvidenceCard。为兼容旧输出，只有 sources 中可解析为**当前授权静态文本**的 ref 路径会改存 document；保留 status/supports 等内容，读过哪些字节及其哈希由原 read_asset 回执追溯。显式 document 是作者的文档来源声明，不自动证明已读，也不赋予新权限。未知卡片、错误或私有 ref 仍沿既有可选条目问题记录处理，其余有效正文继续提交。文档不会加入 scientific_refs 或测量支持链。
 
 旧提交中的 submission_issues 与不可变卡片不补写；兼容修正只作用于新提交。恢复仍执行原源码身份与显式干预规则；不能把静态知识编辑伪装成未改变源码的续跑。
+
+## 同包双任务评测
+
+冻结实验只含 classification 与 ade_frozen 两项、server 后端且无训练时，
+未显式给出 gpu_count 的资源请求最多取两张空闲授权卡；显式 gpu_count=1 保持串行。
+两项各自沿用原有单卡评测，母进程先完成一次 prepare/export/load 和 parity，
+ADE 子进程从同一不可变包独立 load；ready/start 握手完成身份核验后，
+分类在主卡与 ADE 在副卡同时启动原有评测。load 使用禁止读 batch 的 FrozenData，
+不会再次校准或分片，握手等待同样受数值超时与进程清理管理。
+自定义 make_executor.load 在子进程按原 Safeguard 批准源码导入，执行包文件、
+plan、FP 和 Q 全状态身份校验与原有审计；只有实现显式设置 parallel_frozen_load=True
+才启用独立重载并行；未声明时保留串行。不支持的后端/服务和卡不足均在结果中记录串行原因。
+
+子进程继承 GPU lease，进程身份写入作业 processes，受同一 TaskRuntime 的
+取消、数值超时与恢复清理管理；不额外预留或叠加子进程预算。失败保留已经完成
+的任务原件和 dual_task_failure.json，整次实验仍失败。dual_task_receipt.json
+记录同包 hash、设备和真实评测时间交集，实际并行以该回执而非配置判定。
+
+## 事后知识更正与完整方案归档
+
+运行内知识仍由Recorder综合。明确授权的维护可调用 `ResearchMemory.append_correction`，仅为既有claim追加有证据、scope与supersedes绑定的Metareview；author=program，标记maintenance_correction/operator/reason/model_called=false，不冒充模型复盘或正式测量。同一幂等键不能换正文。原卡片/提交不改，派生checkpoint推进，原正式summary/status不重写。L2返回当前版本；历史复盘短视图附knowledge_revisions，详细历史仍按需read_card。
+
+SolutionLibrary的Top3仍只用于保留与B排序。available/catalog及冻结加载从本运行已提交的library/archive/considered事件发现完整历史方案；首次新运行可冻结同协议共享archive，后续读取不直接扫描共享桶以免泄露未来结果。排名外有效方案与未测种子分别标注，历史成绩不冒充新测量；configuration_asset与批准源码保持可追溯。
+
+
+## 独立灵感库与跨轮接续
+
+`InspirationLibrary` 复用本运行 Journal，以 `inspiration_updated` 保存稳定 ID 的简短版本记录，以 `inspiration_task` / `inspiration_candidate` 绑定科研任务和确切候选。它独立于 SolutionLibrary；允许只有想法、依据、进展、问题和下一步，没有代码、完整方案或正指标。`update_inspiration` 不产生实验、不预留数值预算；新条目默认 paused，Generation 用 status 与 reason 激活、暂停、恢复或切换。切换原条目和旧源码都保留，最多一条 active。更新工具与回执幂等提交，中断后复用同一请求；旧快照不能覆盖新进展。Recorder 只能修改已有进展、待办、引用与已吸收部分，不能改变机制或活跃状态。
+
+H3 任务默认绑定当前 active ID；发布候选前已开展的研究请求及后续 L3 请求继承该 ID。旧调用未先建条目时，H3 提交可建立初始条目并关联同任务的请求；不自动导入旧运行。综合阶段针对某灵感取证可在实验草案提供 inspiration_id；不依靠实验描述猜归属。发布后的 H3 科学修订与 L3 始终沿其确切候选的灵感身份，后续切换不改写已有归属或取消三候选 L3。
+
+恢复视图从原 task_snapshot、ExperimentCard、EvidenceCard 和代码 manifest 派生，提供原始请求/配置、source_sha256、源码快照版本、执行结果和失败引用，不重复保存完整方案或大型产物。下一轮 H3 context.inspiration_continuation 默认给最近三个请求和代码入口、未完成事项及完整 read_inspiration 入口；原件保持可读，暂停条目同样可读。Coding/Safeguard 沿已有 implementation_history 直接取得原源码，仍核验文件哈希与可见序号；每份代码结果的 parent_code_ids 记录宿主交付的父代码上下文，实际增量和撤销方式由 Coding explanation 说明，不代表程序已验证科学派生关系。既有冻结包继续通过 evidence_refs/solution_refs 的严格来源恢复，失败或未导出的包不伪造为可加载模型。
+
+H1/H2 对库内完整父方案用 solution_derivation 保存 base_solution_id、changes、rollback；宿主绑定父记录的完整哈希和源码快照引用。该字段兼容旧卡片省略；库外父方案仍需在正文给出完整、可追溯定义。下一轮交付各槽位先前派生入口，原完整父方案和代码保留以供回退。可用灵感部分实际进入 H1/H2 后，以 absorbed_parts 的 part / target_ref 追加确切候选引用；部分吸收不暂停整个灵感，也不更换 H1/H2 的完整基础。弱保底不等于原样重交基线或每轮保证不降。
+
+低分、未入 Top-3、失败不会自动改动灵感状态。Generation 根据实际进展和具体下一步决策，Recorder 记录，宿主负责存取与调度。H1/H2/H3 最终候选仍全部进入原 L3；B 独立保留；正式方案仍按有效双任务 L3 的 ADE20K 主指标及既有规则更新。灵感库目前仅在本运行内跨轮/重启恢复，无跨运行自动合并或源码资产迁移。源码缺失/哈希不符沿既有错误处理返回，不从文字合成“恢复成功”；修改宿主后的历史恢复仍需要显式 intervention。
+
+
+## 动态研究主题与方法谱系
+
+新轮次先排 `rNNN/focus`（Generation，原订阅串行锁与 BudgetLedger），在 H1/H2/H3 启动前恢复上次主题、依据、用户澄清、关联灵感/方法、关键证据、原代码配置和未完成动作。通常一次模型决定产生一个主题版本并绑定本轮三个槽位，不三路重复选题。若 Generation 仅暂停而未选择后续方向，则先回到共同选题，不自动启动暂停方向的候选；可一次 switch 同时保留旧方向并选择新方向。失败保留待重试状态，不由宿主填充“默认正确”选题。共同调用占用原 LLM/墙钟预算，不增加候选或数值预算。
+
+主题条目是 question、mutable_dimensions、held_conditions、objective、rationale、next_step、reconsider_when 和短引用；主题不是算法正确性声明或数值执行约束。问题可由增益转为解释、必要性检验、消融、共享或简化；相关进展与正式指标分开，方案晋升规则不变。Generation 决定 establish/continue/narrow/expand/pause/resume/switch。next_step 是叙述；初次建立主题或显式 new_action 才创建稳定 action ID。completed_action_ids / deferred_action_ids / resumed_action_ids 由 Generation 精确更新状态，next_action_id 接续 open 动作并更新复议条件。暂停/恢复不按文本重复创建动作，完成后要做新的同文行动必须显式 new_action。原始版本和复议条件始终可读，省略不会清空旧动作或来源。
+
+Journal 的 topic_version 以 topic-id@version 为身份、decision_ref 指向真实 ReviewDecisionCard；topic_round_binding 固定共同初始版本，topic_scope_binding 记录轮中影响槽位和理由。Generation 用 revise_topic 明确 affected_slots / impact，仅影响后续投入和新提交；冻结调用继续按原读取快照归属。已发布候选的 L3 严格继承该候选 topic_ref/method_id，不随当前主题切换。科学修改仍需 revise_candidate，新版本才获得新归属。主题状态不改变 InspirationLibrary.active；灵感切换仍须明确 update_inspiration。
+
+method_candidate 仅补充算法身份、父 method_id（或 solution:<完整方案ID>）、变化说明与候选引用。同算法跨主题继续时 Generation 显式沿用 method_id；新算法/派生省略 ID、声明 method_lineage，由宿主分配新身份并链接父候选。宿主不凭同名、槽位或灵感推断算法相同。旧候选不回填虚构谱系；已有完整方案、HypothesisCard 修订及源码父链继续可读。request_history 复用原请求、代码 manifest、源码快照、配置和 Evidence 投影，不复制完整方案。
+
+context.research_topic 默认交付摘要、最近三项请求/实现和最多八项未完成动作，完整版本由 read_topic 可达；method_catalog_state/read_method 给出沿革及准确实现入口。实际研究请求、最终计划、代码和 Evidence 经已有不可变引用链恢复；任何主题都可以读全局历史完整方案/B。主题不会新增实验的科学范围拒绝门禁，用户 Brief 的全局空间、硬约束、量化与评价协议仍是原执行链的权威。
+
+Recorder 通过可选 Metareview.topic_notes（topic_ref、progress、reconsideration、source_refs）整理有条件的认识、动作进展和复议建议，只追加 topic_note，不改主题状态。Generation 下次恢复这些建议后独立判断。历史无主题状态保持显式未知；已启动的旧轮不插入事后“共同决定”，下一新轮再选题。恢复仍要求原源码变更 intervention；没有跨运行自动合并、资产迁移、语言辩论或宿主科学打分。
+
+恢复读取以 source_snapshot 的 path、sha256、field 和 source_version 保留原件身份。`read_asset({asset: path, snapshot_field: field})` 返回授权成员目录；加 `member` 和 offset/limit 读取确切原文及成员 SHA256。验证完整归档哈希后仅开放执行实现、必要配置和方法/方案成员；评价规则、测试、角色 Prompt 不在恢复视图。原 research_run.json 和 intervention commit 保持完整归档，旧回执的过宽文件授权不继续生效。跨运行完整方案仍用原归档版本，不能以当前源码替代。
+
+自动 topic_catalog、inspiration_library、method_catalog_state 各给最多八项短目录和分页入口；对应 read 工具省略身份即可浏览/按 query 查询，指定身份可读完整历史。当前主题/活跃灵感的未完成事项与复议条件继续交付，同一请求或实现正文在 context 内只保留一份，其他位置给出准确 body_location。Recorder 错误 topic_notes 逐项进入 submission_issues，原条目和原因保留；其余有效正文正常发布，不放宽身份核验。
+
+## Recorder 流程版本
+
+同一 Metareview 的可选 `skill_updates` 随 `recording_submissions`、科学分析、知识修订及批次游标一起提交。每项保留原稿，来源由宿主解析到本批可见卡的精确字段。失效条目记录 `invalid` 和原因。有效提案先记 `queued`。提交后按 Metareview 哈希及条目位置发布，在共享锁下核对当前父版本。`EXP/skills/versions/<sha>/<name>/SKILL.md` 与 `references/origin.json` 保存包和出处，`releases/` 中的原子回执确认发布；可重建目录。Journal 的 `skill_update_result` 记录 published 或 conflict，暂时写入失败保留待办，下次启动或 Recorder 提交重新处理。一次运行的模型、数据、协议记入来源与范围。
+
+新运行固定共享头与人工包版本。后续模型调用只加入本运行已发布版本，已经发出的调用使用原 Journal 截点。`context.skill_catalog` 给出最多七条相关简介；`read_asset skills/INDEX.md` 支持 find 与分页。`skills/<name>/SKILL.md` 读取当前版本，`skills/<name>@<sha>/…` 精确读取可见祖先、退役版本或来源附件。源码里的人工原件仍进入 core_sha256；显式修订和停用需绑定包哈希。不同血缘同名在目录标为冲突。流程提案、已发表经验和实际测量各保留自己的身份。

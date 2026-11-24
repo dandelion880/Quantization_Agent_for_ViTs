@@ -5,23 +5,64 @@
 """
 
 import platform
+import inspect
 
 from ..schemas import PTQError, require
 
 
+def inspect_vit(model, spec):
+    """Read the prefix/order contract of the bound patch ViT and verify asset declarations."""
+    patch = model.patch_embed.patch_size
+    pair = [patch, patch] if isinstance(patch, int) else list(patch)
+    blocks = list(model.blocks)
+    paths = {id(module): path for path, module in model.named_modules()}
+    cls = getattr(model, "cls_token", None)
+    extras = [(name, getattr(model, attr)) for name, attr in
+              (("storage", "storage_tokens"), ("register", "register_tokens"), ("distillation", "dist_token"))
+              if getattr(model, attr, None) is not None]
+    require(len(extras) <= 1, "mixed prefix layout needs a model adapter")
+    kind, count = (extras[0][0], extras[0][1].shape[-2]) if extras else ("none", 0)
+    facts = {"patch_size": pair[0] if pair[0] == pair[1] else pair,
+             "depth": len(blocks), "hidden_dim": model.embed_dim, "num_heads": blocks[0].attn.num_heads,
+             "cls_token_count": cls.shape[-2] if cls is not None else 0,
+             "special_token_count": count, "special_token_type": kind,
+             "prefix_token_count": (cls.shape[-2] if cls is not None else 0) + count}
+    for name, value in facts.items():
+        require(name not in spec or value == spec[name], f"actual {name}={value} conflicts with asset", code="asset_mismatch")
+    return {**facts, "block_paths": [paths[id(b)] for b in blocks],
+            "block_forward": str(inspect.signature(blocks[0].forward)),
+            "block_type": type(blocks[0]).__name__,
+            "task_forward": "forward_features" if hasattr(model, "n_storage_tokens") else "forward"}
+
+
+def boundary_tensor(value):
+    """One image stream. Preserve lists/tuples in the actual replay call."""
+    import torch
+    if isinstance(value, (tuple, list)) and len(value) == 1:
+        value = value[0]
+    require(torch.is_tensor(value), "block boundary requires one tensor stream")
+    return value
+
+
 class ProfileAdapter:
-    version = "torch_vit_profile_v1"
+    version = "torch_vit_profile_v2"
 
     def token_layout(self, backend, name, shape, image_shape):
         """返回已验证的 token 切片；window 下标仅表示窗口内位置。"""
         require(len(shape) == 3 and len(image_shape) == 4, "token 统计要求 [B,N,C] 特征与图像输入")
         spec = getattr(backend, "spec", {})
         family = spec.get("family", "")
-        cls, special = spec.get("cls_token_count", 0), spec.get("special_token_count", 0)
+        cls, special = spec.get("cls_token_count"), spec.get("special_token_count")
         scope, batch_semantics = "image_sequence", "images"
         extra = {}
-        if family.startswith(("DINO", "MAE", "DeiT")):
-            require(name.startswith("blocks.") or name == "norm", "该位点尚未验证全局 token 排列")
+        if hasattr(backend.model, "blocks") and hasattr(backend.model, "patch_embed"):
+            paths = spec.get("block_paths")
+            if paths is None:
+                blocks = {id(b) for b in backend.model.blocks}
+                paths = [n for n, m in backend.model.named_modules() if id(m) in blocks]
+            require(name == "norm" or any(name == b or name.startswith(b + ".") for b in paths),
+                    "该位点尚未验证全局 token 排列")
+            require(cls is not None and special is not None, "缺少已验证的 prefix 布局")
             patch = spec["patch_size"]
             ph, pw = (patch, patch) if isinstance(patch, int) else patch
             patches = (image_shape[-2] // ph) * (image_shape[-1] // pw)

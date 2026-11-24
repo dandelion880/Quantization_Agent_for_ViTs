@@ -41,9 +41,18 @@ class CLIVersionGates(unittest.TestCase):
                 self.preflight('codex-cli 0.167.0', **kwargs)
             self.assertEqual(error.exception.code, 'llm_tool_isolation')
 
+    def test_reviewed_0169_keeps_isolation_and_exact_version_gate(self):
+        result = self.preflight('codex-cli 0.169.0')
+        self.assertIn('cli169_compatibility.json', result['version_review'])
+        for kwargs in ({'tool_mode': 'native'}, {'effort': 'low'}):
+            with self.subTest(kwargs=kwargs), self.assertRaises(PTQError) as error:
+                self.preflight('codex-cli 0.169.0', **kwargs)
+            self.assertEqual(error.exception.code, 'llm_tool_isolation')
+
     def test_unknown_and_similar_versions_fail_before_account_or_model_catalog(self):
         for version in ('codex-cli 0.165.0', 'codex-cli 0.166.1', 'codex-cli 0.166.0-dev',
-                        'codex-cli 0.167.1', 'codex-cli 0.167.0-dev', 'codex-cli 1.0.0'):
+                        'codex-cli 0.167.1', 'codex-cli 0.167.0-dev',
+                        'codex-cli 0.169.1', 'codex-cli 0.169.0-dev', 'codex-cli 1.0.0'):
             with self.subTest(version=version), \
                     patch('runtime.subscription.cli.run', return_value=(0, version, '')) as command, \
                     patch('runtime.subscription.cli.account_status') as account:

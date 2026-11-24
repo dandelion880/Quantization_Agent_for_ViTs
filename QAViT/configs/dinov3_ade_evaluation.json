@@ -1,0 +1,125 @@
+{
+  "model": {
+    "auxiliary_head": null,
+    "backbone": {
+      "checkpoint_path": "checkpoints/dinov3_vitb16_pretrain_lvd1689m-73cec8be.pth",
+      "freeze_backbone": true,
+      "image_size": 512,
+      "out_indices": [
+        2,
+        5,
+        8,
+        11
+      ],
+      "type": "DINOv3MMSegBackbone"
+    },
+    "data_preprocessor": {
+      "bgr_to_rgb": true,
+      "mean": [
+        123.675,
+        116.28,
+        103.53
+      ],
+      "pad_val": 0,
+      "seg_pad_val": 255,
+      "size": [
+        512,
+        512
+      ],
+      "std": [
+        58.395,
+        57.12,
+        57.375
+      ],
+      "type": "SegDataPreProcessor"
+    },
+    "decode_head": {
+      "align_corners": false,
+      "channels": 512,
+      "dropout_ratio": 0.1,
+      "in_channels": [
+        768,
+        768,
+        768,
+        768
+      ],
+      "in_index": [
+        0,
+        1,
+        2,
+        3
+      ],
+      "loss_decode": {
+        "loss_weight": 1.0,
+        "type": "CrossEntropyLoss",
+        "use_sigmoid": false
+      },
+      "norm_cfg": {
+        "requires_grad": true,
+        "type": "SyncBN"
+      },
+      "num_classes": 150,
+      "pool_scales": [
+        1,
+        2,
+        3,
+        6
+      ],
+      "type": "UPerHead"
+    },
+    "neck": {
+      "in_channels": [
+        768,
+        768,
+        768,
+        768
+      ],
+      "out_channels": 768,
+      "scales": [
+        4,
+        2,
+        1,
+        0.5
+      ],
+      "type": "MultiLevelNeck"
+    },
+    "pretrained": null,
+    "test_cfg": {
+      "crop_size": [
+        512,
+        512
+      ],
+      "mode": "slide",
+      "stride": [
+        341,
+        341
+      ]
+    },
+    "train_cfg": {},
+    "type": "EncoderDecoder"
+  },
+  "pipeline": [
+    {
+      "type": "LoadImageFromFile"
+    },
+    {
+      "keep_ratio": true,
+      "scale": [
+        2048,
+        512
+      ],
+      "type": "Resize"
+    },
+    {
+      "reduce_zero_label": true,
+      "type": "LoadAnnotations"
+    },
+    {
+      "type": "PackSegInputs"
+    }
+  ],
+  "data_root": "/root/data-pub/ssdbackup/ssddata/data/chengzelu/ADEChallengeData2016",
+  "expected_images": 2000,
+  "head_receipt": "assets/dinov3_ade_head.json",
+  "provenance": "model and test_pipeline from bound MMSeg checkpoint meta.cfg"
+}

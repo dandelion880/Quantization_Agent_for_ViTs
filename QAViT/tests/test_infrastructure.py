@@ -20,6 +20,7 @@ from core.memory import ResearchMemory, MemoryRetriever
 from core.debate import INITIAL_PAIRS, ranking_table, validate_verdict
 from core.workflow import Workflow
 from tools.experiments import execution_fingerprint
+from tests.support import advance_with_topic_fixture
 from tests.support import validation_config, experiment_payload, hypothesis, review, meta
 
 
@@ -336,6 +337,9 @@ class DebateAndMemory(TempCase):
 class WorkflowSimulation(TempCase):
     def scripted(self, wf, task, *, ineligible=False, five=False):
         c, purpose = task["inputs"]["context"], task["inputs"]["purpose"]
+        if purpose == "focus":
+            from tests.support import topic_decision
+            return topic_decision(wf)
         if purpose in ("generate", "evolve"):
             value = hypothesis(c["round"], c["slot"])
             if wf.memory.snapshot()["L3"]:
@@ -352,6 +356,8 @@ class WorkflowSimulation(TempCase):
         if purpose == "arbitrate":
             more = five and c["pair"] == ["H1", "H2"] and c["exchange"] < 5
             return review("verdict", outcome="continue" if more else "A", decisive_reason="test control flow", changed_judgments=[], next_questions=[])
+        if purpose == "select":
+            return review("ranking", selected_slot="H1", selection_basis="CPU fixture: retain mature baseline")
         if purpose == "rank":
             table = ranking_table(wf.selection_matches(c), c["eligible"])
             return review("ranking", selected_slot=table["groups_by_direct_results"][0][0] if c["eligible"] else None,
@@ -364,7 +370,7 @@ class WorkflowSimulation(TempCase):
         wf = self.workflow(rounds)
         reloaded = False
         for tick in range(350):
-            if wf.advance():
+            if advance_with_topic_fixture(wf):
                 break
             ready = wf.queue.ready()
             self.assertTrue(ready, "scripted workflow stalled")
@@ -377,7 +383,7 @@ class WorkflowSimulation(TempCase):
                     for card in context["memory"]["cards"]:
                         self.assertTrue(wf.can_read_card(task, card))
                 wf.submit(task, self.scripted(wf, task, ineligible=ineligible, five=five), self.root / "SCRIPTED_TEST_ONLY.json")
-            if tick == 4:
+            if tick == 1:
                 wf = Workflow(wf.run_dir)
                 reloaded = True
         else:
@@ -387,24 +393,18 @@ class WorkflowSimulation(TempCase):
         self.assertIsNone(wf.memory.snapshot()["L1"]["incumbent"])
         self.assertEqual(len(wf.journal.find_cards("EvidenceCard")), 0)
         for number in range(1, rounds + 1):
-            self.assertEqual(len(wf.matches(number)), 4)
-            self.assertEqual(len(wf.round_hypotheses(number)), 4)
+            self.assertEqual(wf.matches(number), {})
+            self.assertEqual(set(wf.round_hypotheses(number)), {"H1", "H2", "H3"})
         return wf
 
-    def test_two_round_four_matches_feedback_and_resume(self):
+    def test_two_round_gonly_feedback_and_resume(self):
         wf = self.drive()
-        self.assertTrue(all(m["exchanges"] == 1 for m in wf.matches(1).values()))
         self.assertTrue(all(h["payload"]["feedback_used"] for h in wf.round_hypotheses(2).values()))
-
-    def test_ineligible_pairs_are_records_not_fake_wins(self):
-        wf = self.drive(ineligible=True, rounds=1)
-        self.assertEqual(sum(m["outcome"] == "ineligible" for m in wf.matches(1).values()), 2)
-        self.assertTrue(all(m["exchanges"] == 0 for m in wf.matches(1).values() if m["outcome"] == "ineligible"))
-
-    def test_fifth_exchange_is_a_hard_ceiling(self):
-        wf = self.drive(five=True, rounds=1)
-        self.assertEqual(wf.matches(1)["H1-H2"]["exchanges"], 5)
-        self.assertFalse(any("/e6/" in key for key in wf.tasks()))
+        for number in (1, 2):
+            self.assertEqual(wf.selection_card(number)['author'], 'generation')
+            self.assertEqual(wf.selection_card(number)['payload']['selected_slot'], 'H1')
+        purposes = {t['inputs'].get('purpose') for t in wf.tasks().values()}
+        self.assertEqual(purposes, {'focus', 'generate', 'select', 'record'})
 
 
 class PureSemantics(unittest.TestCase):

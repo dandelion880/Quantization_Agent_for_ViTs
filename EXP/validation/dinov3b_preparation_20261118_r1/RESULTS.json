@@ -1,0 +1,947 @@
+{
+  "formal_rounds_started": 0,
+  "model": {
+    "architecture": "ViT-B/16",
+    "block_forward": "(x_or_x_list, rope_or_rope_list=None) -> List[torch.Tensor]",
+    "block_type": "SelfAttentionBlock",
+    "checkpoint_sha256": "73cec8be7427c8655ceced13ce62f6e20a1fa90d1b4d4a550df17a1144081a7c",
+    "classification_head": {
+      "feature": "x_norm_clstoken",
+      "kind": "verified frozen normalized-CLS linear head",
+      "protected_module": "head",
+      "sha256": "2e460dfaf7b9ddf1d40cdad225cafea6d19b8d5d749d2b5c8beb247d5c52a6b8"
+    },
+    "cls_token_count": 1,
+    "depth": 12,
+    "example_block_call": {
+      "input": [
+        [
+          {
+            "device": "cpu",
+            "dtype": "torch.float32",
+            "shape": [
+              1,
+              201,
+              768
+            ]
+          }
+        ],
+        [
+          [
+            {
+              "device": "cpu",
+              "dtype": "torch.float32",
+              "shape": [
+                196,
+                64
+              ]
+            },
+            {
+              "device": "cpu",
+              "dtype": "torch.float32",
+              "shape": [
+                196,
+                64
+              ]
+            }
+          ]
+        ]
+      ],
+      "kwargs": {},
+      "macs": null,
+      "output": [
+        {
+          "device": "cpu",
+          "dtype": "torch.float32",
+          "shape": [
+            1,
+            201,
+            768
+          ]
+        }
+      ]
+    },
+    "example_sample_ids": [
+      "train/n15075141/n15075141_8773.JPEG"
+    ],
+    "family": "DINOv3-B",
+    "first_block": "blocks.0",
+    "hidden_dim": 768,
+    "input": {
+      "device": "cpu",
+      "dtype": "torch.float32",
+      "shape": [
+        1,
+        3,
+        224,
+        224
+      ]
+    },
+    "last_block": "blocks.11",
+    "model_id": "dinov3_vitb16",
+    "num_heads": 12,
+    "patch_size": 16,
+    "pool_counts": {
+      "calibration": 32,
+      "final": 50000,
+      "search": 1000
+    },
+    "prefix_token_count": 5,
+    "preprocessing": {
+      "antialias": true,
+      "crop_size": 224,
+      "interpolation": "bicubic",
+      "mean": [
+        0.485,
+        0.456,
+        0.406
+      ],
+      "resize_shorter": 256,
+      "std": [
+        0.229,
+        0.224,
+        0.225
+      ]
+    },
+    "profile_tools": [
+      "query_ptq_sites",
+      "profile_structure",
+      "profile_distribution",
+      "read_profile_evidence"
+    ],
+    "sample_selection": {
+      "detail_field": "sample_views",
+      "meaning": "evaluation/fit use the fixed per-split order; seeded profiling reports its own actual IDs",
+      "ordering_seeds": {
+        "calibration": 0,
+        "final": 20261009,
+        "search": 20261008
+      }
+    },
+    "segmentation": {
+      "feature_interface": "DINOv3MMSegBackbone",
+      "head_sha256": "db894b760c37acbbfef84888b18b7554076b762664597c0f12d958f99c272927",
+      "out_indices": [
+        2,
+        5,
+        8,
+        11
+      ],
+      "preprocessing": [
+        {
+          "type": "LoadImageFromFile"
+        },
+        {
+          "keep_ratio": true,
+          "scale": [
+            2048,
+            512
+          ],
+          "type": "Resize"
+        },
+        {
+          "reduce_zero_label": true,
+          "type": "LoadAnnotations"
+        },
+        {
+          "type": "PackSegInputs"
+        }
+      ],
+      "test_cfg": {
+        "crop_size": [
+          512,
+          512
+        ],
+        "mode": "slide",
+        "stride": [
+          341,
+          341
+        ]
+      }
+    },
+    "sequence": {
+      "cls": [
+        0,
+        1
+      ],
+      "intervals": "half-open, image sequence",
+      "patch_start": 5,
+      "special": [
+        1,
+        5
+      ]
+    },
+    "site_counts": {
+      "attention_key": 12,
+      "attention_logits": 12,
+      "attention_query": 12,
+      "attention_value": 12,
+      "conv2d": 1,
+      "linear": 49,
+      "module_output": 50,
+      "post_gelu": 12,
+      "post_layernorm": 25,
+      "post_softmax": 12,
+      "pre_layernorm": 25
+    },
+    "site_examples": {
+      "attention_key": "blocks.0.attn::attention_key",
+      "attention_logits": "blocks.0.attn::attention_logits",
+      "attention_query": "blocks.0.attn::attention_query",
+      "attention_value": "blocks.0.attn::attention_value",
+      "conv2d": "patch_embed.proj",
+      "linear": "blocks.0.attn.qkv",
+      "module_output": "patch_embed.proj::module_output",
+      "post_gelu": "blocks.0.mlp.act::post_gelu",
+      "post_layernorm": "blocks.0.norm1::post_layernorm",
+      "post_softmax": "blocks.0.attn::post_softmax",
+      "pre_layernorm": "blocks.0.norm1::pre_layernorm"
+    },
+    "special_token_count": 4,
+    "special_token_type": "storage",
+    "split_sources": {
+      "calibration": "train",
+      "final": "val",
+      "search": "train"
+    },
+    "task_forward": "forward_features",
+    "task_output": {
+      "device": "cpu",
+      "dtype": "torch.float32",
+      "shape": [
+        1,
+        1000
+      ]
+    }
+  },
+  "bound_assets": {
+    "checkpoint_assets": [
+      {
+        "bytes": 342860279,
+        "path": "/root/data-fs/projects/LowRank_W4A4_Vision_Research/checkpoints/dinov3_vitb16_pretrain_lvd1689m-73cec8be.pth",
+        "sha256": "73cec8be7427c8655ceced13ce62f6e20a1fa90d1b4d4a550df17a1144081a7c"
+      },
+      {
+        "bytes": 22306672,
+        "path": "/root/data-fs/projects/Quantization_Agent_for_ViTs/QAViT/configs/assets/imagenet_manifest.json",
+        "sha256": "7e560abfe98169fd72597ec87defd8bf12faadebdb3fb278bdbe9865ce400f4c"
+      },
+      {
+        "bytes": 63966,
+        "path": "/root/data-fs/projects/LowRank_W4A4_Vision_Research/outputs/model_assets_20260924_r1/model_assets_manifest.json",
+        "sha256": "4374426e0a4a344823a25d0a1fff97eb50e25bda8574ec3b51cfdab7ed8f3174"
+      },
+      {
+        "bytes": 3099556,
+        "path": "/root/data-fs/projects/LowRank_W4A4_Vision_Research/checkpoints/dinov3_vitb16_imagenet_subset_linear_head.pth",
+        "sha256": "2e460dfaf7b9ddf1d40cdad225cafea6d19b8d5d749d2b5c8beb247d5c52a6b8"
+      }
+    ],
+    "config_asset": {
+      "bytes": 3394,
+      "path": "/root/data-fs/projects/Quantization_Agent_for_ViTs_gonly/QAViT/configs/dinov3b_backend.json",
+      "sha256": "14cdf13ae733c7232338b31bbc2ac3a69bbc8a21de4e1b791b0f135118ac8e4a"
+    },
+    "config_path": "QAViT/configs/dinov3b_backend.json",
+    "kind": "server",
+    "segmentation_assets": [
+      {
+        "bytes": 2269,
+        "path": "/root/data-fs/projects/Quantization_Agent_for_ViTs_gonly/QAViT/configs/dinov3_ade_evaluation.json",
+        "sha256": "82e763d03b489dd984b4f21ac88c7a5b3ae0d184da02733880c9814beb468cca"
+      },
+      {
+        "bytes": 617,
+        "path": "/root/data-fs/projects/Quantization_Agent_for_ViTs_gonly/QAViT/configs/assets/dinov3_ade_head.json",
+        "sha256": "e9f004abfe7bbc5dc889384ca226f0e9e295b1d0ebe9d21782bf2a653d119df2"
+      },
+      {
+        "bytes": 587572294,
+        "path": "/root/data-fs/projects/ptq_training_free/checkpoints/best_mIoU_iter_160000.pth",
+        "sha256": "db894b760c37acbbfef84888b18b7554076b762664597c0f12d958f99c272927"
+      }
+    ]
+  },
+  "pilots": [
+    {
+      "seed": "gptaq",
+      "wall_seconds": 800.9643795993179,
+      "metrics": {
+        "classification": {
+          "baseline_top1": 79.16666666666667,
+          "baseline_top5": 95.83333333333333,
+          "top1": 4.166666666666667,
+          "top5": 16.666666666666668
+        },
+        "segmentation": {
+          "aAcc": 11.710776953150235,
+          "baseline_aAcc": 85.41100972390531,
+          "baseline_mAcc": 68.70509632849691,
+          "baseline_mIoU": 52.00553364061709,
+          "mAcc": 15.009853141168945,
+          "mIoU": 2.9402645776639758
+        }
+      },
+      "receipt": {
+        "path": "EXP/validation/dinov3b_preparation_20261118_r1/pilot_gptaq/pilot.json",
+        "sha256": "5cf32af3261a9ffafa756cbff987a77ec5915898d8de844b33aa65ffd7bd5dc8"
+      }
+    },
+    {
+      "seed": "repq",
+      "wall_seconds": 874.2330861277878,
+      "metrics": {
+        "classification": {
+          "baseline_top1": 79.16666666666667,
+          "baseline_top5": 95.83333333333333,
+          "top1": 0.0,
+          "top5": 4.166666666666667
+        },
+        "segmentation": {
+          "aAcc": 4.812422793131599,
+          "baseline_aAcc": 85.41100972390531,
+          "baseline_mAcc": 68.70509632849691,
+          "baseline_mIoU": 52.00553364061709,
+          "mAcc": 8.662452795462459,
+          "mIoU": 1.6861500710714679
+        }
+      },
+      "receipt": {
+        "path": "EXP/validation/dinov3b_preparation_20261118_r1/pilot_repq/pilot.json",
+        "sha256": "30bd3cc6c47428c7e6f66a93bfc43fb5770a8506f004adf4a0c320d1a1c63fd3"
+      }
+    },
+    {
+      "seed": "group32_log2",
+      "wall_seconds": 472.43647189065814,
+      "metrics": {
+        "classification": {
+          "baseline_top1": 79.16666666666667,
+          "baseline_top5": 95.83333333333333,
+          "top1": 0.0,
+          "top5": 12.5
+        },
+        "segmentation": {
+          "aAcc": 11.776164196373161,
+          "baseline_aAcc": 85.41100972390531,
+          "baseline_mAcc": 68.70509632849691,
+          "baseline_mIoU": 52.00553364061709,
+          "mAcc": 7.373823940883955,
+          "mIoU": 1.6404457402600523
+        }
+      },
+      "receipt": {
+        "path": "EXP/validation/dinov3b_preparation_20261118_r1/pilot_group32_r2/pilot.json",
+        "sha256": "67c49cb3fea8af8da025ad3d6b7602ca8a62ddc0fae47149e2c2306191870973"
+      }
+    },
+    {
+      "seed": "partitioned",
+      "wall_seconds": 404.57534491457045,
+      "metrics": {
+        "classification": {
+          "baseline_top1": 79.16666666666667,
+          "baseline_top5": 95.83333333333333,
+          "top1": 45.833333333333336,
+          "top5": 79.16666666666667
+        },
+        "segmentation": {
+          "aAcc": 67.17149272811632,
+          "baseline_aAcc": 85.41100972390531,
+          "baseline_mAcc": 68.70509632849691,
+          "baseline_mIoU": 52.00553364061709,
+          "mAcc": 40.032094159003634,
+          "mIoU": 19.581414222583177
+        }
+      },
+      "receipt": {
+        "path": "EXP/validation/dinov3b_preparation_20261118_r1/role_source/EXP/pilot_partition/pilot.json",
+        "sha256": "89a3181cb984fd0bb9e3dbad57c7a5f61c0aa9e9132e68444861913342016f0a"
+      }
+    }
+  ],
+  "baseline": {
+    "evaluations": {
+      "classification": {
+        "aggregate_relative_mse": 0.5984359077854173,
+        "baseline_latency_ms": 15.833865478634834,
+        "baseline_top1": 79.128,
+        "baseline_top5": 95.22,
+        "cosine_error": 0.342205656708368,
+        "cuda_increment_mib": 16.0498046875,
+        "cuda_peak_memory_mib": 1229.7548828125,
+        "delta_top1_pp": -22.380000000000003,
+        "delta_top5_pp": -12.292000000000002,
+        "deployment_peak_memory_mib": null,
+        "latency_ms": 52.68687196075916,
+        "measured_speedup": 0.30052771951289486,
+        "mse": 0.7893000229522527,
+        "native_latency_ms": null,
+        "relative_mse": 0.5984359077854173,
+        "top1": 56.748,
+        "top1_drop_pp": 22.380000000000003,
+        "top5": 82.928
+      },
+      "segmentation": {
+        "aAcc": 72.4707778223631,
+        "baseline_aAcc": 84.3351372535474,
+        "baseline_mAcc": 64.86214999089177,
+        "baseline_mIoU": 52.8577944311583,
+        "delta_aAcc_pp": -11.864359431184297,
+        "delta_mAcc_pp": -27.091659601491727,
+        "delta_mIoU_pp": -23.17295201241029,
+        "mAcc": 37.77049038940004,
+        "mIoU": 29.68484241874801
+      }
+    },
+    "experiment": "ExperimentCard-9e782e107dd0412881747909fb7bd30e@1",
+    "model_ref": "df8f5e062e654dd3b41824339c47c26fef2f17bae8cbe18ec4f03e1f76e0cf0f",
+    "plan_sha256": "7c401e29080dc2172629a05c013b9b57e0a726de20aeff2e14b9b3d84cfb13d8",
+    "protocol": "b2d3980c4fbc151c84e2b699b1b699f9b1b5150333514349ab49b64cd408e205",
+    "reference": {
+      "evidence_ref": "EvidenceCard-05ba26ee5f474c0d8fe109239209e505@1",
+      "run_dir": "EXP/validation/dinov3b_preparation_20261118_r1/baseline_partition"
+    },
+    "resources": {
+      "cpu_seconds": 7054.063888,
+      "energy_joules": null,
+      "gpu_bindings": [
+        {
+          "device_node": "/dev/nvidia0",
+          "index": 0,
+          "uuid": "GPU-7b3cc098-9544-bc3b-f922-2dda1d35619b"
+        },
+        {
+          "device_node": "/dev/nvidia1",
+          "index": 1,
+          "uuid": "GPU-1f053b21-cd6a-49f3-b124-eba7081372cf"
+        }
+      ],
+      "gpu_peak_allocated_bytes": 1289491456,
+      "gpu_peak_reserved_bytes": 2048917504,
+      "parallelism": {
+        "allocated_gpus": 2,
+        "allocation_policy": "candidate primary GPUs before intra-candidate parallelism",
+        "classification_shards_supported": false,
+        "dual_task_supported": true,
+        "fallback": null,
+        "requested_gpus": 2,
+        "unserved_candidate_reservations": 0
+      },
+      "peak_rss_kib": 1555588,
+      "physical_gpu": 0,
+      "physical_gpus": [
+        0,
+        1
+      ],
+      "wall_seconds": 4774.624497469515
+    },
+    "seconds": 4802.286255333573
+  },
+  "static_boundaries": 146,
+  "actual_protocol_hash": "b2d3980c4fbc151c84e2b699b1b699f9b1b5150333514349ab49b64cd408e205",
+  "historical_B": {
+    "candidate": {
+      "configuration_asset": "/root/data-fs/projects/Quantization_Agent_for_ViTs_gonly/EXP/validation/dinov3b_preparation_20261118_r1/prepared_handoff/solution_library/7c18e6b087adca53f3598e3d3f584545db65287e1485abe2ba4536da77e2d273.json",
+      "evidence_refs": [
+        "EvidenceCard-05ba26ee5f474c0d8fe109239209e505@1"
+      ],
+      "measurement_origin": "preparation",
+      "metrics": {
+        "mIoU": 29.68484241874801,
+        "top1": 56.748
+      },
+      "model_ref": "df8f5e062e654dd3b41824339c47c26fef2f17bae8cbe18ec4f03e1f76e0cf0f",
+      "new_measurement": false,
+      "run_dir": "/root/data-fs/projects/Quantization_Agent_for_ViTs_gonly/EXP/validation/dinov3b_preparation_20261118_r1/baseline_partition",
+      "solution_id": "df8f5e062e654dd3b41824339c47c26fef2f17bae8cbe18ec4f03e1f76e0cf0f"
+    },
+    "competes_in_preselection": false,
+    "policy": "Retain B while exploring H1/H2/H3; historical scores are not current measurements.",
+    "role": "retained_verified_result",
+    "status": "available"
+  },
+  "reconstruction": {
+    "equal": true,
+    "reload": {
+      "comparison": "torch.equal for all floating outputs",
+      "evaluated_instance": "reloaded",
+      "host_verified": true,
+      "passed": true,
+      "sample_ids": [
+        "train/n04522168/n04522168_9121.JPEG"
+      ],
+      "samples": 1,
+      "split": "search"
+    },
+    "source_request": "/root/data-fs/projects/Quantization_Agent_for_ViTs_gonly/EXP/validation/dinov3b_preparation_20261118_r1/baseline_partition/jobs/task-204ff7a1224094de8a7af3e2-a0001/request.json",
+    "source_request_sha256": "5a91ea6c85be9ccfc2c496fffe01d9233cfd408124d8410f2e547fefb0942fb9",
+    "states": {
+      "formal": {
+        "calibration_ids": [
+          "train/n01751748/n01751748_5926.JPEG",
+          "train/n02442845/n02442845_19600.JPEG",
+          "train/n04131690/n04131690_11080.JPEG",
+          "train/n03065424/n03065424_37483.JPEG",
+          "train/n07754684/n07754684_28118.JPEG",
+          "train/n04356056/n04356056_1814.JPEG",
+          "train/n03908714/n03908714_12667.JPEG",
+          "train/n02085936/n02085936_9694.JPEG",
+          "train/n01978455/n01978455_3255.JPEG",
+          "train/n03777568/n03777568_6449.JPEG",
+          "train/n04485082/n04485082_19000.JPEG",
+          "train/n06596364/n06596364_10245.JPEG",
+          "train/n02791124/n02791124_1088.JPEG",
+          "train/n03125729/n03125729_15999.JPEG",
+          "train/n04147183/n04147183_17806.JPEG",
+          "train/n03676483/n03676483_37960.JPEG",
+          "train/n11939491/n11939491_3079.JPEG",
+          "train/n04328186/n04328186_2076.JPEG",
+          "train/n02108000/n02108000_1443.JPEG",
+          "train/n02105505/n02105505_5421.JPEG",
+          "train/n03018349/n03018349_10666.JPEG",
+          "train/n04228054/n04228054_19685.JPEG",
+          "train/n02708093/n02708093_3057.JPEG",
+          "train/n02894605/n02894605_18232.JPEG",
+          "train/n02088466/n02088466_7609.JPEG",
+          "train/n02088094/n02088094_5099.JPEG",
+          "train/n03476684/n03476684_442.JPEG",
+          "train/n03447721/n03447721_5653.JPEG",
+          "train/n03223299/n03223299_3439.JPEG",
+          "train/n03854065/n03854065_54988.JPEG",
+          "train/n02105641/n02105641_3318.JPEG",
+          "train/n15075141/n15075141_8773.JPEG"
+        ],
+        "digest": "48c08c7f431e09bd19b1af5902c2f951c9d6f21201a306274f0432cd18c4474b",
+        "plan_sha256": "7c401e29080dc2172629a05c013b9b57e0a726de20aeff2e14b9b3d84cfb13d8",
+        "training": false
+      },
+      "independent": {
+        "calibration_ids": [
+          "train/n01751748/n01751748_5926.JPEG",
+          "train/n02442845/n02442845_19600.JPEG",
+          "train/n04131690/n04131690_11080.JPEG",
+          "train/n03065424/n03065424_37483.JPEG",
+          "train/n07754684/n07754684_28118.JPEG",
+          "train/n04356056/n04356056_1814.JPEG",
+          "train/n03908714/n03908714_12667.JPEG",
+          "train/n02085936/n02085936_9694.JPEG",
+          "train/n01978455/n01978455_3255.JPEG",
+          "train/n03777568/n03777568_6449.JPEG",
+          "train/n04485082/n04485082_19000.JPEG",
+          "train/n06596364/n06596364_10245.JPEG",
+          "train/n02791124/n02791124_1088.JPEG",
+          "train/n03125729/n03125729_15999.JPEG",
+          "train/n04147183/n04147183_17806.JPEG",
+          "train/n03676483/n03676483_37960.JPEG",
+          "train/n11939491/n11939491_3079.JPEG",
+          "train/n04328186/n04328186_2076.JPEG",
+          "train/n02108000/n02108000_1443.JPEG",
+          "train/n02105505/n02105505_5421.JPEG",
+          "train/n03018349/n03018349_10666.JPEG",
+          "train/n04228054/n04228054_19685.JPEG",
+          "train/n02708093/n02708093_3057.JPEG",
+          "train/n02894605/n02894605_18232.JPEG",
+          "train/n02088466/n02088466_7609.JPEG",
+          "train/n02088094/n02088094_5099.JPEG",
+          "train/n03476684/n03476684_442.JPEG",
+          "train/n03447721/n03447721_5653.JPEG",
+          "train/n03223299/n03223299_3439.JPEG",
+          "train/n03854065/n03854065_54988.JPEG",
+          "train/n02105641/n02105641_3318.JPEG",
+          "train/n15075141/n15075141_8773.JPEG"
+        ],
+        "digest": "48c08c7f431e09bd19b1af5902c2f951c9d6f21201a306274f0432cd18c4474b",
+        "plan_sha256": "7c401e29080dc2172629a05c013b9b57e0a726de20aeff2e14b9b3d84cfb13d8",
+        "training": false
+      }
+    },
+    "wall_seconds": 1060.3876605350524
+  },
+  "reference_reuse": {
+    "changed_view_measured": true,
+    "one": "5cfbe596b3c4f70a82df6046d60736c967b11172d6cad056142d16c06794710c",
+    "reused_reference": {
+      "path": "/root/data-fs/projects/Quantization_Agent_for_ViTs_gonly/EXP/validation/dinov3b_preparation_20261118_r1/fp_reference_check/source.json",
+      "sha256": "a8e1da348ed0572b93b947cd2c3fbb6793cbee1a00ac6f0521f2fd3e43501e5d"
+    },
+    "same_counts_and_metrics": true,
+    "two": "6c7918429b2189d2a3f46363be526f99e6cc120d4d38cf22b669674473fdce91"
+  },
+  "DeiT": {
+    "path": "EXP/validation/dinov3b_preparation_20261118_r1/deit/summary.json",
+    "sha256": "dd256ae5c575557e01a4c76b4fffcf67f09a965583acdfb1db05d8fec1ffcb00"
+  },
+  "components": [
+    {
+      "budget": {
+        "as_of_unix": 1794989897.2707932,
+        "clock_mode": "active_segments",
+        "closeout_reserve_releases": [],
+        "closeout_reserve_seconds": 0,
+        "configured_closeout_reserve_seconds": 0,
+        "configured_total_wall_seconds": 10800,
+        "deadline_unix": 1794998514.6746225,
+        "elapsed_seconds": 2182.5961706638336,
+        "exclude_numeric_wait": true,
+        "excluded_numeric_wait_seconds": 133.34361362457275,
+        "llm_calls": {
+          "limit": null,
+          "remaining": null,
+          "reserved": 27
+        },
+        "meaning": "累计智能体时间：纯数值执行、等待资源或结果不计时；同时进行的推理/Coding/审核照常计时，重叠区间只计一次。estimated_seconds 是数值单任务超时，不要求小于智能体余额。deadline_unix 仅是当前余额提示，会随纯数值等待后移；已启动实验保留自身超时、人工停止和资源限制。暂停不计时；恢复保留消费，崩溃未知间隔保守计入。",
+        "remaining_seconds": 8617.403829336166,
+        "research_remaining_seconds": 8617.403829336166,
+        "settled_reservations": 29,
+        "shutdown_reserve_seconds": 0,
+        "source": "BudgetLedger.snapshot/check/reserve",
+        "total_wall_seconds": 10800,
+        "unsettled_estimated_seconds_by_kind": {},
+        "unsettled_reservations": 0,
+        "wall_budget_authorizations": [],
+        "worker_deadline_unix": 1794998514.6746225
+      },
+      "candidate": [
+        "HypothesisCard-a82516ea7a7944d39bb99169a61c9f6d@1"
+      ],
+      "evidence": [
+        "EvidenceCard-754e5e6d685e4ff4a52d852c4d4a05bb@1",
+        "EvidenceCard-6e9cc4af67ad4b81a1dcfa56812f4c9e@1"
+      ],
+      "focus": [
+        "ReviewDecisionCard-5cc077d1ffc1f48c0576d88d477ba4a4@1"
+      ],
+      "recorder": [
+        "MetareviewCard-296dc04a879d422a8b5ff4adbb654e5f@1"
+      ],
+      "restored_idea": "idea-bda56fd9876d500e6309",
+      "topic": "topic-69cd4c13fa63a6534df1@1"
+    },
+    {
+      "budget": {
+        "as_of_unix": 1794993222.487946,
+        "clock_mode": "active_segments",
+        "closeout_reserve_releases": [],
+        "closeout_reserve_seconds": 0,
+        "configured_closeout_reserve_seconds": 0,
+        "configured_total_wall_seconds": 10800,
+        "deadline_unix": 1795000133.1089692,
+        "elapsed_seconds": 3889.3789768218994,
+        "exclude_numeric_wait": true,
+        "excluded_numeric_wait_seconds": 1378.9842131137848,
+        "llm_calls": {
+          "limit": null,
+          "remaining": null,
+          "reserved": 49
+        },
+        "meaning": "累计智能体时间：纯数值执行、等待资源或结果不计时；同时进行的推理/Coding/审核照常计时，重叠区间只计一次。estimated_seconds 是数值单任务超时，不要求小于智能体余额。deadline_unix 仅是当前余额提示，会随纯数值等待后移；已启动实验保留自身超时、人工停止和资源限制。暂停不计时；恢复保留消费，崩溃未知间隔保守计入。",
+        "remaining_seconds": 6910.621023178101,
+        "research_remaining_seconds": 6910.621023178101,
+        "settled_reservations": 52,
+        "shutdown_reserve_seconds": 0,
+        "source": "BudgetLedger.snapshot/check/reserve",
+        "total_wall_seconds": 10800,
+        "unsettled_estimated_seconds_by_kind": {},
+        "unsettled_reservations": 0,
+        "wall_budget_authorizations": [],
+        "worker_deadline_unix": 1795000133.1089692
+      },
+      "candidate": [
+        "HypothesisCard-590fbd74a35e4763ad666e27e166d8f5@1"
+      ],
+      "evidence": [
+        "EvidenceCard-754e5e6d685e4ff4a52d852c4d4a05bb@1",
+        "EvidenceCard-6e9cc4af67ad4b81a1dcfa56812f4c9e@1",
+        "EvidenceCard-f09901ec85c3428595a84b77d6bf5337@1"
+      ],
+      "focus": [
+        "ReviewDecisionCard-b5e93bddd9d59988d72ef9164ae6228d@1"
+      ],
+      "recorder": [
+        "MetareviewCard-1aba6760d8b744f0aab938a0f3552686@1"
+      ],
+      "restored_idea": "idea-bda56fd9876d500e6309",
+      "topic": "topic-69cd4c13fa63a6534df1@2"
+    }
+  ],
+  "continuation": {
+    "topic_versions": [
+      "topic-69cd4c13fa63a6534df1@1",
+      "topic-69cd4c13fa63a6534df1@2"
+    ],
+    "inspiration": "idea-bda56fd9876d500e6309",
+    "recovery": "本轮可提交上述完整定义、负结果和限制，不追加重复测量。下一项优先的小对照是在C20确切冻结父状态及已序列化shared-PV/prefix状态上进行诊断性2×2查询路由消融：分别令CLS查询行、其余查询行使用prefix或shared量化输出，保留全shared与全prefix两端，所有码本和其他状态不变、不拟合新参数。该混合路由仅用于因果定位，不作为最终候选。比较相同图像的CLS/storage/patch局部PV、累计PV、block8/11 patch、normalized CLS及教师KL；先在C20已测样本解释排序，再用未参与外层选择的新search样本检验方向。若CLS-only不能复现KL方向，撤回CLS保护解释；若方向仅在旧样本成立，保留偶然性或外层选择解释。完整候选仍须实现按N延展的固定语义成员、独立导出重载和冻结ADE迁移，不能将C20固定N=201的局部模块直接称为可部署实现。",
+    "previous_exact_code_delivered": [
+      "code-1cf17448046b1e238de8eada028c1e387736a544eb9330cda4622b00f0465a62",
+      "code-90fb73c33af429773f8d67b290a70a00690ef4856656e976b1a69e36302e78d6"
+    ],
+    "implementation_history": [
+      {
+        "code": "code-5f58bc3b69712c05d474452f88076b8705178f6b481ebbea95cf6c72a54c6ca7",
+        "configuration": {
+          "ref": "ExperimentCard-3998e3adb31147959644f176486c6dff@1",
+          "field": "/payload"
+        },
+        "executions": [],
+        "evidence": [],
+        "implementation": {
+          "path": "EXP/validation/dinov3b_preparation_20261118_r1/roles_direct/code/5f58bc3b69712c05d474452f88076b8705178f6b481ebbea95cf6c72a54c6ca7/implementation.py",
+          "sha256": "caf51bc80b78b98a7433de1a5aceca9474411bc31b2ac2b21c46787a311d65c9"
+        }
+      },
+      {
+        "code": "code-1cf17448046b1e238de8eada028c1e387736a544eb9330cda4622b00f0465a62",
+        "configuration": {
+          "ref": "ExperimentCard-3998e3adb31147959644f176486c6dff@1",
+          "field": "/payload"
+        },
+        "executions": [
+          "ExperimentCard-be93acfdee0d4c0e8dda697ce0bc91eb@1"
+        ],
+        "evidence": [
+          "EvidenceCard-754e5e6d685e4ff4a52d852c4d4a05bb@1"
+        ],
+        "implementation": {
+          "path": "EXP/validation/dinov3b_preparation_20261118_r1/roles_direct/code/1cf17448046b1e238de8eada028c1e387736a544eb9330cda4622b00f0465a62/implementation.py",
+          "sha256": "ed007eed8391dc2c4890613ecd350f1ce92d0c59ed8c38900a36990eb63c086a"
+        }
+      },
+      {
+        "code": "code-90fb73c33af429773f8d67b290a70a00690ef4856656e976b1a69e36302e78d6",
+        "configuration": {
+          "ref": "ExperimentCard-0b78226ff11f4c3d8ddb05b72ccb3ea0@1",
+          "field": "/payload"
+        },
+        "executions": [
+          "ExperimentCard-dbef5d7141a04f69b7ca658679f4538d@1"
+        ],
+        "evidence": [
+          "EvidenceCard-6e9cc4af67ad4b81a1dcfa56812f4c9e@1"
+        ],
+        "implementation": {
+          "path": "EXP/validation/dinov3b_preparation_20261118_r1/roles_direct/code/90fb73c33af429773f8d67b290a70a00690ef4856656e976b1a69e36302e78d6/implementation.py",
+          "sha256": "5a7ec9d2cf838851073ab64588afcf2f308c8aab2e6b69bc3e632485dee5e18e"
+        }
+      },
+      {
+        "code": "code-7414058df6d7c971dcf3e37186413c08da082de2549ad0e81c5180d8f1868549",
+        "configuration": {
+          "ref": "ExperimentCard-5c800434e3b641e8be3bfd6e89209f11@1",
+          "field": "/payload"
+        },
+        "executions": [
+          "ExperimentCard-a931998367cd412d84ccf1c77349dd61@1"
+        ],
+        "evidence": [
+          "EvidenceCard-f09901ec85c3428595a84b77d6bf5337@1"
+        ],
+        "implementation": {
+          "path": "EXP/validation/dinov3b_preparation_20261118_r1/roles_direct/code/7414058df6d7c971dcf3e37186413c08da082de2549ad0e81c5180d8f1868549/implementation.py",
+          "sha256": "d35863e73cf18bdf5d8f99ca6c923f6091d13dd75a472c76770f915f89228521"
+        }
+      }
+    ]
+  },
+  "resources_eval_L0": {
+    "dinov3b_preparation_20261118_r1": {
+      "cache_reused_requests": 0,
+      "experiment_states": {
+        "completed": 3
+      },
+      "metrics": {
+        "cost": {
+          "amount": null,
+          "basis": "unknown_subscription_cost",
+          "currency": null,
+          "known_subtotal": null,
+          "missing_calls": 49,
+          "note": "Subscription tokens are usage, not a verified monetary charge."
+        },
+        "duration": {
+          "missing_elapsed_attempts": 0,
+          "note": "Router elapsed includes preflight/lock waits; sum is not run wall time. CLI inner reconnects are not observable.",
+          "observed_model_interval_union_seconds": 2728.69562792778,
+          "pure_inference_seconds": null,
+          "router_elapsed_sum_seconds": 3208.895091569051,
+          "subscription_lock_wait_seconds": null
+        },
+        "execution_attempts": 49,
+        "failed_attempts": 2,
+        "incomplete_attempts": 0,
+        "model_calls_completed": 47,
+        "model_calls_failed": 1,
+        "model_calls_start_unknown": 0,
+        "model_calls_started": 48,
+        "preflight_only_attempts": 1,
+        "tokens": {
+          "cache_write_input_tokens": {
+            "known_calls": 47,
+            "known_sum": 0,
+            "missing_calls": 2
+          },
+          "cached_input_tokens": {
+            "known_calls": 47,
+            "known_sum": 84864,
+            "missing_calls": 2
+          },
+          "input_tokens": {
+            "known_calls": 47,
+            "known_sum": 3260078,
+            "missing_calls": 2
+          },
+          "output_tokens": {
+            "known_calls": 47,
+            "known_sum": 76469,
+            "missing_calls": 2
+          },
+          "reasoning_output_tokens": {
+            "known_calls": 47,
+            "known_sum": 12143,
+            "missing_calls": 2
+          }
+        }
+      },
+      "timing": {
+        "active_segment_wall_union_seconds": 5268.615421772003,
+        "note": "Only recorded closed intervals are measured. Pauses and parallel call sums are not run active time.",
+        "numeric_wait_union_seconds": 1378.9842131137848,
+        "open_numeric_waits": 0,
+        "open_segments": 0,
+        "segment_count": 4
+      },
+      "tools": {
+        "read_asset": {
+          "cache_reused": 0,
+          "observed_model_requests": 38,
+          "requests_without_linked_task": 0,
+          "states": {
+            "completed": 38
+          },
+          "tasks": 38
+        },
+        "read_card": {
+          "cache_reused": 0,
+          "observed_model_requests": 49,
+          "requests_without_linked_task": 0,
+          "states": {
+            "completed": 49
+          },
+          "tasks": 49
+        },
+        "read_method": {
+          "cache_reused": 0,
+          "observed_model_requests": 1,
+          "requests_without_linked_task": 0,
+          "states": {
+            "completed": 1
+          },
+          "tasks": 1
+        },
+        "request_experiment": {
+          "cache_reused": 0,
+          "observed_model_requests": 5,
+          "requests_without_linked_task": 1,
+          "states": {
+            "completed": 3,
+            "failed": 1
+          },
+          "tasks": 4
+        },
+        "update_inspiration": {
+          "cache_reused": 0,
+          "observed_model_requests": 5,
+          "requests_without_linked_task": 0,
+          "states": {
+            "completed": 5
+          },
+          "tasks": 5
+        }
+      },
+      "report": {
+        "path": "EXP/evaluations/dinov3b_preparation_20261118_r1/reports/report-0001.json",
+        "sha256": "7b63b4a25c4f6f345ec6d44177d5d6237eec468d6b863b00855904413a73bac8"
+      }
+    },
+    "dinov3b_prepared_baseline_20261118_r1": {
+      "cache_reused_requests": 0,
+      "experiment_states": {
+        "completed": 1
+      },
+      "metrics": {
+        "cost": {
+          "amount": null,
+          "basis": "unknown_subscription_cost",
+          "currency": null,
+          "known_subtotal": null,
+          "missing_calls": 0,
+          "note": "Subscription tokens are usage, not a verified monetary charge."
+        },
+        "duration": {
+          "missing_elapsed_attempts": 0,
+          "note": "Router elapsed includes preflight/lock waits; sum is not run wall time. CLI inner reconnects are not observable.",
+          "observed_model_interval_union_seconds": null,
+          "pure_inference_seconds": null,
+          "router_elapsed_sum_seconds": null,
+          "subscription_lock_wait_seconds": null
+        },
+        "execution_attempts": 0,
+        "failed_attempts": 0,
+        "incomplete_attempts": 0,
+        "model_calls_completed": 0,
+        "model_calls_failed": 0,
+        "model_calls_start_unknown": 0,
+        "model_calls_started": 0,
+        "preflight_only_attempts": 0,
+        "tokens": {
+          "cache_write_input_tokens": {
+            "known_calls": 0,
+            "known_sum": null,
+            "missing_calls": 0
+          },
+          "cached_input_tokens": {
+            "known_calls": 0,
+            "known_sum": null,
+            "missing_calls": 0
+          },
+          "input_tokens": {
+            "known_calls": 0,
+            "known_sum": null,
+            "missing_calls": 0
+          },
+          "output_tokens": {
+            "known_calls": 0,
+            "known_sum": null,
+            "missing_calls": 0
+          },
+          "reasoning_output_tokens": {
+            "known_calls": 0,
+            "known_sum": null,
+            "missing_calls": 0
+          }
+        }
+      },
+      "timing": {
+        "active_segment_wall_union_seconds": 4802.29403090477,
+        "note": "Only recorded closed intervals are measured. Pauses and parallel call sums are not run active time.",
+        "numeric_wait_union_seconds": 4798.352672815323,
+        "open_numeric_waits": 0,
+        "open_segments": 0,
+        "segment_count": 1
+      },
+      "tools": {},
+      "report": {
+        "path": "EXP/evaluations/dinov3b_prepared_baseline_20261118_r1/reports/report-0001.json",
+        "sha256": "5ad51c4f0f4d3bbbf48b0c1de5da032315b539af2de438c3c9f7807a2d66ff0d"
+      }
+    }
+  },
+  "roles_index": {
+    "path": "EXP/validation/dinov3b_preparation_20261118_r1/source_index.json",
+    "sha256": "f427c578733c27019d00e23c868b8f8f5015712e52b21a51187e1c2afe2d4f9d"
+  },
+  "launch_input": {
+    "path": "EXP/inputs/dinov3b_static_w4a4_gonly_next4/input.json",
+    "sha256": "42152de9223d9310d8878e99093509d20b14db7bf9d5f844b2570ea882fcae3c"
+  }
+}

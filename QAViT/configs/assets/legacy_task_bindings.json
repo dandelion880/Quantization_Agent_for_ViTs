@@ -1,0 +1,8 @@
+{
+  "7e4819921623a644cab3d67214cdfe8b999195b19457a7283c8b7eab358acfb4": {
+    "deit_base_patch16_224": {
+      "segmentation_config": "ade_evaluation.json",
+      "expected_images": 2000
+    }
+  }
+}

@@ -1,4 +1,4 @@
-"""科研主流程：生成→筛查→初始三场→选 H*→加强为 H4→父子比较→最终选择→L3→复盘。
+"""G-only：H1/H2/H3 自主研究→Generation 候选综合与修订→三候选 L3→复盘。
 
 Workflow 拥有唯一状态；实验子流程、角色交互和运行驱动分别放在三个职责分区。
 Journal 是事实源，所有阶段依据已提交事件推进，重复 advance 不重复发布任务。
@@ -12,7 +12,8 @@ from core.journal import Journal, atomic_json, file_lock, read_json
 from runtime.task_queue import GlobalTaskQueue, TERMINAL
 from runtime.budget import BudgetLedger
 from core.memory import ResearchMemory, MemoryRetriever
-from core.debate import INITIAL_PAIRS, MAX_EXCHANGES, match_key, ranking_table, selection_pairs
+from core.skills import SkillLibrary
+from core.debate import selection_pairs  # Historical card inspection only.
 from runtime.task_runtime import TaskRuntime
 from tools.experiments import ExperimentBroker
 from runtime.identity import code_identity, code_snapshot
@@ -34,16 +35,32 @@ class Workflow(RoleInteraction, ExperimentRequests, WorkflowDriver):
         if config is not None:
             if self.run_dir.exists():
                 raise ContractError("新运行目录已存在，不覆盖历史")
-            config = config_check(deepcopy(config), resolve_resources=True)
+            config = deepcopy(config)
+            config.setdefault("architecture", "gonly")
+            if config["architecture"] != "gonly":
+                raise ContractError("此分支只启动 G-only；Full 使用 main 或基线 tag")
+            config = config_check(config, resolve_resources=True)
+            from tools.profiling import inspect_run_model
+            metadata = inspect_run_model(config["research_brief"], config["runtime"]["cpu_threads"])
             self.run_dir.mkdir(parents=True)
+            model_info = {}
+            if metadata:
+                from tools.experiments import asset
+                path = self.run_dir / "model_metadata.json"
+                atomic_json(path, metadata)
+                config["research_brief"]["model"]["binding"] = metadata["binding"]
+                model_info = {"model_metadata": {"asset": asset(path), "summary": metadata["summary"]}}
             identity = code_identity()
             atomic_json(manifest, {"schema_version": "qavit.run/2", "run_id": self.run_dir.name,
                                    "config": config, "config_sha256": fingerprint(config),
                                    "code_identity": identity, "source_snapshot": code_snapshot(identity),
                                    "created_at": datetime.now(timezone.utc).isoformat(),
-                                   "legacy_memory_imported": False, "legacy_incumbent_imported": False})
+                                   "legacy_memory_imported": False, "legacy_incumbent_imported": False, **model_info})
         saved = read_json(manifest)
-        self.config = config_check(saved["config"])
+        if not read_only and saved["config"].get("architecture") != "gonly":
+            raise ContractError("不能将 Full 历史运行静默恢复为 G-only；请使用 main 或基线 tag")
+        self.model_metadata = saved.get("model_metadata")
+        self.config = config_check(saved["config"], historical=read_only)
         if fingerprint(self.config) != saved["config_sha256"]:
             raise ContractError("运行配置被改写")
         self.journal = Journal(self.run_dir, saved["run_id"])
@@ -69,6 +86,10 @@ class Workflow(RoleInteraction, ExperimentRequests, WorkflowDriver):
             brief = make_card("ResearchBrief", self.journal.run_id, self.config["research_brief"], author="user")
             self.journal.commit("research/brief", cards=[brief])
         self.brief = self.journal.find_cards("ResearchBrief")[-1]
+        self.skills = SkillLibrary(self.journal)
+        if not read_only:
+            self.skills.initialize(saved['source_snapshot'])
+            self.skills.reconcile()
         self.queue = GlobalTaskQueue(self.journal)
         self.budget = BudgetLedger(self.journal, None if read_only else self.config.get("budget", {}),
                                    started_unix=datetime.fromisoformat(saved["created_at"]).timestamp())
@@ -76,9 +97,16 @@ class Workflow(RoleInteraction, ExperimentRequests, WorkflowDriver):
         self.broker = ExperimentBroker(self.journal, self.brief["id"], self.budget, self.config['runtime'])
         self.runtime = TaskRuntime(self.run_dir, self.queue, self.budget, self.config["runtime"])
         from core.solutions import SolutionLibrary
-        self.solutions = SolutionLibrary(self.journal, self.brief["payload"], shared=self.config.get("purpose") == "research")
+        self.solutions = SolutionLibrary(self.journal, self.brief["payload"],
+            shared=self.config.get("purpose") == "research" and not self.config.get("isolated_solution_library"))
         if not read_only:
             self.solutions.initialize()
+            if self.config.get('prepared_baseline') is not None:
+                self.solutions.import_prepared(self.config['prepared_baseline'])
+        from core.inspirations import InspirationLibrary
+        self.inspirations = InspirationLibrary(self.journal, self.solutions)
+        from core.topics import ResearchTopics
+        self.topics = ResearchTopics(self.journal, self.inspirations, self.solutions)
         self.transport_blocked = None
 
 
@@ -103,11 +131,15 @@ class Workflow(RoleInteraction, ExperimentRequests, WorkflowDriver):
             batch = self.memory.recording_batch()
             context.update(recording_batch=batch)
             refs = batch['source_refs']
+        if purpose == 'generate' and context.get('slot') == 'H3':
+            active = self.inspirations.active()
+            if active:
+                context.setdefault('inspiration_id', active['id'])
         producers = [t["task_id"] for t in self.queue.snapshot(states={"completed"}, fields=("task_id", "outputs")).values()
                      if set(t["outputs"]).intersection(refs)]
         # 同场 A/B、仲裁仍各自调用并串行领取；独立配对不共享订阅互斥锁。
         resources = ([f"llm:judger:{context['round']}:" + "-".join(context['pair'])]
-                     if role == "judger" and context.get("pair") else ["llm:subscription"])
+                     if role == "judger" and context.get("pair") else (["llm:coding"] if role == "coding" else []))
         return self.queue.enqueue(key, "llm", role=role, inputs={"purpose": purpose, "refs": list(dict.fromkeys(refs)),
                                   "context": context, **({"parent_task": parent_task} if parent_task else {})}, depends_on=list(dict.fromkeys([*depends, *producers])), resource_keys=resources,
                                   max_retries=self.config["llm"].get("max_transport_retries", 2))
@@ -122,8 +154,13 @@ class Workflow(RoleInteraction, ExperimentRequests, WorkflowDriver):
 
 
     def round_hypotheses(self, number):
-        return {card["payload"]["slot"]: card for card in self.journal.find_cards("HypothesisCard")
-                if card["payload"]["round"] == number}
+        # Only initial publications and the host revision transaction change candidates.
+        result = {card['payload']['slot']: card for card in self.journal.find_cards('HypothesisCard')
+                  if card['payload']['round'] == number and card['version'] == 1}
+        for event in self.journal.events:
+            if event['type'] == 'candidate_revised' and event['round'] == number:
+                result[event['slot']] = self.journal.card(event['candidate_ref'])
+        return result
 
 
     def round_refs(self, number):
@@ -140,52 +177,58 @@ class Workflow(RoleInteraction, ExperimentRequests, WorkflowDriver):
                 for pair in selection_pairs(context["selection_stage"], context.get("parent_slot"))}
 
 
-    def progress_selection(self, number, stage, hypotheses, screens, parent=None):
-        """复用 rank 任务；明确裁决由程序引用，未决才等待 Judger 说明选择。"""
-        key = f"r{number:03d}/" + ("select_parent" if stage == "parent" else "rank")
-        task = self.queue.get_by_key(key)
-        if task is None:
-            parent_slot = parent["payload"]["selected_slot"] if parent else None
-            candidates = ["H1", "H2", "H3"] if stage == "parent" else (["H4", parent_slot] if parent_slot else [])
-            context = {"round": number, "selection_stage": stage, "parent_slot": parent_slot,
-                       "parent_selection_ref": parent["id"] if parent else None,
-                       "candidate_refs": {s: hypotheses[s]["id"] for s in candidates},
-                       "eligible": [s for s in candidates if screens[s]["payload"]["eligible"]],
-                       "incumbent_separate": True}
-            context["matches"] = self.selection_matches(context)
-            context["direct_results"] = ranking_table(context["matches"], context["eligible"])
-            identifier = self.enqueue_role(key, "rank", refs=self.round_refs(number), context=context)
-            task = self.queue.get(identifier)
-        context = task["inputs"]["context"]
-        if context.get("selection_stage") != stage:
-            raise ContractError("既有选择任务未绑定当前阶段，不能静默改变 H* 或合并排名")
-        result = self.result_card(task)
-        if result:
-            return result
-        matches = self.selection_matches(context)
-        table = ranking_table(matches, context["eligible"])
-        winners = [s for s, wins in table["wins"].items() if wins == len(context["eligible"]) - 1]
-        if (winners or not context["eligible"]) and not task.get("request_path"):
-            ready = {t["task_id"] for t in self.queue.ready()}
-            if task["task_id"] in ready:
-                selected = winners[0] if winners else None
-                verdicts = [self.journal.card(m["verdict_ref"]) for m in matches.values()]
-                evidence = sorted({ref for c in verdicts for ref in c["payload"]["evidence_refs"]})
-                basis = ("复用本阶段已提交直接裁决；所选方案胜过其余合格候选。" if len(context["eligible"]) > 1
-                         else "资格审查后仅余一个合格方案，保留该方案。" if selected
-                         else "初始方案全部不合格；无合格候选，跳过演化及 L3。")
-                reasons = [c["payload"].get("decisive_reason", c["payload"]["rationale"]) for c in verdicts
-                           if selected in c["payload"].get("pair", []) and c["payload"]["outcome"] in ("A", "B")]
-                if reasons:
-                    basis += " 既有裁决依据：" + "；".join(reasons)
-                self.submit(self.queue.claim(task["task_id"]), {
-                    "phase": "ranking", "selected_slot": selected,
-                    "provisional": table["requires_provisional_basis"], "selection_basis": basis,
-                    "rationale": basis, "evidence_refs": evidence,
-                    "uncertainties": ["其余局部未决关系保留在 direct_results。"] if table["requires_provisional_basis"] else [],
-                    "selection_source": "existing_verdicts_and_screening",
-                    "reused_verdict_refs": [c["id"] for c in verdicts]}, None, author="program")
-        return self.result_card(self.queue.get(task["task_id"]))
+    def candidate_refs(self, number):
+        return {slot: card['id'] for slot, card in self.round_hypotheses(number).items()}
+
+    def selection_key(self, number):
+        base = f'r{number:03d}/select'
+        initial = self.queue.get_by_key(base)
+        refs = self.candidate_refs(number)
+        return (base if initial is None or initial['inputs']['context']['candidate_refs'] == refs
+                else base + '/' + fingerprint(refs)[:16])
+
+    def selection_card(self, number):
+        selected = self.result_card(self.queue.get_by_key(self.selection_key(number)))
+        if selected and selected['payload'].get('candidate_refs') == self.candidate_refs(number):
+            return selected
+        # Keep historical fallbacks readable, but never create another H1 preference.
+        return next((self.journal.card(e['selection_ref']) for e in self.journal.events
+                     if e['type'] == 'selection_fallback' and e['round'] == number
+                     and self.journal.card(e['selection_ref'])['payload'].get('candidate_refs') == self.candidate_refs(number)), None)
+
+    def progress_preselection(self, number, hypotheses, failures):
+        """Pin a fresh decision to every candidate version; B is retained separately."""
+        candidates = self.candidate_refs(number)
+        for task in self.queue.snapshot(kinds={'llm'}).values():
+            context = task['inputs'].get('context', {})
+            if (task['inputs'].get('purpose') == 'select' and context.get('round') == number
+                    and context.get('candidate_refs') != candidates and task['state'] not in TERMINAL):
+                self.queue.change(task['task_id'], 'cancelled', patch={'error': {
+                    'code': 'stale_candidate_selection', 'message': '候选已有新版本，重新预选；旧任务与证据保留'}})
+        selected = self.selection_card(number)
+        if selected or not hypotheses:
+            return selected
+        identifier = self.enqueue_role(self.selection_key(number), 'select',
+            refs=[self.brief['id'], *self.round_refs(number), *candidates.values(),
+                  *[t['task_card'] for t in failures]], context={
+                'round': number, 'selection_stage': 'gonly_synthesis',
+                'candidate_refs': candidates,
+                'revision_context': [{k: e[k] for k in ('parent_ref', 'candidate_ref', 'reason', 'change_type',
+                    'validation_status', 'basis_evidence_refs')} for e in self.journal.events
+                    if e['type'] == 'candidate_revised' and e['candidate_ref'] in candidates.values()],
+                'incomplete_slots': [t['inputs']['context']['slot'] for t in failures],
+                'meaning': 'Compare and revise all candidates; every final version enters L3. B is retained independently; a new revision is unvalidated.'})
+        return self.result_card(self.queue.get(identifier))
+
+    def consider_l3(self, number):
+        """Persist valid L3 before Recorder/closeout; partial results never replace Top-3."""
+        selection = self.selection_card(number)
+        if selection:
+            for ref in self.l3_outcome(number)['valid_evidence_refs']:
+                evidence = self.journal.card(ref)
+                experiment = self.journal.card(evidence['payload']['experiment_ref'])
+                self.solutions.consider_round(number, evidence, experiment, selection,
+                                             validator=self.broker.validate_evidence_for)
 
 
     def enqueue_recorder(self, number, *, incomplete=False, key=None):
@@ -202,15 +245,13 @@ class Workflow(RoleInteraction, ExperimentRequests, WorkflowDriver):
                         and review_refs <= set(task['inputs']['context']['recording_batch']['source_refs'])):
                     return task['task_id']
         refs = batch['source_refs']
-        ranking = self.result_card(self.queue.get_by_key(f"r{number:03d}/rank"))
-        parent = self.result_card(self.queue.get_by_key(f"r{number:03d}/select_parent"))
+        ranking = self.selection_card(number)
         outcome = self.l3_outcome(number)
         return self.enqueue_role(key or f"r{number:03d}/record", "record", refs=refs, context={
             "recording_batch": batch,
             "round": number, "selection_ref": ranking["id"] if ranking else None,
-            "selection": ranking["payload"]["selected_slot"] if ranking else None,
-            "parent_selection_ref": parent["id"] if parent else None,
-            "parent_hypothesis_ref": parent["payload"]["selected_hypothesis_ref"] if parent else None,
+            "selection": ranking["payload"].get("selected_slot") if ranking else None,
+            "candidate_refs": ranking["payload"].get("candidate_refs", {}) if ranking else {},
             "l3_outcome": outcome, "incomplete_round": incomplete,
             "requirements": "事实与来源已由程序完整归档。综合关键发现、矛盾证据、适用条件和下一轮问题；"
                             "按需深读原件，允许空 knowledge_updates；不要返回全量覆盖清单或逐条审计。"})
@@ -241,54 +282,11 @@ class Workflow(RoleInteraction, ExperimentRequests, WorkflowDriver):
                    for e in self.journal.events)
 
 
-    def progress_match(self, number, pair, hypotheses, screens):
-        if "H4" in pair:
-            parent = self.result_card(self.queue.get_by_key(f"r{number:03d}/select_parent"))
-            if not parent or tuple(pair) != ("H4", parent["payload"]["selected_slot"]):
-                raise ContractError("H4 只能与本轮已持久化的 H* 交锋")
-        key = match_key(number, pair)
-        short = "-".join(pair)
-        if short in self.matches(number):
-            return
-        refs = [hypotheses[s]["id"] for s in pair] + [screens[s]["id"] for s in pair]
-        if not all(screens[s]["payload"]["eligible"] for s in pair):
-            card = make_card("ReviewDecisionCard", self.journal.run_id, {
-                "phase": "verdict", "round": number, "pair": list(pair), "outcome": "ineligible",
-                "rationale": "至少一个假设未通过硬性审查；保留配对记录，没有开展辩论或计算胜负。",
-                "evidence_refs": [], "uncertainties": [], "exchanges": 0}, refs=refs)
-            self.journal.commit(key + "/ineligible", cards=[card], events=[{"type": "match_closed", "round": number,
-                "pair": short, "outcome": "ineligible", "exchanges": 0, "verdict_ref": card["id"]}])
-            return
-        tasks = self.tasks()
-        history = []
-        for exchange in range(1, MAX_EXCHANGES + 1):
-            judge = tasks.get(key + f"/e{exchange}/arbitrate")
-            verdict = self.result_card(judge)
-            if verdict:
-                if verdict["payload"]["outcome"] != "continue":
-                    self.event("match_closed", key + "/closed", round=number, pair=short,
-                               outcome=verdict["payload"]["outcome"], exchanges=exchange, verdict_ref=verdict["id"])
-                    return
-                history.extend([*judge["inputs"]["refs"], verdict["id"]])
-                continue
-            positions = []
-            for side in ("A", "B"):
-                position_key = key + f"/e{exchange}/{side}"
-                self.enqueue_role(position_key, "position", refs=[*refs, *history], context={
-                    "round": number, "pair": list(pair), "exchange": exchange, "side": side,
-                    "position_for": pair[0 if side == "A" else 1], "max_exchanges": MAX_EXCHANGES,
-                    "independence": "本次双方立场分别生成；此输入不包含本次另一方发言。"})
-                positions.append(self.result_card(self.queue.get_by_key(position_key)))
-            if all(positions):
-                self.enqueue_role(key + f"/e{exchange}/arbitrate", "arbitrate",
-                                  refs=[*refs, *history, *[p["id"] for p in positions]], context={
-                    "round": number, "pair": list(pair), "exchange": exchange, "max_exchanges": MAX_EXCHANGES,
-                    "protocol": "核查双方预测和证据。明显优劣提前裁决；真实争议可请求实验。最多5回合。"})
-            return
-
-
     def advance(self):
-        """依已提交状态推进两阶段选择；恢复不重选父卡片或重复创建比赛。"""
+        """依已提交状态推进 G-only；恢复不改写候选或重复预选。"""
+        if self.config['purpose'] == 'baseline_measurement':
+            raise ContractError('基线测量使用程序实验入口，不能启动科研轮次')
+        self.skills.reconcile()
         if self.scope_target_reached():
             return True
         self.release_scope_closeout_reserve()
@@ -313,91 +311,88 @@ class Workflow(RoleInteraction, ExperimentRequests, WorkflowDriver):
                       if e['type'] == 'round_finished' and e['round'] == number - 1), {})
         review_pending = prior.get('scientific_review') == 'pending'
         if review_pending:
+            if prior.get("selection_ref"):
+                feedback_refs.append(prior["selection_ref"])
             feedback_refs += [r for r in self.round_refs(number - 1)
                               if self.journal.cards[r]['kind'] in ('HypothesisCard', 'EvidenceCard')
                               or (self.journal.cards[r]['kind'] == 'ReviewDecisionCard'
                                   and self.journal.card(r)['payload']['phase'] == 'ranking')]
+        # Old partially-started rounds keep their actual unscoped history. New
+        # rounds use one shared Generation decision before any candidate starts.
+        topic_ref = self.topics.round_ref(number)
+        legacy_started = any(self.queue.get_by_key(prefix + '/generate/' + slot) for slot in ('H1','H2','H3'))
+        if not topic_ref and not legacy_started:
+            focus_key = prefix + '/focus'
+            while True:
+                identifier = self.enqueue_role(focus_key, 'focus', refs=[self.brief['id'], *feedback_refs],
+                    context={'round': number, 'previous_review_pending': review_pending})
+                focus = self.queue.get(identifier)
+                if focus['state'] != 'completed':
+                    return False  # Original failure/retry/budget semantics; never invent a topic.
+                topic_ref = self.topics.round_ref(number)
+                if topic_ref:
+                    break
+                # Generation paused investment. A following common decision can
+                # select another direction; the host does not choose it for H1/H2/H3.
+                focus_key = prefix + '/focus/after/' + fingerprint(focus['outputs'])[:16]
         for slot, kind in (("H1", "existing_method"), ("H2", "engineering"), ("H3", "new_algorithm")):
             self.enqueue_role(prefix + "/generate/" + slot, "generate", refs=[self.brief["id"], *feedback_refs],
                               context={"round": number, "slot": slot, "hypothesis_type": kind,
+                                       **({"topic_ref": topic_ref} if topic_ref else {}),
                                        "previous_review_pending": review_pending})
-        hypotheses = self.round_hypotheses(number)
         target = self.config.get("scope_target")
         if target and number == target["round"]:
-            # This boundary precedes *every* screen publication, including partial
+            # This boundary precedes *every* preselection publication, including partial
             # generation, the final receipt, recovery and repeated advance/resume.
             return self.mark_scope_target_if_ready()
-        screens = {}
-        for slot, card in hypotheses.items():
-            screening = prefix + "/screen/" + slot
-            # 所有已生成假设可比较机制，但当前轮各类型没有预设优先级。
-            self.enqueue_role(screening, "screen", refs=[self.brief["id"], card["id"]],
-                              context={"round": number, "slot": slot, "hypothesis_ref": card["id"]})
-            screen = self.result_card(self.queue.get_by_key(screening))
-            if screen:
-                screens[slot] = screen
-        if not {"H1", "H2", "H3"} <= screens.keys():
+        generators = [self.queue.get_by_key(prefix + '/generate/' + slot) for slot in ('H1', 'H2', 'H3')]
+        if any(t['state'] not in TERMINAL for t in generators):
             return False
-        for pair in INITIAL_PAIRS:
-            self.progress_match(number, pair, hypotheses, screens)
-        matches = self.matches(number)
-        # 各场依自己的已提交状态推进；全部正式结案后才统一选择 H*。
-        if not {"-".join(pair) for pair in INITIAL_PAIRS} <= matches.keys():
+        # Keep exactly the submitted task outputs, including their version IDs.
+        hypotheses = self.round_hypotheses(number)
+        failures = [t for t in generators if not self.result_card(t)]
+        ranking = self.progress_preselection(number, hypotheses, failures)
+        selection_task = self.queue.get_by_key(self.selection_key(number))
+        if selection_task and selection_task['state'] not in TERMINAL:
             return False
-        parent = self.progress_selection(number, "parent", hypotheses, screens)
-        if not parent:
+        if hypotheses and not ranking:
+            # Keep this exact round open for resume --retry-failed. Exhausted
+            # bounded transport/contract retries never fabricate a review or
+            # consume these candidates' L3 opportunity by finishing the round.
+            self.event('synthesis_pending', prefix + '/synthesis_pending/' + selection_task['task_card'],
+                round=number, task_ref=selection_task['task_card'], candidate_refs=self.candidate_refs(number),
+                error=selection_task.get('error'), pending_stages=['generation_synthesis','candidate_l3'],
+                next_action='修复失败原因后 resume --retry-failed 沿原综合任务及预算继续；B 保留。')
             return False
-        parent_slot, parent_ref = parent["payload"]["selected_slot"], parent["payload"]["selected_hypothesis_ref"]
-        if parent_slot:
-            # 使用选择卡绑定的完整 ID，不能由同槽位后来出现的版本替换父方案。
-            hypotheses[parent_slot] = self.journal.card(parent_ref)
-            related = {ref: self.journal.card(ref, field=("kind",)) for ref in self.round_refs(number)}
-            reviews = [self.journal.card(ref) for ref, kind in related.items()
-                       if kind == "ReviewDecisionCard"]
-            critiques = [c for c in reviews
-                         if (parent_ref in c["refs"] or parent_slot in c["payload"].get("pair", []))]
-            evidence_refs = sorted({ref for ref, kind in related.items() if kind == "EvidenceCard"}
-                                   | {ref for c in critiques for ref in c["payload"].get("evidence_refs", [])})
-            critique_refs = [c["id"] for c in critiques]
-            self.enqueue_role(prefix + "/evolve/H4", "evolve", refs=[self.brief["id"], parent["id"], parent_ref,
-                              *critique_refs, *evidence_refs, *feedback_refs], context={
-                "round": number, "slot": "H4", "hypothesis_type": "evolved",
-                "parent_ref": parent_ref, "parent_hypothesis": hypotheses[parent_slot],
-                "parent_selection_ref": parent["id"], "selection_basis": parent["payload"]["selection_basis"],
-                "parent_provisional": parent["payload"]["provisional"], "critique_refs": critique_refs,
-                "evidence_refs": evidence_refs, "stage1_matches": {"-".join(p): matches["-".join(p)] for p in INITIAL_PAIRS},
-                "required_input": "仅加强已选 H*；结合所附选择理由、相关批评和证据说明改进目标。parent_refs 必须仅含 parent_ref。"})
-            if "H4" not in screens:
+        selected = ranking['payload'].get('selected_slot') if ranking else None
+        if self.config["enable_l3"] and ranking:
+            # Visit every branch before waiting: a slow/failed candidate cannot
+            # prevent its siblings from planning, calibrating or returning results.
+            pending = False
+            for slot, hypothesis_ref in ranking['payload']['candidate_refs'].items():
+                plan_key, request_key = self.l3_request_keys(number, slot, hypothesis_ref)
+                done = self.progress_planned_request(plan_key, request_key,
+                    refs=[ranking['id'], hypothesis_ref, self.brief['id']],
+                    context={'round': number, 'slot': slot, 'selection': slot, 'selection_ref': ranking['id'],
+                             'hypothesis_ref': hypothesis_ref, 'candidate_refs': ranking['payload']['candidate_refs'],
+                             'selection_stage': 'gonly_synthesis', 'gate': 'remaining hard budget only'})
+                pending = pending or not done
+            self.consider_l3(number)
+            if pending:
                 return False
-            hypotheses["H4"] = self.result_card(self.tasks()[prefix + "/evolve/H4"])
-            pair = ("H4", parent_slot)
-            self.progress_match(number, pair, hypotheses, screens)
-            if "-".join(pair) not in self.matches(number):
-                return False
-        ranking = self.progress_selection(number, "final", hypotheses, screens, parent)
-        if not ranking:
-            return False
-        selected = ranking["payload"]["selected_slot"]
-        if self.config["enable_l3"] and selected:
-            if not self.progress_planned_request(prefix + '/plan_l3', prefix + '/L3',
-                    refs=[ranking['id'], ranking['payload']['selected_hypothesis_ref'], self.brief['id']],
-                    context={'round': number, 'selection': selected, 'selection_ref': ranking['id'],
-                             'hypothesis_ref': ranking['payload']['selected_hypothesis_ref'],
-                             'selection_stage': 'final', 'gate': 'remaining hard budget only'}):
-                return False
+        self.consider_l3(number)
         if self.queue.get_by_key(prefix + "/record") is None:
-            self.enqueue_recorder(number)
+            self.enqueue_recorder(number, incomplete=bool(failures) or not ranking or
+                                  (self.config["enable_l3"] and not self.l3_outcome(number)["formal_validation_success"]))
         recording_task = self.queue.get_by_key(prefix + '/record')
         recorder = self.result_card(recording_task)
         if recorder or self.defer_recorder(recording_task) or recording_task is None:
-            if self.config["enable_l3"] and selected:
-                for ref in self.l3_outcome(number)["valid_evidence_refs"][-1:]:
-                    evidence = self.journal.card(ref)
-                    experiment = self.journal.card(evidence["payload"]["experiment_ref"])
-                    self.solutions.consider_round(number, evidence, experiment, ranking, validator=self.broker.validate_evidence_for)
             self.event("round_finished", prefix + "/finished", round=number, metareview_ref=recorder['id'] if recorder else None,
                        scientific_review='completed' if recorder or recording_task is None else 'pending',
-                       selection_ref=ranking["id"], selected_slot=selected)
+                       selection_ref=ranking["id"] if ranking else None, selected_slot=selected,
+                       candidate_refs=ranking["payload"].get("candidate_refs", {}) if ranking else {},
+                       l3_outcome=self.l3_outcome(number),
+                       incomplete_slots=[t["inputs"]["context"]["slot"] for t in failures])
             # round_finished 是内部事件，必须继续推进后继轮或终态；否则队列空闲
             # 会被主循环误判为 blocked，完成的最后一轮也永远无法结束。
             return self.advance()

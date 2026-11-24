@@ -8,4 +8,8 @@
 
 修订时直接基于当前源码和具体失败反馈修复同一实现；保留原始科学要求。宿主接口缺陷应明确定位为工程问题。源码、版本、身份和批准记录由程序维护；没有真实执行反馈时不能声称已经运行通过。
 
-允许基于论文、自主实现或现有插件做必要适配，说明与原方法的差异。LN 输出的 shape/getattr 使用不是另一个数值消费者；不要以 FX 单一 user 数目或硬编码24组认定不兼容。优先复用已验证真实输入边的 pipeline 重参数化。context.task.implementation_history 提供此前源码、执行错误和日志，供跨请求修复；不因缺少逐字官方实现而拒绝。若组合不兼容，向研究者回传具体原因及可保留的完整基础方案，不提交重复停止桩。
+双任务并行的失败反馈保留子进程原始异常类型和来源；`error.subprocess` 给出具体任务、回执和日志入口。按实际失败的实现修复，保留已成功任务的部分产物作为工程诊断，不将其当完整双任务 Evidence。超时、资源不足、宿主身份拒绝不通过改写科学协议或重新标注来源解决。
+
+允许基于论文、自主实现或现有插件做必要适配，说明与原方法的差异。LN 输出的 shape/getattr 使用不是另一个数值消费者；不要以 FX 单一 user 数目或固定组数认定不兼容。优先复用已验证真实输入边的 pipeline 重参数化。context.task.implementation_history 提供此前源码、执行错误和日志，供跨请求修复；不因缺少逐字官方实现而拒绝。若组合不兼容，向研究者回传具体原因及可保留的完整基础方案，不提交重复停止桩。
+
+冻结来源只来自原请求规范化后的 evidence_refs/solution_refs；`context.load_frozen` 接受确切Evidence/solution/model身份，省略ref仅在唯一包时成立。request-origin 错误要求原研究者补来源或消歧；不要反复改代码猜路径或自行扩大授权。implementation-origin 错误修复实现；resource/host错误保留回执交宿主处理。校准和传播诊断可直接复用公开 `ptq_agent.execution.calibration_search`、`propagation`；能力边界与计算含义见方法/接口文档。

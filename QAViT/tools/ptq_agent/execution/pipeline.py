@@ -179,7 +179,9 @@ def build_model(backend, plan, preprocess=None, weights=None, activations=None):
     install_operators(model, plan)
     require(set(quantizers(model)) == {site_id(l) for l in plan["layers"]},
             "安装的量化器与配置不符", code="coverage_mismatch")
-    return model
+    # Replacing modules after deepcopy introduces fresh training=True children.
+    # The frozen model contract applies recursively, including these operators.
+    return model.eval().requires_grad_(False)
 
 
 def quantizers(model):
@@ -364,7 +366,10 @@ class QuantizationExecutor:
         if target == "activation" and getattr(self, "repq_activation_params", {}).get(layer["module"]) is not None:
             params = {k: v.clone() for k, v in self.repq_activation_params[layer["module"]].items()}
         trials = []
-        if c["strategy"] == "percentile":
+        if target == 'activation' and options.get('token_partition') and c['strategy'] == 'percentile':
+            from .grids_partition import fit
+            params = fit(x, spec, options['token_partition'], c['percentiles'])
+        elif c["strategy"] == "percentile":
             params = (grids.fit(x, spec, method, percentiles=c["percentiles"]) if method == "uniform_affine" else
                       grids.percentile_log(x, spec, lambda value, shape, params: get_target_method("activation", method).apply(
                           value, shape, params=params, options=options), c["percentiles"]))
@@ -403,7 +408,10 @@ class QuantizationExecutor:
             # 只补标记，不修改拟合的 scale/zero；原 quantized_prefix 路径复用既有参数。
             params["repq_affine"] = torch.tensor(True)
         result = get_target_method("weight", method).fit(x, spec, params) if target == "weight" else {k: v.cpu() for k, v in params.items()}
-        report.update(strategy=c["strategy"], metric=c["metric"], candidates=trials)
+        from .calibration import parameter_evidence
+        report.update(strategy=c["strategy"], metric=c["metric"], candidates=trials,
+                      selected_candidate=min(trials, key=lambda row: row["score"]) if trials else None,
+                      selected_parameters=parameter_evidence(params))
         return result, report
 
     def fit_model(self, model, plan, *, initial_weights=None, initial_params=None, reset_weights=()):
@@ -431,7 +439,24 @@ class QuantizationExecutor:
             # dependence whose topological order requires a calibration forward.
             groups = list(groups.values())
         sequential = plan["execution"].get("within_stage", "parallel") == "sequential"
+        if plan["execution"].get("layer_order", "forward") == "reverse":
+            groups.reverse()
         order = plan["execution"]["order"]
+        blocks = plan["execution"].get("block_modules", [])
+        units = []
+        for rows in groups:
+            matches = {b for b in blocks for l in rows if l["module"] == b or l["module"].startswith(b + ".")}
+            require(len(matches) <= 1, "同一算子跨越不同 block")
+            key = next(iter(matches), None)
+            if key is not None:
+                model.get_submodule(key)  # reject nonexistent block paths before fitting
+            if key is not None and units and units[-1][0] == key:
+                units[-1][1].append(rows)
+            else:
+                units.append((key, [rows]))
+        require(all(sum(k == b for k, _ in units) == 1 for b in blocks),
+                "block 位点在真实前向拓扑中必须连续，不能把命名分组伪称 block 调度")
+        pass_index = 0
         stages = ("activation", "weight") if order == "a_then_w" else ("weight", "activation")
 
         installed_params = {}
@@ -453,20 +478,44 @@ class QuantizationExecutor:
             sid = site_id(layer)
             if layer[target] is None:
                 return
-            if target == "weight" and layer["module"] in weights and layer["module"] not in reset_weights:
+            if pass_index == 0 and target == "weight" and layer["module"] in weights and layer["module"] not in reset_weights:
                 return
-            if target == "activation" and sid in params:
+            if pass_index == 0 and target == "activation" and sid in params:
                 return
             print(f"calibration {sid} {target}: {layer[target + '_method']}", flush=True)
             if target == "activation" and (plan["execution"]["activation_calibration"] == "dynamic" or layer[target]["format"] in RAW_FLOATS):
                 result, report = {}, {"samples": 0, "strategy": "runtime_minmax_or_raw_cast"}
             else:
-                result, report = self.fit_target(model, layer, target)
+                flags = [(q, q.enabled, getattr(q, "weight_enabled", None)) for q in qmap.values()]
+                try:
+                    # Re-estimation observes the current peers, but never QDQ's the
+                    # target twice or reconstructs its already quantized output.
+                    if plan["execution"].get("calibration_context", "current") == "float":
+                        for q, _, w in flags:
+                            q.enabled = False
+                            if w is not None:
+                                q.weight_enabled = False
+                    q = qmap[sid]
+                    if target == "activation":
+                        q.enabled = False
+                    else:
+                        q.weight_enabled = False
+                    result, report = self.fit_target(model, layer, target)
+                finally:
+                    for q, enabled, weight_enabled in flags:
+                        q.enabled = enabled
+                        if weight_enabled is not None:
+                            q.weight_enabled = weight_enabled
             if target == "weight":
                 weights[layer["module"]] = result
             elif result:
                 params[sid] = result
-            reports.append({"site": sid, "target": target, "method": layer[target + "_method"], **report})
+            reports.append({"site": sid, "target": target, "method": layer[target + "_method"],
+                            "pass": pass_index + 1, "calibration_unit": plan["execution"].get("calibration_unit", "operator"),
+                            "block": next((b for b in blocks if layer["module"] == b or layer["module"].startswith(b + ".")), None),
+                            "layer_order": plan["execution"].get("layer_order", "forward"),
+                            "context": plan["execution"].get("calibration_context", "current"),
+                            "reference": "target disabled on actual observed input; peers follow context", **report})
             install()
             bind_calibration_operators(model, plan, params)
             gc.collect()
@@ -481,31 +530,57 @@ class QuantizationExecutor:
                     elif isinstance(q, PipelineLinear):
                         q.weight_enabled = layer[target] is not None
 
-        install()
-        if order == "joint":
-            for rows in groups:
-                if any(calibration(l, t)["strategy"] == "coordinate" for l in rows for t in stages if l[t]):
-                    print(f"calibration coordinate: {[site_id(l) for l in rows]}", flush=True)
-                    w, a, report = fit_operator(self, model, rows)
-                    weights.update(w)
-                    params.update(a)
-                    install()
-                    reports.append({"sites": [site_id(l) for l in rows], **report})
-                else:
-                    for layer in rows:
-                        for target in stages:
-                            fit(layer, target)
-                if sequential:
-                    enable(rows, stages)
-        else:
-            for target in stages:
-                for rows in groups:
-                    for layer in rows:
-                        fit(layer, target)
+        def run_groups(selected_groups):
+            if order == "joint":
+                for rows in selected_groups:
+                    if any(calibration(l, t)["strategy"] == "coordinate" for l in rows for t in stages if l[t]):
+                        flags = [(q, q.enabled, getattr(q, "weight_enabled", None)) for q in qmap.values()]
+                        try:
+                            if plan["execution"].get("calibration_context", "current") == "float":
+                                for q, _, w in flags:
+                                    q.enabled = False
+                                    if w is not None:
+                                        q.weight_enabled = False
+                            for layer in rows:
+                                q = qmap[site_id(layer)]
+                                q.enabled = False
+                                if isinstance(q, PipelineLinear):
+                                    q.weight_enabled = False
+                            w, a, report = fit_operator(self, model, rows)
+                        finally:
+                            for q, enabled, weight_enabled in flags:
+                                q.enabled = enabled
+                                if weight_enabled is not None:
+                                    q.weight_enabled = weight_enabled
+                        weights.update(w)
+                        params.update(a)
+                        install()
+                        reports.append({"sites": [site_id(l) for l in rows], "pass": pass_index + 1,
+                                        "context": plan["execution"].get("calibration_context", "current"), **report})
+                    else:
+                        for layer in rows:
+                            for target in stages:
+                                fit(layer, target)
                     if sequential:
-                        enable(rows, (target,))
-                enable(plan["layers"], (target,))
-        enable(plan["layers"], stages)
+                        enable(rows, stages)
+            else:
+                for target in stages:
+                    for rows in selected_groups:
+                        for layer in rows:
+                            fit(layer, target)
+                        if sequential:
+                            enable(rows, (target,))
+                    enable([l for rows in selected_groups for l in rows], (target,))
+
+        install()
+        for pass_index in range(plan["execution"].get("reestimate_passes", 1)):
+            if plan["execution"].get("calibration_unit", "operator") == "block":
+                for _, unit_groups in units:
+                    run_groups(unit_groups)
+                    enable([l for rows in unit_groups for l in rows], stages)
+            else:
+                run_groups(groups)
+            enable(plan["layers"], stages)
         return weights, params, reports
 
     def prepare(self, plan, shapes):
@@ -601,7 +676,7 @@ class QuantizationExecutor:
                     require(torch.equal(q.decoded_weight, math_plugin.decode_weight(q.weight_record, q.decoded_weight.device)), "解码权重与编码不同")
             if layer["activation"] and layer["activation"]["format"] not in RAW_FLOATS and plan["execution"]["activation_calibration"] == "static":
                 math_plugin.validate_activation(q.params(), layer, self.input_shapes[site_id(layer)])
-        require(not model.training and all(not p.requires_grad for p in model.parameters()), "候选模型未冻结")
+        require(all(not m.training for m in model.modules()) and all(not p.requires_grad for p in model.parameters()), "候选模型未冻结")
         return {"configuration_hash": fingerprint(plan), "coverage_exact": True,
                 "unselected_state_unchanged": True, "protected_head_neck_unchanged": True,
                 "official_classifier_quantized": any(l["module"] == "head" for l in plan["layers"]),
@@ -615,9 +690,17 @@ class QuantizationExecutor:
         path = Path(directory)
         require(not path.exists(), "产物目录已存在，拒绝覆盖", code="run_exists")
         path.mkdir(parents=True)
+        # Selection can replace a grid or weight record after prepare. Serialize the
+        # audited live model, including affine transforms, even with old-style callers.
+        qmap = quantizers(model)
+        records = {row["module"]: qmap[site_id(row)].weight_record for row in plan["layers"] if row["weight"]}
+        params = {site_id(row): qmap[site_id(row)].params() for row in plan["layers"] if row["activation"]
+                  and row["activation"]["format"] not in RAW_FLOATS and plan["execution"]["activation_calibration"] == "static"}
+        preprocess = {p["module"]: {"scale": qmap[p["module"]].input_scale.detach().cpu(),
+                                     "shift": qmap[p["module"]].input_shift.detach().cpu()} for p in plan["preprocess"]}
         removed = {name + ".weight" for name in records}
         state = {k: v.detach().cpu().clone() for k, v in self.backend.model.state_dict().items() if k not in removed}
-        payload = {"state": state, "weights": records, "activations": params, "preprocess": self.preprocess_state}
+        payload = {"state": state, "weights": records, "activations": params, "preprocess": preprocess}
         handle, tmp = tempfile.mkstemp(dir=path, suffix=".tmp")
         os.close(handle)
         try:

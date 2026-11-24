@@ -1,0 +1,2678 @@
+{
+  "schema": "qavit.gonly.delivery/1",
+  "draft": false,
+  "as_of": "2026-11-15T22:41:41.969584+00:00",
+  "source_audit": "round_audit_latest.json",
+  "run": "/root/data-fs/projects/Quantization_Agent_for_ViTs_gonly/EXP/runs/deitb_static_w4a4_gonly_20261115_r2",
+  "status": "completed",
+  "journal": {
+    "sequence": 9149,
+    "head": "be44b44d22ee6799906e585b35be94a06fbcd97ba7bc5c9a3179ef8ab26fa7d3"
+  },
+  "initial_B": {
+    "evidence_ref": "EvidenceCard-e643fc1b1e154c17a7553394f97281f1@1",
+    "experiment_ref": "ExperimentCard-d50cbad6ce7645cb93ba04a9c16374a1@1",
+    "hypothesis_ref": "HypothesisCard-19d67c99082648a5b9607415ca5a8bb1@1",
+    "id": "3fa2102e9a6efeec9dba2b6606dc274f00c44252609e0e0c6f0a92c8fefd8cc6",
+    "metrics": {
+      "mIoU": 28.055647558635677,
+      "top1": 72.482
+    },
+    "run_dir": "/root/data-fs/projects/Quantization_Agent_for_ViTs_gonly/EXP/runs/deitb_static_w4a4_gonly_20261115_r1",
+    "selection_ref": "ReviewDecisionCard-7cb7ef691bd740ca834d9b58052aaf27@1",
+    "source_version": "cb04d86178919244b9215ff4b2c9ef05100454f1e992c1315827c3d59aa220dd",
+    "status": "evaluated",
+    "title": "H1 round 2"
+  },
+  "rounds": [
+    {
+      "round": 1,
+      "status": "completed",
+      "hypotheses": [
+        {
+          "ref": "HypothesisCard-a2f5f5fe11f842dbb4645cb41653fcef@1",
+          "slot": "H1",
+          "title": "AdaLog 完整 W4A4 方案上的 LN→Linear 通道等价平衡",
+          "feedback_used": [],
+          "evidence_refs": []
+        },
+        {
+          "ref": "HypothesisCard-a8757ba120cf4e5fa331c8119c0b0c63@1",
+          "slot": "H3",
+          "title": "固定概率码本上的空间误差反馈：将注意力量化误差移向相邻 Value 的差分",
+          "feedback_used": [],
+          "evidence_refs": []
+        },
+        {
+          "ref": "HypothesisCard-cca0039a87d2447994d06f9e0195c676@1",
+          "slot": "H2",
+          "title": "AdaLog完整方案的首层Query逐head静态A4：保留Key共享尺度，限制粒度改动范围",
+          "feedback_used": [],
+          "evidence_refs": [
+            "EvidenceCard-b7c871eb269e436a92e5b99d4867f49f@1"
+          ]
+        }
+      ],
+      "selection": {
+        "ref": "ReviewDecisionCard-0f4f0f8f614b4fb5ae5c8ded38a17257@1",
+        "payload": {
+          "candidate_refs": {
+            "H1": "HypothesisCard-a2f5f5fe11f842dbb4645cb41653fcef@1",
+            "H2": "HypothesisCard-cca0039a87d2447994d06f9e0195c676@1",
+            "H3": "HypothesisCard-a8757ba120cf4e5fa331c8119c0b0c63@1"
+          },
+          "evidence_refs": [
+            "EvidenceCard-b7c871eb269e436a92e5b99d4867f49f@1",
+            "EvidenceCard-ba6cbb3000eb40fdab41ad88e7b1b86c@1"
+          ],
+          "phase": "ranking",
+          "provisional": true,
+          "rationale": "预选当前版本H2，不改变其仅首层Query逐head、Key保持共享尺度的定义。新增真实对照C14直接检验了收益是否依赖FP Key：在相同共享K4码器下，逐head Q相对共享Q的pooled O NMSE差，在前64张复测集为−0.01175056，在未参与原候选选择的第65–128张为−0.01040726；对应CLS差为−0.00455387、−0.00427647，patch差亦均为负。因此，局部收益并未因Key量化而消失，也不只出现在原选择样本上。这是推进理由，而非任务性能证据。\n重要反证仍保留：C9的Key及深层CLS负结果支持限制干预范围；C14中部分head的O或CLS误差仍增加，不能宣称逐head普遍更优。前64张复测不是独立重复，后64张也不是独立校准重复。\nH1的24条通道平衡有浮点等价依据，但尚未验证联合W/A收益，可能只是转移量化难度；H3的空间误差反馈有明确代数机制，但空间顺序相对匹配最近邻、打乱顺序的优势尚未测量，并增加递推与ADE布局适配成本。二者均未被反驳。相较之下，H2以较小实现改动获得了针对关键替代解释的正向证据，下一笔完整验证更有机会以可控成本回答局部收益能否转化为分类及迁移收益。故将本轮L3预算投向H2，而非仅按已有测量数量排序。独立历史保底B继续保留；本决定仅为预选，不更新实测排名。",
+          "round": 1,
+          "selected_hypothesis_ref": "HypothesisCard-cca0039a87d2447994d06f9e0195c676@1",
+          "selected_slot": "H2",
+          "selection_basis": "预选当前版本H2，不改变其仅首层Query逐head、Key保持共享尺度的定义。新增真实对照C14直接检验了收益是否依赖FP Key：在相同共享K4码器下，逐head Q相对共享Q的pooled O NMSE差，在前64张复测集为−0.01175056，在未参与原候选选择的第65–128张为−0.01040726；对应CLS差为−0.00455387、−0.00427647，patch差亦均为负。因此，局部收益并未因Key量化而消失，也不只出现在原选择样本上。这是推进理由，而非任务性能证据。\n重要反证仍保留：C9的Key及深层CLS负结果支持限制干预范围；C14中部分head的O或CLS误差仍增加，不能宣称逐head普遍更优。前64张复测不是独立重复，后64张也不是独立校准重复。\nH1的24条通道平衡有浮点等价依据，但尚未验证联合W/A收益，可能只是转移量化难度；H3的空间误差反馈有明确代数机制，但空间顺序相对匹配最近邻、打乱顺序的优势尚未测量，并增加递推与ADE布局适配成本。二者均未被反驳。相较之下，H2以较小实现改动获得了针对关键替代解释的正向证据，下一笔完整验证更有机会以可控成本回答局部收益能否转化为分类及迁移收益。故将本轮L3预算投向H2，而非仅按已有测量数量排序。独立历史保底B继续保留；本决定仅为预选，不更新实测排名。",
+          "selection_source": "generation",
+          "selection_stage": "gonly_preselection",
+          "uncertainties": [
+            "现有测量限于FP前缀、FP Value及未量化概率路径；P4/V4、量化前缀和后续传播可能抵消局部收益。尚无完整候选logits KL或量化任务成绩；辅助分类数值属于FP-only对照。",
+            "完整H2执行器、全网覆盖、冻结状态及独立导出重载尚待实现和核验；局部执行成功不等于最终static W4A4合规已验证。",
+            "ImageNet Top-1与ADE mIoU方向均未知，不能由局部NMSE推断。后续L3须保持32张分类校准、50000张ImageNet及2000张ADE完整评测和同条件FP对照，ADE不得重新校准。"
+          ]
+        }
+      },
+      "recorder_refs": [
+        "MetareviewCard-a54b85e87cd84f4586baf095b4c230df@1"
+      ],
+      "B_before": {
+        "evidence_ref": "EvidenceCard-e643fc1b1e154c17a7553394f97281f1@1",
+        "experiment_ref": "ExperimentCard-d50cbad6ce7645cb93ba04a9c16374a1@1",
+        "hypothesis_ref": "HypothesisCard-19d67c99082648a5b9607415ca5a8bb1@1",
+        "id": "3fa2102e9a6efeec9dba2b6606dc274f00c44252609e0e0c6f0a92c8fefd8cc6",
+        "metrics": {
+          "mIoU": 28.055647558635677,
+          "top1": 72.482
+        },
+        "run_dir": "/root/data-fs/projects/Quantization_Agent_for_ViTs_gonly/EXP/runs/deitb_static_w4a4_gonly_20261115_r1",
+        "selection_ref": "ReviewDecisionCard-7cb7ef691bd740ca834d9b58052aaf27@1",
+        "source_version": "cb04d86178919244b9215ff4b2c9ef05100454f1e992c1315827c3d59aa220dd",
+        "status": "evaluated",
+        "title": "H1 round 2"
+      },
+      "executions": [
+        {
+          "execution_id": "task-8f43bc50242a127e34f8404f-a0001",
+          "level": "L2",
+          "status": "failed",
+          "evidence_ref": null,
+          "error": {
+            "code": "ContractError",
+            "message": "测量证据缺少符合冻结规格的评测结果: classification",
+            "origin": "implementation"
+          },
+          "binding_issues": [],
+          "worker_wall_seconds": 108.07831457816064,
+          "result": "/root/data-fs/projects/Quantization_Agent_for_ViTs_gonly/EXP/runs/deitb_static_w4a4_gonly_20261115_r2/jobs/task-8f43bc50242a127e34f8404f-a0001/result.json"
+        },
+        {
+          "execution_id": "task-9a31524441b1e4a6ff8fb613-a0001",
+          "level": "L2",
+          "status": "completed",
+          "evidence_ref": "EvidenceCard-b7c871eb269e436a92e5b99d4867f49f@1",
+          "error": null,
+          "binding_issues": [],
+          "worker_wall_seconds": 108.51731550693512,
+          "result": "/root/data-fs/projects/Quantization_Agent_for_ViTs_gonly/EXP/runs/deitb_static_w4a4_gonly_20261115_r2/jobs/task-9a31524441b1e4a6ff8fb613-a0001/result.json"
+        },
+        {
+          "execution_id": "task-d82cced7cfe0bd4030e5cac0-a0001",
+          "level": "L2",
+          "status": "completed",
+          "evidence_ref": "EvidenceCard-ba6cbb3000eb40fdab41ad88e7b1b86c@1",
+          "error": null,
+          "binding_issues": [],
+          "worker_wall_seconds": 55.38354265503585,
+          "result": "/root/data-fs/projects/Quantization_Agent_for_ViTs_gonly/EXP/runs/deitb_static_w4a4_gonly_20261115_r2/jobs/task-d82cced7cfe0bd4030e5cac0-a0001/result.json"
+        },
+        {
+          "execution_id": "task-ee70cbb59cd25c6937cef641-a0001",
+          "level": "L3",
+          "status": "completed",
+          "evidence_ref": "EvidenceCard-34132bb00ead4c6f8f6b8ecbc4a26107@1",
+          "error": null,
+          "binding_issues": [],
+          "worker_wall_seconds": 5100.114776425064,
+          "result": "/root/data-fs/projects/Quantization_Agent_for_ViTs_gonly/EXP/runs/deitb_static_w4a4_gonly_20261115_r2/jobs/task-ee70cbb59cd25c6937cef641-a0001/result.json"
+        }
+      ],
+      "formal": [
+        {
+          "execution_id": "task-ee70cbb59cd25c6937cef641-a0001",
+          "evidence_ref": "EvidenceCard-34132bb00ead4c6f8f6b8ecbc4a26107@1",
+          "experiment_ref": "ExperimentCard-138051ad3db5460c86149d9450fccb5f@1",
+          "source_sha256": "80aac61fc004a3301ee35de7970d67bdb901a046679f32209f653f50efe5500e",
+          "core_sha256": "6f5db3ec908f9e44ae2616b1e2f8ad6a8d2468b3f7ceffbcbe5c1f4a87ad2dec",
+          "model_identity": {
+            "baseline_state_sha256": "a62575cb13ad6d419979a98641e8f758c52ff0464a28264643c98c3a989d6f28",
+            "model_ref": "14e4fd32745a705cfa3d748250c5a16b756d7bcd48e12707df484ea5a0956857",
+            "model_unchanged": true,
+            "protocol_hash": "50a110da010f8c6b048f3ead8f8b6934e5dc2670ec9f7b1c90c62107121bd5f4",
+            "quantizer_state_sha256": null
+          },
+          "classification": {
+            "full_dataset_evaluation": true,
+            "metrics": {
+              "baseline_top1": 81.796,
+              "baseline_top5": 95.594,
+              "top1": 72.35,
+              "top5": 90.212
+            },
+            "sample_count": 50000,
+            "status": "completed"
+          },
+          "segmentation": {
+            "backbones_unchanged": true,
+            "full_dataset_evaluation": true,
+            "head_unchanged": true,
+            "images": 2000,
+            "metrics": {
+              "fp": {
+                "aAcc": 78.75318055624219,
+                "mAcc": 50.60654191157785,
+                "mIoU": 39.8295824953736
+              },
+              "quantized": {
+                "aAcc": 71.52603988462512,
+                "mAcc": 38.045538130185356,
+                "mIoU": 28.459681850757335
+              }
+            },
+            "recalibrated": false,
+            "trained": false
+          },
+          "reload": {
+            "comparison": "torch.equal for all floating outputs",
+            "evaluated_instance": "reloaded",
+            "host_verified": true,
+            "loader": "approved_custom_executor",
+            "passed": true,
+            "sample_ids": [
+              "train/n04522168/n04522168_9121.JPEG"
+            ],
+            "samples": 1,
+            "split": "search"
+          },
+          "actual_calibration": {
+            "full_dataset": false,
+            "sample_count": 32,
+            "sample_ids": [
+              "train/n01751748/n01751748_5926.JPEG",
+              "train/n02442845/n02442845_19600.JPEG",
+              "train/n04131690/n04131690_11080.JPEG",
+              "train/n03065424/n03065424_37483.JPEG",
+              "train/n07754684/n07754684_28118.JPEG",
+              "train/n04356056/n04356056_1814.JPEG",
+              "train/n03908714/n03908714_12667.JPEG",
+              "train/n02085936/n02085936_9694.JPEG",
+              "train/n01978455/n01978455_3255.JPEG",
+              "train/n03777568/n03777568_6449.JPEG",
+              "train/n04485082/n04485082_19000.JPEG",
+              "train/n06596364/n06596364_10245.JPEG",
+              "train/n02791124/n02791124_1088.JPEG",
+              "train/n03125729/n03125729_15999.JPEG",
+              "train/n04147183/n04147183_17806.JPEG",
+              "train/n03676483/n03676483_37960.JPEG",
+              "train/n11939491/n11939491_3079.JPEG",
+              "train/n04328186/n04328186_2076.JPEG",
+              "train/n02108000/n02108000_1443.JPEG",
+              "train/n02105505/n02105505_5421.JPEG",
+              "train/n03018349/n03018349_10666.JPEG",
+              "train/n04228054/n04228054_19685.JPEG",
+              "train/n02708093/n02708093_3057.JPEG",
+              "train/n02894605/n02894605_18232.JPEG",
+              "train/n02088466/n02088466_7609.JPEG",
+              "train/n02088094/n02088094_5099.JPEG",
+              "train/n03476684/n03476684_442.JPEG",
+              "train/n03447721/n03447721_5653.JPEG",
+              "train/n03223299/n03223299_3439.JPEG",
+              "train/n03854065/n03854065_54988.JPEG",
+              "train/n02105641/n02105641_3318.JPEG",
+              "train/n15075141/n15075141_8773.JPEG"
+            ],
+            "split": "calibration"
+          },
+          "static_w4a4": {
+            "frozen": true,
+            "protocol": "static_w4a4/1",
+            "task_modules": {
+              "head": {
+                "activation": null,
+                "weight": null
+              }
+            }
+          },
+          "artifacts_hashes_match": true,
+          "delta_initial_B_pp": {
+            "top1": -0.132000000000005,
+            "mIoU": 0.40403429212165776
+          },
+          "delta_previous_B_pp": {
+            "top1": -0.132000000000005,
+            "mIoU": 0.40403429212165776
+          }
+        }
+      ],
+      "solution_considered": [
+        {
+          "commit_sequence": 4477,
+          "evidence_ref": "EvidenceCard-34132bb00ead4c6f8f6b8ecbc4a26107@1",
+          "round": 1,
+          "selected": true,
+          "type": "solution_considered"
+        }
+      ],
+      "B_after": {
+        "evidence_ref": "EvidenceCard-34132bb00ead4c6f8f6b8ecbc4a26107@1",
+        "experiment_ref": "ExperimentCard-138051ad3db5460c86149d9450fccb5f@1",
+        "hypothesis_ref": "HypothesisCard-cca0039a87d2447994d06f9e0195c676@1",
+        "id": "14e4fd32745a705cfa3d748250c5a16b756d7bcd48e12707df484ea5a0956857",
+        "metrics": {
+          "mIoU": 28.459681850757335,
+          "top1": 72.35
+        },
+        "run_dir": "/root/data-fs/projects/Quantization_Agent_for_ViTs_gonly/EXP/runs/deitb_static_w4a4_gonly_20261115_r2",
+        "selection_ref": "ReviewDecisionCard-0f4f0f8f614b4fb5ae5c8ded38a17257@1",
+        "source_version": "6f5db3ec908f9e44ae2616b1e2f8ad6a8d2468b3f7ceffbcbe5c1f4a87ad2dec",
+        "status": "evaluated",
+        "title": "H2 round 1"
+      }
+    },
+    {
+      "round": 2,
+      "status": "completed",
+      "hypotheses": [
+        {
+          "ref": "HypothesisCard-9f9ffc0e927c4e0c88e6f3172d268826@1",
+          "slot": "H1",
+          "title": "AdaLog上的CLS/patch双约束通道平衡：以联合W4A4误差决定静态启用",
+          "feedback_used": [
+            {
+              "influence": "落实前轮保留联合W/A对照的建议；C29说明A-only改善不能替代联合分析，进一步发现全token改善也不能替代CLS或整网输出。保留B，不把其绝对任务成绩归于本候选。",
+              "metareview_ref": "MetareviewCard-a54b85e87cd84f4586baf095b4c230df@1"
+            }
+          ],
+          "evidence_refs": [
+            "EvidenceCard-91922d78bcf2470483ffd28c2901fd03@1"
+          ]
+        },
+        {
+          "ref": "HypothesisCard-8777425b41fc4c8398f9c76afc84286c@1",
+          "slot": "H3",
+          "title": "固定A4码本上的空间二元联合概率编码",
+          "feedback_used": [
+            {
+              "effect": "采用前轮反馈要求的实际码本匹配空间对照，并明确区分局部PV误差、整网KL和完整双任务性能。B的已有成绩不被归因为本机制或首层Q改动的增量效果。",
+              "metareview_ref": "MetareviewCard-a54b85e87cd84f4586baf095b4c230df@1"
+            }
+          ],
+          "evidence_refs": [
+            "EvidenceCard-34132bb00ead4c6f8f6b8ecbc4a26107@1"
+          ]
+        },
+        {
+          "ref": "HypothesisCard-4e18b5ef2947493185bac679c1f71d60@1",
+          "slot": "H2",
+          "title": "冻结量化上下文中的首层Query逐head条件PV误差选码",
+          "feedback_used": [
+            {
+              "effect": "采用前轮关于真实量化上下文和固定其他量化器的建议，已用C34完成局部冻结对照；同时保留AdaLog-only正式双任务对照缺失这一限制，不将既有完整成绩归因于逐head改动。",
+              "metareview_ref": "MetareviewCard-a54b85e87cd84f4586baf095b4c230df@1"
+            }
+          ],
+          "evidence_refs": [
+            "EvidenceCard-282de481b2e34307accec0cd80ce7f6a@1",
+            "EvidenceCard-34132bb00ead4c6f8f6b8ecbc4a26107@1"
+          ]
+        }
+      ],
+      "selection": {
+        "ref": "ReviewDecisionCard-6cefb2d4cc5d4139881ad1ff2d3ef6f8@1",
+        "payload": {
+          "candidate_refs": {
+            "H1": "HypothesisCard-9f9ffc0e927c4e0c88e6f3172d268826@1",
+            "H2": "HypothesisCard-4e18b5ef2947493185bac679c1f71d60@1",
+            "H3": "HypothesisCard-8777425b41fc4c8398f9c76afc84286c@1"
+          },
+          "evidence_refs": [
+            "EvidenceCard-282de481b2e34307accec0cd80ce7f6a@1",
+            "EvidenceCard-91922d78bcf2470483ffd28c2901fd03@1",
+            "EvidenceCard-34132bb00ead4c6f8f6b8ecbc4a26107@1"
+          ],
+          "phase": "ranking",
+          "provisional": true,
+          "rationale": "预选当前H2（HypothesisCard-4e18b5ef2947493185bac679c1f71d60@1），保持其首层Query条件PV目标选码算法不变。理由是该候选已有能隔离机制的真实冻结网络对照：C/D使用相同实际逐head候选码本，仅改变选择目标，其余量化状态固定；32张校准后，256张search上D虽增加Q重建误差，却降低全token条件PV误差、相对FP的总PV误差和整网KL。两个128张分段的平均KL差分别为−0.034232和−0.014487，支持有限的传播收益，而非仅校准目标内改善。它们属于同一次执行，不是独立重复。\n重要反证不能忽略：D的CLS条件及总PV误差均恶化；共享Q诊断臂虽使全tokenPV误差变差，KL仍改善，且search Top-1增量大于D。因此不能把PV误差当作任务排序器，也不能宣称H2优于共享Q或已提高正式精度。\nH1的六处FP前缀局部诊断提供了联合W4A4改善和CLS退化的真实依据，但当前提交的双token门控、LN折叠及完整重校准组合尚未测量；原局部结果不能自动验证这一修订。H3的固定码本联合编码具有明确可证伪机制，但加载契约失败未产生有效测量，既不是反驳，也不支持直接投入昂贵双任务验证；其下一项高价值工作仍是小规模码本匹配对照。三者条件、干预及样本范围不同，不按局部NMSE数值横向排名。\n本轮将预算用于H2导出适配及正式双任务验证，能直接检验已观察到的目标失配修正是否转化为分类收益并迁移到ADE；相比继续重复同类search代理测量，这更能消除当前关键不确定性。选择依据是这项新增信息的价值及单点后处理的有限实现成本，而非基础包的成熟度或槽位优先权。独立保底B保持不变，其已有成绩不算本候选成绩。本次仅为预选，L3尚未完成。",
+          "round": 2,
+          "selected_hypothesis_ref": "HypothesisCard-4e18b5ef2947493185bac679c1f71d60@1",
+          "selected_slot": "H2",
+          "selection_basis": "预选当前H2（HypothesisCard-4e18b5ef2947493185bac679c1f71d60@1），保持其首层Query条件PV目标选码算法不变。理由是该候选已有能隔离机制的真实冻结网络对照：C/D使用相同实际逐head候选码本，仅改变选择目标，其余量化状态固定；32张校准后，256张search上D虽增加Q重建误差，却降低全token条件PV误差、相对FP的总PV误差和整网KL。两个128张分段的平均KL差分别为−0.034232和−0.014487，支持有限的传播收益，而非仅校准目标内改善。它们属于同一次执行，不是独立重复。\n重要反证不能忽略：D的CLS条件及总PV误差均恶化；共享Q诊断臂虽使全tokenPV误差变差，KL仍改善，且search Top-1增量大于D。因此不能把PV误差当作任务排序器，也不能宣称H2优于共享Q或已提高正式精度。\nH1的六处FP前缀局部诊断提供了联合W4A4改善和CLS退化的真实依据，但当前提交的双token门控、LN折叠及完整重校准组合尚未测量；原局部结果不能自动验证这一修订。H3的固定码本联合编码具有明确可证伪机制，但加载契约失败未产生有效测量，既不是反驳，也不支持直接投入昂贵双任务验证；其下一项高价值工作仍是小规模码本匹配对照。三者条件、干预及样本范围不同，不按局部NMSE数值横向排名。\n本轮将预算用于H2导出适配及正式双任务验证，能直接检验已观察到的目标失配修正是否转化为分类收益并迁移到ADE；相比继续重复同类search代理测量，这更能消除当前关键不确定性。选择依据是这项新增信息的价值及单点后处理的有限实现成本，而非基础包的成熟度或槽位优先权。独立保底B保持不变，其已有成绩不算本候选成绩。本次仅为预选，L3尚未完成。",
+          "selection_source": "generation",
+          "selection_stage": "gonly_preselection",
+          "uncertainties": [
+            "H2的KL改善可能受patch权重、有限样本及量化误差抵消影响；现有search包含历史使用样本，不能视为独立确认集。",
+            "H2仍需将已测D算法接入可导出、可独立重载的执行器；必须从指定确切冻结包派生，保持除首层Q外状态不变，不以重新prepare替代。",
+            "正式验证须遵守static W4A4完整审计、ImageNet 50000张及ADE20K 2000张和同条件FP对照；分类校准状态直接迁移，不在ADE重新拟合。",
+            "AdaLog-only完整双任务对照仍缺失，上一轮逐head改动的任务增量因果效应尚未解决；本次选择不消除此限制。"
+          ]
+        }
+      },
+      "recorder_refs": [
+        "MetareviewCard-da9388eba6e5400097ccf98020cf094c@1"
+      ],
+      "B_before": {
+        "evidence_ref": "EvidenceCard-34132bb00ead4c6f8f6b8ecbc4a26107@1",
+        "experiment_ref": "ExperimentCard-138051ad3db5460c86149d9450fccb5f@1",
+        "hypothesis_ref": "HypothesisCard-cca0039a87d2447994d06f9e0195c676@1",
+        "id": "14e4fd32745a705cfa3d748250c5a16b756d7bcd48e12707df484ea5a0956857",
+        "metrics": {
+          "mIoU": 28.459681850757335,
+          "top1": 72.35
+        },
+        "run_dir": "/root/data-fs/projects/Quantization_Agent_for_ViTs_gonly/EXP/runs/deitb_static_w4a4_gonly_20261115_r2",
+        "selection_ref": "ReviewDecisionCard-0f4f0f8f614b4fb5ae5c8ded38a17257@1",
+        "source_version": "6f5db3ec908f9e44ae2616b1e2f8ad6a8d2468b3f7ceffbcbe5c1f4a87ad2dec",
+        "status": "evaluated",
+        "title": "H2 round 1"
+      },
+      "executions": [
+        {
+          "execution_id": "task-041490963dea8321621117ca-a0001",
+          "level": "L2",
+          "status": "failed",
+          "evidence_ref": null,
+          "error": {
+            "code": "invalid_config",
+            "message": "Frozen load must return an independent eval model",
+            "origin": "implementation",
+            "path": "$",
+            "retryable": false
+          },
+          "binding_issues": [],
+          "worker_wall_seconds": 50.44858674518764,
+          "result": "/root/data-fs/projects/Quantization_Agent_for_ViTs_gonly/EXP/runs/deitb_static_w4a4_gonly_20261115_r2/jobs/task-041490963dea8321621117ca-a0001/result.json"
+        },
+        {
+          "execution_id": "task-1c01e37d88053f8d01e547ea-a0001",
+          "level": "L3",
+          "status": "failed",
+          "evidence_ref": null,
+          "error": {
+            "code": "AttributeError",
+            "message": "'str' object has no attribute 'open'",
+            "origin": "implementation"
+          },
+          "binding_issues": [],
+          "worker_wall_seconds": 21.76839060895145,
+          "result": "/root/data-fs/projects/Quantization_Agent_for_ViTs_gonly/EXP/runs/deitb_static_w4a4_gonly_20261115_r2/jobs/task-1c01e37d88053f8d01e547ea-a0001/result.json"
+        },
+        {
+          "execution_id": "task-479e0d10207c3a76f06d1f85-a0001",
+          "level": "L2",
+          "status": "completed",
+          "evidence_ref": "EvidenceCard-282de481b2e34307accec0cd80ce7f6a@1",
+          "error": null,
+          "binding_issues": [],
+          "worker_wall_seconds": 149.87993195280433,
+          "result": "/root/data-fs/projects/Quantization_Agent_for_ViTs_gonly/EXP/runs/deitb_static_w4a4_gonly_20261115_r2/jobs/task-479e0d10207c3a76f06d1f85-a0001/result.json"
+        },
+        {
+          "execution_id": "task-4a72bae4ae1e7d02809799ce-a0001",
+          "level": "L2",
+          "status": "completed",
+          "evidence_ref": "EvidenceCard-91922d78bcf2470483ffd28c2901fd03@1",
+          "error": null,
+          "binding_issues": [],
+          "worker_wall_seconds": 253.48253209143877,
+          "result": "/root/data-fs/projects/Quantization_Agent_for_ViTs_gonly/EXP/runs/deitb_static_w4a4_gonly_20261115_r2/jobs/task-4a72bae4ae1e7d02809799ce-a0001/result.json"
+        },
+        {
+          "execution_id": "task-5e0dd9888d3fdd1ceb6ddc3f-a0001",
+          "level": "L1",
+          "status": "failed",
+          "evidence_ref": null,
+          "error": {
+            "code": "ContractError",
+            "message": "load_frozen requires a cited Evidence or evaluated solution with a host-verified exported package",
+            "origin": "implementation"
+          },
+          "binding_issues": [],
+          "worker_wall_seconds": 22.484398102387786,
+          "result": "/root/data-fs/projects/Quantization_Agent_for_ViTs_gonly/EXP/runs/deitb_static_w4a4_gonly_20261115_r2/jobs/task-5e0dd9888d3fdd1ceb6ddc3f-a0001/result.json"
+        },
+        {
+          "execution_id": "task-cb87f2f8ee12da235667770c-a0001",
+          "level": "L3",
+          "status": "completed",
+          "evidence_ref": "EvidenceCard-46fbe7b34ad44eea8f72d04756d69074@1",
+          "error": null,
+          "binding_issues": [],
+          "worker_wall_seconds": 3987.4844715856016,
+          "result": "/root/data-fs/projects/Quantization_Agent_for_ViTs_gonly/EXP/runs/deitb_static_w4a4_gonly_20261115_r2/jobs/task-cb87f2f8ee12da235667770c-a0001/result.json"
+        },
+        {
+          "execution_id": "task-e3c85c5c64ade4ae2bb23970-a0001",
+          "level": "L1",
+          "status": "failed",
+          "evidence_ref": null,
+          "error": {
+            "code": "ContractError",
+            "message": "load_frozen requires a cited Evidence or evaluated solution with a host-verified exported package",
+            "origin": "implementation"
+          },
+          "binding_issues": [],
+          "worker_wall_seconds": 22.4023299459368,
+          "result": "/root/data-fs/projects/Quantization_Agent_for_ViTs_gonly/EXP/runs/deitb_static_w4a4_gonly_20261115_r2/jobs/task-e3c85c5c64ade4ae2bb23970-a0001/result.json"
+        }
+      ],
+      "formal": [
+        {
+          "execution_id": "task-cb87f2f8ee12da235667770c-a0001",
+          "evidence_ref": "EvidenceCard-46fbe7b34ad44eea8f72d04756d69074@1",
+          "experiment_ref": "ExperimentCard-5fb6f9858b2d40918ce24d1842f4628c@1",
+          "source_sha256": "bb5c83b2c6fd5612afb00c451e6e169696d27cdbd99b6ff112454bca3629f633",
+          "core_sha256": "6f5db3ec908f9e44ae2616b1e2f8ad6a8d2468b3f7ceffbcbe5c1f4a87ad2dec",
+          "model_identity": {
+            "baseline_state_sha256": "a62575cb13ad6d419979a98641e8f758c52ff0464a28264643c98c3a989d6f28",
+            "model_ref": "c1c5ac43b4957e8afca2e8c4caca8f3cd1d3cc75eb72e0c8529bf2d00b6a27db",
+            "model_unchanged": true,
+            "protocol_hash": "50a110da010f8c6b048f3ead8f8b6934e5dc2670ec9f7b1c90c62107121bd5f4",
+            "quantizer_state_sha256": null
+          },
+          "classification": {
+            "full_dataset_evaluation": true,
+            "metrics": {
+              "baseline_top1": 81.796,
+              "baseline_top5": 95.594,
+              "top1": 72.394,
+              "top5": 90.21
+            },
+            "sample_count": 50000,
+            "status": "completed"
+          },
+          "segmentation": {
+            "backbones_unchanged": true,
+            "full_dataset_evaluation": true,
+            "head_unchanged": true,
+            "images": 2000,
+            "metrics": {
+              "fp": {
+                "aAcc": 78.75318055624219,
+                "mAcc": 50.60654191157785,
+                "mIoU": 39.8295824953736
+              },
+              "quantized": {
+                "aAcc": 71.59290791271845,
+                "mAcc": 38.10787961207583,
+                "mIoU": 28.47913645190287
+              }
+            },
+            "recalibrated": false,
+            "trained": false
+          },
+          "reload": {
+            "comparison": "torch.equal for all floating outputs",
+            "evaluated_instance": "reloaded",
+            "host_verified": true,
+            "loader": "approved_custom_executor",
+            "passed": true,
+            "sample_ids": [
+              "train/n04522168/n04522168_9121.JPEG"
+            ],
+            "samples": 1,
+            "split": "search"
+          },
+          "actual_calibration": {
+            "full_dataset": false,
+            "sample_count": 32,
+            "sample_ids": [
+              "train/n01751748/n01751748_5926.JPEG",
+              "train/n02442845/n02442845_19600.JPEG",
+              "train/n04131690/n04131690_11080.JPEG",
+              "train/n03065424/n03065424_37483.JPEG",
+              "train/n07754684/n07754684_28118.JPEG",
+              "train/n04356056/n04356056_1814.JPEG",
+              "train/n03908714/n03908714_12667.JPEG",
+              "train/n02085936/n02085936_9694.JPEG",
+              "train/n01978455/n01978455_3255.JPEG",
+              "train/n03777568/n03777568_6449.JPEG",
+              "train/n04485082/n04485082_19000.JPEG",
+              "train/n06596364/n06596364_10245.JPEG",
+              "train/n02791124/n02791124_1088.JPEG",
+              "train/n03125729/n03125729_15999.JPEG",
+              "train/n04147183/n04147183_17806.JPEG",
+              "train/n03676483/n03676483_37960.JPEG",
+              "train/n11939491/n11939491_3079.JPEG",
+              "train/n04328186/n04328186_2076.JPEG",
+              "train/n02108000/n02108000_1443.JPEG",
+              "train/n02105505/n02105505_5421.JPEG",
+              "train/n03018349/n03018349_10666.JPEG",
+              "train/n04228054/n04228054_19685.JPEG",
+              "train/n02708093/n02708093_3057.JPEG",
+              "train/n02894605/n02894605_18232.JPEG",
+              "train/n02088466/n02088466_7609.JPEG",
+              "train/n02088094/n02088094_5099.JPEG",
+              "train/n03476684/n03476684_442.JPEG",
+              "train/n03447721/n03447721_5653.JPEG",
+              "train/n03223299/n03223299_3439.JPEG",
+              "train/n03854065/n03854065_54988.JPEG",
+              "train/n02105641/n02105641_3318.JPEG",
+              "train/n15075141/n15075141_8773.JPEG"
+            ],
+            "split": "calibration"
+          },
+          "static_w4a4": {
+            "frozen": true,
+            "protocol": "static_w4a4/1",
+            "task_modules": {
+              "head": {
+                "activation": null,
+                "weight": null
+              }
+            }
+          },
+          "artifacts_hashes_match": true,
+          "delta_initial_B_pp": {
+            "top1": -0.08799999999999386,
+            "mIoU": 0.4234888932671943
+          },
+          "delta_previous_B_pp": {
+            "top1": 0.04400000000001114,
+            "mIoU": 0.019454601145536543
+          }
+        }
+      ],
+      "solution_considered": [
+        {
+          "commit_sequence": 6829,
+          "evidence_ref": "EvidenceCard-46fbe7b34ad44eea8f72d04756d69074@1",
+          "round": 2,
+          "selected": true,
+          "type": "solution_considered"
+        }
+      ],
+      "B_after": {
+        "evidence_ref": "EvidenceCard-46fbe7b34ad44eea8f72d04756d69074@1",
+        "experiment_ref": "ExperimentCard-5fb6f9858b2d40918ce24d1842f4628c@1",
+        "hypothesis_ref": "HypothesisCard-4e18b5ef2947493185bac679c1f71d60@1",
+        "id": "c1c5ac43b4957e8afca2e8c4caca8f3cd1d3cc75eb72e0c8529bf2d00b6a27db",
+        "metrics": {
+          "mIoU": 28.47913645190287,
+          "top1": 72.394
+        },
+        "run_dir": "/root/data-fs/projects/Quantization_Agent_for_ViTs_gonly/EXP/runs/deitb_static_w4a4_gonly_20261115_r2",
+        "selection_ref": "ReviewDecisionCard-6cefb2d4cc5d4139881ad1ff2d3ef6f8@1",
+        "source_version": "6f5db3ec908f9e44ae2616b1e2f8ad6a8d2468b3f7ceffbcbe5c1f4a87ad2dec",
+        "status": "evaluated",
+        "title": "H2 round 2"
+      }
+    },
+    {
+      "round": 3,
+      "status": "completed",
+      "hypotheses": [
+        {
+          "ref": "HypothesisCard-afdda82cc29b43fbbf1a457a575d53fe@1",
+          "slot": "H2",
+          "title": "冻结完整AdaLog背景下，以整网教师KL选择首层Query静态A4配置",
+          "feedback_used": [],
+          "evidence_refs": [
+            "EvidenceCard-c2c65e752bb547e7a3dc87a3df4a6372@1",
+            "EvidenceCard-46fbe7b34ad44eea8f72d04756d69074@1"
+          ]
+        },
+        {
+          "ref": "HypothesisCard-8cb31620665b4e71b3384774221c1d2c@1",
+          "slot": "H3",
+          "title": "固定A4概率码本的空间二元联合编码：保留待验证机制并隔离标量决策边界混杂",
+          "feedback_used": [
+            {
+              "influence": "采用绑定反馈关于先修复确切加载、完成码本匹配局部对照而非直接升级L3的建议。加载失败保留为工程状态；不把基础方案成绩归因于本H3，也不以局部代理替代任务评价。",
+              "metareview_ref": "MetareviewCard-da9388eba6e5400097ccf98020cf094c@1"
+            }
+          ],
+          "evidence_refs": null
+        },
+        {
+          "ref": "HypothesisCard-a1899a93672a41ee84a9b93dd9a89d10@1",
+          "slot": "H1",
+          "title": "AdaLog完整量化背景下的CLS/patch保护式SmoothQuant门控：保留FC1局部收益，撤回任务增益保证",
+          "feedback_used": [
+            {
+              "metareview_ref": "MetareviewCard-da9388eba6e5400097ccf98020cf094c@1",
+              "response": "采纳在完整量化背景检验CLS/patch门控的建议，已完成C62；根据新证据进一步缩小主张，不将局部NMSE或KL改善解释为Top-1提升。"
+            }
+          ],
+          "evidence_refs": [
+            "EvidenceCard-98241882a5f54ade9cd7b5dcca0dac93@1"
+          ]
+        }
+      ],
+      "selection": {
+        "ref": "ReviewDecisionCard-f0f8e8f05ee94444b23ac84dd2a709be@1",
+        "payload": {
+          "candidate_refs": {
+            "H1": "HypothesisCard-a1899a93672a41ee84a9b93dd9a89d10@1",
+            "H2": "HypothesisCard-afdda82cc29b43fbbf1a457a575d53fe@1",
+            "H3": "HypothesisCard-8cb31620665b4e71b3384774221c1d2c@1"
+          },
+          "evidence_refs": [
+            "EvidenceCard-c2c65e752bb547e7a3dc87a3df4a6372@1",
+            "EvidenceCard-98241882a5f54ade9cd7b5dcca0dac93@1",
+            "EvidenceCard-46fbe7b34ad44eea8f72d04756d69074@1"
+          ],
+          "phase": "ranking",
+          "provisional": true,
+          "rationale": "预选已提交的H2（HypothesisCard-afdda82cc29b43fbbf1a457a575d53fe@1），不改变其九配置候选库、32张校准KL选择规则或仅首层Query干预范围。下一笔正式验证最值得回答：分类分布对齐能否转化为完整分类收益，以及是否损害ADE迁移。\n\nH2的关键对照较清楚：C54在确切冻结基础上，让PV与KL目标复用同一批实际配置，仅改变选择目标。PV选择与原配置相同，KL选择共享minmax配置；冻结后256张search的平均KL由0.516526降至0.480019，两个连续区段均下降。这支持该实例有限的非拟合样本分布对齐，而非仅校准argmin的必然改善。但Top-1仍为87.109375%，条件PV pooled NMSE及原始logit NMSE均恶化，不能据此预测准确率必升，更不能推出ADE收益。\n\nH1的C62支持FC1正确通道配对的局部收益，且identity与打乱对照有判别力；然而门控G虽降低KL，128张search Top-1却由88.28125%降至85.15625%，打乱臂还出现局部误差更差而KL更低的反例。这不是完整任务失败的定论，但使继续核查分类边界风险比直接投入L3更合适。H1与H2使用不同基础状态和search区间，不能按绝对KL或Top-1直接排名。H3仍有合理可证伪机制，但尚无成功测量；加载授权失败不是机制反证，其下一步应是码本匹配局部对照，而非直接完整L3。\n\nH2已有真实冻结加载、候选评分和状态切换路径，可复用基础导出审计工程；新增工作主要是将已测选择封装为可独立重载的最终包。相较再增加代理测量，完整双任务更能消除当前决定性不确定性。因此不追加L2，将剩余智能体预算留给实现、审查及正式验证；纯数值耗时不据此缩减协议。有效B独立保留，其既有成绩不计为H2新结果，本次仅为预选。",
+          "round": 3,
+          "selected_hypothesis_ref": "HypothesisCard-afdda82cc29b43fbbf1a457a575d53fe@1",
+          "selected_slot": "H2",
+          "selection_basis": "预选已提交的H2（HypothesisCard-afdda82cc29b43fbbf1a457a575d53fe@1），不改变其九配置候选库、32张校准KL选择规则或仅首层Query干预范围。下一笔正式验证最值得回答：分类分布对齐能否转化为完整分类收益，以及是否损害ADE迁移。\n\nH2的关键对照较清楚：C54在确切冻结基础上，让PV与KL目标复用同一批实际配置，仅改变选择目标。PV选择与原配置相同，KL选择共享minmax配置；冻结后256张search的平均KL由0.516526降至0.480019，两个连续区段均下降。这支持该实例有限的非拟合样本分布对齐，而非仅校准argmin的必然改善。但Top-1仍为87.109375%，条件PV pooled NMSE及原始logit NMSE均恶化，不能据此预测准确率必升，更不能推出ADE收益。\n\nH1的C62支持FC1正确通道配对的局部收益，且identity与打乱对照有判别力；然而门控G虽降低KL，128张search Top-1却由88.28125%降至85.15625%，打乱臂还出现局部误差更差而KL更低的反例。这不是完整任务失败的定论，但使继续核查分类边界风险比直接投入L3更合适。H1与H2使用不同基础状态和search区间，不能按绝对KL或Top-1直接排名。H3仍有合理可证伪机制，但尚无成功测量；加载授权失败不是机制反证，其下一步应是码本匹配局部对照，而非直接完整L3。\n\nH2已有真实冻结加载、候选评分和状态切换路径，可复用基础导出审计工程；新增工作主要是将已测选择封装为可独立重载的最终包。相较再增加代理测量，完整双任务更能消除当前决定性不确定性。因此不追加L2，将剩余智能体预算留给实现、审查及正式验证；纯数值耗时不据此缩减协议。有效B独立保留，其既有成绩不计为H2新结果，本次仅为预选。",
+          "selection_source": "generation",
+          "selection_stage": "gonly_preselection",
+          "uncertainties": [
+            "H2证据来自一次执行；两个区段及多个指标不是独立重复。32张校准排序的泛化、特定冻结背景中的误差抵消仍未区分。",
+            "共享与逐head分支的实际码器集合不同；当前结果不是纯粒度因果效应，也未解决AdaLog-only完整对照缺口。",
+            "最终H2包尚未完成导出、独立重载及全网static W4A4审计；不得重新prepare基础网络或改变科学定义来完成适配。",
+            "正式结论须等待重载实例的ImageNet 50000张与ADE20K 2000张及同条件FP对照；ADE不得重校准，任一任务退化均须保留报告。"
+          ]
+        }
+      },
+      "recorder_refs": [
+        "MetareviewCard-ebf972d7c3254468898844216e3d8563@1"
+      ],
+      "B_before": {
+        "evidence_ref": "EvidenceCard-46fbe7b34ad44eea8f72d04756d69074@1",
+        "experiment_ref": "ExperimentCard-5fb6f9858b2d40918ce24d1842f4628c@1",
+        "hypothesis_ref": "HypothesisCard-4e18b5ef2947493185bac679c1f71d60@1",
+        "id": "c1c5ac43b4957e8afca2e8c4caca8f3cd1d3cc75eb72e0c8529bf2d00b6a27db",
+        "metrics": {
+          "mIoU": 28.47913645190287,
+          "top1": 72.394
+        },
+        "run_dir": "/root/data-fs/projects/Quantization_Agent_for_ViTs_gonly/EXP/runs/deitb_static_w4a4_gonly_20261115_r2",
+        "selection_ref": "ReviewDecisionCard-6cefb2d4cc5d4139881ad1ff2d3ef6f8@1",
+        "source_version": "6f5db3ec908f9e44ae2616b1e2f8ad6a8d2468b3f7ceffbcbe5c1f4a87ad2dec",
+        "status": "evaluated",
+        "title": "H2 round 2"
+      },
+      "executions": [
+        {
+          "execution_id": "task-01ae3dffd92c922d840bd8a8-a0001",
+          "level": "L2",
+          "status": "completed",
+          "evidence_ref": "EvidenceCard-98241882a5f54ade9cd7b5dcca0dac93@1",
+          "error": null,
+          "binding_issues": [],
+          "worker_wall_seconds": 1319.2266620043665,
+          "result": "/root/data-fs/projects/Quantization_Agent_for_ViTs_gonly/EXP/runs/deitb_static_w4a4_gonly_20261115_r2/jobs/task-01ae3dffd92c922d840bd8a8-a0001/result.json"
+        },
+        {
+          "execution_id": "task-4e754fe9f28cc636d6b74eb0-a0001",
+          "level": "L2",
+          "status": "completed",
+          "evidence_ref": "EvidenceCard-c2c65e752bb547e7a3dc87a3df4a6372@1",
+          "error": null,
+          "binding_issues": [],
+          "worker_wall_seconds": 175.97313924878836,
+          "result": "/root/data-fs/projects/Quantization_Agent_for_ViTs_gonly/EXP/runs/deitb_static_w4a4_gonly_20261115_r2/jobs/task-4e754fe9f28cc636d6b74eb0-a0001/result.json"
+        },
+        {
+          "execution_id": "task-a0db1dae4d320af1619a86d2-a0001",
+          "level": "L2",
+          "status": "failed",
+          "evidence_ref": null,
+          "error": {
+            "code": "ContractError",
+            "message": "load_frozen requires a cited Evidence or evaluated solution with a host-verified exported package",
+            "origin": "implementation"
+          },
+          "binding_issues": [],
+          "worker_wall_seconds": 24.102788722142577,
+          "result": "/root/data-fs/projects/Quantization_Agent_for_ViTs_gonly/EXP/runs/deitb_static_w4a4_gonly_20261115_r2/jobs/task-a0db1dae4d320af1619a86d2-a0001/result.json"
+        },
+        {
+          "execution_id": "task-a1a87544721858bf09965e04-a0001",
+          "level": "L2",
+          "status": "failed",
+          "evidence_ref": null,
+          "error": {
+            "code": "ContractError",
+            "message": "load_frozen requires a cited Evidence or evaluated solution with a host-verified exported package",
+            "origin": "implementation"
+          },
+          "binding_issues": [],
+          "worker_wall_seconds": 24.169993996620178,
+          "result": "/root/data-fs/projects/Quantization_Agent_for_ViTs_gonly/EXP/runs/deitb_static_w4a4_gonly_20261115_r2/jobs/task-a1a87544721858bf09965e04-a0001/result.json"
+        },
+        {
+          "execution_id": "task-a59c9991dc41c0f609756543-a0001",
+          "level": "L2",
+          "status": "failed",
+          "evidence_ref": null,
+          "error": {
+            "code": "EngineeringBlocked",
+            "message": "Host load_frozen authorization rejected the explicitly requested C45 package before its loader could run; implementation cannot create this host binding.",
+            "origin": "host"
+          },
+          "binding_issues": [],
+          "worker_wall_seconds": 28.444991225376725,
+          "result": "/root/data-fs/projects/Quantization_Agent_for_ViTs_gonly/EXP/runs/deitb_static_w4a4_gonly_20261115_r2/jobs/task-a59c9991dc41c0f609756543-a0001/result.json"
+        },
+        {
+          "execution_id": "task-bd1f367496c783dd998c7cff-a0001",
+          "level": "L3",
+          "status": "completed",
+          "evidence_ref": "EvidenceCard-ad61016bc2954c3695078601425890ae@1",
+          "error": null,
+          "binding_issues": [],
+          "worker_wall_seconds": 4350.260723968968,
+          "result": "/root/data-fs/projects/Quantization_Agent_for_ViTs_gonly/EXP/runs/deitb_static_w4a4_gonly_20261115_r2/jobs/task-bd1f367496c783dd998c7cff-a0001/result.json"
+        }
+      ],
+      "formal": [
+        {
+          "execution_id": "task-bd1f367496c783dd998c7cff-a0001",
+          "evidence_ref": "EvidenceCard-ad61016bc2954c3695078601425890ae@1",
+          "experiment_ref": "ExperimentCard-7c4e267001a64c6385ebd5d3a8f3fe66@1",
+          "source_sha256": "15b6d5188a99e1e18dbf9339aed1a5a367140a2a6661bbbc591de634afc6c6cb",
+          "core_sha256": "6f5db3ec908f9e44ae2616b1e2f8ad6a8d2468b3f7ceffbcbe5c1f4a87ad2dec",
+          "model_identity": {
+            "baseline_state_sha256": "a62575cb13ad6d419979a98641e8f758c52ff0464a28264643c98c3a989d6f28",
+            "model_ref": "6e5761dc523e30f6bde2ea3e3801e6adb8c5520a14ce3d6caffa96145f85a7a2",
+            "model_unchanged": true,
+            "protocol_hash": "50a110da010f8c6b048f3ead8f8b6934e5dc2670ec9f7b1c90c62107121bd5f4",
+            "quantizer_state_sha256": null
+          },
+          "classification": {
+            "full_dataset_evaluation": true,
+            "metrics": {
+              "baseline_top1": 81.796,
+              "baseline_top5": 95.594,
+              "top1": 72.19,
+              "top5": 90.236
+            },
+            "sample_count": 50000,
+            "status": "completed"
+          },
+          "segmentation": {
+            "backbones_unchanged": true,
+            "full_dataset_evaluation": true,
+            "head_unchanged": true,
+            "images": 2000,
+            "metrics": {
+              "fp": {
+                "aAcc": 78.75318055624219,
+                "mAcc": 50.60654191157785,
+                "mIoU": 39.8295824953736
+              },
+              "quantized": {
+                "aAcc": 71.50144504027624,
+                "mAcc": 38.22710417599033,
+                "mIoU": 28.555077689970183
+              }
+            },
+            "recalibrated": false,
+            "trained": false
+          },
+          "reload": {
+            "comparison": "torch.equal for all floating outputs",
+            "evaluated_instance": "reloaded",
+            "host_verified": true,
+            "loader": "approved_custom_executor",
+            "passed": true,
+            "sample_ids": [
+              "train/n04522168/n04522168_9121.JPEG"
+            ],
+            "samples": 1,
+            "split": "search"
+          },
+          "actual_calibration": {
+            "full_dataset": false,
+            "sample_count": 32,
+            "sample_ids": [
+              "train/n01751748/n01751748_5926.JPEG",
+              "train/n02442845/n02442845_19600.JPEG",
+              "train/n04131690/n04131690_11080.JPEG",
+              "train/n03065424/n03065424_37483.JPEG",
+              "train/n07754684/n07754684_28118.JPEG",
+              "train/n04356056/n04356056_1814.JPEG",
+              "train/n03908714/n03908714_12667.JPEG",
+              "train/n02085936/n02085936_9694.JPEG",
+              "train/n01978455/n01978455_3255.JPEG",
+              "train/n03777568/n03777568_6449.JPEG",
+              "train/n04485082/n04485082_19000.JPEG",
+              "train/n06596364/n06596364_10245.JPEG",
+              "train/n02791124/n02791124_1088.JPEG",
+              "train/n03125729/n03125729_15999.JPEG",
+              "train/n04147183/n04147183_17806.JPEG",
+              "train/n03676483/n03676483_37960.JPEG",
+              "train/n11939491/n11939491_3079.JPEG",
+              "train/n04328186/n04328186_2076.JPEG",
+              "train/n02108000/n02108000_1443.JPEG",
+              "train/n02105505/n02105505_5421.JPEG",
+              "train/n03018349/n03018349_10666.JPEG",
+              "train/n04228054/n04228054_19685.JPEG",
+              "train/n02708093/n02708093_3057.JPEG",
+              "train/n02894605/n02894605_18232.JPEG",
+              "train/n02088466/n02088466_7609.JPEG",
+              "train/n02088094/n02088094_5099.JPEG",
+              "train/n03476684/n03476684_442.JPEG",
+              "train/n03447721/n03447721_5653.JPEG",
+              "train/n03223299/n03223299_3439.JPEG",
+              "train/n03854065/n03854065_54988.JPEG",
+              "train/n02105641/n02105641_3318.JPEG",
+              "train/n15075141/n15075141_8773.JPEG"
+            ],
+            "split": "calibration"
+          },
+          "static_w4a4": {
+            "frozen": true,
+            "protocol": "static_w4a4/1",
+            "task_modules": {
+              "head": {
+                "activation": null,
+                "weight": null
+              }
+            }
+          },
+          "artifacts_hashes_match": true,
+          "delta_initial_B_pp": {
+            "top1": -0.2920000000000016,
+            "mIoU": 0.4994301313345062
+          },
+          "delta_previous_B_pp": {
+            "top1": -0.20400000000000773,
+            "mIoU": 0.0759412380673119
+          }
+        }
+      ],
+      "solution_considered": [
+        {
+          "commit_sequence": 9139,
+          "evidence_ref": "EvidenceCard-ad61016bc2954c3695078601425890ae@1",
+          "round": 3,
+          "selected": true,
+          "type": "solution_considered"
+        }
+      ],
+      "B_after": {
+        "evidence_ref": "EvidenceCard-ad61016bc2954c3695078601425890ae@1",
+        "experiment_ref": "ExperimentCard-7c4e267001a64c6385ebd5d3a8f3fe66@1",
+        "hypothesis_ref": "HypothesisCard-afdda82cc29b43fbbf1a457a575d53fe@1",
+        "id": "6e5761dc523e30f6bde2ea3e3801e6adb8c5520a14ce3d6caffa96145f85a7a2",
+        "metrics": {
+          "mIoU": 28.555077689970183,
+          "top1": 72.19
+        },
+        "run_dir": "/root/data-fs/projects/Quantization_Agent_for_ViTs_gonly/EXP/runs/deitb_static_w4a4_gonly_20261115_r2",
+        "selection_ref": "ReviewDecisionCard-f0f8e8f05ee94444b23ac84dd2a709be@1",
+        "source_version": "6f5db3ec908f9e44ae2616b1e2f8ad6a8d2468b3f7ceffbcbe5c1f4a87ad2dec",
+        "status": "evaluated",
+        "title": "H2 round 3"
+      }
+    }
+  ],
+  "timing": {
+    "as_of_unix": 1794782501.969584,
+    "active_seconds": 12189.095690011978,
+    "excluded_numeric_wait_seconds": 14111.011677503586,
+    "remaining_seconds": 2210.904309988022,
+    "configured_budget": {
+      "clock_mode": "active_segments",
+      "exclude_numeric_wait": true,
+      "max_rounds": 3,
+      "wall_seconds": 14400
+    },
+    "extensions": [],
+    "segments": [
+      {
+        "commit_sequence": 9149,
+        "deadline_unix": 1794770395.2512445,
+        "elapsed_seconds": 12189.095690011978,
+        "excluded_numeric_wait_seconds": 14111.011677503586,
+        "owner": {
+          "boot_id": "6b5c6a20-dca9-4d23-9c43-b737d02324c4",
+          "pid": 486681,
+          "start_ticks": "842875933",
+          "state": "R"
+        },
+        "processes_stopped": true,
+        "reason": "Supervisor and registered CLI/workers exited",
+        "recovered_without_stop": false,
+        "remaining_at_start": 14400,
+        "segment_id": "segment-1",
+        "started_unix": 1794755995.2512445,
+        "stopped_unix": 1794782295.358612,
+        "type": "budget_segment_stopped",
+        "wall_seconds": 26300.107367515564
+      }
+    ],
+    "segment_wall_union_seconds_as_of": 26300.107367515564,
+    "all_segments_closed": true,
+    "active_segment": null
+  },
+  "role_costs": [
+    {
+      "cost": {
+        "amount": null,
+        "basis": "unknown_subscription_cost",
+        "currency": null,
+        "known_subtotal": null,
+        "missing_calls": 70,
+        "note": "Subscription tokens are usage, not a verified monetary charge."
+      },
+      "duration": {
+        "missing_elapsed_attempts": 0,
+        "note": "Router elapsed includes preflight/lock waits; sum is not run wall time. CLI inner reconnects are not observable.",
+        "observed_model_interval_union_seconds": 3413.0545473098755,
+        "pure_inference_seconds": null,
+        "router_elapsed_sum_seconds": 3569.3086093161255,
+        "subscription_lock_wait_seconds": null
+      },
+      "execution_attempts": 70,
+      "failed_attempts": 0,
+      "incomplete_attempts": 0,
+      "model_calls_completed": 70,
+      "model_calls_failed": 0,
+      "model_calls_start_unknown": 0,
+      "model_calls_started": 70,
+      "preflight_only_attempts": 0,
+      "role": "coding",
+      "tokens": {
+        "cache_write_input_tokens": {
+          "known_calls": 70,
+          "known_sum": 0,
+          "missing_calls": 0
+        },
+        "cached_input_tokens": {
+          "known_calls": 70,
+          "known_sum": 141440,
+          "missing_calls": 0
+        },
+        "input_tokens": {
+          "known_calls": 70,
+          "known_sum": 3875805,
+          "missing_calls": 0
+        },
+        "output_tokens": {
+          "known_calls": 70,
+          "known_sum": 147576,
+          "missing_calls": 0
+        },
+        "reasoning_output_tokens": {
+          "known_calls": 70,
+          "known_sum": 13946,
+          "missing_calls": 0
+        }
+      }
+    },
+    {
+      "cost": {
+        "amount": null,
+        "basis": "unknown_subscription_cost",
+        "currency": null,
+        "known_subtotal": null,
+        "missing_calls": 71,
+        "note": "Subscription tokens are usage, not a verified monetary charge."
+      },
+      "duration": {
+        "missing_elapsed_attempts": 0,
+        "note": "Router elapsed includes preflight/lock waits; sum is not run wall time. CLI inner reconnects are not observable.",
+        "observed_model_interval_union_seconds": 2891.8849182128906,
+        "pure_inference_seconds": null,
+        "router_elapsed_sum_seconds": 3063.094960713759,
+        "subscription_lock_wait_seconds": null
+      },
+      "execution_attempts": 71,
+      "failed_attempts": 0,
+      "incomplete_attempts": 0,
+      "model_calls_completed": 71,
+      "model_calls_failed": 0,
+      "model_calls_start_unknown": 0,
+      "model_calls_started": 71,
+      "preflight_only_attempts": 0,
+      "role": "generation",
+      "tokens": {
+        "cache_write_input_tokens": {
+          "known_calls": 71,
+          "known_sum": 0,
+          "missing_calls": 0
+        },
+        "cached_input_tokens": {
+          "known_calls": 71,
+          "known_sum": 201600,
+          "missing_calls": 0
+        },
+        "input_tokens": {
+          "known_calls": 71,
+          "known_sum": 3693159,
+          "missing_calls": 0
+        },
+        "output_tokens": {
+          "known_calls": 71,
+          "known_sum": 70609,
+          "missing_calls": 0
+        },
+        "reasoning_output_tokens": {
+          "known_calls": 71,
+          "known_sum": 20524,
+          "missing_calls": 0
+        }
+      }
+    },
+    {
+      "cost": {
+        "amount": null,
+        "basis": "unknown_subscription_cost",
+        "currency": null,
+        "known_subtotal": null,
+        "missing_calls": 37,
+        "note": "Subscription tokens are usage, not a verified monetary charge."
+      },
+      "duration": {
+        "missing_elapsed_attempts": 0,
+        "note": "Router elapsed includes preflight/lock waits; sum is not run wall time. CLI inner reconnects are not observable.",
+        "observed_model_interval_union_seconds": 555.1868488788605,
+        "pure_inference_seconds": null,
+        "router_elapsed_sum_seconds": 640.6515520960093,
+        "subscription_lock_wait_seconds": null
+      },
+      "execution_attempts": 37,
+      "failed_attempts": 0,
+      "incomplete_attempts": 0,
+      "model_calls_completed": 37,
+      "model_calls_failed": 0,
+      "model_calls_start_unknown": 0,
+      "model_calls_started": 37,
+      "preflight_only_attempts": 0,
+      "role": "safeguard",
+      "tokens": {
+        "cache_write_input_tokens": {
+          "known_calls": 37,
+          "known_sum": 0,
+          "missing_calls": 0
+        },
+        "cached_input_tokens": {
+          "known_calls": 37,
+          "known_sum": 95872,
+          "missing_calls": 0
+        },
+        "input_tokens": {
+          "known_calls": 37,
+          "known_sum": 2224481,
+          "missing_calls": 0
+        },
+        "output_tokens": {
+          "known_calls": 37,
+          "known_sum": 11621,
+          "missing_calls": 0
+        },
+        "reasoning_output_tokens": {
+          "known_calls": 37,
+          "known_sum": 3584,
+          "missing_calls": 0
+        }
+      }
+    },
+    {
+      "cost": {
+        "amount": null,
+        "basis": "unknown_subscription_cost",
+        "currency": null,
+        "known_subtotal": null,
+        "missing_calls": 4,
+        "note": "Subscription tokens are usage, not a verified monetary charge."
+      },
+      "duration": {
+        "missing_elapsed_attempts": 0,
+        "note": "Router elapsed includes preflight/lock waits; sum is not run wall time. CLI inner reconnects are not observable.",
+        "observed_model_interval_union_seconds": 209.2278642654419,
+        "pure_inference_seconds": null,
+        "router_elapsed_sum_seconds": 218.08087875507772,
+        "subscription_lock_wait_seconds": null
+      },
+      "execution_attempts": 4,
+      "failed_attempts": 0,
+      "incomplete_attempts": 0,
+      "model_calls_completed": 4,
+      "model_calls_failed": 0,
+      "model_calls_start_unknown": 0,
+      "model_calls_started": 4,
+      "preflight_only_attempts": 0,
+      "role": "recorder",
+      "tokens": {
+        "cache_write_input_tokens": {
+          "known_calls": 4,
+          "known_sum": 0,
+          "missing_calls": 0
+        },
+        "cached_input_tokens": {
+          "known_calls": 4,
+          "known_sum": 55808,
+          "missing_calls": 0
+        },
+        "input_tokens": {
+          "known_calls": 4,
+          "known_sum": 280709,
+          "missing_calls": 0
+        },
+        "output_tokens": {
+          "known_calls": 4,
+          "known_sum": 10487,
+          "missing_calls": 0
+        },
+        "reasoning_output_tokens": {
+          "known_calls": 4,
+          "known_sum": 6067,
+          "missing_calls": 0
+        }
+      }
+    }
+  ],
+  "all_agent_costs": {
+    "cost": {
+      "amount": null,
+      "basis": "unknown_subscription_cost",
+      "currency": null,
+      "known_subtotal": null,
+      "missing_calls": 182,
+      "note": "Subscription tokens are usage, not a verified monetary charge."
+    },
+    "duration": {
+      "missing_elapsed_attempts": 0,
+      "note": "Router elapsed includes preflight/lock waits; sum is not run wall time. CLI inner reconnects are not observable.",
+      "observed_model_interval_union_seconds": 7069.3541786670685,
+      "pure_inference_seconds": null,
+      "router_elapsed_sum_seconds": 7491.136000880972,
+      "subscription_lock_wait_seconds": null
+    },
+    "execution_attempts": 182,
+    "failed_attempts": 0,
+    "incomplete_attempts": 0,
+    "model_calls_completed": 182,
+    "model_calls_failed": 0,
+    "model_calls_start_unknown": 0,
+    "model_calls_started": 182,
+    "preflight_only_attempts": 0,
+    "tokens": {
+      "cache_write_input_tokens": {
+        "known_calls": 182,
+        "known_sum": 0,
+        "missing_calls": 0
+      },
+      "cached_input_tokens": {
+        "known_calls": 182,
+        "known_sum": 494720,
+        "missing_calls": 0
+      },
+      "input_tokens": {
+        "known_calls": 182,
+        "known_sum": 10074154,
+        "missing_calls": 0
+      },
+      "output_tokens": {
+        "known_calls": 182,
+        "known_sum": 240293,
+        "missing_calls": 0
+      },
+      "reasoning_output_tokens": {
+        "known_calls": 182,
+        "known_sum": 44121,
+        "missing_calls": 0
+      }
+    }
+  },
+  "numeric_costs": {
+    "allocated_gpu_wall_seconds_sum": 15802.222889363766,
+    "closed_worker_interval_union_seconds": 15686.822942733765,
+    "failed_worker_wall_seconds_sum": 301.8997939247638,
+    "peak_numeric_workers": 2,
+    "worker_wall_seconds_sum": 15802.222889363766
+  },
+  "model_routes": [
+    {
+      "actual_effort": null,
+      "actual_model": null,
+      "count": 70,
+      "requested_effort": "medium",
+      "requested_model": "gpt-6.1-sol",
+      "role": "coding"
+    },
+    {
+      "actual_effort": null,
+      "actual_model": null,
+      "count": 71,
+      "requested_effort": "high",
+      "requested_model": "gpt-6-astra",
+      "role": "generation"
+    },
+    {
+      "actual_effort": null,
+      "actual_model": null,
+      "count": 37,
+      "requested_effort": "medium",
+      "requested_model": "gpt-6.1-sol",
+      "role": "safeguard"
+    },
+    {
+      "actual_effort": null,
+      "actual_model": null,
+      "count": 4,
+      "requested_effort": "high",
+      "requested_model": "gpt-6-luna",
+      "role": "recorder"
+    }
+  ],
+  "components": {
+    "skill_catalog_deliveries": {
+      "generation": 71,
+      "recorder": 4
+    },
+    "skill_reads": [
+      {
+        "parent": {
+          "key": "r001/generate/H2",
+          "purpose": "generate",
+          "role": "generation",
+          "task_id": "task-176dcfa8072618fc40063250"
+        },
+        "arguments": {
+          "asset": "skills/diagnose-ptq-failure/SKILL.md"
+        },
+        "key": "r001/generate/H2/tools/a2/125f3b7a5df2"
+      }
+    ],
+    "asset_read_counts": [
+      {
+        "path": "/root/data-fs/projects/Quantization_Agent_for_ViTs_gonly/EXP/runs/deitb_static_w4a4_gonly_20261115_r2/jobs/task-041490963dea8321621117ca-a0001/worker.log",
+        "count": 1
+      },
+      {
+        "path": "/root/data-fs/projects/Quantization_Agent_for_ViTs_gonly/EXP/runs/deitb_static_w4a4_gonly_20261115_r2/jobs/task-1c01e37d88053f8d01e547ea-a0001/worker.log",
+        "count": 1
+      },
+      {
+        "path": "/root/data-fs/projects/Quantization_Agent_for_ViTs_gonly/EXP/runs/deitb_static_w4a4_gonly_20261115_r2/jobs/task-5e0dd9888d3fdd1ceb6ddc3f-a0001/worker.log",
+        "count": 1
+      },
+      {
+        "path": "/root/data-fs/projects/Quantization_Agent_for_ViTs_gonly/EXP/runs/deitb_static_w4a4_gonly_20261115_r2/jobs/task-8f43bc50242a127e34f8404f-a0001/worker.log",
+        "count": 1
+      },
+      {
+        "path": "/root/data-fs/projects/Quantization_Agent_for_ViTs_gonly/EXP/runs/deitb_static_w4a4_gonly_20261115_r2/jobs/task-a0db1dae4d320af1619a86d2-a0001/worker.log",
+        "count": 1
+      },
+      {
+        "path": "/root/data-fs/projects/Quantization_Agent_for_ViTs_gonly/EXP/runs/deitb_static_w4a4_gonly_20261115_r2/solution_library/22bb57be0494f08bd7a1cfe852f1c3ffa558c70c575f0a8b9fc0b0bcaf15c54d.json",
+        "count": 6
+      },
+      {
+        "path": "/root/data-fs/projects/Quantization_Agent_for_ViTs_gonly/EXP/runs/deitb_static_w4a4_gonly_20261115_r2/solution_library/d9714a16e452e2bd0741da46a9110e26e69a59b7411acb4138fe1de8794502f5.json",
+        "count": 1
+      },
+      {
+        "path": "/root/data-fs/projects/Quantization_Agent_for_ViTs_gonly/EXP/runs/deitb_static_w4a4_gonly_20261115_r2/solution_library/db3a462b50f6d5dca6c3d9ed6e26ab26febb5f62d734f1bc5029d8f56a800d79.json",
+        "count": 3
+      },
+      {
+        "path": "/root/data-fs/projects/Quantization_Agent_for_ViTs_gonly/EXP/runs/deitb_static_w4a4_gonly_20261115_r2/solution_library/dfbcba7cc7693d69803e97052a5a166f5bba3797f61de145aeb0e0085fe42bbd.json",
+        "count": 3
+      },
+      {
+        "path": "/root/data-fs/projects/Quantization_Agent_for_ViTs_gonly/QAViT/docs/CODE_INTERFACES.md",
+        "count": 1
+      },
+      {
+        "path": "/root/data-fs/projects/Quantization_Agent_for_ViTs_gonly/QAViT/docs/EXECUTION.md",
+        "count": 3
+      },
+      {
+        "path": "/root/data-fs/projects/Quantization_Agent_for_ViTs_gonly/QAViT/docs/STATIC_W4A4.md",
+        "count": 1
+      },
+      {
+        "path": "/root/data-fs/projects/Quantization_Agent_for_ViTs_gonly/QAViT/tools/ptq_agent/execution/adalog.py",
+        "count": 7
+      },
+      {
+        "path": "/root/data-fs/projects/Quantization_Agent_for_ViTs_gonly/QAViT/tools/ptq_agent/execution/baselines.py",
+        "count": 5
+      },
+      {
+        "path": "/root/data-fs/projects/Quantization_Agent_for_ViTs_gonly/QAViT/tools/ptq_agent/execution/calibration.py",
+        "count": 4
+      },
+      {
+        "path": "/root/data-fs/projects/Quantization_Agent_for_ViTs_gonly/QAViT/tools/ptq_agent/execution/capabilities.py",
+        "count": 1
+      },
+      {
+        "path": "/root/data-fs/projects/Quantization_Agent_for_ViTs_gonly/QAViT/tools/ptq_agent/execution/codecs.py",
+        "count": 1
+      },
+      {
+        "path": "/root/data-fs/projects/Quantization_Agent_for_ViTs_gonly/QAViT/tools/ptq_agent/execution/contracts.py",
+        "count": 1
+      },
+      {
+        "path": "/root/data-fs/projects/Quantization_Agent_for_ViTs_gonly/QAViT/tools/ptq_agent/execution/evaluation.py",
+        "count": 2
+      },
+      {
+        "path": "/root/data-fs/projects/Quantization_Agent_for_ViTs_gonly/QAViT/tools/ptq_agent/execution/grids.py",
+        "count": 13
+      },
+      {
+        "path": "/root/data-fs/projects/Quantization_Agent_for_ViTs_gonly/QAViT/tools/ptq_agent/execution/methods.py",
+        "count": 3
+      },
+      {
+        "path": "/root/data-fs/projects/Quantization_Agent_for_ViTs_gonly/QAViT/tools/ptq_agent/execution/metrics.py",
+        "count": 2
+      },
+      {
+        "path": "/root/data-fs/projects/Quantization_Agent_for_ViTs_gonly/QAViT/tools/ptq_agent/execution/model.py",
+        "count": 6
+      },
+      {
+        "path": "/root/data-fs/projects/Quantization_Agent_for_ViTs_gonly/QAViT/tools/ptq_agent/execution/operators.py",
+        "count": 6
+      },
+      {
+        "path": "/root/data-fs/projects/Quantization_Agent_for_ViTs_gonly/QAViT/tools/ptq_agent/execution/pipeline.py",
+        "count": 35
+      },
+      {
+        "path": "/root/data-fs/projects/Quantization_Agent_for_ViTs_gonly/QAViT/tools/ptq_agent/execution/plugin_contracts.py",
+        "count": 3
+      },
+      {
+        "path": "/root/data-fs/projects/Quantization_Agent_for_ViTs_gonly/QAViT/tools/ptq_agent/execution/plugin_math.py",
+        "count": 4
+      },
+      {
+        "path": "/root/data-fs/projects/Quantization_Agent_for_ViTs_gonly/QAViT/tools/ptq_agent/execution/runtime_state.py",
+        "count": 2
+      },
+      {
+        "path": "/root/data-fs/projects/Quantization_Agent_for_ViTs_gonly/QAViT/tools/ptq_agent/execution/sites.py",
+        "count": 8
+      },
+      {
+        "path": "CODE_INTERFACES.md",
+        "count": 1
+      },
+      {
+        "path": "QAViT/docs/CODE_INTERFACES.md",
+        "count": 1
+      },
+      {
+        "path": "QAViT/docs/EXECUTION.md",
+        "count": 1
+      },
+      {
+        "path": "QAViT/docs/solutions/README.md",
+        "count": 1
+      },
+      {
+        "path": "QAViT/tools/ptq_agent/execution/adalog.py",
+        "count": 1
+      },
+      {
+        "path": "QAViT/tools/ptq_agent/execution/baselines.py",
+        "count": 1
+      },
+      {
+        "path": "QAViT/tools/ptq_agent/execution/calibration.py",
+        "count": 1
+      },
+      {
+        "path": "QAViT/tools/ptq_agent/execution/contracts.py",
+        "count": 1
+      },
+      {
+        "path": "QAViT/tools/ptq_agent/execution/evaluation.py",
+        "count": 1
+      },
+      {
+        "path": "QAViT/tools/ptq_agent/execution/grids.py",
+        "count": 1
+      },
+      {
+        "path": "QAViT/tools/ptq_agent/execution/methods.py",
+        "count": 1
+      },
+      {
+        "path": "QAViT/tools/ptq_agent/execution/model.py",
+        "count": 1
+      },
+      {
+        "path": "QAViT/tools/ptq_agent/execution/operators.py",
+        "count": 1
+      },
+      {
+        "path": "QAViT/tools/ptq_agent/execution/pipeline.py",
+        "count": 3
+      },
+      {
+        "path": "QAViT/tools/ptq_agent/execution/plugin_math.py",
+        "count": 1
+      },
+      {
+        "path": "QAViT/tools/ptq_agent/execution/sites.py",
+        "count": 1
+      },
+      {
+        "path": "STATIC_W4A4.md",
+        "count": 1
+      },
+      {
+        "path": "methods/adalog.md",
+        "count": 4
+      },
+      {
+        "path": "methods/gptaq.md",
+        "count": 2
+      },
+      {
+        "path": "methods/gptq.md",
+        "count": 1
+      },
+      {
+        "path": "methods/scale_selection.md",
+        "count": 1
+      },
+      {
+        "path": "methods/smoothquant.md",
+        "count": 3
+      },
+      {
+        "path": "methods/uniform_affine.md",
+        "count": 2
+      },
+      {
+        "path": "skills/diagnose-ptq-failure/SKILL.md",
+        "count": 1
+      },
+      {
+        "path": "solutions/README.md",
+        "count": 1
+      },
+      {
+        "path": "solutions/adalog.md",
+        "count": 12
+      }
+    ],
+    "successful_read_card_count": 84,
+    "memory_retrievals": [
+      {
+        "key": "r002/generate/H1/tools/a1/e79db68cce71",
+        "state": "completed",
+        "arguments": {
+          "limit": 8,
+          "query": {
+            "kind": "HypothesisCard"
+          }
+        },
+        "parent": {
+          "key": "r002/generate/H1",
+          "purpose": "generate",
+          "role": "generation",
+          "task_id": "task-9fddf99b265c4c3648cd09bd"
+        }
+      },
+      {
+        "key": "r002/generate/H2/tools/a1/3e70f880a644",
+        "state": "completed",
+        "arguments": {
+          "limit": 6,
+          "query": {
+            "kind": "EvidenceCard",
+            "text": "Query"
+          }
+        },
+        "parent": {
+          "key": "r002/generate/H2",
+          "purpose": "generate",
+          "role": "generation",
+          "task_id": "task-d242c447539663c7b4d070f4"
+        }
+      },
+      {
+        "key": "r002/generate/H3/tools/a1/e3dde7e401da",
+        "state": "completed",
+        "arguments": {
+          "limit": 8,
+          "query": {
+            "kind": "HypothesisCard"
+          }
+        },
+        "parent": {
+          "key": "r002/generate/H3",
+          "purpose": "generate",
+          "role": "generation",
+          "task_id": "task-92fdece512807264a50e6bcd"
+        }
+      },
+      {
+        "key": "r003/generate/H1/tools/a1/70e0e96e1ba1",
+        "state": "completed",
+        "arguments": {
+          "limit": 6,
+          "query": {
+            "kind": "HypothesisCard",
+            "text": "H1"
+          }
+        },
+        "parent": {
+          "key": "r003/generate/H1",
+          "purpose": "generate",
+          "role": "generation",
+          "task_id": "task-c714e82ce8bdd11328176602"
+        }
+      },
+      {
+        "key": "r003/generate/H2/tools/a1/f428ef56caf0",
+        "state": "completed",
+        "arguments": {
+          "limit": 4,
+          "query": {
+            "kind": "EvidenceCard",
+            "text": "条件PV"
+          }
+        },
+        "parent": {
+          "key": "r003/generate/H2",
+          "purpose": "generate",
+          "role": "generation",
+          "task_id": "task-a4f73266fd56c9ee514d7b56"
+        }
+      },
+      {
+        "key": "r003/generate/H1/tools/a2/c2004ca6829d",
+        "state": "completed",
+        "arguments": {
+          "limit": 1,
+          "query": {
+            "evidence_ids": [
+              "EvidenceCard-91922d78bcf2470483ffd28c2901fd03@1"
+            ]
+          }
+        },
+        "parent": {
+          "key": "r003/generate/H1",
+          "purpose": "generate",
+          "role": "generation",
+          "task_id": "task-c714e82ce8bdd11328176602"
+        }
+      },
+      {
+        "key": "r003/generate/H3/tools/a1/d7924641003e",
+        "state": "completed",
+        "arguments": {
+          "limit": 6,
+          "query": {
+            "kind": "HypothesisCard",
+            "text": "H3"
+          }
+        },
+        "parent": {
+          "key": "r003/generate/H3",
+          "purpose": "generate",
+          "role": "generation",
+          "task_id": "task-a37ba42a3aeb067ccb2c7428"
+        }
+      },
+      {
+        "key": "r003/generate/H3/tools/a1/6c24d9227599",
+        "state": "completed",
+        "arguments": {
+          "limit": 5,
+          "query": {
+            "kind": "ExperimentCard",
+            "text": "码本"
+          }
+        },
+        "parent": {
+          "key": "r003/generate/H3",
+          "purpose": "generate",
+          "role": "generation",
+          "task_id": "task-a37ba42a3aeb067ccb2c7428"
+        }
+      },
+      {
+        "key": "r003/generate/H3/tools/a3/8e065aca7eda",
+        "state": "completed",
+        "arguments": {
+          "limit": 3,
+          "query": {
+            "kind": "HypothesisCard",
+            "text": "H3"
+          }
+        },
+        "parent": {
+          "key": "r003/generate/H3",
+          "purpose": "generate",
+          "role": "generation",
+          "task_id": "task-a37ba42a3aeb067ccb2c7428"
+        }
+      }
+    ],
+    "recorder_refs": [
+      "MetareviewCard-a54b85e87cd84f4586baf095b4c230df@1",
+      "MetareviewCard-da9388eba6e5400097ccf98020cf094c@1",
+      "MetareviewCard-ebf972d7c3254468898844216e3d8563@1"
+    ],
+    "implementation_revision_count": 9,
+    "safeguard_review_count": 17
+  },
+  "failed_tasks": [
+    {
+      "error": {
+        "code": "ContractError",
+        "message": "未提交或未知卡片引用: EvidenceCard-e643fc1b1e154c17a7553394f97281f1@1"
+      },
+      "key": "r001/generate/H2/tools/a1/b644f1fd0292",
+      "kind": "host_tool",
+      "role": null,
+      "state": "failed",
+      "task_id": "task-c31dd7a15ef48d1d20577cb6"
+    },
+    {
+      "error": {
+        "code": "ContractError",
+        "message": "未提交或未知卡片引用: HypothesisCard-19d67c99082648a5b9607415ca5a8bb1@1"
+      },
+      "key": "r001/generate/H2/tools/a1/312e77beec59",
+      "kind": "host_tool",
+      "role": null,
+      "state": "failed",
+      "task_id": "task-aa591cf60bf978858379d2b7"
+    },
+    {
+      "error": {
+        "code": "ContractError",
+        "message": "测量证据缺少符合冻结规格的评测结果: classification",
+        "origin": "implementation"
+      },
+      "key": "r001/generate/H2/tools/a4/bc603d463a32/execute",
+      "kind": "experiment",
+      "role": null,
+      "state": "failed",
+      "task_id": "task-8f43bc50242a127e34f8404f"
+    },
+    {
+      "error": {
+        "causes": [
+          {
+            "error": {
+              "code": "ContractError",
+              "message": "load_frozen requires a cited Evidence or evaluated solution with a host-verified exported package",
+              "origin": "implementation"
+            },
+            "state": "failed",
+            "task_id": "task-e3c85c5c64ade4ae2bb23970"
+          }
+        ],
+        "children": [
+          "task-e3c85c5c64ade4ae2bb23970"
+        ],
+        "code": "service_failed"
+      },
+      "key": "r002/generate/H3/tools/a2/9ca9d74037e3",
+      "kind": "experiment_request",
+      "role": "supervisor",
+      "state": "failed",
+      "task_id": "task-bfe54ddb7ef6e037085e7dc6"
+    },
+    {
+      "error": {
+        "code": "invalid_config",
+        "message": "Frozen load must return an independent eval model",
+        "origin": "implementation",
+        "path": "$",
+        "retryable": false
+      },
+      "key": "r002/generate/H2/tools/a3/48b9d811fd31/execute/revision1",
+      "kind": "experiment",
+      "role": null,
+      "state": "failed",
+      "task_id": "task-041490963dea8321621117ca"
+    },
+    {
+      "error": {
+        "code": "ContractError",
+        "message": "load_frozen requires a cited Evidence or evaluated solution with a host-verified exported package",
+        "origin": "implementation"
+      },
+      "key": "r002/generate/H3/tools/a2/9ca9d74037e3/execute/revision1",
+      "kind": "experiment",
+      "role": null,
+      "state": "failed",
+      "task_id": "task-5e0dd9888d3fdd1ceb6ddc3f"
+    },
+    {
+      "error": {
+        "code": "ContractError",
+        "message": "load_frozen requires a cited Evidence or evaluated solution with a host-verified exported package",
+        "origin": "implementation"
+      },
+      "key": "r002/generate/H3/tools/a2/9ca9d74037e3/execute/revision2",
+      "kind": "experiment",
+      "role": null,
+      "state": "failed",
+      "task_id": "task-e3c85c5c64ade4ae2bb23970"
+    },
+    {
+      "error": {
+        "code": "AttributeError",
+        "message": "'str' object has no attribute 'open'",
+        "origin": "implementation"
+      },
+      "key": "r002/L3/execute",
+      "kind": "experiment",
+      "role": null,
+      "state": "failed",
+      "task_id": "task-1c01e37d88053f8d01e547ea"
+    },
+    {
+      "error": {
+        "code": "ContractError",
+        "message": "read_card.field 不存在: /payload/evaluations；当前对象键（前20项）=[\"artifacts\",\"execution_fingerprint\",\"execution_id\",\"experiment_ref\",\"measurement_source\",\"observations\",\"provenance\",\"resources\",\"scope\",\"status\"]。路径从卡片根开始，科研字段通常在 /payload/... 下。"
+      },
+      "key": "r002/record/tools/a1/cdff003e846b",
+      "kind": "host_tool",
+      "role": null,
+      "state": "failed",
+      "task_id": "task-ef1df1473c85729861a7be3f"
+    },
+    {
+      "error": {
+        "causes": [
+          {
+            "error": {
+              "code": "EngineeringBlocked",
+              "message": "Host load_frozen authorization rejected the explicitly requested C45 package before its loader could run; implementation cannot create this host binding.",
+              "origin": "host"
+            },
+            "state": "failed",
+            "task_id": "task-a59c9991dc41c0f609756543"
+          }
+        ],
+        "children": [
+          "task-a59c9991dc41c0f609756543"
+        ],
+        "code": "service_failed"
+      },
+      "key": "r003/generate/H3/tools/a2/1758fabd821a",
+      "kind": "experiment_request",
+      "role": "supervisor",
+      "state": "failed",
+      "task_id": "task-27f4d22829d41fcc10205489"
+    },
+    {
+      "error": {
+        "code": "ContractError",
+        "message": "load_frozen requires a cited Evidence or evaluated solution with a host-verified exported package",
+        "origin": "implementation"
+      },
+      "key": "r003/generate/H3/tools/a2/1758fabd821a/execute",
+      "kind": "experiment",
+      "role": null,
+      "state": "failed",
+      "task_id": "task-a1a87544721858bf09965e04"
+    },
+    {
+      "error": {
+        "code": "ContractError",
+        "message": "load_frozen requires a cited Evidence or evaluated solution with a host-verified exported package",
+        "origin": "implementation"
+      },
+      "key": "r003/generate/H3/tools/a2/1758fabd821a/execute/revision1",
+      "kind": "experiment",
+      "role": null,
+      "state": "failed",
+      "task_id": "task-a0db1dae4d320af1619a86d2"
+    },
+    {
+      "error": {
+        "code": "EngineeringBlocked",
+        "message": "Host load_frozen authorization rejected the explicitly requested C45 package before its loader could run; implementation cannot create this host binding.",
+        "origin": "host"
+      },
+      "key": "r003/generate/H3/tools/a2/1758fabd821a/execute/revision2",
+      "kind": "experiment",
+      "role": null,
+      "state": "failed",
+      "task_id": "task-a59c9991dc41c0f609756543"
+    }
+  ],
+  "interventions": [],
+  "experiment_request_outcomes": [
+    {
+      "error": null,
+      "key": "r001/generate/H2/tools/a4/bc603d463a32",
+      "outputs": [
+        "EvidenceCard-b7c871eb269e436a92e5b99d4867f49f@1"
+      ],
+      "result": {
+        "cache_reused": false,
+        "evidence_ref": "EvidenceCard-b7c871eb269e436a92e5b99d4867f49f@1",
+        "experiment_ref": "ExperimentCard-a3d3434972a8407589b54a787aaabb52@1",
+        "status": "completed"
+      },
+      "state": "completed",
+      "task_id": "task-417370a5ffe811ecae0a70d2"
+    },
+    {
+      "error": null,
+      "key": "r001/select/tools/a1/7675e952b595",
+      "outputs": [
+        "EvidenceCard-ba6cbb3000eb40fdab41ad88e7b1b86c@1"
+      ],
+      "result": {
+        "cache_reused": false,
+        "evidence_ref": "EvidenceCard-ba6cbb3000eb40fdab41ad88e7b1b86c@1",
+        "experiment_ref": "ExperimentCard-d1af665370ee4cf3a34afcfdae519943@1",
+        "status": "completed"
+      },
+      "state": "completed",
+      "task_id": "task-cc298c0d48e6f36a47c24f7e"
+    },
+    {
+      "error": null,
+      "key": "r001/L3",
+      "outputs": [
+        "EvidenceCard-34132bb00ead4c6f8f6b8ecbc4a26107@1"
+      ],
+      "result": {
+        "cache_reused": false,
+        "evidence_ref": "EvidenceCard-34132bb00ead4c6f8f6b8ecbc4a26107@1",
+        "experiment_ref": "ExperimentCard-138051ad3db5460c86149d9450fccb5f@1",
+        "status": "completed"
+      },
+      "state": "completed",
+      "task_id": "task-ea762b82013354256e0b0735"
+    },
+    {
+      "error": null,
+      "key": "r002/generate/H1/tools/a3/38a1909f780f",
+      "outputs": [
+        "EvidenceCard-91922d78bcf2470483ffd28c2901fd03@1"
+      ],
+      "result": {
+        "cache_reused": false,
+        "evidence_ref": "EvidenceCard-91922d78bcf2470483ffd28c2901fd03@1",
+        "experiment_ref": "ExperimentCard-23681205d5504a64b5440a90c6c449b6@1",
+        "status": "completed"
+      },
+      "state": "completed",
+      "task_id": "task-278ac9e725f272877746f67f"
+    },
+    {
+      "error": null,
+      "key": "r002/generate/H2/tools/a3/48b9d811fd31",
+      "outputs": [
+        "EvidenceCard-282de481b2e34307accec0cd80ce7f6a@1"
+      ],
+      "result": {
+        "cache_reused": false,
+        "evidence_ref": "EvidenceCard-282de481b2e34307accec0cd80ce7f6a@1",
+        "experiment_ref": "ExperimentCard-67b25b8b08a74e85a45c1086dd17739a@1",
+        "status": "completed"
+      },
+      "state": "completed",
+      "task_id": "task-36601373b7c519c8993b1a06"
+    },
+    {
+      "error": {
+        "causes": [
+          {
+            "error": {
+              "code": "ContractError",
+              "message": "load_frozen requires a cited Evidence or evaluated solution with a host-verified exported package",
+              "origin": "implementation"
+            },
+            "state": "failed",
+            "task_id": "task-e3c85c5c64ade4ae2bb23970"
+          }
+        ],
+        "children": [
+          "task-e3c85c5c64ade4ae2bb23970"
+        ],
+        "code": "service_failed"
+      },
+      "key": "r002/generate/H3/tools/a2/9ca9d74037e3",
+      "outputs": [],
+      "result": {
+        "cache_reused": null,
+        "evidence_ref": null,
+        "experiment_ref": null,
+        "status": null
+      },
+      "state": "failed",
+      "task_id": "task-bfe54ddb7ef6e037085e7dc6"
+    },
+    {
+      "error": null,
+      "key": "r002/L3",
+      "outputs": [
+        "EvidenceCard-46fbe7b34ad44eea8f72d04756d69074@1"
+      ],
+      "result": {
+        "cache_reused": false,
+        "evidence_ref": "EvidenceCard-46fbe7b34ad44eea8f72d04756d69074@1",
+        "experiment_ref": "ExperimentCard-5fb6f9858b2d40918ce24d1842f4628c@1",
+        "status": "completed"
+      },
+      "state": "completed",
+      "task_id": "task-4abf5e27feeb5c02c370b8d2"
+    },
+    {
+      "error": null,
+      "key": "r003/generate/H1/tools/a3/e0d76d651e9d",
+      "outputs": [
+        "EvidenceCard-98241882a5f54ade9cd7b5dcca0dac93@1"
+      ],
+      "result": {
+        "cache_reused": false,
+        "evidence_ref": "EvidenceCard-98241882a5f54ade9cd7b5dcca0dac93@1",
+        "experiment_ref": "ExperimentCard-9bb74bdbe6074485ab73af3938244dc1@1",
+        "status": "completed"
+      },
+      "state": "completed",
+      "task_id": "task-1a020100f84eb3964bcd5b69"
+    },
+    {
+      "error": null,
+      "key": "r003/generate/H2/tools/a3/964ab13725b8",
+      "outputs": [
+        "EvidenceCard-c2c65e752bb547e7a3dc87a3df4a6372@1"
+      ],
+      "result": {
+        "cache_reused": false,
+        "evidence_ref": "EvidenceCard-c2c65e752bb547e7a3dc87a3df4a6372@1",
+        "experiment_ref": "ExperimentCard-9658e1ad11684527a9b9c33420b6af2e@1",
+        "status": "completed"
+      },
+      "state": "completed",
+      "task_id": "task-81aab0270312ed4f29d3c672"
+    },
+    {
+      "error": {
+        "causes": [
+          {
+            "error": {
+              "code": "EngineeringBlocked",
+              "message": "Host load_frozen authorization rejected the explicitly requested C45 package before its loader could run; implementation cannot create this host binding.",
+              "origin": "host"
+            },
+            "state": "failed",
+            "task_id": "task-a59c9991dc41c0f609756543"
+          }
+        ],
+        "children": [
+          "task-a59c9991dc41c0f609756543"
+        ],
+        "code": "service_failed"
+      },
+      "key": "r003/generate/H3/tools/a2/1758fabd821a",
+      "outputs": [],
+      "result": {
+        "cache_reused": null,
+        "evidence_ref": null,
+        "experiment_ref": null,
+        "status": null
+      },
+      "state": "failed",
+      "task_id": "task-27f4d22829d41fcc10205489"
+    },
+    {
+      "error": null,
+      "key": "r003/L3",
+      "outputs": [
+        "EvidenceCard-ad61016bc2954c3695078601425890ae@1"
+      ],
+      "result": {
+        "cache_reused": false,
+        "evidence_ref": "EvidenceCard-ad61016bc2954c3695078601425890ae@1",
+        "experiment_ref": "ExperimentCard-7c4e267001a64c6385ebd5d3a8f3fe66@1",
+        "status": "completed"
+      },
+      "state": "completed",
+      "task_id": "task-7c5db9e6f6043933a750252a"
+    }
+  ],
+  "managed_terminal": {
+    "observed_at": "2026-11-15T22:40:56.926960+00:00",
+    "summary_sha256": "132d4928b3b006140f3eae5554b8c19f870539ac2045a20c190fcdc44427d8c2",
+    "managed_summary": {
+      "status": "completed",
+      "completed_rounds": [
+        1,
+        2,
+        3
+      ],
+      "workflow_completed": true,
+      "formal_validation_success": true,
+      "scientific_review_complete": true,
+      "state_saved": true,
+      "stop_event_saved": true,
+      "monitor_cleanup_completed": true,
+      "supervisor_exit_code": 0,
+      "finalization_errors": []
+    },
+    "budget": {
+      "elapsed_seconds": 12189.095690011978,
+      "remaining_seconds": 2210.904309988022,
+      "excluded_numeric_wait_seconds": 14111.011677503586,
+      "active_segment": null,
+      "extensions": [],
+      "segments": [
+        {
+          "commit_sequence": 9149,
+          "deadline_unix": 1794770395.2512445,
+          "elapsed_seconds": 12189.095690011978,
+          "excluded_numeric_wait_seconds": 14111.011677503586,
+          "owner": {
+            "boot_id": "6b5c6a20-dca9-4d23-9c43-b737d02324c4",
+            "pid": 486681,
+            "start_ticks": "842875933",
+            "state": "R"
+          },
+          "processes_stopped": true,
+          "reason": "Supervisor and registered CLI/workers exited",
+          "recovered_without_stop": false,
+          "remaining_at_start": 14400,
+          "segment_id": "segment-1",
+          "started_unix": 1794755995.2512445,
+          "stopped_unix": 1794782295.358612,
+          "type": "budget_segment_stopped",
+          "wall_seconds": 26300.107367515564
+        }
+      ]
+    },
+    "task_counts": {
+      "completed": 338,
+      "failed": 13
+    },
+    "active_tasks": [],
+    "owned_scientific_processes_found": [],
+    "launcher_pid_486681_exists": false,
+    "gpu_and_leases": [
+      {
+        "gpu_index": "0",
+        "uuid": "GPU-7b3cc098-9544-bc3b-f922-2dda1d35619b",
+        "memory_used_mib": 0,
+        "utilization_pct": 0,
+        "lease_lock_path": "EXP/cache/v2_resources/f886dd84a4e960bf6a2d2873da5c249bcb710b910febd662245e753a8318d6aa.lock",
+        "exists": true,
+        "exclusive_lock_available": true
+      },
+      {
+        "gpu_index": "1",
+        "uuid": "GPU-1f053b21-cd6a-49f3-b124-eba7081372cf",
+        "memory_used_mib": 0,
+        "utilization_pct": 0,
+        "lease_lock_path": "EXP/cache/v2_resources/d2b128fe3ea4e4f623f0f4617250fb95d7c20bb7c00134b0d715b96a3962e6aa.lock",
+        "exists": true,
+        "exclusive_lock_available": true
+      },
+      {
+        "gpu_index": "2",
+        "uuid": "GPU-df567935-d109-ae8c-1dec-9274a597bb77",
+        "memory_used_mib": 0,
+        "utilization_pct": 0,
+        "lease_lock_path": "EXP/cache/v2_resources/1705a4e88341fa4a28bc8868e117dd9753fa7e5f8c3703c06693b652969de66d.lock",
+        "exists": true,
+        "exclusive_lock_available": true
+      },
+      {
+        "gpu_index": "3",
+        "uuid": "GPU-a9bcbfca-6d9e-46ec-55e0-595e8a2b658c",
+        "memory_used_mib": 0,
+        "utilization_pct": 0,
+        "lease_lock_path": "EXP/cache/v2_resources/26bfa43db8d9d6f4e468b1ec84fa71eb75d4544e6f16a900e7ed415d59ece6e4.lock",
+        "exists": false,
+        "exclusive_lock_available": null
+      },
+      {
+        "gpu_index": "4",
+        "uuid": "GPU-cc9e24d0-5522-0bac-446f-e6608c62a9e6",
+        "memory_used_mib": 0,
+        "utilization_pct": 0,
+        "lease_lock_path": "EXP/cache/v2_resources/b039afc6972f871cf6444306afde1ddd9fd72fc240cbc029596927940a76f92c.lock",
+        "exists": true,
+        "exclusive_lock_available": true
+      }
+    ],
+    "verification_attempts": [
+      "Initial exclusive flock with read-only descriptor returned EBADF on this filesystem; r+b retry performed no file data writes.",
+      "round_audit has default one-shot mode; unsupported --once invocation was replaced by no mode flag."
+    ],
+    "note": "No run.py report command executed; all research/summary artifacts read-only."
+  },
+  "scientific_memory_diagnosis": {
+    "observed_at": "2026-11-15T22:43:38.912922+00:00",
+    "conclusion": "Recorder R2/R3 compares completed candidate to already promoted current B; interpreting equality as absence of a new candidate or prior-B contrast confuses before/after states. The packages and frozen payloads do differ as recorded.",
+    "findings": [
+      {
+        "round": 2,
+        "selection_ref": "ReviewDecisionCard-6cefb2d4cc5d4139881ad1ff2d3ef6f8@1",
+        "pre_round_B_model_ref": "14e4fd32745a705cfa3d748250c5a16b756d7bcd48e12707df484ea5a0956857",
+        "new_candidate_model_ref": "c1c5ac43b4957e8afca2e8c4caca8f3cd1d3cc75eb72e0c8529bf2d00b6a27db",
+        "different_model_refs": true,
+        "recorder_ref": "MetareviewCard-da9388eba6e5400097ccf98020cf094c@1",
+        "recorder_blind_spots": [
+          "C45所列候选与保留B是同一solution/model_ref及同分结果，缺少AdaLog-only基线，不能据当前L3识别H2机制增量。",
+          "局部PV NMSE、整网KL与Top-1/ADE指标有冲突可能；当前单次局部诊断不能证明代理预测规律或泛化。"
+        ],
+        "recorder_guidance": "保留已通过L3审计的候选及B作为可复用有效结果，但不声称H2改动带来任务增益。下一轮最能改变判断的是同协议、同校准和FP对照下的AdaLog-only与仅首层Q逐head/H2候选完整双任务配对；若全L3成本不可接受，可先测固定其余量化状态的共享Q/逐head整网logit KL作筛选，但不得以此替代最终任务比较。H1应先以完整量化背景的CLS/patch受控门控实验检验修订；H3须先修复确切冻结包加载契约并完成码本匹配局部对照，不能直接升级昂贵L3。",
+        "persisted_L2_claims": [
+          {
+            "claim_id": "knowledge-9d818a1cedfec85cfed8",
+            "text": "在本项目官方非蒸馏deit_base_patch16_224、static W4A4、32张校准及规定完整双任务评测条件下，已验证H2候选的ImageNet Top-1/Top-5为72.394%/90.210%，ADE mIoU/mAcc/aAcc为28.4791%/38.1079%/71.5929%；相对配对FP分别存在9.402/5.384、11.3504/12.4987/7.1603个百分点差距。该事实描述候选绝对表现，不表明相对AdaLog-only的改动效应或普遍化表现。",
+            "rationale": "C45对应本次完成的真实完整验证；它与保留B记录的solution/model_ref及成绩相同，且没有同协议AdaLog-only比较，故只保存条件化绝对结果，不作候选增益或独立重复主张。",
+            "revision_ref": "MetareviewCard-da9388eba6e5400097ccf98020cf094c@1",
+            "evidence_refs": [
+              "EvidenceCard-46fbe7b34ad44eea8f72d04756d69074@1"
+            ]
+          }
+        ],
+        "independent_payload_comparison": "r2_frozen_payload_comparison.json"
+      },
+      {
+        "round": 3,
+        "selection_ref": "ReviewDecisionCard-f0f8e8f05ee94444b23ac84dd2a709be@1",
+        "pre_round_B_model_ref": "c1c5ac43b4957e8afca2e8c4caca8f3cd1d3cc75eb72e0c8529bf2d00b6a27db",
+        "new_candidate_model_ref": "6e5761dc523e30f6bde2ea3e3801e6adb8c5520a14ce3d6caffa96145f85a7a2",
+        "different_model_refs": true,
+        "recorder_ref": "MetareviewCard-ebf972d7c3254468898844216e3d8563@1",
+        "recorder_blind_spots": [
+          "H2 尚无同 AdaLog 基础、同协议的共享/逐 head Query 完整双任务因果对照；本轮 L3 候选与 B 身份相同。",
+          "单次局部执行中的 KL、NMSE、Top-1 冲突不能确立代理指标预测最终任务性能的规律。",
+          "H3 冻结包未进入加载器，机制预测尚未检验。"
+        ],
+        "recorder_guidance": "保留已验证 B 作为独立有效结果，但勿把本次相同 model_ref 的 L3 结果记作 H2 增量。下一轮若继续 H2，最有判别力的比较是同一 AdaLog-only 基础、相同校准与 FP 对照下，实际不同的共享 Query 与逐 head Query 包完成完整双任务；确认包身份不同后再评估。成本受限时可先在冻结其余状态下比较两者整网 logit KL 作筛选，但不能替代完整分类与 ADE 结论。H1 仅保留局部机制证据及任务风险；H3 先解决确切冻结包授权契约，不重复把加载失败当科学结果。",
+        "persisted_L2_claims": [
+          {
+            "claim_id": "knowledge-c96c9cb2ec4fd44c2c95",
+            "text": "本轮完整验证的 W4A4 包通过独立重载及全量 ImageNet/ADE 评测，但其 solution/model_ref 与保留的有效 B 相同；该次绝对双任务表现不能作为 H2 相对 B 的增量效果证据。",
+            "rationale": "全量配对 FP 指标确立该包表现；相同候选身份及结果限制了可作出的因果比较。分类与 ADE 均明显低于配对 FP，亦不应被局部 KL 证据掩盖。",
+            "revision_ref": "MetareviewCard-ebf972d7c3254468898844216e3d8563@1",
+            "evidence_refs": [
+              "EvidenceCard-ad61016bc2954c3695078601425890ae@1"
+            ]
+          }
+        ],
+        "independent_payload_comparison": "r3_frozen_payload_comparison.json"
+      }
+    ],
+    "persistent_memory_issue": "The post-promotion identity wording is retained in L2 claims knowledge-9d818a1cedfec85cfed8 and knowledge-c96c9cb2ec4fd44c2c95. History was not changed.",
+    "valid_remaining_limits": [
+      "No matched contemporaneous AdaLog-only full dual-task control for the original per-head intervention.",
+      "Only single fixed calibration/evaluation runs; no independent repetition or robust effect estimates.",
+      "Proxy KL/PV/logit/Top1 rankings conflict.",
+      "H3 mechanism never obtained valid numerical evidence; H1 complete method not evaluated by L3."
+    ],
+    "L1_open_questions": [
+      "在同协议、同AdaLog基础方案、相同校准及FP对照下，首层Query逐head相对共享Query对完整ImageNet与ADE指标的增量因果效应分别是多少？"
+    ],
+    "external_intervention": false
+  },
+  "cache_reused_request_count": 0,
+  "independent_payload_comparisons": [
+    "r2_frozen_payload_comparison.json",
+    "r3_frozen_payload_comparison.json"
+  ],
+  "limitations": [
+    "Read-only derived index; no additional workflow gates or scientific decisions.",
+    "Requested and actual model identities are separate; absent actual stays unknown.",
+    "Cached input and reasoning output are subfields; subscription monetary cost unknown.",
+    "Worker wall/GPU allocation and excluded budget waits have distinct accounting boundaries.",
+    "Machine checks require human review of candidate changes, rationale and feedback use.",
+    "GPU allocation wall is not measured GPU compute time or energy. No subscription charge is inferred.",
+    "H3 repeated source-binding failures produced no valid mechanism measurements; not a scientific refutation.",
+    "No independent-seed repetition, paired Full/G-only study, novelty proof or native INT4 speedup was established."
+  ],
+  "finalized_at": "2026-11-15T22:52:59.852862+00:00",
+  "terminal_verification": {
+    "observed_at": "2026-11-15T22:40:56.926960+00:00",
+    "summary_sha256": "132d4928b3b006140f3eae5554b8c19f870539ac2045a20c190fcdc44427d8c2",
+    "managed_summary": {
+      "status": "completed",
+      "completed_rounds": [
+        1,
+        2,
+        3
+      ],
+      "workflow_completed": true,
+      "formal_validation_success": true,
+      "scientific_review_complete": true,
+      "state_saved": true,
+      "stop_event_saved": true,
+      "monitor_cleanup_completed": true,
+      "supervisor_exit_code": 0,
+      "finalization_errors": []
+    },
+    "budget": {
+      "elapsed_seconds": 12189.095690011978,
+      "remaining_seconds": 2210.904309988022,
+      "excluded_numeric_wait_seconds": 14111.011677503586,
+      "active_segment": null,
+      "extensions": [],
+      "segments": [
+        {
+          "commit_sequence": 9149,
+          "deadline_unix": 1794770395.2512445,
+          "elapsed_seconds": 12189.095690011978,
+          "excluded_numeric_wait_seconds": 14111.011677503586,
+          "owner": {
+            "boot_id": "6b5c6a20-dca9-4d23-9c43-b737d02324c4",
+            "pid": 486681,
+            "start_ticks": "842875933",
+            "state": "R"
+          },
+          "processes_stopped": true,
+          "reason": "Supervisor and registered CLI/workers exited",
+          "recovered_without_stop": false,
+          "remaining_at_start": 14400,
+          "segment_id": "segment-1",
+          "started_unix": 1794755995.2512445,
+          "stopped_unix": 1794782295.358612,
+          "type": "budget_segment_stopped",
+          "wall_seconds": 26300.107367515564
+        }
+      ]
+    },
+    "task_counts": {
+      "completed": 338,
+      "failed": 13
+    },
+    "active_tasks": [],
+    "owned_scientific_processes_found": [],
+    "launcher_pid_486681_exists": false,
+    "gpu_and_leases": [
+      {
+        "gpu_index": "0",
+        "uuid": "GPU-7b3cc098-9544-bc3b-f922-2dda1d35619b",
+        "memory_used_mib": 0,
+        "utilization_pct": 0,
+        "lease_lock_path": "EXP/cache/v2_resources/f886dd84a4e960bf6a2d2873da5c249bcb710b910febd662245e753a8318d6aa.lock",
+        "exists": true,
+        "exclusive_lock_available": true
+      },
+      {
+        "gpu_index": "1",
+        "uuid": "GPU-1f053b21-cd6a-49f3-b124-eba7081372cf",
+        "memory_used_mib": 0,
+        "utilization_pct": 0,
+        "lease_lock_path": "EXP/cache/v2_resources/d2b128fe3ea4e4f623f0f4617250fb95d7c20bb7c00134b0d715b96a3962e6aa.lock",
+        "exists": true,
+        "exclusive_lock_available": true
+      },
+      {
+        "gpu_index": "2",
+        "uuid": "GPU-df567935-d109-ae8c-1dec-9274a597bb77",
+        "memory_used_mib": 0,
+        "utilization_pct": 0,
+        "lease_lock_path": "EXP/cache/v2_resources/1705a4e88341fa4a28bc8868e117dd9753fa7e5f8c3703c06693b652969de66d.lock",
+        "exists": true,
+        "exclusive_lock_available": true
+      },
+      {
+        "gpu_index": "3",
+        "uuid": "GPU-a9bcbfca-6d9e-46ec-55e0-595e8a2b658c",
+        "memory_used_mib": 0,
+        "utilization_pct": 0,
+        "lease_lock_path": "EXP/cache/v2_resources/26bfa43db8d9d6f4e468b1ec84fa71eb75d4544e6f16a900e7ed415d59ece6e4.lock",
+        "exists": false,
+        "exclusive_lock_available": null
+      },
+      {
+        "gpu_index": "4",
+        "uuid": "GPU-cc9e24d0-5522-0bac-446f-e6608c62a9e6",
+        "memory_used_mib": 0,
+        "utilization_pct": 0,
+        "lease_lock_path": "EXP/cache/v2_resources/b039afc6972f871cf6444306afde1ddd9fd72fc240cbc029596927940a76f92c.lock",
+        "exists": true,
+        "exclusive_lock_available": true
+      }
+    ],
+    "verification_attempts": [
+      "Initial exclusive flock with read-only descriptor returned EBADF on this filesystem; r+b retry performed no file data writes.",
+      "round_audit has default one-shot mode; unsupported --once invocation was replaced by no mode flag."
+    ],
+    "note": "No run.py report command executed; all research/summary artifacts read-only."
+  },
+  "summary_semantics": "Original stopped-run snapshot; current_implementation_matches is the stop-time fact, not equality with the later postrun checkout.",
+  "summary": {
+    "status": "completed",
+    "completed_rounds": [
+      1,
+      2,
+      3
+    ],
+    "expected_rounds": [
+      1,
+      2,
+      3
+    ],
+    "validated_rounds": [
+      1,
+      2,
+      3
+    ],
+    "workflow_completed": true,
+    "formal_validation_success": true,
+    "numerical_validation_status": "validated",
+    "scientific_review_complete": true,
+    "state_saved": true,
+    "monitor_cleanup_completed": true,
+    "supervisor_exit_code": 0,
+    "finalization_errors": [],
+    "current_implementation_matches": true
+  },
+  "preparation_validation": {
+    "scope": "preparation_only_not_formal_L3",
+    "actual_start_utc": "2026-11-15",
+    "fixed_source_integration": {
+      "tests": 95,
+      "passed": 95,
+      "seconds": 152.142,
+      "log": "integration_final.log"
+    },
+    "initial_round_scope_run": {
+      "tests": 38,
+      "passed": 36,
+      "source_edit_identity_rejections": 2,
+      "log": "round_scope.log"
+    },
+    "revision_fault_injection": {
+      "tests": 5,
+      "passed": 5,
+      "logs": "revision/"
+    },
+    "dual_failure_and_coding": {
+      "tests": 57,
+      "initial_passed": 56,
+      "concurrent_prompt_identity_rejection": 1,
+      "failed_case_fixed_source_rerun_passed": true,
+      "logs": "../gonly_boundary_20261116_r1/"
+    },
+    "evidence_and_recovered_request": {
+      "purpose": "preparation engineering validation; not formal L3",
+      "evidence_tests": {
+        "passed": 15,
+        "new": 3,
+        "log": "evidence.log"
+      },
+      "request_recovery_and_numeric_timeout_tests": {
+        "passed": 7,
+        "new": 3,
+        "log": "request_recovery.log"
+      },
+      "gpu_result": "gpu/GPU_RESULTS.json",
+      "gpu_cleanup": "gpu/cleanup.json",
+      "gpu_overlap_seconds": 12.353677749633789,
+      "exact_quality_and_samples_equal": true,
+      "deadline_matches_actual_request": true,
+      "history_modified": false
+    },
+    "structure_audit": {
+      "status": "passed",
+      "syntax_files": 192,
+      "snapshot_files": 315
+    },
+    "llm_transport": {
+      "cli_version": "0.169.0",
+      "scientific_routes_changed": false,
+      "probes": [
+        "generation/astra/high",
+        "coding/sol/medium",
+        "recorder/luna/high",
+        "monitor/sol/ultra"
+      ],
+      "actual_identity": "not_reported_by_cli",
+      "receipt": "llm/cli169_compatibility.json"
+    },
+    "live_generation_result": "live_generation_r1_result.json",
+    "note": "Batches overlap; counts are not added as unique tests. No preparation metric is counted as a new formal result.",
+    "live_generation": {
+      "validation_passed": true,
+      "checks": {
+        "actual_tool_numeric_evidence_returned": true,
+        "bound_real_worker_receipts_and_hashes": true,
+        "executed_parameters_match_selected_intervention": true,
+        "no_l3_executed": true,
+        "no_retired_roles": true,
+        "registered_workers_all_exited": true,
+        "reselection_uses_current_versions": true,
+        "scientific_revision_published": true,
+        "selected_exact_version_actually_executed": true
+      },
+      "calls": 6,
+      "evidence": 3,
+      "measurement_source": "synthetic_computation",
+      "actual_numeric_tool_execution": true,
+      "initial_harness_failure_preserved": "live_generation_r1_result_initial_harness.json",
+      "new_formal_results": 0,
+      "input_tokens": 191057,
+      "output_tokens": 6274,
+      "numeric_worker_seconds": 9.227,
+      "readonly_reverify_entry": "verify_live_generation.py"
+    }
+  },
+  "preparation_costs": {
+    "llm_calls": 10,
+    "input_tokens": 208969,
+    "output_tokens": 6465,
+    "cached_input_tokens": 0,
+    "reasoning_output_tokens": 1209,
+    "tiny_numeric_worker_seconds": 9.227,
+    "gpu_engineering_scopes": "new search64+ADE1 serial/dual plus identity rejection; no prepare; not formal L3",
+    "gpu_mode_runs": {
+      "dual": {
+        "elapsed_seconds": 67.7810537815094,
+        "model_ref": "87bdbfc3c0ddeb10b91c128e57561831e498be8313749e623a86d991f85df46a"
+      },
+      "serial": {
+        "elapsed_seconds": 44.00317335128784,
+        "model_ref": "87bdbfc3c0ddeb10b91c128e57561831e498be8313749e623a86d991f85df46a"
+      }
+    },
+    "preparation_total_gpu_allocation_seconds": null,
+    "note": "Whole preparation GPU lease interval not separately metered; measured mode runs retained. No costs charged to formal budget."
+  },
+  "external_codex_usage": {
+    "as_of_utc": "2026-11-15T22:52:59.676795+00:00",
+    "scope": "external preparation, engineering, Codex monitoring and reporting; separate from QAViT scientific CLI and isolated preparation probes/Generation",
+    "sessions": [
+      {
+        "thread": "01a1dfbd-5076-7410-86a3-90409f026ac7",
+        "agent": "/root",
+        "session_contexts": [
+          {
+            "model": "gpt-6.1-sol",
+            "effort": "ultra"
+          }
+        ],
+        "as_of": "2026-11-15T22:52:05.936Z",
+        "usage": {
+          "input_tokens": 134752370,
+          "cached_input_tokens": 134280704,
+          "cache_write_input_tokens": 0,
+          "output_tokens": 90077,
+          "reasoning_output_tokens": 34467,
+          "total_tokens": 134842447
+        },
+        "usage_initial_baseline": {
+          "input_tokens": 0,
+          "cached_input_tokens": 0,
+          "cache_write_input_tokens": 0,
+          "output_tokens": 0,
+          "reasoning_output_tokens": 0,
+          "total_tokens": 0
+        }
+      },
+      {
+        "thread": "01a1dfbe-e28e-7bc0-b2ef-a7b9a469926c",
+        "agent": "/root/revision_recovery",
+        "session_contexts": [
+          {
+            "model": "gpt-6.1-sol",
+            "effort": "ultra"
+          }
+        ],
+        "as_of": "2026-11-15T15:20:04.844Z",
+        "usage": {
+          "input_tokens": 7347621,
+          "cached_input_tokens": 7237632,
+          "cache_write_input_tokens": 0,
+          "output_tokens": 23733,
+          "reasoning_output_tokens": 6779,
+          "total_tokens": 7371354
+        },
+        "usage_initial_baseline": {
+          "input_tokens": 0,
+          "cached_input_tokens": 0,
+          "cache_write_input_tokens": 0,
+          "output_tokens": 0,
+          "reasoning_output_tokens": 0,
+          "total_tokens": 0
+        }
+      },
+      {
+        "thread": "01a1dfbe-f767-7011-aa0a-e969dc111e6b",
+        "agent": "/root/dual_failures",
+        "session_contexts": [
+          {
+            "model": "gpt-6.1-sol",
+            "effort": "ultra"
+          }
+        ],
+        "as_of": "2026-11-15T15:14:53.315Z",
+        "usage": {
+          "input_tokens": 4326264,
+          "cached_input_tokens": 4265984,
+          "cache_write_input_tokens": 0,
+          "output_tokens": 15796,
+          "reasoning_output_tokens": 4524,
+          "total_tokens": 4342060
+        },
+        "usage_initial_baseline": {
+          "input_tokens": 0,
+          "cached_input_tokens": 0,
+          "cache_write_input_tokens": 0,
+          "output_tokens": 0,
+          "reasoning_output_tokens": 0,
+          "total_tokens": 0
+        }
+      },
+      {
+        "thread": "01a1dfbf-09b5-76d2-8391-1acbaf196268",
+        "agent": "/root/evidence_resume",
+        "session_contexts": [
+          {
+            "model": "gpt-6.1-sol",
+            "effort": "ultra"
+          }
+        ],
+        "as_of": "2026-11-15T22:51:49.544Z",
+        "usage": {
+          "input_tokens": 8915498,
+          "cached_input_tokens": 8675200,
+          "cache_write_input_tokens": 0,
+          "output_tokens": 30775,
+          "reasoning_output_tokens": 10420,
+          "total_tokens": 8946273
+        },
+        "usage_initial_baseline": {
+          "input_tokens": 0,
+          "cached_input_tokens": 0,
+          "cache_write_input_tokens": 0,
+          "output_tokens": 0,
+          "reasoning_output_tokens": 0,
+          "total_tokens": 0
+        }
+      },
+      {
+        "thread": "01a1dfc6-92e1-7760-811a-4d1b3c8b308e",
+        "agent": "/root/formal_monitor",
+        "session_contexts": [
+          {
+            "model": "gpt-6.1-sol",
+            "effort": "ultra"
+          }
+        ],
+        "as_of": "2026-11-15T22:44:10.276Z",
+        "usage": {
+          "input_tokens": 42770816,
+          "cached_input_tokens": 42499840,
+          "cache_write_input_tokens": 0,
+          "output_tokens": 78202,
+          "reasoning_output_tokens": 19512,
+          "total_tokens": 42849018
+        },
+        "usage_initial_baseline": {
+          "input_tokens": 0,
+          "cached_input_tokens": 0,
+          "cache_write_input_tokens": 0,
+          "output_tokens": 0,
+          "reasoning_output_tokens": 0,
+          "total_tokens": 0
+        }
+      }
+    ],
+    "totals": {
+      "input_tokens": 198112569,
+      "cached_input_tokens": 196959360,
+      "cache_write_input_tokens": 0,
+      "output_tokens": 238583,
+      "reasoning_output_tokens": 75702,
+      "total_tokens": 198351152
+    },
+    "notes": [
+      "cached input is a subset of input; reasoning output is a subset of output; do not add twice",
+      "reported repeated-context consumption, not unique evidence volume or a subscription invoice",
+      "session/request model metadata is visible; service actual identity remains unreported",
+      "snapshot excludes later reporting/final-answer usage"
+    ]
+  },
+  "postrun_engineering_fix": {
+    "status": "passed",
+    "formal_intervention": false,
+    "formal_run_modified": false,
+    "formal_frozen_core_sha256": "6f5db3ec908f9e44ae2616b1e2f8ad6a8d2468b3f7ceffbcbe5c1f4a87ad2dec",
+    "postrun_core_sha256_at_check": "92dbd9fc776a441b6e2b782f41874b6223cca04e16a0215742c4d120aa0c6c57",
+    "final_regression": {
+      "passed": 20,
+      "seconds": 15.439,
+      "new_tests": 4,
+      "log": "regression_final.log"
+    },
+    "historical_context_check": "historical_context_check.json",
+    "run_files_stat_unchanged": 14204,
+    "LLM_calls": 0,
+    "numeric_executions": 0,
+    "historical_Memory_corrected": false,
+    "limitation": "Read-only context reconstruction; no real Recorder rerun or claim of measured prompt efficacy.",
+    "LLM_calls_scope": "New QAViT model calls only; external Codex engineering reasoning is in the separate external-session ledger."
+  },
+  "frozen_identity_receipt": {
+    "path": "experiment_identity.json",
+    "sha256": "b880dac54b4bf2d66b20b7f067a1a6c4431598430258ea5884433834140f083f",
+    "input_sha256": "e709aea585bcb8d668f1598ca8c10a0ce9b54702dfb61a9e34590ad65c22cfc6",
+    "source_commit": "70a14ac"
+  }
+}

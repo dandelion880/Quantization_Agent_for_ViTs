@@ -6,10 +6,11 @@ from runtime.files import read, file_hash
 
 
 class DataView:
-    def __init__(self, data, split, count=None, shard=None):
+    def __init__(self, data, split, count=None, shard=None, *, offset=0):
         self.data, self.split, self.labels = data, split, data.labels
         self.shape_observation_splits = getattr(data, "shape_observation_splits", ())
         ids = data.ids(split)
+        ids = ids[offset:]
         if count is not None:
             if not 0 < count <= len(ids):
                 raise ValueError("评价样本范围越界")
@@ -24,14 +25,19 @@ class DataView:
     def ids(self, split):
         return self.selected if split == self.split else self.data.ids(split)
 
+    def source_rows(self, split):
+        if split != self.split:
+            yield from self.data.source_rows(split)
+            return
+        rows = {r["sample_id"]: r for r in self.data.rows[split]}
+        yield from (rows[sid] for sid in self.selected)
+
     def batches(self, split):
         if split != self.split:
             yield from self.data.batches(split)
             return
-        selected = set(self.selected)
-        for row in self.data.rows[split]:
-            if row["sample_id"] in selected:
-                yield self.data.backend.data_adapter.load_image(row).to(self.data.backend.device), row["sample_id"]
+        for row in self.source_rows(split):
+            yield self.data.backend.data_adapter.load_image(row).to(self.data.backend.device), row["sample_id"]
 
 
 def evaluate(backend, cfg, data, model, plan, split, count=None, shard=None, *, native=True, sites=()):
@@ -74,6 +80,10 @@ def aggregate(results):
     expected = expected if selection is None else expected[:selection]
     if set(ids) != set(expected):
         raise ValueError("分片未覆盖指定全部样本")
+    predictions = {sid: row for evaluation in evaluations
+                   for sid, row in zip(evaluation["sample_ids"], evaluation.get("per_sample_predictions", []))}
+    if predictions and set(predictions) != set(expected):
+        raise ValueError("分片的逐图分类结果不完整")
     errors = OutputErrors()
     for evaluation in evaluations:
         for key, sums in evaluation["metrics"]["raw_error_sums"].items():
@@ -93,10 +103,11 @@ def aggregate(results):
     return {"status": "completed", "data": {k: v for k, v in first.items() if k != "evaluation"} | {
         "evaluation": {"status": "completed", "split": split, "sample_count": len(ids), "sample_ids": expected,
                        "classification_counts": counts, "metrics": metrics,
+                       **({"per_sample_predictions": [predictions[s] for s in expected]} if predictions else {}),
                        "full_dataset_evaluation": full, "used_for_search": True,
                        "health": {k: all(e["health"][k] for e in evaluations) for k in evaluations[0]["health"]},
                        "coverage": {k: sum(e["coverage"][k] for e in evaluations) for k in evaluations[0]["coverage"]},
-                       "protocol": first["data_protocol"], "scope": "complete ImageNet validation 50000" if full else "subset",
+                       "protocol": first["data_protocol"], "scope": "complete validation manifest" if full else "subset",
                        "shard_timings": [e["timing"] for e in evaluations], "native_low_precision_kernel": False,
                        "latency_interpretation": "per-worker reference QDQ overhead, no native speedup claim"}},
         "cpu_seconds": (sum(r["cpu_seconds"] for r in results)

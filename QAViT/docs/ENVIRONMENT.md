@@ -15,9 +15,12 @@
 | ImageNet 划分、路径和标签 | `configs/assets/imagenet_manifest.json` | 按清单中原有绝对路径读取 |
 | ADE 数据、预处理、head 收据 | `configs/ade_evaluation.json` | data_root 使用原路径；head_receipt 相对 configs |
 | 冻结 ADE head | `configs/assets/ade_head.json` 的 checkpoint | 原有绝对路径，加载时核对 SHA256 |
+| DINOv3 资产目录、官方构造器及冻结分类头 | `configs/dinov3b_backend.json` | 已有 model_assets_manifest 的选定记录、源码及 checkpoint SHA256 |
+| DINOv3 分割任务 | `configs/dinov3_ade_evaluation.json`、`configs/assets/dinov3_ade_head.json` | 从原 MMSeg checkpoint 配置获得层/预处理；逐张量核对保存的骨干并 strict 加载 neck/head |
+| 历史任务关联 | `configs/assets/legacy_task_bindings.json` | 只对确切的旧资产清单摘要和 model_id 恢复原 ADE 设置 |
 | 通用模型 factory | ResearchBrief 的 model.adapter.factory | `文件路径:函数`；相对路径基于项目根；冻结源码资产哈希 |
 
-母模型和 head 仍在 `/root/data-fs/projects/ptq_training_free/` 的原资产目录；读取的是权重，不导入该项目实现。数据集原位置不搬迁、不覆盖。新 factory 应使用自包含实现或当前运行批准的实验代码；框架不使用 EXP 中的一次性框架实现。
+母模型、任务头、官方源码和数据沿所选资产清单的原位置只读加载。数据集原位置不搬迁、不覆盖。新 factory 应使用自包含实现或当前运行批准的实验代码；框架不使用 EXP 中的一次性框架实现。
 
 `configs/deitb_backend.json` 是实际数值工具的后端示例，不是科研策略模板。其 loop 中的工具选项（格式、校准缓存、方法能力、诊断资源与历史工具元数据）沿用现有值；V2 的研究轮次/全局墙钟以运行输入与 BudgetLedger 为准；数值工具原有活动时间检查和调用预留保护仍按原实现保留，具体边界列在本次报告，未顺带修改预算策略。模型与推理强度仅在 `configs/models.json` 和明确冻结的运行覆盖中生效，数值后端不再包含旧 LLM 设置。
 

@@ -1,0 +1,863 @@
+{
+  "status": "three_component_replays_completed",
+  "review_type": "source-backed human-readable engineering review, not independent LLM scoring or numerical validation",
+  "cases": [
+    {
+      "case": "unranked_continuation",
+      "attempt": "r1",
+      "status": "completed",
+      "review": "保留同一 active 灵感并提交发展版 H3；未把工程加载失败或题设假想低分当作机制反证。读取真实历史实现，明确未新测/未新修复。",
+      "limits": [
+        "低分是显式假想条件，实际历史 H3 无有效数值分数。",
+        "此次输出发生在最终 Memory 复制优化前，科研 Prompt/路由/提交合同与最终版一致；源码身份单列。"
+      ],
+      "raw_result": "EXP/validation/engineering_cleanup_20261117_r1/unranked_continuation_r1_result.json",
+      "raw_result_sha256": "bf36c9d85a9594e950dcc99be007d4860af0e66cfb1fa7ba768f26d9bee01ff6",
+      "run": "EXP/validation/engineering_cleanup_20261117_r1/live/unranked_continuation_r1",
+      "evidence_classes": {
+        "decision": "real Generation",
+        "material": "actual historical source and results",
+        "new_conditions": "explicit scenario; low score is hypothetical",
+        "new_numerical_evidence": false,
+        "topic_idea_action": "scripted state"
+      },
+      "elapsed_seconds": 168.53393135406077,
+      "source_identity": {
+        "identity_schema": "qavit.source/3",
+        "core_sha256": "e659d8ad17f985d97c8a754342cb25fb2649d0a81e0df726f4b4116154785b87",
+        "archive_sha256": "a59a4bcd4c8551db095944bdd29d1239b771acd6e09d3d98798da5211cb89042"
+      },
+      "originals": {
+        "h3_actual_source": {
+          "path": "/root/data-fs/projects/Quantization_Agent_for_ViTs_gonly/EXP/runs/deitb_static_w4a4_gonly_20261115_r2/code/0abd9a8021d7acda42bb230953d9f736ee8a74a7eef486fc6f92433f94cb3eab/implementation.py",
+          "sha256": "ff6a9a1d4d29bf150e2c1ba04dfcc54434a04514aef09e6aabc8c3bac379d847"
+        },
+        "h3_original_hypothesis": {
+          "path": "/root/data-fs/projects/Quantization_Agent_for_ViTs_gonly/EXP/runs/deitb_static_w4a4_gonly_20261115_r2/cards/e62999a16f2ea0714d5c425c2e108ec3ac477315be7e4f52b04bfe98c8825816.json",
+          "sha256": "11f36881d7781077553978a67f6a5ef77681b27b8dea8c1344bf4e95d94ed8c5"
+        },
+        "h3_original_request": {
+          "path": "/root/data-fs/projects/Quantization_Agent_for_ViTs_gonly/EXP/runs/deitb_static_w4a4_gonly_20261115_r2/cards/5d6ea98d48f96667c49a2382bfdb07b90a91e49df0839165b134d2c844a6aae5.json",
+          "sha256": "8c49e3d0462a21aa800cf2b0ba158a9f2170389ba6e29027e291df9523c0ee34"
+        }
+      },
+      "original_hashes_unchanged": true,
+      "model_calls": [
+        {
+          "actual": {
+            "model": null,
+            "reasoning_effort": null,
+            "source": "not_reported_by_cli"
+          },
+          "elapsed_seconds": 21.097521236166358,
+          "error": null,
+          "model_call_started": true,
+          "requested": {
+            "model": "gpt-6-astra",
+            "reasoning_effort": "high"
+          },
+          "usage": {
+            "cache_write_input_tokens": 0,
+            "cached_input_tokens": 0,
+            "input_tokens": 27737,
+            "output_tokens": 333,
+            "reasoning_output_tokens": 94
+          }
+        },
+        {
+          "actual": {
+            "model": null,
+            "reasoning_effort": null,
+            "source": "not_reported_by_cli"
+          },
+          "elapsed_seconds": 38.22419754602015,
+          "error": null,
+          "model_call_started": true,
+          "requested": {
+            "model": "gpt-6-astra",
+            "reasoning_effort": "high"
+          },
+          "usage": {
+            "cache_write_input_tokens": 0,
+            "cached_input_tokens": 0,
+            "input_tokens": 43660,
+            "output_tokens": 645,
+            "reasoning_output_tokens": 176
+          }
+        },
+        {
+          "actual": {
+            "model": null,
+            "reasoning_effort": null,
+            "source": "not_reported_by_cli"
+          },
+          "elapsed_seconds": 95.53855472058058,
+          "error": null,
+          "model_call_started": true,
+          "requested": {
+            "model": "gpt-6-astra",
+            "reasoning_effort": "high"
+          },
+          "usage": {
+            "cache_write_input_tokens": 0,
+            "cached_input_tokens": 0,
+            "input_tokens": 44645,
+            "output_tokens": 3098,
+            "reasoning_output_tokens": 258
+          }
+        }
+      ],
+      "tools": [
+        {
+          "arguments": {
+            "field": "/payload/inputs/context/historical_material",
+            "limit": 12000,
+            "offset": 0,
+            "ref": "TaskCard-f336a858ca114830aec6db297819d5f2@2"
+          },
+          "name": "read_card",
+          "state": "completed"
+        },
+        {
+          "arguments": {
+            "field": "/payload/inputs/context/historical_material",
+            "limit": 12000,
+            "offset": 12000,
+            "ref": "TaskCard-f336a858ca114830aec6db297819d5f2@2"
+          },
+          "name": "read_card",
+          "state": "completed"
+        },
+        {
+          "arguments": {
+            "field": "/payload/inputs/context/historical_material",
+            "limit": 12000,
+            "offset": 24000,
+            "ref": "TaskCard-f336a858ca114830aec6db297819d5f2@2"
+          },
+          "name": "read_card",
+          "state": "completed"
+        },
+        {
+          "arguments": {
+            "field": "/payload/inputs/context/historical_material",
+            "limit": 12000,
+            "offset": 36000,
+            "ref": "TaskCard-f336a858ca114830aec6db297819d5f2@2"
+          },
+          "name": "read_card",
+          "state": "completed"
+        },
+        {
+          "arguments": {
+            "inspiration_id": "idea-87bb18bb375929e27b7c",
+            "next_step": "本次提交原机制的待验证H3，不启动执行。后续获准执行时先绑定确切历史冻结来源并复用原源码；授权无法恢复则记录阻塞，不重建基线。恢复后按原五臂、32张校准及64张search局部设计检验nearest增量、配对效应和交叉项，再决定保留、缩小主张或撤下联合编码。",
+            "open_questions": [
+              "确切历史冻结包能否通过宿主来源授权加载并保持状态签名不变？",
+              "spatial_pair是否优于同实际码本nearest，而非仅优于native？",
+              "空间拟合lambda下的配对优势是否能迁移？同lambda打乱对照只检验固定编码器的配对作用，不能证明经独立校准的非空间方案必然较差。",
+              "pair内及pair间交叉项是否抵消代理目标改善？"
+            ],
+            "progress": "已核对历史 implementation.py（SHA256 ff6a9a1d4d29bf150e2c1ba04dfcc54434a04514aef09e6aabc8c3bac379d847）：包含实际AdaLog解码码本读取、32张calibration拟合静态lambda、三个位点的五臂离线PV对照、lambda=1控制及跨pair误差分解。源码存在不代表运行成功；无本机制有效PV、KL或任务成绩。本次未执行实验、修复或代码生成。",
+            "reason": "继续原机制而非另起近似实现：已读完整历史源码、假设与请求，实际故障发生在冻结来源授权阶段，机制尚未测量；题设早期低分是假想条件，不能据此淘汰。当前可检验的关键缺口是联合编码相对同码本最近邻的增量及空间配对的作用。",
+            "status": "active"
+          },
+          "name": "update_inspiration",
+          "state": "completed"
+        }
+      ],
+      "decision": {
+        "author": "generation",
+        "content_sha256": "2c1a7e7b290777b777d55d0a736ceb9b021aeefc619e0b5941512175c2f9fe61",
+        "created_at": "2026-11-17T13:01:20.397660+00:00",
+        "id": "HypothesisCard-5b08b99b428741109edbb49c7542f2ac@1",
+        "kind": "HypothesisCard",
+        "logical_id": "HypothesisCard-5b08b99b428741109edbb49c7542f2ac",
+        "parents": [],
+        "payload": {
+          "evidence_refs": [],
+          "feedback_used": [],
+          "hypothesis_type": "new_algorithm",
+          "implementation": {
+            "next_step": "后续获准执行时，由宿主恢复确切历史来源授权，复用原源码及批准加载契约，核验包身份、原生PV路径和前后冻结签名；无法恢复则保留工程阻塞，不重建近似基线。",
+            "remaining_work": "正式接入网络、冻结编码器参数与配对规则的导出重载、ADE动态网格适配及完整覆盖审计尚待实现或验证。每pair最多枚举256个组合，可能增加编码成本，不宣称原生INT4加速。",
+            "status": "已读取完整历史implementation.py、假设与实验请求。已有源码实现实际码本读取、静态lambda拟合、三个预定位点的五臂离线PV比较和跨pair误差分解；它不是已验证的部署编码器。历史材料记录冻结来源授权阶段阻塞，机制测量未开始。本次未执行、修复或生成代码。"
+          },
+          "inspiration_id": "idea-87bb18bb375929e27b7c",
+          "intervention": {
+            "base": "延续历史请求指定的确切冻结方案c1c5ac43b4957e8afca2e8c4caca8f3cd1d3cc75eb72e0c8529bf2d00b6a27db及其实际量化设置，不以当前待测AdaLog种子或重新校准实例替代。其当前来源授权尚未恢复；此处定义后续候选，不声称已加载或核验。",
+            "calibration": "仅在未改动基础包上使用既定32张分类calibration。每个位点、head跨图像及空间pair累加U=sum||u||²、D=sum||w||²；U>0时lambda=clip(D/U,1/64,64)，U=0时lambda=1。记录U、D及截断状态，推理前冻结；search、final、ADE均不得重估。",
+            "codebook_and_encoder": "复用原源码，从实际冻结AdaLog量化器读取解码集合C；当前实现要求每个位点为各head共享的标量per-tensor组、shift=0且reserve_zero=true。核验C含零且至多16值。逐head/query/pair枚举C×C并最小化J，并列按排序码字索引字典序选择。两个4bit码字的组合不是单标量256级码本。若实际包不满足原实现合同，记录不兼容而不静默更换码本。",
+            "pairing": "沿适配器真实patch网格作蛇形遍历，将相邻两个patch key组成不重叠pair；编码后恢复原key次序。所有query沿key轴应用相同规则。CLS key及末尾未配对patch key使用同码本最近邻。配对不依赖图像内容；不同分辨率按同一几何规则生成索引。",
+            "sites": [
+              "blocks.0.attn::post_softmax",
+              "blocks.5.attn::post_softmax",
+              "blocks.11.attn::post_softmax"
+            ],
+            "unchanged": "保持基础权重、其他激活量化器、Q/K/V、post-GELU、scale/base/LUT及已有补偿不变；不增加概率归一化、浮点PV残差或重复QDQ。training=false，保护FP源模型和冻结Neck/UPerHead。撤下联合编码可恢复原生P编码；nearest只是独立消融，不混称原基础方案。"
+          },
+          "mechanism": "设量化前概率P∈R^{B×H×Nq×Nk}，实际参与PV的A4 Value为Vhat∈R^{B×H×Nk×d}。对同一head、query的patch key对(a,b)，令u=(Vhat_a+Vhat_b)/2、w=(Vhat_a−Vhat_b)/2，码字误差ea=ca−pa、eb=cb−pb。该pair输出误差严格为δ=(ea+eb)u+(ea−eb)w，其能量为(ea+eb)²||u||²+(ea−eb)²||w||²+2(ea+eb)(ea−eb)〈u,w〉。若相邻Value的差分能量较小且几何关系可以迁移，用校准冻结的lambda近似相对代价，最小化J=(ea+eb)²+lambda(ea−eb)²，可能通过允许差分误差换取较小共同模态误差。该代理忽略模态交叉项、pair间交叉项及误差与Value的依赖，不保证总PV改善。主要替代解释是原生AdaLog到最近邻的标量决策边界变化，或非空间特异的一般联合误差控制。lambda=1时J=2(ea²+eb²)，在精确算术及一致并列规则下退化为独立最近邻。以上是理论关系，不是测量结果。",
+          "mechanism_relations": [],
+          "method_id": "method-fe5441627fc69382d2bd",
+          "predictions": [
+            {
+              "falsification": "若三个预定位点均不优于nearest，则该范围内的局部收益预测不成立；部分改善仅支持相应位点，不推广到全部层或任务性能。",
+              "id": "p1",
+              "measurement": "未来在固定64张search上，按位点、head及CLS/patch query报告sum||Phat@Vhat−P@Vhat||²/sum||P@Vhat||²、原始分子分母和逐图配对差。跨head用分子分母求和，不能平均head NMSE。",
+              "statement": "空间联合编码在至少一个预定位点的patch-query条件PV误差低于同实际码本nearest；概率重建MSE不必降低。"
+            },
+            {
+              "falsification": "打乱持平或更好时，不再主张该编码器具有空间配对优势。即使空间臂更好，也不能据此断言独立拟合lambda的非空间方案必然较差，因为当前lambda由空间统计拟合。",
+              "id": "p2",
+              "measurement": "seed=42固定打乱patch遍历再配对，其余P、Vhat、码本、lambda和样本完全相同。",
+              "statement": "若空间几何对该冻结编码器有作用，spatial_pair应优于使用同lambda的固定shuffled_pair。"
+            },
+            {
+              "falsification": "出现无法由并列或浮点舍入解释的差异时，先判定实现控制未通过，不解释联合编码收益。",
+              "id": "p3",
+              "measurement": "逐元素比较lambda_one和nearest；保留不同位置、码字及目标差，按原源码检查近并列的高精度诊断。",
+              "statement": "lambda_one应实现同码本独立最近邻，是区分编码错误与机制效果的控制。"
+            }
+          ],
+          "research_question": "在确切冻结W4A4模型中，仅改变三个post-softmax位点的概率编码决策，利用校准所得Value共同/差分能量联合选取两个码字，能否比同码本标量最近邻降低条件PV误差？空间配对是否提供额外作用？",
+          "round": 2,
+          "scope": {
+            "limits": "静态Value几何可能不迁移；交叉项、上游改变、CLS/patch差异、ADE分辨率变化及编码开销均可能抵消收益。当前同lambda打乱对照只检验该冻结编码器的配对作用。",
+            "planned": "官方非蒸馏deit_base_patch16_224，training-free static W4A4背景，仅三个指定P位点更换编码决策。",
+            "verified": "无本机制有效PV、KL、分类或ADE测量；早期低分是题设假想条件，不是事实。当前运行fallback_B尚无已验证结果，不借用历史基线成绩填补。"
+          },
+          "slot": "H3",
+          "sources": [
+            {
+              "document": "/root/data-fs/projects/Quantization_Agent_for_ViTs_gonly/EXP/runs/deitb_static_w4a4_gonly_20261115_r2/code/0abd9a8021d7acda42bb230953d9f736ee8a74a7eef486fc6f92433f94cb3eab/implementation.py",
+              "status": "通过已交付historical_material完整读取；SHA256 ff6a9a1d4d29bf150e2c1ba04dfcc54434a04514aef09e6aabc8c3bac379d847；历史源码，不是本次Evidence",
+              "supports": "原机制的可执行定义、实际接口限制、五臂控制及误差分解；源码存在不证明执行成功。"
+            },
+            {
+              "document": "/root/data-fs/projects/Quantization_Agent_for_ViTs_gonly/EXP/runs/deitb_static_w4a4_gonly_20261115_r2/cards/e62999a16f2ea0714d5c425c2e108ec3ac477315be7e4f52b04bfe98c8825816.json",
+              "status": "通过已交付historical_material完整读取的历史假设，非当前运行测量",
+              "supports": "沿用确切冻结基础、配对机制和回退方式，不将本轮延续包装为重新发明算法。"
+            },
+            {
+              "document": "/root/data-fs/projects/Quantization_Agent_for_ViTs_gonly/EXP/runs/deitb_static_w4a4_gonly_20261115_r2/cards/5d6ea98d48f96667c49a2382bfdb07b90a91e49df0839165b134d2c844a6aae5.json",
+              "status": "通过已交付historical_material完整读取的历史请求，非测量结果",
+              "supports": "32张校准、64张search、确切包和五臂局部对照合同。"
+            },
+            {
+              "source": "本卡pair误差代数分解及已交付灵感续调记录",
+              "status": "理论分析与研究状态，不是实测",
+              "supports": "机制前提、lambda=1控制、交叉项限制和继续研究的理由。"
+            }
+          ],
+          "title": "固定A4概率码本的空间二元联合编码：继续原机制，以最近邻与打乱配对隔离收益来源",
+          "topic_ref": "topic-60fe06a2cd4bb04b6202@1",
+          "validation_design": {
+            "current_decision": "继续现有active灵感，不因未入Top-3或题设假想低分淘汰，也不因已有代码投入而预设收益。缺失的是可区分解释的实际测量，本次仅提交待检验候选，不启动数值、外部网络或代码生成。",
+            "decision_branches": "若native到nearest解释收益而spatial_pair不再改善，不主张联合编码增益；若空间与打乱均优于nearest但二者相当，仅保留一般联合误差控制解释；若pair能量下降却总PV不降，否定由pair代理直接推出PV收益，停止据此升级。加载失败只更新工程状态。",
+            "later_validation": "只有局部结果值得继续时，另行实际接入完整模型，与确切原包及nearest替换包比较整网输出偏差和教师KL；KL不替代任务指标。最终候选须审计主体W4/A4及全部规定语义边、每固定组至多16码字、无重复QDQ，并记录head/neck精度。正式成绩仅来自冻结导出并经宿主核验重载后的ImageNet validation 50000张Top-1/Top-5及同条件FP对照，以及ADE20K validation 2000张mIoU/mAcc/aAcc及同条件FP对照。ADE直接迁移分类冻结状态，不重新校准或训练。",
+            "observations": "除条件PV和P误差外，报告概率行和误差、Value共同/差分能量、sum_pair||δ_pair||²、||sum_pairδ_pair||²及两者之差，另列CLS/未配对key能量、与pair总和的交叉贡献和分解重构误差。保留全部预定位点及CLS/patch冲突，同一执行中的层与head不是独立重复。",
+            "small_control": "恢复授权后复用原五臂：native、nearest、spatial_pair、同lambda的shuffled_pair、lambda_one。32张calibration只拟合新增lambda；冻结后在search[0,64)评价，记录样本身份及与calibration的交集，不声称该search此前未被使用。FP32、batch_size=1，各臂共用同一次未修改量化前缀捕获的P和Vhat，三个局部比较不串联。O0=P@Vhat只绕过当前P量化，不是全FP attention。"
+          }
+        },
+        "refs": [
+          "ResearchBrief-d52526ac2b1747de99492b28a84e3ab0@1"
+        ],
+        "run_id": "unranked_continuation_r1",
+        "schema_version": "qavit.cards/2",
+        "version": 1
+      },
+      "new_evidence_count": 0,
+      "numerical_tasks": 0,
+      "skill_reads": 0
+    },
+    {
+      "case": "explain_simplify",
+      "attempt": "r2",
+      "status": "completed",
+      "review": "选择 narrow，转向区分实际码器、目标与分组的影响，并研究共享/校准简化；保持旧 H3 灵感与动作。承认不能由跨轮结果做单因素因果归因。",
+      "limits": [
+        "仅核对到 round 3 归档数值；明确 round 2 数值未核对齐，不伪造跨轮增益。",
+        "一次 read_card select 工具请求失败后继续完成，未把失败伪称已读取。",
+        "历史 Evidence 很大；此脚本将原件嵌入 TaskCard，回放成本不代表正常按引用恢复的生产吞吐。"
+      ],
+      "raw_result": "EXP/validation/engineering_cleanup_20261117_r1/explain_simplify_r2_result.json",
+      "raw_result_sha256": "3fa57b1ca08da5d31864aefb0bfa73144840ff801cda7fe922f8a0d4c75f20be",
+      "run": "EXP/validation/engineering_cleanup_20261117_r1/live/explain_simplify_r2",
+      "evidence_classes": {
+        "decision": "real Generation",
+        "material": "actual historical source and results",
+        "new_conditions": "explicit scenario; low score is hypothetical",
+        "new_numerical_evidence": false,
+        "topic_idea_action": "scripted state"
+      },
+      "elapsed_seconds": 282.9788315501064,
+      "source_identity": {
+        "identity_schema": "qavit.source/3",
+        "core_sha256": "f075eeec76249a8147012a0e3b234590a7e9b4add21e43c2e1e846682a62a59a",
+        "archive_sha256": "4dd4b52d8de6e6eaf994bcb64ec72cb84920526d73d7aa576eb1783eb68bcf2a"
+      },
+      "originals": {
+        "h2_actual_source_0": {
+          "path": "/root/data-fs/projects/Quantization_Agent_for_ViTs_gonly/EXP/runs/deitb_static_w4a4_gonly_20261115_r2/code/a45f638e2ea0d9081ba58a8f6c8b03f791497e57b05c11f6782ab46fa4c39544/implementation.py",
+          "sha256": "bb5c83b2c6fd5612afb00c451e6e169696d27cdbd99b6ff112454bca3629f633"
+        },
+        "h2_actual_source_1": {
+          "path": "/root/data-fs/projects/Quantization_Agent_for_ViTs_gonly/EXP/runs/deitb_static_w4a4_gonly_20261115_r2/code/8e2dc4c3b875b67e394ed96aa30e651a4d3e31e574003046da23d95fd300200a/implementation.py",
+          "sha256": "15b6d5188a99e1e18dbf9339aed1a5a367140a2a6661bbbc591de634afc6c6cb"
+        },
+        "h2_original_evidence_0": {
+          "path": "/root/data-fs/projects/Quantization_Agent_for_ViTs_gonly/EXP/runs/deitb_static_w4a4_gonly_20261115_r2/cards/6aada9c4b25a62543149e66f2b9c90dc5eb0bfdffb5dc372b41f14497ba695ba.json",
+          "sha256": "a1b6b3749d726f913dcae6adb61b4c1fc110178e692301ac3e010f1dd9ad1956"
+        },
+        "h2_original_evidence_1": {
+          "path": "/root/data-fs/projects/Quantization_Agent_for_ViTs_gonly/EXP/runs/deitb_static_w4a4_gonly_20261115_r2/cards/c100885a186c6f476d3a08b529ed2e5d09338cc4eb11115958a1433196558714.json",
+          "sha256": "42e8301d8802ed2f535f9418f736b144b0c9eb823d069ce0110a3e82d57991f4"
+        },
+        "h2_original_hypothesis_0": {
+          "path": "/root/data-fs/projects/Quantization_Agent_for_ViTs_gonly/EXP/runs/deitb_static_w4a4_gonly_20261115_r2/cards/ab56d06ab1a456cc8d73cd64765b6c379f1a3dff255944b2deda10ad2fb78f03.json",
+          "sha256": "09b2f725f6a70d9fbf9a2a17d9d790fd4c18794311014a2304b109ee3bf50335"
+        },
+        "h2_original_hypothesis_1": {
+          "path": "/root/data-fs/projects/Quantization_Agent_for_ViTs_gonly/EXP/runs/deitb_static_w4a4_gonly_20261115_r2/cards/7423dee4eb6574a1c6636181d2e0be8b7974bf2ff3ceaf3ed38fc8c8d8464362.json",
+          "sha256": "fb64c97e5a3d34bc61d8cd50ca01731a27cb6fc30bfb7a7b6a46d6425d5fa088"
+        },
+        "h2_solution_0": {
+          "path": "/root/data-fs/projects/Quantization_Agent_for_ViTs_gonly/EXP/runs/deitb_static_w4a4_gonly_20261115_r2/solution_library/22bb57be0494f08bd7a1cfe852f1c3ffa558c70c575f0a8b9fc0b0bcaf15c54d.json",
+          "sha256": "e692108a50613c63ac05ab40f940fef6738225f938e189035ac71756093a6ad7"
+        },
+        "h2_solution_1": {
+          "path": "/root/data-fs/projects/Quantization_Agent_for_ViTs_gonly/EXP/runs/deitb_static_w4a4_gonly_20261115_r2/solution_library/acaf7ebee8b31658a824b04a53f0a4cd6e47fe6e4df7a0efa025b1f7db513141.json",
+          "sha256": "adc64b00a862020ee44f521304f498a2a64d54ac93b88cb9a929d7c1caae8eef"
+        }
+      },
+      "original_hashes_unchanged": true,
+      "model_calls": [
+        {
+          "actual": {
+            "model": null,
+            "reasoning_effort": null,
+            "source": "not_reported_by_cli"
+          },
+          "elapsed_seconds": 12.505413252860308,
+          "error": null,
+          "model_call_started": true,
+          "requested": {
+            "model": "gpt-6-astra",
+            "reasoning_effort": "high"
+          },
+          "usage": {
+            "cache_write_input_tokens": 0,
+            "cached_input_tokens": 0,
+            "input_tokens": 19634,
+            "output_tokens": 115,
+            "reasoning_output_tokens": 45
+          }
+        },
+        {
+          "actual": {
+            "model": null,
+            "reasoning_effort": null,
+            "source": "not_reported_by_cli"
+          },
+          "elapsed_seconds": 16.567348761484027,
+          "error": null,
+          "model_call_started": true,
+          "requested": {
+            "model": "gpt-6-astra",
+            "reasoning_effort": "high"
+          },
+          "usage": {
+            "cache_write_input_tokens": 0,
+            "cached_input_tokens": 0,
+            "input_tokens": 23283,
+            "output_tokens": 231,
+            "reasoning_output_tokens": 88
+          }
+        },
+        {
+          "actual": {
+            "model": null,
+            "reasoning_effort": null,
+            "source": "not_reported_by_cli"
+          },
+          "elapsed_seconds": 25.429446198046207,
+          "error": null,
+          "model_call_started": true,
+          "requested": {
+            "model": "gpt-6-astra",
+            "reasoning_effort": "high"
+          },
+          "usage": {
+            "cache_write_input_tokens": 0,
+            "cached_input_tokens": 2944,
+            "input_tokens": 32097,
+            "output_tokens": 567,
+            "reasoning_output_tokens": 293
+          }
+        },
+        {
+          "actual": {
+            "model": null,
+            "reasoning_effort": null,
+            "source": "not_reported_by_cli"
+          },
+          "elapsed_seconds": 101.1657030954957,
+          "error": null,
+          "model_call_started": true,
+          "requested": {
+            "model": "gpt-6-astra",
+            "reasoning_effort": "high"
+          },
+          "usage": {
+            "cache_write_input_tokens": 0,
+            "cached_input_tokens": 0,
+            "input_tokens": 43626,
+            "output_tokens": 2400,
+            "reasoning_output_tokens": 457
+          }
+        }
+      ],
+      "tools": [
+        {
+          "arguments": {
+            "field": "/payload/inputs/context/historical_material",
+            "limit": 12000,
+            "offset": 0,
+            "ref": "TaskCard-2e91138e12bd4066b7d5607e73d27104@2"
+          },
+          "name": "read_card",
+          "state": "completed"
+        },
+        {
+          "arguments": {
+            "field": "/payload/inputs/context/historical_material",
+            "limit": 12000,
+            "offset": 12000,
+            "ref": "TaskCard-2e91138e12bd4066b7d5607e73d27104@6"
+          },
+          "name": "read_card",
+          "state": "completed"
+        },
+        {
+          "arguments": {
+            "field": "/payload/inputs/context/historical_material",
+            "limit": 12000,
+            "offset": 25845573,
+            "ref": "TaskCard-2e91138e12bd4066b7d5607e73d27104@6"
+          },
+          "name": "read_card",
+          "state": "completed"
+        },
+        {
+          "arguments": {
+            "field": "/payload/inputs/context/historical_material/h2_actual_source_1/text",
+            "limit": 12000,
+            "offset": 0,
+            "ref": "TaskCard-2e91138e12bd4066b7d5607e73d27104@10"
+          },
+          "name": "read_card",
+          "state": "completed"
+        },
+        {
+          "arguments": {
+            "field": "/payload/inputs/context/historical_material/h2_actual_source_1/text",
+            "limit": 12000,
+            "offset": 12000,
+            "ref": "TaskCard-2e91138e12bd4066b7d5607e73d27104@10"
+          },
+          "name": "read_card",
+          "state": "completed"
+        },
+        {
+          "arguments": {
+            "field": "/payload/inputs/context/historical_material",
+            "limit": 12000,
+            "offset": 48000,
+            "ref": "TaskCard-2e91138e12bd4066b7d5607e73d27104@10"
+          },
+          "name": "read_card",
+          "state": "completed"
+        },
+        {
+          "arguments": {
+            "field": "/payload/inputs/context/historical_material",
+            "limit": 50,
+            "ref": "TaskCard-2e91138e12bd4066b7d5607e73d27104@10",
+            "select": {
+              "metric": "*top1*"
+            }
+          },
+          "name": "read_card",
+          "state": "failed"
+        }
+      ],
+      "decision": {
+        "author": "generation",
+        "content_sha256": "b5252d51a56e9c2471d4a5dc0a7f2a270e21fa7d40993b293aa8eb87b9ae690c",
+        "created_at": "2026-11-17T13:15:37.499978+00:00",
+        "id": "ReviewDecisionCard-7e15961f364c3bcc5553ea7da9ad4c60@1",
+        "kind": "ReviewDecisionCard",
+        "logical_id": "ReviewDecisionCard-7e15961f364c3bcc5553ea7da9ad4c60",
+        "parents": [],
+        "payload": {
+          "decision": "narrow",
+          "evidence_refs": [],
+          "held_conditions": [
+            "官方非蒸馏 deit_base_patch16_224、保护原始 FP checkpoint、FP32、training=false，不训练或微调模型及任务头",
+            "最终方案遵循 static_w4a4/1：规定主体 W4/A4 边界完整覆盖，每固定组至多16码字且零计入，同一语义边不重复 QDQ；head/neck 浮点选择明确记录",
+            "所有拟合只用冻结分类 calibration 的32张；search 1000张用于外层比较，不重拟合量化器；final 不参与搜索",
+            "最终候选导出重载后按原协议评价 ImageNet 50000张和 ADE20K 2000张及对应 FP 对照；ADE 迁移冻结分类状态，不重新校准或训练",
+            "归因对照固定同一完整父状态及非干预参数；局部诊断不冒充最终全网合规或正式性能结论"
+          ],
+          "historical_sources": [
+            {
+              "path": "/root/data-fs/projects/Quantization_Agent_for_ViTs_gonly/EXP/runs/deitb_static_w4a4_gonly_20261115_r2/code/a45f638e2ea0d9081ba58a8f6c8b03f791497e57b05c11f6782ab46fa4c39544/implementation.py",
+              "sha256": "bb5c83b2c6fd5612afb00c451e6e169696d27cdbd99b6ff112454bca3629f633",
+              "supports": "已交付源码中的逐头条件 PV 选参定义；非本次测量"
+            },
+            {
+              "path": "/root/data-fs/projects/Quantization_Agent_for_ViTs_gonly/EXP/runs/deitb_static_w4a4_gonly_20261115_r2/code/8e2dc4c3b875b67e394ed96aa30e651a4d3e31e574003046da23d95fd300200a/implementation.py",
+              "sha256": "15b6d5188a99e1e18dbf9339aed1a5a367140a2a6661bbbc591de634afc6c6cb",
+              "supports": "已交付源码中的九配置 KL 选参、共享实例绑定及非 Q 冻结检查定义"
+            },
+            {
+              "path": "/root/data-fs/projects/Quantization_Agent_for_ViTs_gonly/EXP/runs/deitb_static_w4a4_gonly_20261115_r2/solution_library/acaf7ebee8b31658a824b04a53f0a4cd6e47fe6e4df7a0efa025b1f7db513141.json",
+              "sha256": "adc64b00a862020ee44f521304f498a2a64d54ac93b88cb9a929d7c1caae8eef",
+              "supports": "已读尾部的 H2 round 3 历史指标摘要；未完整读取该方案，不作为本次 Evidence"
+            }
+          ],
+          "inspiration_ids": [
+            "idea-87bb18bb375929e27b7c"
+          ],
+          "mutable_dimensions": [
+            "Query 的静态共享/逐头分组、候选构造及选参目标，优先解释已有首层 Query 实现",
+            "固定概率 A4 码本上的原生编码、独立最近邻与空间二元联合编码及其必要性对照",
+            "校准搜索与参数共享的简化；允许必要的全局诊断、历史完整方案对照和其他位点干预"
+          ],
+          "new_action": "在同一冻结父状态和实际 Query 候选库中分离选参目标与分组效应，检验共享配置及更低成本校准是否足够",
+          "next_step": "后续候选阶段优先沿确切 H2 源码和冻结父状态形成最小归因对照：恢复九个实际 Query 配置并记录 spec、scale/zero、码本与去重关系，在同一候选库上分别按 Query SSE、条件 PV SSE 和教师 KL 选取整配置，使用相同校准数据与平局规则；条件 PV 参考只旁路 Q，保持实际 K4、P4、V4 及其余上下文冻结。固定目标后再比较共享与逐头子集，不能把相同 percentile 网格当成相同实际码器集合。先检查不同规则是否真的选出不同状态，再在独立 search 上分别观察局部误差、整网 KL 与任务指标，避免重复评价相同实例。共享参数减少与校准成本变化单列报告，不声称原生 INT4 加速。H1/H2 各自从可追溯完整父方案形成可回退改动，不原样提交基线。H3 沿现有灵感和原动作恢复确切源码，以同码本独立最近邻对照联合编码，必要时加入非空间配对，隔离标量决策边界与空间性的混杂。本任务只保存方向，不执行上述数值测量、修复或代码生成。",
+          "objective": "转向机制解释、必要性检验与可回退的参数共享/校准简化；不预设更复杂的分组或更长程目标更优。",
+          "phase": "research_direction",
+          "question": "在冻结完整量化上下文中，注意力量化的有效改变来自实际码器、选参目标还是分组容量？哪些逐头参数或联合编码结构可以撤去而保留效果？",
+          "rationale": "当前主题和动作是脚本恢复状态，不追认其为先前真实研究决定。已读历史原源码提供了比继续泛泛讨论收益更具体的问题：a45f638e… 实现对首层 Query 每个 head 在原冻结参数和四个 percentile 候选中，以条件 PV 残差选参；8e2dc4c3… 实现则在原逐头配置、四个共享配置、四个逐头配置组成的九个整配置中，以32张校准上的 FP→量化 logits KL 选择，并绑定共享 percentile=1.0 的预期实例。因此目标、候选集合和分组同时变化，跨轮结果不能归因于其中任一因素。已交付历史 H2 round 3 方案摘要记录 Top-1=72.19、mIoU=28.555077689970183；这是旧协议下的归档值，不是本次测量。当前已读片段不足以核对 round 2 的对应双任务数值，不计算跨轮增益。代码中的一致性断言也不单独证明执行已通过。新的研究价值是检验复杂度是否必要，而不是追逐未核实的提升。H3 空间配对仍是未验证灵感，加载失败不是机制反证；保留其 active 状态及原 open 动作，不用本次主题调整替代原实现。当前运行尚无已核验 B，待测种子不充当保底。",
+          "reconsider_when": "若不同目标选择完全相同的实际码器，则该候选库不能区分目标机制，优先转为搜索冗余与简化问题；若共享配置在受控比较中保留效果，则检验逐头参数的必要性，不推广为共享普遍更优；若共享出现明确退化，则保留逐头回退并定位受影响的 head/token。若局部 PV 误差与整网 KL 或任务表现排序冲突，则修订代理解释，不择优报告。若非 Q 状态无法保持一致或源码/来源绑定失败，则先标记工程阻塞，不作机制判断。H3 若联合编码不改变实际输出，或其差异仅由独立最近邻替换解释，则简化该机制；只有有效受控结果才能改变空间性判断。正式双任务退化与局部代理改善分开处理。",
+          "round": 2,
+          "source_refs": [
+            "ResearchBrief-0c993ee9385d4f05817f4ec8dd1301d5@1",
+            "ReviewDecisionCard-0c9b449615988c80f3b99ffd101b8022@1"
+          ],
+          "topic_id": "topic-1f67aec2acc1f38643f5",
+          "uncertainties": [],
+          "unresolved_questions": [
+            "历史 round 2/round 3 完整结果、候选分数与重载状态尚未全部核对，不能据现有片段完成因果归因或本次排名。",
+            "共享配置的效果来自范围、zero-point、分组约束还是目标选择，尚无同候选库受控结论。",
+            "分类教师 KL 对 ADE 表征的适用性未知；ADE 不参与选参。",
+            "空间二元编码是否超越同码本独立最近邻，以及空间配对是否必要，仍未测量。"
+          ]
+        },
+        "refs": [
+          "ResearchBrief-0c993ee9385d4f05817f4ec8dd1301d5@1",
+          "ReviewDecisionCard-0c9b449615988c80f3b99ffd101b8022@1"
+        ],
+        "run_id": "explain_simplify_r2",
+        "schema_version": "qavit.cards/2",
+        "version": 1
+      },
+      "new_evidence_count": 0,
+      "numerical_tasks": 0,
+      "skill_reads": 0
+    },
+    {
+      "case": "deferred_resume",
+      "attempt": "r1",
+      "status": "completed",
+      "review": "选择 resume，沿原 action ID 暂存→open，主题 paused→active，无重复动作。依据工程前提变化继续机制辨别，明确源码及原数值链尚须核验。",
+      "limits": [
+        "只读取部分真实原代码，未声称完整源码与端到端加载已经验证。",
+        "主题/动作及修复可用性来自明确脚本场景，不是先前自主科研运行。"
+      ],
+      "raw_result": "EXP/validation/engineering_cleanup_20261117_r1/deferred_resume_r1_result.json",
+      "raw_result_sha256": "10087800b39851b542516d64643af629fdc2f6daaeea3d9de19d3c4e458033ff",
+      "run": "EXP/validation/engineering_cleanup_20261117_r1/live/deferred_resume_r1",
+      "evidence_classes": {
+        "decision": "real Generation",
+        "material": "actual historical source and results",
+        "new_conditions": "explicit scenario; low score is hypothetical",
+        "new_numerical_evidence": false,
+        "topic_idea_action": "scripted state"
+      },
+      "elapsed_seconds": 99.69764920510352,
+      "source_identity": {
+        "identity_schema": "qavit.source/3",
+        "core_sha256": "f075eeec76249a8147012a0e3b234590a7e9b4add21e43c2e1e846682a62a59a",
+        "archive_sha256": "4dd4b52d8de6e6eaf994bcb64ec72cb84920526d73d7aa576eb1783eb68bcf2a"
+      },
+      "originals": {
+        "h3_actual_source": {
+          "path": "/root/data-fs/projects/Quantization_Agent_for_ViTs_gonly/EXP/runs/deitb_static_w4a4_gonly_20261115_r2/code/0abd9a8021d7acda42bb230953d9f736ee8a74a7eef486fc6f92433f94cb3eab/implementation.py",
+          "sha256": "ff6a9a1d4d29bf150e2c1ba04dfcc54434a04514aef09e6aabc8c3bac379d847"
+        },
+        "h3_original_hypothesis": {
+          "path": "/root/data-fs/projects/Quantization_Agent_for_ViTs_gonly/EXP/runs/deitb_static_w4a4_gonly_20261115_r2/cards/e62999a16f2ea0714d5c425c2e108ec3ac477315be7e4f52b04bfe98c8825816.json",
+          "sha256": "11f36881d7781077553978a67f6a5ef77681b27b8dea8c1344bf4e95d94ed8c5"
+        },
+        "h3_original_request": {
+          "path": "/root/data-fs/projects/Quantization_Agent_for_ViTs_gonly/EXP/runs/deitb_static_w4a4_gonly_20261115_r2/cards/5d6ea98d48f96667c49a2382bfdb07b90a91e49df0839165b134d2c844a6aae5.json",
+          "sha256": "8c49e3d0462a21aa800cf2b0ba158a9f2170389ba6e29027e291df9523c0ee34"
+        }
+      },
+      "original_hashes_unchanged": true,
+      "model_calls": [
+        {
+          "actual": {
+            "model": null,
+            "reasoning_effort": null,
+            "source": "not_reported_by_cli"
+          },
+          "elapsed_seconds": 19.967466989532113,
+          "error": null,
+          "model_call_started": true,
+          "requested": {
+            "model": "gpt-6-astra",
+            "reasoning_effort": "high"
+          },
+          "usage": {
+            "cache_write_input_tokens": 0,
+            "cached_input_tokens": 0,
+            "input_tokens": 19866,
+            "output_tokens": 224,
+            "reasoning_output_tokens": 159
+          }
+        },
+        {
+          "actual": {
+            "model": null,
+            "reasoning_effort": null,
+            "source": "not_reported_by_cli"
+          },
+          "elapsed_seconds": 76.78491666726768,
+          "error": null,
+          "model_call_started": true,
+          "requested": {
+            "model": "gpt-6-astra",
+            "reasoning_effort": "high"
+          },
+          "usage": {
+            "cache_write_input_tokens": 0,
+            "cached_input_tokens": 0,
+            "input_tokens": 23711,
+            "output_tokens": 1510,
+            "reasoning_output_tokens": 450
+          }
+        }
+      ],
+      "tools": [
+        {
+          "arguments": {
+            "field": "/payload/inputs/context/historical_material",
+            "limit": 12000,
+            "offset": 0,
+            "ref": "TaskCard-926727d52193434cac94618278c3adc8@2"
+          },
+          "name": "read_card",
+          "state": "completed"
+        }
+      ],
+      "decision": {
+        "author": "generation",
+        "content_sha256": "259fa1690bccb84153189a9f1d0ca7ec6691503156f6991e792b269f8283d74b",
+        "created_at": "2026-11-17T13:17:23.457162+00:00",
+        "id": "ReviewDecisionCard-1971566cc2019ddc7de58f7a81b00729@1",
+        "kind": "ReviewDecisionCard",
+        "logical_id": "ReviewDecisionCard-1971566cc2019ddc7de58f7a81b00729",
+        "parents": [],
+        "payload": {
+          "decision": "resume",
+          "evidence_refs": [],
+          "held_conditions": [
+            "保持 ResearchBrief 的官方非蒸馏 DeiT-Base、FP32、training=false；保护原始模型及冻结任务头。",
+            "最终方案遵守 static_w4a4/1：规定量化边完整覆盖，每个固定组至多16码字且包含零；量化参数只由32张分类 calibration 确定，推理前冻结。",
+            "机制对照固定来源实例、实际解码码本、输入 P 与实际 A4 Value，明确局部干预范围；不以局部诊断冒充完整候选。",
+            "最终评价仍为重载冻结实例后的 ImageNet 50000张与 ADE20K 2000张；ADE 不重新校准或训练。当前任务不开展数值实验或代码生成。"
+          ],
+          "inspiration_ids": [
+            "idea-87bb18bb375929e27b7c"
+          ],
+          "mutable_dimensions": [
+            "固定合法概率码本内的编码决策、配对方式与静态模态权重",
+            "用于解释概率误差及其下游传播的校准目标、分组和消融；允许必要的完整方案及全局对照"
+          ],
+          "next_action_id": "action-1e50a3b5cdf8038a",
+          "next_step": "接续原动作：沿已授权入口核实原源码、冻结实例及来源绑定，不以文字近似重写。后续研究在授权允许时复用原五臂局部对照，先检查实际码本和 lambda=1 的代数退化及浮点并列差异，再在相同 P、Vhat 上比较概率误差与实际 PV 误差，分开报告 CLS/patch、位点及交叉项。H1/H2 各自从完整父方案形成可回退改良；H3 沿现有 active 灵感继续。此次仅恢复研究方向，不宣称已完成核验、修复执行或测量。",
+          "objective": "恢复尚未完成的机制辨别，判断联合编码应保留、修复还是简化；不预设精度收益。",
+          "phase": "research_direction",
+          "question": "在冻结的 static W4A4 完整方案中，概率编码决策与配对方式如何影响 PV 输出误差？空间配对的作用能否与标量最近邻决策、一般配对质量误差控制区分？",
+          "rationale": "当前暂停及动作状态是脚本建立的回放状态，不代表此前真实科研判断。宿主报告精确 source selector 与 request-origin 回送已通过 CPU 接口回归修复，原先暂存工作的工程前提发生变化，但尚未证明原数值链已成功运行。已交付历史 implementation.py 正文片段（SHA256 ff6a9a1d4d29bf150e2c1ba04dfcc54434a04514aef09e6aabc8c3bac379d847）包含 native、nearest、spatial_pair、shuffled_pair、lambda_one 对照及 PV 误差分解，因此存在无需重建机制即可接续的可证伪工作。历史加载失败不是机制反证，现无该机制性能分数；完整源码其余部分、配置与执行绑定仍需核实。恢复的依据是可区分替代解释的下一步价值，而非已有投入或假定收益。",
+          "reconsider_when": "来源绑定核验失败则保留为工程阻塞并重新暂存，不作机制否定。有效对照若显示改善仅来自 native 改为 nearest，则转向标量编码简化；空间配对不优于匹配条件的打乱配对，则缩小空间性主张；代理目标下降而实际 PV 误差不降，则检查被忽略的交叉项并修订目标。只有局部机制支持且冻结构造可行时才推进更广传播与任务验证，不能据局部指标宣布正式性能提升。",
+          "resumed_action_ids": [
+            "action-1e50a3b5cdf8038a"
+          ],
+          "round": 2,
+          "source_refs": [
+            "ResearchBrief-ba665e936c1c474b96e3bd833e9d2309@1"
+          ],
+          "topic_id": "topic-7b9652b3ab2cdae7e0c1",
+          "uncertainties": [],
+          "unresolved_questions": [
+            "CPU 接口修复能否在原始来源及冻结实例上完成端到端绑定？",
+            "共享静态模态权重下的空间与打乱对照，能否区分空间结构作用与权重对配对几何的匹配作用？",
+            "局部 PV 误差变化是否能迁移到累计输出偏差及分类、分割任务表现？"
+          ]
+        },
+        "refs": [
+          "ResearchBrief-ba665e936c1c474b96e3bd833e9d2309@1"
+        ],
+        "run_id": "deferred_resume_r1",
+        "schema_version": "qavit.cards/2",
+        "version": 1
+      },
+      "new_evidence_count": 0,
+      "numerical_tasks": 0,
+      "skill_reads": 0,
+      "action_transition": {
+        "before": [
+          {
+            "decision_ref": "ReviewDecisionCard-eb8eaf7d34d2bf8aa1291abee7b5d6bc@1",
+            "description": "在确切原源码与冻结来源上核实空间配对机制，再决定修复或简化",
+            "id": "action-1e50a3b5cdf8038a",
+            "reconsider_when": "来源绑定修复且可形成有效配对测量后复议；若实际码器没有改变则调整问题",
+            "status": "deferred"
+          }
+        ],
+        "after": [
+          {
+            "decision_ref": "ReviewDecisionCard-1971566cc2019ddc7de58f7a81b00729@1",
+            "description": "在确切原源码与冻结来源上核实空间配对机制，再决定修复或简化",
+            "id": "action-1e50a3b5cdf8038a",
+            "reconsider_when": "来源绑定核验失败则保留为工程阻塞并重新暂存，不作机制否定。有效对照若显示改善仅来自 native 改为 nearest，则转向标量编码简化；空间配对不优于匹配条件的打乱配对，则缩小空间性主张；代理目标下降而实际 PV 误差不降，则检查被忽略的交叉项并修订目标。只有局部机制支持且冻结构造可行时才推进更广传播与任务验证，不能据局部指标宣布正式性能提升。",
+            "status": "open"
+          }
+        ],
+        "same_ids": true
+      }
+    }
+  ],
+  "retained_failed_attempt": {
+    "case": "explain_simplify",
+    "attempt": "r1",
+    "status": "incomplete",
+    "failure": {
+      "clarification": null,
+      "error": {
+        "code": "ContractError",
+        "message": "任务执行期间核心或数值实现变化，结果不得进入科学证据"
+      },
+      "state": "failed"
+    },
+    "raw_result": "EXP/validation/engineering_cleanup_20261117_r1/explain_simplify_r1_result.json",
+    "raw_result_sha256": "7d9580d1f8dd43d50c8c2f4ac5219598fe04a417eeecaae532f98ec629ca31c8",
+    "cause": "While updating offline evaluation guidance, task_worker compared full archives instead of execution identity; response rejected by host.",
+    "fix": "Compare core_sha256 on both successful work and StructuredOutputError paths; preserve full archive independently.",
+    "model_calls": [
+      {
+        "actual": {
+          "model": null,
+          "reasoning_effort": null,
+          "source": "not_reported_by_cli"
+        },
+        "elapsed_seconds": 15.909959468990564,
+        "error": null,
+        "model_call_started": true,
+        "requested": {
+          "model": "gpt-6-astra",
+          "reasoning_effort": "high"
+        },
+        "usage": {
+          "cache_write_input_tokens": 0,
+          "cached_input_tokens": 0,
+          "input_tokens": 19605,
+          "output_tokens": 107,
+          "reasoning_output_tokens": 39
+        }
+      },
+      {
+        "actual": {
+          "model": null,
+          "reasoning_effort": null,
+          "source": "not_reported_by_cli"
+        },
+        "elapsed_seconds": 27.710852598771453,
+        "error": null,
+        "model_call_started": true,
+        "requested": {
+          "model": "gpt-6-astra",
+          "reasoning_effort": "high"
+        },
+        "usage": {
+          "cache_write_input_tokens": 0,
+          "cached_input_tokens": 0,
+          "input_tokens": 23241,
+          "output_tokens": 419,
+          "reasoning_output_tokens": 215
+        }
+      },
+      {
+        "actual": {
+          "model": null,
+          "reasoning_effort": null,
+          "source": "not_reported_by_cli"
+        },
+        "elapsed_seconds": 24.035429805517197,
+        "error": null,
+        "model_call_started": true,
+        "requested": {
+          "model": "gpt-6-astra",
+          "reasoning_effort": "high"
+        },
+        "usage": {
+          "cache_write_input_tokens": 0,
+          "cached_input_tokens": 0,
+          "input_tokens": 30415,
+          "output_tokens": 480,
+          "reasoning_output_tokens": 217
+        }
+      },
+      {
+        "actual": {
+          "model": null,
+          "reasoning_effort": null,
+          "source": "not_reported_by_cli"
+        },
+        "elapsed_seconds": 96.61977573670447,
+        "error": null,
+        "model_call_started": true,
+        "requested": {
+          "model": "gpt-6-astra",
+          "reasoning_effort": "high"
+        },
+        "usage": {
+          "cache_write_input_tokens": 0,
+          "cached_input_tokens": 0,
+          "input_tokens": 46477,
+          "output_tokens": 2279,
+          "reasoning_output_tokens": 516
+        }
+      }
+    ],
+    "elapsed_seconds": 297.13562794961035
+  },
+  "calls_including_failed_attempt": 13,
+  "usage_including_failed_attempt": {
+    "input_tokens": 397997,
+    "cached_input_tokens": 2944,
+    "output_tokens": 12408,
+    "reasoning_output_tokens": 3007
+  },
+  "usage_boundary": "reasoning_output_tokens is a subfield, not added to output_tokens; CLI actual model/effort not reported, requested route preserved",
+  "limits": [
+    "Three targeted scenarios, not a formal long run or statistical model-quality estimate.",
+    "All new topic/idea/action states are scripted fixtures; decisions and tool requests are real model outputs.",
+    "No new GPU/numerical evidence, no complete ImageNet/ADE20K evaluation, no new Eval-L0 judge scores.",
+    "Final integration repaired recovery-note deduplication to retain all evidence/configuration/code handles. These no-numerical-request replays did not exercise that branch; exact continuation with retained requests is covered by the low-unranked-H3 integration fixture."
+  ]
+}

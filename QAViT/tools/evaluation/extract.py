@@ -13,7 +13,6 @@ from .common import (QAVIT, EvalError, SourceStore, canonical, confined, digest,
                      fingerprint, loads, redact, write_json)
 from .judge import DEFAULT_EFFORT, DEFAULT_MODEL
 from .metrics import call_metrics, run_timing, task_timing, tool_metrics
-from .rules import task_catalog
 
 
 class FrozenRun:
@@ -271,7 +270,7 @@ def coverage_from_context(context):
 def build_case(run, task, calls, rules):
     purpose, role = task["inputs"]["purpose"], task["role"]
     context = task["inputs"].get("context", {})
-    case = {"schema_version": VERSION, "case_id": "case-" + fingerprint([run.run_id, task["task_id"], purpose])[:24],
+    case = {"schema_version": VERSION, "evidence_projection": "exact_lists_and_repeated_bodies/1", "case_id": "case-" + fingerprint([run.run_id, task["task_id"], purpose])[:24],
             "run_id": run.run_id, "task_id": task["task_id"], "task_key": task["key"],
             "role": role, "purpose": purpose, "rubric_id": rules.selected[purpose]["rubric_id"],
             "slot": context.get("slot"), "selection_stage": context.get("selection_stage"),
@@ -374,7 +373,6 @@ def prepare(run_path, output, rules, pricing=None):
     if output.is_relative_to(run_path) or run_path.is_relative_to(output):
         raise EvalError("evaluation output must not overlap historical run")
     run = FrozenRun(run_path, output)
-    catalog = task_catalog()
     by_task = defaultdict(list)
     for call in run.calls:
         by_task[call["task_id"]].append(call)
@@ -386,8 +384,9 @@ def prepare(run_path, output, rules, pricing=None):
         if task["kind"] != "llm":
             continue
         if purpose not in rules.selected:
-            reason = "supervisor_program_or_unsupported_purpose"
-        elif task.get("role") != catalog[purpose]["role"]:
+            reason = ('gonly_selection_rubric_unavailable' if purpose == 'select' else
+                      'supervisor_program_or_unsupported_purpose' if purpose == 'supervise' else 'rubric_not_covered')
+        elif not rules.accepts_role(purpose, task.get('role')):
             reason = "role_purpose_mismatch"
         elif purpose == "rank" and any((run.card(ref) or {}).get("author") == "program" or
                     (run.card(ref) or {}).get("payload", {}).get("selection_source") == "existing_verdicts_and_screening"

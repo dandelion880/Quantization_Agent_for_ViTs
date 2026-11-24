@@ -13,11 +13,53 @@ from runtime.budget import BudgetExhausted, RequestBudgetInsufficient
 from runtime.subscription import structured_output_error
 from agents.roles import role_spec
 from tools.experiments import verify_assets
-from runtime.gpu_resources import ResourceBusy, placement
+from runtime.gpu_resources import ResourceBusy, ResourceUnavailable, placement
 
 
 
 class WorkflowDriver:
+    def note_resource_wait(self, task, error):
+        now = time.monotonic()
+        waits = self.__dict__.setdefault('_resource_waits', {})
+        entry = waits.setdefault(task['task_id'], {'idle_since': now})
+        entry.update(code=type(error).__name__, message=str(error),
+                     unavailable=isinstance(error, ResourceUnavailable),
+                     next_probe=now+self.config['runtime'].get('resource_poll_seconds', 2))
+        if not task.get('resource_wait') or task['resource_wait'].get('code') != entry['code']:
+            self.queue.change(task['task_id'], task['state'], patch={'resource_wait': {
+                'code': entry['code'], 'message': entry['message'], 'since_unix': time.time(),
+                'origin': 'resource', 'recovery': 'resume_after_resources_available'}})
+
+    def resource_blockage(self):
+        waits = self.__dict__.setdefault('_resource_waits', {})
+        active = self.queue.snapshot(states={'running'}, fields=('kind',))
+        now = time.monotonic()
+        if active:
+            # Live work is progress. Ordinary queueing behind siblings is not
+            # no-progress time and never becomes Agent time.
+            for entry in waits.values():
+                entry['idle_since'] = now
+            return None
+        limit = self.config['runtime'].get('resource_wait_timeout_seconds', 900)
+        blocked = []
+        for tid, entry in list(waits.items()):
+            if self.queue.get(tid)['state'] not in ('ready','retry','pending'):
+                waits.pop(tid)
+                continue
+            elapsed = now-entry['idle_since']
+            if entry['unavailable'] or elapsed >= limit:
+                blocked.append({'task_id':tid, 'code':entry['code'], 'message':entry['message'],
+                                'idle_seconds':elapsed})
+        return {'code':'resource_blocked', 'origin':'resource', 'tasks':blocked,
+                'recovery':'保存确切任务与预算；恢复已授权设备后 resume，不自动扩大 GPU 授权。'} if blocked else None
+
+    def persist_status(self, status):
+        now = time.monotonic()
+        if now-getattr(self, '_status_written_at', -float('inf')) >= 1:
+            atomic_json(self.run_dir / 'status.json', {'status':status, 'sequence':self.journal.sequence,
+                         'remaining_seconds':self.budget.snapshot()['remaining_seconds']})
+            self._status_written_at = now
+
     def dispatch_candidates(self):
         # 旧快照可保持任务身份/尝试和读取视图，只恢复其每场互斥资源。
         tasks = self.queue.snapshot(states={"pending", "ready", "retry", "waiting", "needs_clarification"},
@@ -27,6 +69,10 @@ class WorkflowDriver:
                 keys = [k for k in task['resource_keys'] if not k.startswith(('model:', 'gpu:'))]
                 if keys != task['resource_keys']:
                     self.queue.change(task['task_id'], task['state'], patch={'resource_keys': keys})
+            if (task['kind'] == 'llm' and task['role'] != 'judger'
+                    and task['resource_keys'] == ['llm:subscription']):
+                self.queue.change(task['task_id'], task['state'], patch={
+                    'resource_keys': ['llm:coding'] if task['role'] == 'coding' else []})
             pair = task['inputs'].get('context', {}).get('pair')
             if (task['kind'] == 'llm' and task['role'] == 'judger' and pair
                     and task['state'] not in ('running', 'completed', 'failed', 'cancelled', 'ineligible')
@@ -62,8 +108,10 @@ class WorkflowDriver:
             messages = [{'role': 'assistant', 'content': {'tool_calls': [
                 {'id': c['id'], 'name': c['name']} for c in row['content'].get('tool_calls', [])]}}
                 for row in task.get('conversation', [])]
-            return {"kind": "llm", "spec": role_spec(task["role"], inputs["purpose"], context,
-                        self.config["llm"], messages=messages), 'read_permissions': permissions,
+            spec = role_spec(task["role"], inputs["purpose"], context, self.config["llm"], messages=messages)
+            if task['role'] == 'coding' and spec['settings'].get('coding_native_tools') is True:
+                spec['native_read_permissions'] = {p:h for p,h in permissions.items() if p.endswith('.py')}
+            return {"kind": "llm", "spec": spec, 'read_permissions': permissions,
                     "estimated_seconds": min(self.config["runtime"]["task_timeout_seconds"], self.budget.snapshot()["remaining_seconds"])}
         if task["kind"] == "experiment":
             experiment = self.journal.card(inputs["experiment_ref"])
@@ -72,7 +120,7 @@ class WorkflowDriver:
             return {"kind": task["kind"], "experiment": experiment, "approval": inputs.get("approval"),
                     "candidate": inputs.get("candidate"),
                     "gpu": resources.get("gpu"), "cpu_threads": resources["cpu_threads"],
-                    **placement(experiment, self.config['runtime'], self.brief['payload']),
+                    **placement(experiment, self.config['runtime'], self.brief['payload'], approval=inputs.get('approval')),
                     "estimated_seconds": resources["estimated_seconds"]}
         if task["kind"] == "literature":
             return {"kind": "literature", **inputs, "estimated_seconds": 45}
@@ -85,6 +133,9 @@ class WorkflowDriver:
         count = 0
         for candidate in self.dispatch_candidates():
             task = self.queue.get(candidate["task_id"])
+            waiting = getattr(self, '_resource_waits', {}).get(task['task_id'])
+            if waiting and time.monotonic() < waiting['next_probe']:
+                continue
             if task['kind'] == 'experiment':
                 parent = self.queue.snapshot(fields=('experiment_ref',)).get(task['inputs'].get('parent_task'))
                 if (task['task_id'] in held_bindings or (parent and parent.get('experiment_ref')
@@ -116,7 +167,7 @@ class WorkflowDriver:
                 if task['role'] == 'judger':
                     if sum(t['role'] == 'judger' for t in llms) >= 3:
                         continue
-                elif any(t['role'] != 'judger' for t in llms):
+                elif task['role'] == 'coding' and any(t['role'] == 'coding' for t in llms):
                     continue
             if task["kind"] == "experiment" and sum(t["kind"] == "experiment" for t in active) >= self.config["runtime"]["experiment_concurrency"]:
                 continue
@@ -158,18 +209,22 @@ class WorkflowDriver:
                                task_id=task["task_id"], added_refs=stale, memory_version=self.journal.memory_version)
             try:
                 self.runtime.launch(task, self.request_body(task), input_versions=versions)
-            except ResourceBusy:
+            except ResourceBusy as exc:
+                self.note_resource_wait(task, exc)
                 continue
             except RequestBudgetInsufficient as exc:
                 self.queue.claim(task["task_id"], input_versions=versions)
                 self.queue.fail(task["task_id"], {"code": type(exc).__name__, "message": str(exc)})
+            getattr(self, '_resource_waits', {}).pop(task['task_id'], None)
             count += 1
         return count
 
-    def update_numeric_wait(self):
+    def update_numeric_wait(self, *, draining=False):
         tasks = list(self.queue.snapshot(fields=("kind", "state")).values())
         numeric = any(t['kind'] == 'experiment' and t['state'] in ('pending', 'ready', 'running', 'retry') for t in tasks)
-        agent = any(t['kind'] != 'experiment' and t['state'] in ('ready', 'running', 'retry') for t in tasks)
+        # During drain dispatch is suspended. Only a running nonnumeric job overlaps.
+        active = ('running',) if draining else ('ready', 'running', 'retry')
+        agent = any(t['kind'] != 'experiment' and t['state'] in active for t in tasks)
         self.budget.numeric_wait(numeric and not agent)
 
     def numeric_running(self):
@@ -206,6 +261,8 @@ class WorkflowDriver:
                 # Reuse the same bounded contract-repair counter; no transport retry loop.
                 raise ContractError(error["message"])
             retry = code in ("worker_lost", "InterruptedError", "llm_timeout", "llm_transport_error", "llm_format_error")
+            if task['kind'] == 'experiment' and error.get('origin') in ('implementation','request'):
+                retry = False  # Return to the owner; never replay the same failing source/intent.
             audit = Path(path).parent / "llm_audit.json"
             before_call = task["kind"] == "llm" and audit.exists() and read_json(audit).get("model_call_started") is False
             # A transport/timeout failure is recoverable on either side of the
@@ -250,7 +307,8 @@ class WorkflowDriver:
             evidence = self.broker.evidence(experiment, receipt, path, code_artifact=approval["candidate"] if approval else None)
             self.queue.finish(task["task_id"], outputs=[evidence["id"]], result={"receipt": str(path)}, cards=[evidence],
                               events=[self.memory.live_update(evidence_ref=evidence["id"])])
-            if experiment["payload"]["level"] == "L3":
+            if (experiment["payload"]["level"] == "L3" and
+                    experiment['payload']['execution'].get('result_protocol', {}).get('purpose') != 'development'):
                 provenance = evidence["payload"]["provenance"]
                 if provenance.get("model_ref"):
                     try:
@@ -342,7 +400,13 @@ class WorkflowDriver:
         tasks = self.queue.snapshot()
         # A returned failure is part of the researcher's history, not unfinished
         # work. Reopening it after a revised plan would replay superseded science.
-        settled = {row['task'] for task in tasks.values() for row in task.get('tool_results', [])}
+        finished_rounds = {e['round'] for e in self.journal.events if e['type'] == 'round_finished'}
+        settled = {t['task_id'] for t in tasks.values()
+                   if t['inputs'].get('context', {}).get('round') in finished_rounds
+                   and t['inputs'].get('purpose') != 'record'}
+        settled.update(row['task'] for task in tasks.values() for row in task.get('tool_results', []))
+        settled.update(self.journal.card(e['failed_task_ref'])['payload']['task_id']
+                       for e in self.journal.events if e['type'] == 'selection_fallback')
         settled.update(t['inputs']['previous_request_task'] for t in tasks.values()
                        if t['inputs'].get('previous_request_task'))
         settled.update(t['inputs']['context']['previous_request_task'] for t in tasks.values()
@@ -379,17 +443,29 @@ class WorkflowDriver:
         status = status or (events[-1]["status"] if events else "created")
         if error is None and events and status == events[-1]["status"]:
             error = events[-1].get("error")
-        rounds = [{"round": n, "matches": self.matches(n), "l3_outcome": self.l3_outcome(n)}
+        rounds = [{"round": n, "preselection": self.selection_card(n), "l3_outcome": self.l3_outcome(n)}
                   for n in self.budget.snapshot()["rounds_started"]]
-        attempts = [r["l3_outcome"] for r in rounds if r["l3_outcome"]["task_refs"]]
+        expected_rounds = list(range(1, self.config.get('budget', {}).get('max_rounds', 10) + 1))
+        validated_rounds = [r['round'] for r in rounds if r['l3_outcome']['formal_validation_success']]
+        # The aggregate describes the entire requested scope. A successful early
+        # round cannot stand in for skipped, deferred or not-yet-started rounds.
+        formal_success = (self.config['enable_l3'] and not self.config.get('scope_target')
+                          and bool(expected_rounds) and set(expected_rounds) <= set(validated_rounds))
         value = {"schema_version": "qavit.report/2", "run_id": self.journal.run_id,
-                 "status": status, "error": error, "workflow_completed": status == "completed",
+                 "status": status, "error": error, "architecture": self.config.get("architecture", "full"),
+                 "workflow_completed": status == "completed",
                  "scope_target": self.config.get("scope_target"), "scope_target_reached": self.scope_target_reached(),
                  "completed_rounds": sorted({e["round"] for e in self.journal.events if e["type"] == "round_finished"}),
-                 "formal_validation_success": bool(attempts) and all(r["formal_validation_success"] for r in attempts),
-                 "numerical_validation_status": "validated" if attempts and all(r["formal_validation_success"] for r in attempts) else "not_validated",
+                 "formal_validation_success": bool(formal_success),
+                 "numerical_validation_status": "validated" if formal_success else "not_validated",
+                 "expected_rounds": expected_rounds, "validated_rounds": validated_rounds,
                  "tasks": counts, "budget": self.budget.snapshot(), "memory": self.memory.snapshot(),
                  "rounds": rounds,
+                 'pending_synthesis': [{k:e[k] for k in ('round','task_ref','candidate_refs','pending_stages','next_action')}
+                    for e in self.journal.events if e['type']=='synthesis_pending'
+                    and self.selection_card(e['round']) is None],
+                 "research_topics": [{k:r[k] for k in ('id','ref','status','question','objective','next_step','reconsider_when')}
+                                     for r in self.topics.snapshot().values()],
                  "clarifications": [{"task_id": t["task_id"], **t["clarification"]} for t in tasks.values() if t["state"] == "needs_clarification"],
                  "failures": [{"task_id": t["task_id"], "key": t["key"], "error": t.get("error")} for t in tasks.values() if t["state"] == "failed"],
                  "evidence": [{"id": c["id"], "source": c["payload"]["measurement_source"],
@@ -414,9 +490,12 @@ class WorkflowDriver:
                 # 崩溃前已提交的工作结果优先接收；不消耗新的实验或模型调用。
                 self.poll()
                 while True:
-                    budget = self.budget.check(allow_numeric_drain=self.numeric_running())
+                    scan = time.monotonic()-getattr(self, '_disk_checked_at', -float('inf')) >= 5
+                    budget = self.budget.check(allow_numeric_drain=self.numeric_running(), check_disk=scan)
+                    if scan:
+                        self._disk_checked_at = time.monotonic()
                     self.poll()
-                    self.update_numeric_wait()
+                    self.update_numeric_wait(draining=self.numeric_running() and budget['research_remaining_seconds'] <= 0)
                     self.release_scope_closeout_reserve()
                     budget = self.budget.snapshot()
                     if self.transport_blocked:
@@ -465,12 +544,15 @@ class WorkflowDriver:
                         break
                     dispatched = self.dispatch()
                     self.update_numeric_wait()
+                    blockage = self.resource_blockage()
+                    if blockage:
+                        status, error = 'resource_blocked', blockage
+                        break
                     tasks = self.queue.snapshot(fields=("state",)).values()
                     if not dispatched and not any(t["state"] in ("running", "ready", "retry") for t in tasks):
                         status = "needs_clarification" if any(t["state"] == "needs_clarification" for t in tasks) else "blocked"
                         break
-                    atomic_json(self.run_dir / "status.json", {"status": status, "sequence": self.journal.sequence,
-                                                               "remaining_seconds": self.budget.snapshot()["remaining_seconds"]})
+                    self.persist_status(status)
                     time.sleep(.1)
             except BudgetExhausted as exc:
                 status, error = "budget_exhausted", str(exc)
@@ -494,6 +576,8 @@ class WorkflowDriver:
                 try:
                     if not failures and self.mark_scope_target_if_ready():
                         status = "scope_target_reached"
+                    for number in self.budget.snapshot()["rounds_started"]:
+                        self.consider_l3(number)
                     pending = self.memory.recording_batch()
                     if pending['review_required']:
                         self.event('recorder_pending', f'recorder/pending/{self.journal.sequence}', batch=pending, reason=status)

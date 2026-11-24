@@ -45,6 +45,21 @@ def bias_transform(x, weight):
     return {"scale": scale, "shift": torch.full_like(scale, -GELU_NEGATIVE_BOUND)}, None
 
 
+def _lut_roundoff_equal(actual, expected):
+    if torch.equal(actual, expected):
+        return True
+    if (actual.shape != expected.shape or actual.dtype != expected.dtype
+            or expected.dtype not in (torch.float32, torch.float64)):
+        return False
+    # CPU/CUDA division by resolution can differ by one ULP. Frozen LUT bytes
+    # remain unchanged and are protected by the artifact hash; do not refit or
+    # rewrite them to match the device used for validation.
+    actual = actual.to(expected.device)
+    lower = torch.nextafter(expected, torch.full_like(expected, -float('inf')))
+    upper = torch.nextafter(expected, torch.full_like(expected, float('inf')))
+    return bool(((actual >= lower) & (actual <= upper)).all())
+
+
 def validate_params(params, spec):
     require(set(params) == {"scale", "base_q", "shift", "table1", "table2"}, "AdaLog 参数字段不符")
     require(all(torch.is_tensor(v) and bool(torch.isfinite(v).all()) for v in params.values()), "AdaLog 参数非有限")
@@ -53,4 +68,6 @@ def validate_params(params, spec):
     require(1 <= q <= 256 and q == int(q) and params["scale"].item() > 0, "AdaLog base/scale 非法")
     require(params["shift"].item() in (0.0, float(torch.tensor(GELU_NEGATIVE_BOUND))), "AdaLog shift 非法")
     expected = parameters(params["scale"], spec["bits"], q, params["shift"].item())
-    require(all(torch.equal(params[k], expected[k]) for k in ("table1", "table2")), "AdaLog LUT 与 base/bit 不一致")
+    require(torch.equal(params['table1'], expected['table1'])
+            and _lut_roundoff_equal(params['table2'], expected['table2']),
+            "AdaLog LUT 与 base/bit 不一致")

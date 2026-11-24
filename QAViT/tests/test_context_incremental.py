@@ -16,11 +16,11 @@ class IncrementalContextRegression(TempCase):
     tools = delivery.DeliveryRegression.tools
     science = delivery.DeliveryRegression.science
 
-    def sample_card(self, wf):
+    def sample_card(self, wf, count=128):
         cards = self.science(wf, 'sample-sharing', commit=False)
         payload = deepcopy(cards[1]['payload'])
-        ids = ['validation/' + str(i).zfill(8) for i in range(128)]
-        data = {'search': {'sample_ids': ids, 'sample_count': 128, 'split': 'search', 'full_dataset': False}}
+        ids = ['validation/' + str(i).zfill(8) for i in range(count)]
+        data = {'search': {'sample_ids': ids, 'sample_count': count, 'split': 'search', 'full_dataset': False}}
         payload['scope'] = {'data': deepcopy(data), 'limitations': ['subset only'], 'arbitrary_list': ids}
         payload['provenance'] = {'execution_facts': {'data': deepcopy(data)}, 'sample_selection': {'search': ids}}
         payload['observations'] = {'accuracy_delta': -0.02, 'counterevidence': 'held-out accuracy decreased', 'conditions': 'same 128 subset'}
@@ -28,27 +28,49 @@ class IncrementalContextRegression(TempCase):
         wf.journal.commit('sample-sharing', cards=[cards[0], card])
         return cards[0], card, ids
 
-    def test_same_samples_once_with_precise_sources_and_order_preserved(self):
+    def test_large_samples_are_compact_with_precise_sources_and_order_preserved(self):
         wf = self.workflow(1)
         _, card, ids = self.sample_card(wf)
         seen = {}
         view = wf.present_card(card)
         wf.coalesce_condition_lists(card, view, seen)
         payload = view['payload']
-        self.assertEqual(payload['scope']['data']['search']['sample_ids'], ids)
         self.assertEqual(payload['scope']['arbitrary_list'], ids)
         self.assertEqual(payload['observations'], card['payload']['observations'])
-        for value in [payload['provenance']['execution_facts']['data']['search']['sample_ids'],
+        for value in [payload['scope']['data']['search']['sample_ids'],
+                      payload['provenance']['execution_facts']['data']['search']['sample_ids'],
                       payload['provenance']['sample_selection']['search']]:
             self.assertEqual(value['sha256'], fingerprint(ids))
+            self.assertEqual(value['items'], len(ids))
+            self.assertTrue(value['ordered'])
             self.assertEqual(wf.card_field(card, value['read_card']['field']), ids)
-            source = value['body_location']['same_value_as']
-            self.assertEqual(wf.card_field(view, source['field']), ids)
+            self.assertNotIn('body_location', value)  # No full large list was displayed.
         changed = deepcopy(card)
         changed['payload']['scope']['data']['search']['sample_ids'].reverse()
         second = wf.present_card(changed)
         wf.coalesce_condition_lists(changed, second, seen)
-        self.assertEqual(second['payload']['scope']['data']['search']['sample_ids'], ids[::-1])
+        reordered = second['payload']['scope']['data']['search']['sample_ids']
+        self.assertEqual(reordered['sha256'], fingerprint(ids[::-1]))
+        self.assertNotEqual(reordered['sha256'], fingerprint(ids))
+        self.assertEqual(wf.card_field(changed, reordered['read_card']['field']), ids[::-1])
+        self.assertEqual(wf.journal.card(card['id']), card)
+
+    def test_short_samples_share_one_complete_body_with_exact_sources(self):
+        wf = self.workflow(1)
+        _, card, ids = self.sample_card(wf, count=8)
+        view = wf.present_card(card)
+        wf.coalesce_condition_lists(card, view, {})
+        payload = view['payload']
+        self.assertEqual(payload['scope']['data']['search']['sample_ids'], ids)
+        self.assertEqual(payload['scope']['arbitrary_list'], ids)  # Unrelated arrays are not identity lists.
+        for value in [payload['provenance']['execution_facts']['data']['search']['sample_ids'],
+                      payload['provenance']['sample_selection']['search'],
+                      payload['key_facts']['conditions']['data']['search']['sample_ids']]:
+            self.assertEqual(value['sha256'], fingerprint(ids))
+            self.assertEqual(wf.card_field(card, value['read_card']['field']), ids)
+            source = value['body_location']['same_value_as']
+            self.assertEqual(source['ref'], card['id'])
+            self.assertEqual(wf.card_field(view, source['field']), ids)
         self.assertEqual(wf.journal.card(card['id']), card)
 
     def test_context_keeps_outcome_conditions_and_raw_read(self):

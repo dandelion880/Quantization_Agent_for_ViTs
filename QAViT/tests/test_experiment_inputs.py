@@ -12,7 +12,7 @@ from core.journal import atomic_json, file_sha256, read_json
 from core.workflow import Workflow
 from runtime.budget import BudgetLedger, BudgetExhausted, RequestBudgetInsufficient
 from runtime.paths import ROOT, QAVIT
-from tests.support import validation_config, experiment_payload, review
+from tests.support import validation_config, experiment_payload, review, hypothesis
 from tests.test_infrastructure import TempCase
 from tools.data_receipt import data_receipt
 from tools.experiments import preflight_experiment
@@ -143,7 +143,6 @@ class DataReceiptRegression(InputCase):
                 self.assertIn("不是结构化评测列表", " ".join(data_receipt(brief)["unknowns"]))
 
     def test_ade_receipt_uses_existing_settings_and_marks_content_validation_unknown(self):
-        from tools import segmentation
         root = self.root / "ade"
         for kind, suffix in (("images", ".jpg"), ("annotations", ".png")):
             folder = root / kind / "validation"
@@ -153,14 +152,14 @@ class DataReceiptRegression(InputCase):
         atomic_json(settings, {"data_root": str(root), "pipeline": [{"fixture": True}]})
         brief = validation_config()["research_brief"]
         brief["evaluation_protocol"] = {"evaluations": [{"kind": "ade_frozen", "count": None}]}
-        with patch.object(segmentation, "SETTINGS", settings):
-            receipt = data_receipt(brief)
-            row, = receipt["available_data"]
-            self.assertEqual(row["available_samples"], 3)
-            self.assertEqual(row["source"]["path"], str(settings))
-            self.assertIn("未读取内容", row["checks"])
-            (root / "annotations/validation/2.png").unlink()
-            self.assertIsNone(data_receipt(brief)["available_data"][0]["available_samples"])
+        brief['model']['adapter']['backend_overrides']['segmentation_config'] = str(settings)
+        receipt = data_receipt(brief)
+        row, = receipt["available_data"]
+        self.assertEqual(row["available_samples"], 3)
+        self.assertEqual(row["source"]["path"], str(settings))
+        self.assertIn("未读取内容", row["checks"])
+        (root / "annotations/validation/2.png").unlink()
+        self.assertIsNone(data_receipt(brief)["available_data"][0]["available_samples"])
 
     def test_task_inputs_keep_role_boundaries_and_do_not_copy_debate_memory(self):
         wf = self.workflow(1)
@@ -255,9 +254,18 @@ class BriefEvaluationRegression(InputCase):
         protocols.append({"evaluations": [cases[1][0], {"kind": "ade_frozen", "count": None}], "full_dataset": True})
         for index, protocol in enumerate(protocols):
             wf = Workflow(self.root / str(index), self.configuration(protocol))
-            task = wf.queue.get(wf.enqueue_role("fixture/plan", "plan_l3"))
+            candidate = make_card('HypothesisCard', wf.journal.run_id, hypothesis(1, 'H1'))
+            wf.journal.commit('fixture/candidate', cards=[candidate])
+            select_id = wf.enqueue_role('r001/select', 'select', refs=[candidate['id']],
+                context={'round': 1, 'candidate_refs': {'H1': candidate['id']}})
+            wf.queue.ready()
+            wf.submit(wf.queue.claim(select_id), {'rationale': 'Protocol fixture candidate'}, 'fixture')
+            selection = wf.selection_card(1)
+            task = wf.queue.get(wf.enqueue_role("fixture/plan", "plan_l3", context={
+                'round': 1, 'slot': 'H1', 'selection_ref': selection['id'], 'hypothesis_ref': candidate['id']}))
             wf.queue.ready(); task = wf.queue.claim(task["task_id"])
             draft = self.draft(list(reversed(protocol["evaluations"])))
+            draft['candidate_binding'] = {'selection_ref': selection['id'], 'hypothesis_ref': candidate['id']}
             original = deepcopy(draft)
             with patch.object(wf.broker, "freeze", side_effect=AssertionError("preflight cannot freeze")):
                 wf.submit(task, draft, "CPU_CONTRACT_FIXTURE")
@@ -289,7 +297,10 @@ class BriefEvaluationRegression(InputCase):
 
     def evidence(self, wf, *, full=False, commit=True):
         rows = wf.brief["payload"]["evaluation_protocol"]["evaluations"]
-        spec = wf.broker.freeze(self.draft(rows), requester="judger")
+        from tests.support import scheduler_l3_draft
+        draft = scheduler_l3_draft()
+        draft["execution"]["evaluations"] = deepcopy(rows)
+        spec = wf.broker.freeze(draft, requester="judger")
         wf.journal.commit("fixture/spec", cards=[spec])
         evaluations = {}
         for row in rows:

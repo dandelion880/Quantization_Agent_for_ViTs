@@ -15,6 +15,32 @@ class ReadDeliveryBoundaries(TempCase):
     science=delivery.DeliveryRegression.science
     screening=delivery.DeliveryRegression.screening
 
+    def test_prior_asset_version_can_expand_an_unread_tail_without_reinjecting_it(self):
+        from unittest.mock import patch
+        from core.journal import file_sha256
+        wf=self.workflow(1)
+        path=self.root/'strategy.md'
+        path.write_text('first page '+'x'*14000+' OLD CONTRARY RESULT')
+        sha=file_sha256(path)
+        task=self.task(wf,'generate',round=1,slot='H1',hypothesis_type='existing_method')
+        task,_=self.begin(wf,task)
+        original=wf.authorized_assets
+        def allowed(task):
+            return {**original(task),str(path):file_sha256(path)}
+        with patch.object(wf,'authorized_assets',side_effect=allowed):
+            task,ctx=self.tools(wf,task,[('read_asset',{'asset':str(path),'limit':8})])
+            version=ctx['tool_results'][-1]['result']['version_read']
+            self.assertEqual(version['sha256'],sha)
+            path.write_text('later version')
+            task,ctx=self.tools(wf,task,[('read_card',{'ref':wf.brief['id']})])
+            self.assertEqual(ctx['tool_results'][0]['result']['delivery'],'previously_delivered_body_omitted')
+            task,ctx=self.tools(wf,task,[('read_asset',{**version,'find':'OLD CONTRARY','limit':50})])
+            self.assertEqual(ctx['tool_results'][-1]['result']['text'],'OLD CONTRARY RESULT')
+            self.assertEqual(ctx['tool_results'][-1]['result']['sha256'],sha)
+            with self.assertRaises(ContractError):
+                wf.host_tool({'inputs':{'parent_task':task['task_id'],'name':'read_asset',
+                                        'arguments':{'asset':str(path),'sha256':'1'*64}}})
+
     def test_result_batch_is_complete_isolated_and_does_not_copy_queue_per_row(self):
         from unittest.mock import patch
         wf=self.workflow(1);rows=[]

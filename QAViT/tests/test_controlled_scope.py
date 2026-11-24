@@ -13,6 +13,7 @@ from runtime.budget import BudgetLedger, BudgetExhausted, RequestBudgetInsuffici
 from runtime.run_segments import run_managed
 from runtime.task_runtime import TaskRuntime
 from runtime.task_queue import GlobalTaskQueue
+from tests.support import advance_with_topic_fixture
 from tests.support import validation_config, hypothesis
 from tests.test_infrastructure import TempCase, WorkflowSimulation
 
@@ -28,7 +29,7 @@ class ScopeBoundary(TempCase):
             wf.budget.begin_segment()
         script = WorkflowSimulation()
         for _ in range(100):
-            self.assertFalse(wf.advance())
+            self.assertFalse(advance_with_topic_fixture(wf))
             if "r002/generate/H1" in wf.tasks():
                 return wf
             for candidate in wf.queue.ready():
@@ -47,19 +48,19 @@ class ScopeBoundary(TempCase):
         for slot in ("H1", "H2"):
             self.submit_h(wf, slot)
             wf = Workflow(wf.run_dir)
-            self.assertFalse(wf.advance())
-            self.assertFalse(wf.advance())
+            self.assertFalse(advance_with_topic_fixture(wf))
+            self.assertFalse(advance_with_topic_fixture(wf))
             self.assertFalse(any("r002/screen" in k for k in wf.tasks()))
         # A required child must settle even if its parent's durable H is present.
         parent = wf.tasks()["r002/generate/H3"]
         child = wf.queue.enqueue("r002/generate/H3/control_child", "host_tool",
                                  inputs={"parent_task": parent["task_id"]})
         self.submit_h(wf, "H3")
-        self.assertFalse(wf.advance())
+        self.assertFalse(advance_with_topic_fixture(wf))
         wf.queue.ready(); wf.queue.claim(child); wf.queue.finish(child, result={"source": "test_double"})
-        self.assertTrue(wf.advance())
+        self.assertTrue(advance_with_topic_fixture(wf))
         seq = wf.journal.sequence
-        self.assertTrue(wf.advance())
+        self.assertTrue(advance_with_topic_fixture(wf))
         self.assertEqual(seq, wf.journal.sequence)
         for _ in range(2):
             wf = Workflow(wf.run_dir)
@@ -69,7 +70,8 @@ class ScopeBoundary(TempCase):
             self.assertTrue(result["scope_target_reached"])
             self.assertFalse(result["workflow_completed"])
             self.assertEqual(result["completed_rounds"], [1])
-            self.assertFalse(any(k.startswith("r002/") and "/generate/" not in k for k in wf.tasks()))
+            self.assertFalse(any(k.startswith("r002/") and "/generate/" not in k and k != "r002/focus"
+                                 for k in wf.tasks()))
         self.assertEqual(len(wf.memory.snapshot()["L3"]), 1)
         self.assertTrue(wf.memory.recording_batch()["review_required"])
 
@@ -147,7 +149,7 @@ class ScopeBoundary(TempCase):
                              closeout_reserve_seconds=900, shutdown_reserve_seconds=60, min_free_bytes=0)
         wf = Workflow(self.root / 'release_after_poll', cfg)
         wf.budget.begin_segment()
-        wf.advance(); wf.queue.ready()
+        advance_with_topic_fixture(wf); wf.queue.ready()
         generator = wf.queue.claim(wf.tasks()['r001/generate/H1']['task_id'])
         wf.submit(generator, WorkflowSimulation().scripted(wf, generator), 'SCRIPTED_HYPOTHESIS_ONLY')
         task = wf.enqueue_recorder(1)
@@ -183,7 +185,7 @@ class ScopeBoundary(TempCase):
             wf = Workflow(self.root / mode, cfg)
             if mode == 'active_segments':
                 wf.budget.begin_segment()
-            wf.advance(); wf.queue.ready()
+            advance_with_topic_fixture(wf); wf.queue.ready()
             generator = wf.queue.claim(wf.tasks()['r001/generate/H1']['task_id'])
             wf.submit(generator, WorkflowSimulation().scripted(wf, generator), 'SCRIPTED_HYPOTHESIS_ONLY')
             task = wf.enqueue_recorder(1)
@@ -419,12 +421,17 @@ class PreflightRecovery(TempCase):
         from agents.roles import role_spec
         from tests.support import validation_config
         spec = role_spec("generation", "generate", {}, validation_config()["llm"])
-        with patch("runtime.subscription.SubscriptionTransport.preflight", side_effect=[
+        # This transport-order fixture must not depend on a CLI being on PATH.
+        # cli.run is mocked below; active subscriptions in other runs retain their slots.
+        with patch('runtime.model_router.ROOT', self.root), \
+             patch("runtime.subscription.cli.executable", return_value='/fixture/codex'), \
+             patch("runtime.subscription.SubscriptionTransport.preflight", side_effect=[
                 codex_cli.fail("timeout", "temporary fixture"), {"source": "test_double"}]) as preflight, \
              patch("runtime.model_router.cli.run", side_effect=codex_cli.fail("authentication", "post-preflight fixture")) as model:
             for i in range(2):
-                with self.assertRaises(Exception):
+                with self.assertRaises(codex_cli.PTQError) as error:
                     call_once(spec, self.root / str(i), time.time() + 10)
+                self.assertEqual(error.exception.code, 'llm_timeout' if i == 0 else 'llm_authentication')
                 self.assertEqual(model.call_count, i)
         self.assertEqual(preflight.call_count, 2)
         self.assertFalse(read_json(self.root / "0/llm_audit.json")["model_call_started"])

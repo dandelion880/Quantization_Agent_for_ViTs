@@ -9,6 +9,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from core.cards import ContractError, canonical, fingerprint, make_card
 from core.journal import atomic_json
 from core.workflow import Workflow
+from tests.support import advance_with_topic_fixture
 from tests.support import experiment_payload, hypothesis
 from tests.test_infrastructure import TempCase
 from tests import test_infrastructure as infrastructure
@@ -21,11 +22,11 @@ class GenerationLoop(TempCase):
     read = delivery.DeliveryRegression.read
     scripted = infrastructure.WorkflowSimulation.scripted
 
-    def test_two_rounds_with_pre_h_experiments_preserve_debates_h4_and_recorder(self):
+    def test_two_rounds_with_pre_h_experiments_preserve_candidates_selection_and_recorder(self):
         wf = self.workflow(2)
         experimented = set()
         for tick in range(150):
-            if wf.advance():
+            if advance_with_topic_fixture(wf):
                 break
             for ready in wf.queue.ready():
                 self.assertEqual(ready['kind'], 'llm')
@@ -50,11 +51,9 @@ class GenerationLoop(TempCase):
         self.assertEqual(len(wf.memory.snapshot()['L3']), 2)
         for number in (1, 2):
             hs = wf.round_hypotheses(number)
-            self.assertEqual(set(hs), {'H1', 'H2', 'H3', 'H4'})
-            self.assertEqual(len(wf.matches(number)), 4)
-            parent = hs['H4']['parents'][0]
-            parent_slot = next(k for k, h in hs.items() if h['id'] == parent)
-            self.assertIn('H4-' + parent_slot, wf.matches(number))
+            self.assertEqual(set(hs), {'H1', 'H2', 'H3'})
+            self.assertEqual(wf.matches(number), {})
+            self.assertEqual(wf.selection_card(number)['author'], 'generation')
         self.assertTrue(all(h['payload']['feedback_used'] for h in wf.round_hypotheses(2).values()))
         self.assertFalse(wf.memory.recording_batch()['source_refs'])
 
@@ -82,6 +81,24 @@ class GenerationLoop(TempCase):
         wf.queue.finish(execution['task_id'], outputs=[evidence['id']], cards=[evidence])
         wf.queue.ready(); wf.progress_request(wf.queue.claim(request['task_id']))
         return evidence
+
+    def test_focus_measurement_resumes_the_common_decision(self):
+        from tests.support import topic_decision
+        from agents.roles import tools_for
+        wf = self.workflow(1)
+        wf.advance()
+        task, _ = self.begin(wf, wf.tasks()['r001/focus'])
+        self.assertIn('request_experiment', [tool['name'] for tool in tools_for('focus')])
+        evidence = self.measured(wf, self.ask(wf, task), 4)
+        wf = Workflow(wf.run_dir)
+        resumed, context = self.begin(wf, wf.queue.get(task['task_id']))
+        self.assertIn(evidence['id'], wf.required_refs(resumed))
+        self.assertIn(evidence['id'], canonical(context['tool_results']))
+        self.assertFalse(wf.round_hypotheses(1))
+        wf.submit(resumed, {**topic_decision(wf), 'source_refs':[evidence['id']]}, 'scripted')
+        wf.advance()
+        for slot in ('H1','H2','H3'):
+            self.assertEqual(wf.tasks()['r001/generate/'+slot]['inputs']['context']['topic_ref'], wf.topics.round_ref(1))
 
     def test_direct_submission_needs_no_experiment_or_judger(self):
         wf = self.workflow(1)

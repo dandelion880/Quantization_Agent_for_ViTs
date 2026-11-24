@@ -1,0 +1,148 @@
+{
+  "architecture": "gonly",
+  "budget": {
+    "max_artifact_bytes": 1073741824,
+    "max_rounds": 1,
+    "min_free_bytes": 1073741824,
+    "wall_seconds": 600
+  },
+  "enable_l3": false,
+  "llm": {
+    "max_transport_retries": 2,
+    "provider": "codex_subscription"
+  },
+  "name": "real_deit_code_r2",
+  "purpose": "validation",
+  "research_brief": {
+    "evaluation_protocol": {
+      "count": 4,
+      "formal_incumbent_allowed": false,
+      "kind": "local_intervention_pilot",
+      "split": "search"
+    },
+    "experiment_example": {
+      "controls": {
+        "baseline": "same original FP32 model",
+        "intervention": "one activation site only"
+      },
+      "decision_impact": "确定输入MSE是否足以支持当前排序，识别是否需要输出敏感度机制。",
+      "execution": {
+        "calibration": {
+          "count": 2,
+          "split": "calibration"
+        },
+        "evaluation": {
+          "count": 4,
+          "split": "search"
+        },
+        "method": "rtn",
+        "parameters": {
+          "axis": null,
+          "bits": 4,
+          "granularity": "per_tensor",
+          "group_size": null,
+          "signed": true
+        },
+        "requires_code": false,
+        "resolved_choices": {
+          "activation_bits": 4,
+          "activation_calibration": "static",
+          "calibration_samples": 2,
+          "granularity": {
+            "activation": "per_tensor"
+          },
+          "quantization_scope": {
+            "sites": [
+              "blocks.0.mlp.fc2"
+            ]
+          },
+          "training": false,
+          "weight_bits": 4
+        },
+        "seed": 42,
+        "service": "tensor_probe",
+        "site": "blocks.0.mlp.fc2"
+      },
+      "level": "L1",
+      "measurements": [
+        "input_relative_mse",
+        "operator_output_relative_mse"
+      ],
+      "prediction": "均匀量化会引入非零误差；输入误差与输出误差可能排序不同，需要测量而非预设。",
+      "question": "局部输入量化误差与下游算子输出误差是否一致变化？",
+      "replication": {
+        "configuration_difference": {},
+        "purpose": "",
+        "requested": false
+      },
+      "resources": {
+        "cpu_threads": 4,
+        "estimated_seconds": 120
+      },
+      "scope": {
+        "activation_bits": 4,
+        "method": "rtn",
+        "model": "tiny_vit",
+        "site": "blocks.0.mlp.fc2"
+      },
+      "validation": {
+        "baseline": "FP32 original",
+        "scope": "controlled local QDQ, not full-model accuracy"
+      }
+    },
+    "goals": {
+      "validation": "两轮小规模真实Agent职责验证；H1/H2/H3、主动取证与方案修订、证据预选、Memory反馈。自主选择有决策价值的L1/L2测量，必要时请求Coding扩展量化器。"
+    },
+    "hard_constraints": {
+      "activation_bits": 4,
+      "training": false,
+      "weight_bits": 4
+    },
+    "model": {
+      "adapter": {
+        "backend_overrides": {
+          "device": "cuda:0"
+        },
+        "config_path": "QAViT/configs/deitb_backend.json",
+        "kind": "server"
+      },
+      "name": "DeiT-B local pilot only",
+      "scope": {
+        "model": "deit_base_patch16_224"
+      }
+    },
+    "scientific_question": "在随机小型ViT中，低比特激活输入MSE能否预测局部输出与整网输出偏差？请提出已有方法、工程改进和新机制三个可证伪假设，通过真实局部实验审查，不能外推为ImageNet/ADE精度。",
+    "search_space": {
+      "calibration_samples": [
+        4
+      ],
+      "granularity": [
+        "per_tensor",
+        "per_channel"
+      ],
+      "methods": "选择已有工具或明确定义新量化器；本次静态W4A4 training-free仅为验证输入。",
+      "sites": [
+        "blocks.0.attn.proj"
+      ]
+    },
+    "source_documents": [
+      "/root/data-fs/projects/Quantization_Agent_for_ViTs_gonly/QAViT/docs/METHODS.md",
+      "/root/data-fs/projects/Quantization_Agent_for_ViTs_gonly/QAViT/docs/EXECUTION.md"
+    ]
+  },
+  "runtime": {
+    "allowed_gpus": [
+      0
+    ],
+    "cpu_threads": 2,
+    "experiment_concurrency": 1,
+    "llm_concurrency": 1,
+    "numeric_task_timeout_seconds": {
+      "L1": 120,
+      "L2": 120,
+      "L3": 120
+    },
+    "task_timeout_seconds": 180
+  },
+  "schema_version": "qavit.research/2"
+}

@@ -4,14 +4,14 @@
 实际 model/effort 未回显时保持未知，不用请求配置冒充服务端回显。
 """
 from dataclasses import asdict
-from contextlib import contextmanager
+from contextlib import contextmanager, ExitStack
 import hashlib
 from pathlib import Path
 import time
 
 from runtime.paths import ROOT  # 初始化已核验本地依赖与 EXP 缓存路径。
 from runtime.subscription import SubscriptionTransport
-from runtime.configuration import model_defaults
+from runtime.configuration import GENERATION_ROUTES, model_defaults
 from runtime import codex_cli as cli
 from runtime.subscription import output_schema, TRANSPORT, strict_json
 from ptq_agent.schemas import LLMRequest, Message, PTQError
@@ -24,6 +24,8 @@ def client_for(role, settings):
     if settings.get("provider", "codex_subscription") != "codex_subscription":
         raise ContractError("本版仅核验过订阅通道；变更 provider 需要显式适配与验证")
     model, effort = settings.get("agent_models", model_defaults())[role]
+    if role == "generation" and (model, effort) not in GENERATION_ROUTES:
+        raise ContractError("G-only Generation 需使用已核验的 Astra / high 路由；禁止静默降级")
     return SubscriptionTransport(model, effort, settings)
 
 
@@ -33,25 +35,33 @@ def preflight(role, settings, *, timeout=60):
 
 @contextmanager
 def subscription_slot(role, deadline):
-    """项目范围的有界订阅槽；Judger 三槽，其它角色共用原串行锁。"""
+    """Project-wide cap of four model calls, including at most one Coding."""
     root = ROOT / "EXP/cache/codex_lock"
-    paths = ([root / ("judger-" + str(i) + ".lock") for i in range(3)]
-             if role == "judger" else [root / ".lock"])
+    slots = [root / f"subscription-{i}.lock" for i in range(4)]
     while True:
         if time.time() >= deadline:
             raise cli.fail("timeout", "等待订阅并发槽时到达硬截止")
-        for path in paths:
-            lock = file_lock(path)
-            try:
-                lock.__enter__()
-            except ContractError:
-                continue
-            try:
-                yield str(path.name)
-            finally:
-                lock.__exit__(None, None, None)
-            return
+        for path in slots:
+            with ExitStack() as stack:
+                try:
+                    if role == 'coding':
+                        stack.enter_context(file_lock(root / '.lock'))
+                    if role == 'judger' and path == slots[-1]:
+                        continue
+                    stack.enter_context(file_lock(path))
+                except ContractError:
+                    continue
+                yield path.name
+                return
         time.sleep(min(.05, max(0, deadline - time.time())))
+
+
+def transport_input(transport):
+    if transport.get('role') not in ('coding', 'safeguard'):
+        return canonical(transport)
+    ordered = ['role', 'tools', 'response_schema', 'context', 'messages']
+    keys = [k for k in ordered if k in transport] + sorted(set(transport) - set(ordered))
+    return '{' + ','.join(canonical(k) + ':' + canonical(transport[k]) for k in keys) + '}'
 
 
 def call_once(spec, directory, deadline):
@@ -81,15 +91,30 @@ def call_once(spec, directory, deadline):
         with subscription_slot(spec["role"], deadline) as slot:
             audit["subscription_slot"] = slot
             audit["preflight"] = client.preflight(min(60, remaining()))
+            cap = spec['settings'].get('subscription_max_used_percent')
+            limits = audit['preflight']['account']['rate_limits'] if cap is not None else {}
+            if cap is not None and any(limits[k] and limits[k]['usedPercent'] >= cap for k in ('primary', 'secondary')):
+                raise cli.fail('quota_reserve', '已到达冻结的订阅额度预留边界；未开始新的模型调用')
             atomic_json(working / "schema.json", output_schema(request))
-            (working / "instructions.txt").write_text(request.system_prompt + "\n\n" + TRANSPORT, encoding="utf-8")
+            native, transport_prompt = None, TRANSPORT
+            if spec['role'] == 'coding' and spec['settings'].get('coding_native_tools') is True:
+                from runtime.coding_native import prepare
+                native, audit['coding_channel'] = prepare(client,spec,directory,deadline)
+                if native:
+                    transport_prompt = ("在本任务工作目录用原生工具检索、编辑及 CPU 调试 implementation.py。只读绑定源码在 "
+                        + audit['coding_channel']['sources'] + "。最终按外层 schema 返回 __agent_decision__，"
+                        "arguments_json 内为 action=submit 和 content={source_file:implementation.py} 及必要执行选择。"
+                        "科研工具仍以原工具名和 arguments_json 交还宿主；GPU 实验由 worker 执行。")
+            (working / "instructions.txt").write_text(request.system_prompt + "\n\n" + transport_prompt, encoding="utf-8")
             audit["model_call_started"] = True
             audit["started_unix"] = time.time()
             atomic_json(directory / "llm_audit.json", audit)
             transport = asdict(request)
             # system_prompt 已作为 CLI instructions 完整传输，stdin 不再重复。
             transport.pop('system_prompt')
-            code, stdout, stderr = cli.run(client.command(working), working, remaining(), canonical(transport))
+            event_path = working / 'events.jsonl' if native or spec['settings'].get('record_live_events') else None
+            code, stdout, stderr = cli.run(client.command(working, native=native) if native else client.command(working),
+                working, remaining(), transport_input(transport), **({'event_path': event_path} if event_path else {}))
             audit["exit_code"] = code
             audit["stderr"] = {"bytes": len(stderr.encode()), "sha256": hashlib.sha256(stderr.encode()).hexdigest(),
                                "category": cli.failure_category(stderr)}
@@ -113,8 +138,8 @@ def call_once(spec, directory, deadline):
                 except (ValueError, TypeError):
                     pass
             audit["reported_usage"] = reports
-            if len(reports) == 1 and isinstance(reports[0], dict):
-                audit["usage"] = reports[0]
+            from runtime.coding_native import usage_total
+            audit["usage"] = usage_total(reports)
             if code:
                 raise cli.fail(cli.failure_category(stderr), "订阅 CLI 失败；未接受科学动作")
             if audit["stderr"]["category"] in ("authentication", "quota_exhausted"):
@@ -124,7 +149,13 @@ def call_once(spec, directory, deadline):
             answer = working / "answer.json"
             if not answer.exists() or answer.stat().st_size > 16 * 1024 ** 2:
                 raise cli.fail("format_error", "缺少完整最终响应")
-            response, details = client.decode(stdout, answer.read_text(), request)
+            response, details = client.decode(stdout, answer.read_text(), request, **({"native": True} if native else {}))
+            if native and response.decision and response.decision.get("action") == "submit":
+                from runtime.coding_native import delivered
+                content = response.decision["content"]
+                if content.pop("source_file", None) != "implementation.py" or "source" in content or "revision" in content:
+                    raise ContractError("native submission must deliver implementation.py")
+                content["source"] = delivered(native[0])
             audit.update(response=details, actual=details["actual"], usage=response.usage)
             return {"response": asdict(response), "audit": str(directory / "llm_audit.json"),
                     "usage": response.usage, "actual": details["actual"],
@@ -133,6 +164,11 @@ def call_once(spec, directory, deadline):
         audit["error"] = exc.to_dict() if isinstance(exc, PTQError) else {"code": type(exc).__name__, "message": str(exc)}
         raise
     finally:
+        events = working / 'events.jsonl'
+        if events.is_file() and audit.get('error') and audit.get('usage') is None:
+            from runtime.coding_native import interrupted_usage
+            audit['usage_status'] = interrupted_usage(events)
+            audit['usage'] = audit['usage_status']['completed_turn_usage']
         audit["elapsed_seconds"] = time.monotonic() - started
         audit["finished_unix"] = time.time()
         atomic_json(directory / "llm_audit.json", audit)

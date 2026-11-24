@@ -1,0 +1,43 @@
+{
+  "at_unix": 1794732895.1789742,
+  "reason": "Host AdaLog LUT/base check falsely rejected immutable CPU/CUDA transport due to at most one ULP table2 division rounding. Only bounded validation changed; construction, calibration, decode, inference and W4A4 coverage unchanged.",
+  "original_commit": "b6fd75e2689e15add23611005639bcbd5f250cc6",
+  "repair_commit": "42cbdd293fd2c39e19ca9e7fcc2a157d9a4f935f",
+  "changed_files": [
+    "QAViT/tools/ptq_agent/execution/adalog.py",
+    "QAViT/tests/test_adalog_lut_transport.py",
+    "QAViT/tests/data/adalog_cuda_lut_float32.json"
+  ],
+  "previous_core_sha256": "8c76550850c9f3a29bb4898784b75c9048f0f4ea22abe304dfc72ad3885869da",
+  "current_core_sha256": "cb04d86178919244b9215ff4b2c9ef05100454f1e992c1315827c3d59aa220dd",
+  "previous_numerical_sha256": "f00b614ad7b4d408a2468113fd83d25ee31f7c5e73725a2ebf6ca05842d60ce4",
+  "current_numerical_sha256": "466d4782742036f6c62992e33b9fdf3bd1489f013ac753ed80538e5ac34cb794",
+  "math_function_ast_unchanged": {
+    "parameters": true,
+    "fit": true,
+    "apply": true,
+    "bias_transform": true
+  },
+  "validation": {
+    "new_tests_passed": 5,
+    "existing_tests_passed": 15,
+    "full_tiny_cpu_cuda_reload": true,
+    "real_lut_q1_to256_max_ulp": 1,
+    "rejects_two_ulp": true,
+    "saved_parameters_and_outputs_unchanged": true,
+    "test_fixture_setup_failures_preserved": [
+      "adalog_transport_complete_fixture_attempt1.log",
+      "adalog_transport_complete_fixture_attempt2.log"
+    ]
+  },
+  "budget_before_resume": {
+    "elapsed_seconds": 5087.348938941956,
+    "remaining_seconds": 5712.651061058044,
+    "excluded_numeric_wait_seconds": 7163.278715372086,
+    "extensions": [],
+    "configured_total_wall_seconds": 10800
+  },
+  "frozen_config_sha256": "06676cdf3e11127510c6fc1d9ed627858034ef99e981816cdafdbb2fbc3dc29e",
+  "original_failed_package_preserved": "EXP/runs/deitb_static_w4a4_gonly_20261115_r1/jobs/task-4c0b12d7d5df8e29a01f0f16-a0001/model",
+  "scope": "No dataset, checkpoint, frozen config, G-only roles, numeric formula, codeword capacity or final sample count changed. No previous artifact identity edited. New executions use new source identity and existing strict rebind checks."
+}

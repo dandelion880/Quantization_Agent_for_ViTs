@@ -145,13 +145,14 @@ import sys, time
 from pathlib import Path
 sys.path.insert(0, sys.argv[1])
 from core.journal import atomic_json
-from runtime.model_router import subscription_slot
-with subscription_slot(sys.argv[2], time.time() + 15) as slot:
+from runtime import model_router
+model_router.ROOT = Path(sys.argv[3]).parent
+with model_router.subscription_slot(sys.argv[2], time.time() + 15) as slot:
     start = time.time()
     time.sleep(.7)
     atomic_json(Path(sys.argv[3]), {'role':sys.argv[2], 'slot':slot, 'start':start, 'end':time.time()})
 '''
-        roles = ['judger'] * 4 + ['coding', 'generation']
+        roles = ['coding', 'coding', 'generation', 'generation', 'safeguard', 'recorder']
         processes = [subprocess.Popen([sys.executable, '-B', '-c', script, str(QAVIT), role,
                      str(self.root / ('slot' + str(i) + '.json'))]) for i, role in enumerate(roles)]
         try:
@@ -166,7 +167,9 @@ with subscription_slot(sys.argv[2], time.time() + 15) as slot:
             maximum['judger'] = max(maximum['judger'], sum(r['role'] == 'judger' for r in active))
             maximum['other'] = max(maximum['other'], sum(r['role'] != 'judger' for r in active))
             maximum['total'] = max(maximum['total'], len(active))
-        self.assertEqual(maximum, {'judger': 3, 'other': 1, 'total': 4})
+        self.assertEqual(maximum['total'], 4)
+        a, b = rows[:2]
+        self.assertTrue(a['end'] <= b['start'] or b['end'] <= a['start'])
 
     def test_numeric_workers_from_two_runs_no_longer_share_global_slot(self):
         script = '''

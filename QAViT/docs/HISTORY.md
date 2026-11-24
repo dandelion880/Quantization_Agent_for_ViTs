@@ -2,10 +2,16 @@
 
 当前实现从 [QAViT README](../README.md)、[资源导航](../knowledge/INDEX.md) 与 [STRUCTURE](../../STRUCTURE.md) 进入。历史报告记录当时版本、输入和验证范围；不因保留链接就视为当前能力或当前协议成绩。日志、原始卡片、数据、checkpoint 和源码快照保持原位，只读查阅；不要从历史 EXP 导入一次性框架代码作为当前运行依赖。
 
-本表列出本轮整理时各独立目录的 REPORT.md。完整有效文件树在 [本轮盘点](../../EXP/validation/knowledge_resources_20261108_r1/PROJECT_RESOURCE_INVENTORY.md)，部分原件仅在本机，是否入库以 .gitignore 为准。当前伪代码见 [本轮 PSEUDOCODE](../../EXP/validation/host_context_20261110_r1/PSEUDOCODE.md)。
+本表列出本轮整理时各独立目录的 REPORT.md。完整有效文件树在 [本轮盘点](../../EXP/validation/knowledge_resources_20261108_r1/PROJECT_RESOURCE_INVENTORY.md)，部分原件仅在本机，是否入库以 .gitignore 为准。当前伪代码见[冻结状态改良流程](../../EXP/validation/frozen_trials_20261124/PSEUDOCODE.md)。
 
 | 历史目录（相对 EXP） | 当时报告 |
 |---|---|
+| validation/frozen_trials_20261124 | [多视图评分、增量继承与连续断点回放](../../EXP/validation/frozen_trials_20261124/REPORT.md) |
+| validation/engineering_cleanup_20261117_r1 | [当前工程清洗：恢复、隔离、容错与成本测量](../../EXP/validation/engineering_cleanup_20261117_r1/REPORT.md) |
+| validation/research_topics_20261117_r1 | [动态主题初版；当时回放含占位实现，工程边界由当前清洗修正](../../EXP/validation/research_topics_20261117_r1/REPORT.md) |
+| validation/inspiration_continuity_20261117_r1 | [独立灵感接续初版，历史原件](../../EXP/validation/inspiration_continuity_20261117_r1/REPORT.md) |
+| validation/capabilities_multi_l3_20261117_r1 | [三候选 L3 与候选优先 GPU 验证](../../EXP/validation/capabilities_multi_l3_20261117_r1/REPORT.md) |
+| validation/skill_system_integration_20261116_r1 | [七项可选 Skill 接入与当时验证](../../EXP/validation/skill_system_integration_20261116_r1/REPORT.md) |
 | validation/host_context_20261110_r1 | [宿主性能与上下文简化：真实慢请求、等价/权限回归与 Eval-L0](../../EXP/validation/host_context_20261110_r1/REPORT.md) |
 | implementation/qavit_v2_20261026 | [QAViT v2 实施与验证记录](../../EXP/implementation/qavit_v2_20261026/REPORT.md) |
 | implementation/v2_structure_20261027 | [QAViT V2 结构整理与离线验证](../../EXP/implementation/v2_structure_20261027/REPORT.md) |
@@ -40,3 +46,5 @@
 | validation/two_rounds_20261104_r2 | [QAViT 真实运行最终报告 — 2026-11-04](../../EXP/validation/two_rounds_20261104_r2/REPORT.md) |
 
 其它入口：EXP/runs 为各运行事实与源码冻结，EXP/inputs 为具体研究配置，EXP/outputs 为历史整理输出，EXP/cache 为可重建临时数据。它们的目录名称不保证属于当前 V2 格式；恢复须遵守原身份/配置合同，不能批量迁移或重写成新格式。
+
+本轮针对性科研能力修订（未启动正式贯通）：[交付与剩余验证](../../EXP/validation/gonly_research_capability_20261116_r1/REPORT.md)。包含追加式历史知识更正、H3恢复、真实校准搜索及冻结传播诊断。

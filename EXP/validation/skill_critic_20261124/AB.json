@@ -1,0 +1,261 @@
+{
+  "baseline": "264e16b806836c6c37681b3970772851c01a66d6",
+  "scope": "live, isolated focus checkpoint and two new runs; max 5 consumer calls; no new numerical execution",
+  "source_evidence": {
+    "experiment_ref": "ExperimentCard-22bbe4ee81e84005b9202c2ae3b1d7d6@1",
+    "ref": "EvidenceCard-4836106bbfde46a980420001c3eeafa6@1",
+    "wall_seconds": 61.299358950927854
+  },
+  "publication": {
+    "base_sha256": null,
+    "commit_sequence": 104,
+    "index": 0,
+    "key": "skills/result/MetareviewCard-032ccec68f5547fbb1179abb84b2d5ac@1/0",
+    "metareview_ref": "MetareviewCard-032ccec68f5547fbb1179abb84b2d5ac@1",
+    "name": "gate-fp-block-headroom-to-static-ptq",
+    "operation": "2e51d81b509a7fcb7cf5f4146f3af53a3a28eea1e5cfa71921959fc045e821e6",
+    "origin_run": "dinov3b_static_w4a4_independent_20261121_r1",
+    "status": "published",
+    "type": "skill_update_result",
+    "version": "4f219ad0755ef7b2392a1a199a326da757b68e65adc980159e6550c9cbcea243"
+  },
+  "portable_sources": [
+    {
+      "card_id": "ExperimentCard-22bbe4ee81e84005b9202c2ae3b1d7d6@1",
+      "card_sha256": "d23a1b4236f0b1c67b4bf1b864f505bc506ade9591f621ff3019a6a670d6de8e",
+      "field": "/payload/controls/parent",
+      "kind": "ExperimentCard",
+      "origin_run": "dinov3b_static_w4a4_independent_20261121_r1",
+      "value": "直接冷载既有 B32；不 prepare、不重估任何码器。未干预 B32 和原 FP 是逐图配对对照。每臂只把一个 block 换成作用于当前 Q 输入的 FP block，其余保持 B32。",
+      "value_sha256": "06a03f3dd938dc4505a20e18b0281283455c21f6f5b3dfc7c076148875a6dd79"
+    },
+    {
+      "card_id": "ExperimentCard-22bbe4ee81e84005b9202c2ae3b1d7d6@1",
+      "card_sha256": "d23a1b4236f0b1c67b4bf1b864f505bc506ade9591f621ff3019a6a670d6de8e",
+      "field": "/payload/decision_impact",
+      "kind": "ExperimentCard",
+      "origin_run": "dinov3b_static_w4a4_independent_20261121_r1",
+      "value": "若某段恢复使多个后续读取点和 logits 同向接近 FP，则优先在该路径检验合法 W4A4 增量；若 patch 与 CLS 方向分离，优先检验校准目标的取舍；若单块均弱而上游映射或交叉项明显，则保留多块联动和 stem 来源，不按单点最大误差锁层。",
+      "value_sha256": "0a743a15827c533eeada4c11765e03a0a2c39e3d464daeee88afabc297e70aef"
+    },
+    {
+      "card_id": "EvidenceCard-4836106bbfde46a980420001c3eeafa6@1",
+      "card_sha256": "b60829ea284e597e6f3184a485c43511e8c3a61a1e0b535ddb08241d49c7de2c",
+      "execution_id": "focus-measure",
+      "field": "/payload/observations/result/baseline_output_error/aggregate_relative_mse",
+      "kind": "EvidenceCard",
+      "measurement_source": "real",
+      "origin_run": "dinov3b_static_w4a4_independent_20261121_r1",
+      "status": "completed",
+      "value": 0.5414449834753573,
+      "value_sha256": "88465f7e422f88442b6e5d01e083a9f4017fe8395669d51b753823e69dc6cac4"
+    },
+    {
+      "card_id": "EvidenceCard-4836106bbfde46a980420001c3eeafa6@1",
+      "card_sha256": "b60829ea284e597e6f3184a485c43511e8c3a61a1e0b535ddb08241d49c7de2c",
+      "execution_id": "focus-measure",
+      "field": "/payload/observations/result/decomposition_cross_term/blocks.11/all/twice_dot",
+      "kind": "EvidenceCard",
+      "measurement_source": "real",
+      "origin_run": "dinov3b_static_w4a4_independent_20261121_r1",
+      "status": "completed",
+      "value": -17408711.39018355,
+      "value_sha256": "e638edce680b0368e06f53b61dde4d2affbc1ad8ea0a1ae644438401fb4150ed"
+    },
+    {
+      "card_id": "EvidenceCard-4836106bbfde46a980420001c3eeafa6@1",
+      "card_sha256": "b60829ea284e597e6f3184a485c43511e8c3a61a1e0b535ddb08241d49c7de2c",
+      "execution_id": "focus-measure",
+      "field": "/payload/observations/result/decomposition_cross_term/blocks.11/cls/twice_dot",
+      "kind": "EvidenceCard",
+      "measurement_source": "real",
+      "origin_run": "dinov3b_static_w4a4_independent_20261121_r1",
+      "status": "completed",
+      "value": 24587.286493738186,
+      "value_sha256": "4338cc3b02b226150bd5739b663e4524abe6279913f523559fbfade80c072696"
+    }
+  ],
+  "arms": {
+    "recorder": {
+      "calls": 1,
+      "read_tools": 0,
+      "returned_text_characters": 0,
+      "model_wall_seconds": 92.53998065367341,
+      "usage": {
+        "cache_write_input_tokens": 0,
+        "cached_input_tokens": 0,
+        "input_tokens": 27667,
+        "output_tokens": 2477,
+        "reasoning_output_tokens": 175
+      },
+      "raw": "recorder/trace.json",
+      "trace_sha256": "9d1de96a1374e78f550b480b4864e50e5d7f28ff01e0de15946057f628e5438e",
+      "requested_route": {
+        "model": "gpt-6.2-sol",
+        "reasoning_effort": "medium"
+      }
+    },
+    "consumer": {
+      "calls": 5,
+      "read_tools": 4,
+      "returned_text_characters": 7367,
+      "model_wall_seconds": 197.46600922197104,
+      "usage": {
+        "cache_write_input_tokens": 0,
+        "cached_input_tokens": 9472,
+        "input_tokens": 133952,
+        "output_tokens": 1861,
+        "reasoning_output_tokens": 533
+      },
+      "raw": "consumer/trace.json",
+      "trace_sha256": "1fea3e7137ec4cd82babca6b3e2c7a94cabe11a47fef87011f675f1639b96cc3",
+      "requested_route": {
+        "model": "gpt-6.2-astra",
+        "reasoning_effort": "high"
+      },
+      "decision": {
+        "action": "submit",
+        "content": {
+          "decision": "establish",
+          "held_conditions": [
+            "直接冷载已验证的 B32（df8f5e062e654dd3b41824339c47c26fef2f17bae8cbe18ec4f03e1f76e0cf0f），不以 64 图重新 prepare 来代替该父包。除指定 A4 边界外，W4、其他 A4、前后缀及两个任务头不动；保留倍率 1 的原包作逐图对照。",
+            "局部试验 training=false、FP32 计算。只在绑定的 ImageNet calibration 拟合，在独立 search 比较；ADE 不拟合。完整候选仍须冷载同一静态 W4A4 骨干，在固定 5000/502 开发视图分别评价，官方验证不回流。"
+          ],
+          "mutable_dimensions": [
+            "首个干预只改一个块中实际供 FC2 使用的 post-GELU A4 码器：保持原分组、码字数和零点不变，所有组的尺度共乘一个静态正倍率。竞争臂只换块位置，不换算法、拟合目标或预算。"
+          ],
+          "next_step": "先取回同父单块替换的逐臂配对行；若不可恢复，只在固定 calibration 子集重放缺失的行。以未干预 B32 为零点，对每臂记录相对同一 FP 的 logits NMSE 降幅，以及块 2/5/8/11 的 patch NMSE 各自降幅（未受影响的读出记零）；CLS [0,1)、storage [1,5)、patch [5,N) 分报。主臂在 logits 与四层平均 patch 误差均下降的块中，按两项相对降幅的较小值最大者提名；竞争臂取其余块中块输出全 token 局部重建误差降幅最大者，同分取较早块。对两块分别从原 B32 出发，在相同 calibration 前 32 图、相同 Q 上下文试倍率 {0.8,0.9,1,1.1,1.25}；均最小化相对 FP 的 logits NMSE 与四层平均 patch NMSE 的等权和，两项各除以自身父包误差，并列优先 1。记录逐倍率分数和实际生效尺度。分别导出、冷载，在相同 search 前 128 图逐图对比父包和竞争臂，不据 search 重选倍率。",
+          "objective": "先检验整块 FP 替换提示的位置能否转化为合法 W4A4 增量，再决定是否扩大干预；不把 FP 恢复幅度当作低比特预期收益。",
+          "question": "在同一冻结 B32 上，按分类 logits 和多层 patch 读出选择干预块，是否比按块内重建误差选择干预块，更值得投入一次等预算的静态 A4 尺度修正？",
+          "rationale": "B32 在开发视图的 Top-1 为 57.78（FP 81.04），mIoU 为 33.1328（FP 74.7617），只看分类不足以选方向。已交付的历史配对诊断是把单个 FP 块作用于当前 Q 输入，其余保持 B32；未干预输出的 aggregate_relative_mse 为 0.541445。块 11 的局部误差与上游传播误差的两倍内积在全 token 为 −17408711，在 CLS 却为 +24587：前者有抵消，后者同向叠加。这不是两个可比的归一化效应量，也不能推出换块后 logits 或 patch 一定改善。现有摘录没有各替换臂的端点排序，因此不指定块 11 为赢家。",
+          "reconsider_when": "若 FP 臂均不能同时改善两类端点，就不按全 token 排名强推单块，转为解释 CLS/patch 取舍或上游多块联动。若主臂选回 1、冷载后仅有局部改善、或任一端点在 search 恶化，则回退该增量；若竞争臂在两端均不劣且至少一端更好，优先竞争臂而非维护原提名。两臂均弱只否定这次单点尺度投入，不否定整块存在可恢复误差。状态未正确安装先修复，不作机制判断。即使两项代理均改善，也只支持进入任务验证，不声称 Top-1 或 mIoU 已提升。",
+          "source_refs": [
+            "C1",
+            "TaskCard-2e41e82f636c427781780574ce211aaf@4"
+          ]
+        }
+      },
+      "reads": [
+        {
+          "name": "read_asset",
+          "asset": "skills/gate-fp-block-headroom-to-static-ptq/SKILL.md"
+        },
+        {
+          "name": "read_asset",
+          "asset": "skills/gate-fp-block-headroom-to-static-ptq/references/origin.json"
+        },
+        {
+          "name": "read_asset",
+          "asset": "skills/gate-fp-block-headroom-to-static-ptq@4f219ad0755ef7b2392a1a199a326da757b68e65adc980159e6550c9cbcea243/SKILL.md"
+        },
+        {
+          "name": "read_card",
+          "asset": "TaskCard-2e41e82f636c427781780574ce211aaf@4"
+        }
+      ]
+    },
+    "consumer-control": {
+      "calls": 5,
+      "read_tools": 15,
+      "returned_text_characters": 35168,
+      "model_wall_seconds": 177.52645196951926,
+      "usage": {
+        "cache_write_input_tokens": 0,
+        "cached_input_tokens": 9472,
+        "input_tokens": 161111,
+        "output_tokens": 2193,
+        "reasoning_output_tokens": 460
+      },
+      "raw": "consumer-control/trace.json",
+      "trace_sha256": "f7fe824c25b29eb9332be1d1f75eaf3e23403fc3ffa23f4c82cd64786ac02527",
+      "requested_route": {
+        "model": "gpt-6.2-astra",
+        "reasoning_effort": "high"
+      },
+      "decision": {
+        "action": "submit",
+        "content": {
+          "decision": "establish",
+          "held_conditions": [
+            "加载已冷载验证的完整 B32（df8f5e062e654dd3b41824339c47c26fef2f17bae8cbe18ec4f03e1f76e0cf0f），保留原 32 图校准状态；r=1 是原包对照，不用 64 图重建 B。除选定消费边外，权重、其他激活量化器、前后缀与任务头全冻结。",
+            "保持绑定的 DINOv3-B/16、FP32 计算和 static_w4a4/1。倍率仅用 ImageNet calibration 的固定 64 图前向选择；search 独立比较，不用 ADE 或 dev 拟合。同一冷载骨干供两个原任务头使用。"
+          ],
+          "mutable_dimensions": [
+            "首个动作只改一个块中实际供 FC2 消费的 post-GELU A4 尺度：在原静态分组、码字和零点不变时，将各组原尺度乘同一倍率 r∈{0.8,0.9,1,1.1,1.25}。选择这条边是因为干预单一、可精确撤销，不是因为已证明 FC2 是瓶颈。",
+            "只比较两种位置选择：按冻结后缀的 patch 响应提名主试块，按块内局部恢复量提名竞争块。两处使用相同候选族、拟合目标和预算，不同时修改。"
+          ],
+          "next_step": "从原单块替换配对表核对父包、图像 ID 与视图，仅在共同覆盖的块中比较。主试取使最后一层 patch NMSE 相对未替换 B 下降最多、且分类 teacher-KL 不升的块；若无块满足，取 patch 下降最多者并标记分类冲突。竞争对照取其余块中局部新增归一化误差最大的块；若两种规则首选相同，明确记为一致，次选仅作位置对照。若原表缺共同图像或端点，只补对应的同父配对观测，不用幅值猜层号。在两块分别试上述倍率：在真实 Q 前缀和冻结后缀下，从分类 KL 不高于 r=1 的倍率中选使绑定抽取层 2/5/8/11 的平均 patch NMSE 最低者（各层分别按 FP patch 能量归一化，平局优先 r=1）。记录全部分数及实际尺度。对各自选定状态在同一 search 前 128 图与 B 逐图配对，分列块内误差、四层 patch、末端 CLS 与 logits；CLS [0,1)、storage [1,5)、patch [5,N) 不混算。若接纳非单位倍率，按确切边安装、导出并冷载复核，与评分时输出对齐后才进入候选。",
+          "objective": "先判别干预位置的选择依据，再判断可实现的改动能否提高冻结双任务成绩；不把整块 FP 替换的响应当成 W4A4 可取得的增益。",
+          "question": "在冻结 B32 上，把一次合法 A4 尺度修正用在对下游 patch 表征有影响的块，是否比用在局部误差最大的块更有效，同时不损害分类 logits？",
+          "rationale": "同一 B32 在既有开发视图上的 Top-1 为 57.78（FP 81.04），mIoU 为 33.1328（FP 74.7617）。分割保留率较低，值得优先保护 patch 路径，但不能据此定位某层。Brief 已指出同父单块 FP 替换的局部、分组与端点响应不一致；当前交付正文未给出逐块配对值，因此不指定一个未经核实的胜出层号。替换整个块同时移除了多条边的误差，而单边尺度修正只检验其中一个可部署机制。",
+          "reconsider_when": "若主试在 search 上降低 patch 误差且分类 KL 不升，而局部提名对照不能，优先沿该传播路径发展；若竞争块反而满足条件，改投竞争块。若二者都选 r=1、只改善块内误差，或 patch 改善伴随分类恶化，则撤销该单边改动、保留 B；再区分权重误差、其他激活边和多块联动，不宣称 FP 定位失效。冷载不一致先修实现，不作机制判断。只有三条完整候选各自的 5000/502 配对 L3-dev 才用于判断开发双任务收益；官方 50k/2k 留待方案冻结后独立核验。",
+          "source_refs": [
+            "ResearchBrief-a940ee902b6e4f0b968c2623163e2d0a@1"
+          ]
+        }
+      },
+      "reads": [
+        {
+          "name": "read_asset",
+          "asset": "skills/diagnose-ptq-failure/SKILL.md"
+        },
+        {
+          "name": "read_asset",
+          "asset": "skills/design-discriminative-experiment/SKILL.md"
+        },
+        {
+          "name": "read_asset",
+          "asset": "EXP/validation/dinov3b_preparation_20261118_r1/baseline_partition/baseline_receipt.json"
+        },
+        {
+          "name": "read_asset",
+          "asset": "skills/diagnose-ptq-failure/references/diagnosis-cases.md"
+        },
+        {
+          "name": "read_asset",
+          "asset": "skills/design-discriminative-experiment/references/decision-examples.md"
+        },
+        {
+          "name": "read_asset",
+          "asset": "QAViT/knowledge/INDEX.md"
+        },
+        {
+          "name": "read_asset",
+          "asset": "skills/INDEX.md"
+        },
+        {
+          "name": "read_asset",
+          "asset": "skills/select-calibration-objective/SKILL.md"
+        },
+        {
+          "name": "read_asset",
+          "asset": "skills/evaluate-ptq-candidate/SKILL.md"
+        },
+        {
+          "name": "read_asset",
+          "asset": "QAViT/knowledge/research-skills/research-routes/INDEX.md"
+        },
+        {
+          "name": "read_asset",
+          "asset": "skills/diagnose-ptq-failure/SKILL.md"
+        },
+        {
+          "name": "read_asset",
+          "asset": "skills/diagnose-ptq-failure/references/error-propagation-and-intervention.md"
+        },
+        {
+          "name": "read_card",
+          "asset": "TaskCard-5b78a9830a3a4b9dbc515b3c123e7787@4"
+        },
+        {
+          "name": "read_asset",
+          "asset": "/root/data-fs/projects/Quantization_Agent_for_ViTs_gonly/EXP/inputs/dinov3b_static_w4a4_independent_20261121_r1/baseline_development.json"
+        },
+        {
+          "name": "read_card",
+          "asset": "TaskCard-685e1e1f9a524d29a744650fb043d237@4"
+        }
+      ]
+    }
+  }
+}

@@ -1,0 +1,153 @@
+{
+  "calls": [
+    {
+      "path": "after/focus/focus/llm_audit.json",
+      "request_sha256": "dccb74413f158ff50ac19366ed7f14c21a6339bee1bd53996a98cc150626f426",
+      "route": {
+        "model": "gpt-6.2-astra",
+        "reasoning_effort": "high"
+      },
+      "actual": {
+        "model": null,
+        "reasoning_effort": null,
+        "source": "not_reported_by_cli"
+      },
+      "usage": {
+        "cache_write_input_tokens": 0,
+        "cached_input_tokens": 0,
+        "input_tokens": 21238,
+        "output_tokens": 1184,
+        "reasoning_output_tokens": 58
+      },
+      "elapsed_seconds": 47.489248123019934,
+      "error": null
+    },
+    {
+      "path": "after/local/design/llm_audit.json",
+      "request_sha256": "4e61c211451c808da4728de90c92ed92670394ab969a7d7c8541fc2cb33086b4",
+      "route": {
+        "model": "gpt-6.2-astra",
+        "reasoning_effort": "high"
+      },
+      "actual": {
+        "model": null,
+        "reasoning_effort": null,
+        "source": "not_reported_by_cli"
+      },
+      "usage": {
+        "cache_write_input_tokens": 0,
+        "cached_input_tokens": 0,
+        "input_tokens": 15997,
+        "output_tokens": 494,
+        "reasoning_output_tokens": 45
+      },
+      "elapsed_seconds": 19.04851889796555,
+      "error": null
+    },
+    {
+      "path": "after/local/receipt/llm_audit.json",
+      "request_sha256": "cbbdd6dc079ec9bac3f2cad412139b0d8e61fa5a3ae90a0a39e779fe957080fd",
+      "route": {
+        "model": "gpt-6.2-astra",
+        "reasoning_effort": "high"
+      },
+      "actual": {
+        "model": null,
+        "reasoning_effort": null,
+        "source": "not_reported_by_cli"
+      },
+      "usage": {
+        "cache_write_input_tokens": 0,
+        "cached_input_tokens": 0,
+        "input_tokens": 18298,
+        "output_tokens": 1113,
+        "reasoning_output_tokens": 345
+      },
+      "elapsed_seconds": 38.718021569773555,
+      "error": null
+    },
+    {
+      "path": "before/local/design/llm_audit.json",
+      "request_sha256": "9e3a103a19458c6d1b96142ca86d0a8caea244a35b2f201ef1a262d095e90bcb",
+      "route": {
+        "model": "gpt-6.2-astra",
+        "reasoning_effort": "high"
+      },
+      "actual": {
+        "model": null,
+        "reasoning_effort": null,
+        "source": "not_reported_by_cli"
+      },
+      "usage": {
+        "cache_write_input_tokens": 0,
+        "cached_input_tokens": 0,
+        "input_tokens": 15826,
+        "output_tokens": 635,
+        "reasoning_output_tokens": 90
+      },
+      "elapsed_seconds": 26.782618375495076,
+      "error": null
+    },
+    {
+      "path": "before/local/receipt/llm_audit.json",
+      "request_sha256": "c02e583fb4ff2cde20ef2c5aa937012fdf8a880bee9a062d66800cfae16a0654",
+      "route": {
+        "model": "gpt-6.2-astra",
+        "reasoning_effort": "high"
+      },
+      "actual": {
+        "model": null,
+        "reasoning_effort": null,
+        "source": "not_reported_by_cli"
+      },
+      "usage": {
+        "cache_write_input_tokens": 0,
+        "cached_input_tokens": 0,
+        "input_tokens": 18222,
+        "output_tokens": 1184,
+        "reasoning_output_tokens": 287
+      },
+      "elapsed_seconds": 38.286734284833074,
+      "error": null
+    },
+    {
+      "path": "preflight_reserve/local/design/llm_audit.json",
+      "request_sha256": "27dd4fcd4989ec46baefdadc13830bc3fcaa645b68ca97111935cc4acba6a9c2",
+      "route": {
+        "model": "gpt-6.2-astra",
+        "reasoning_effort": "high"
+      },
+      "actual": {
+        "model": null,
+        "reasoning_effort": null,
+        "source": "not_reported_by_cli"
+      },
+      "usage": null,
+      "elapsed_seconds": 4.2199899181723595,
+      "error": {
+        "code": "llm_quota_reserve",
+        "message": "已到达冻结的订阅额度预留边界；未开始新的模型调用",
+        "path": "$",
+        "retryable": false
+      }
+    }
+  ],
+  "original_focus": "EXP/runs/dinov3b_static_w4a4_gonly_next4_20261118_r1/jobs/task-d99dfca9f223d0834c4e19cd-a0001/result.json",
+  "exact_design_matched": true,
+  "source_result": "EXP/runs/dinov3b_static_w4a4_gonly_next4_20261118_r1/jobs/task-8a8e4f18a09ce384c1b73d7a-a0001/result.json",
+  "source_result_sha256": "a75f2197fa17ffd698a76cab52f2052dbf6fc99b57cf9dd1bd325a06226bcd9a",
+  "post_replay_unconstrained_E5_minimum": {
+    "eligible_for_suffix": false,
+    "grid_sha256": "c9c4882579b9f68626e1a09948de00c2fd3a91cd32b65dfda13483d93e938ec1",
+    "metrics": {
+      "E_2": 0.361638944549709,
+      "E_5": 0.548858208569123,
+      "K": 0.7519341339561665
+    },
+    "pair": [
+      0.7,
+      0.7
+    ]
+  },
+  "KL_cap": 0.7360455049009987
+}

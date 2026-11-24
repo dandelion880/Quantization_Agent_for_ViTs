@@ -11,6 +11,7 @@ from core.cards import ContractError, make_card
 from core.debate import INITIAL_PAIRS, ranking_table
 from core.journal import atomic_json, read_json
 from core.workflow import Workflow
+from tests.support import advance_with_topic_fixture
 from tests.support import validation_config, experiment_payload, review, meta
 from tests import test_infrastructure as infrastructure
 from tests.test_infrastructure import TempCase
@@ -99,37 +100,52 @@ class L3Regression(TempCase):
         config["budget"].update(max_rounds=1, min_free_bytes=0)
         wf = Workflow(self.root / name, config)
         for _ in range(50):
-            self.assertFalse(wf.advance())
+            self.assertFalse(advance_with_topic_fixture(wf))
             for candidate in wf.queue.ready():
                 task = wf.queue.claim(candidate["task_id"])
                 if task["inputs"]["purpose"] == "plan_l3":
                     if plan_state:
                         wf.queue.change(task["task_id"], plan_state, patch={"error": {"message": "fixture plan failure"}})
                         return wf, task
-                    draft = experiment_payload("L3")
-                    draft["execution"].update(service="evaluate_artifact", parameters={}, evaluations=[{
-                        "kind": "classification", "split": "final", "count": 2}])
+                    from tests.support import scheduler_l3_draft
+                    draft = scheduler_l3_draft()
                     if estimated_seconds is not None:
                         draft['resources']['estimated_seconds'] = estimated_seconds
                     if requires_code:
+                        draft['execution'].pop('plan')
                         draft['execution'].update(service='custom_experiment', requires_code=True, interface='experiment_v1')
                     wf.submit(task, draft, "fixture")
-                    wf.advance()
+                    advance_with_topic_fixture(wf)
                     wf.queue.ready()
                     trial = (wf.queue.claim(wf.tasks()["r001/L3"]["task_id"]) if claim_request
                              else wf.tasks()['r001/L3'])
                     return wf, trial
                 wf.submit(task, infrastructure.WorkflowSimulation.scripted(self, wf, task), "fixture")
+                if task['inputs']['purpose'] == 'select':
+                    # Exercise recovery of a historical single-candidate task while
+                    # other final candidates remain explicitly deferred in this fixture.
+                    selection = wf.selection_card(1)
+                    candidate = selection['payload']['candidate_refs']['H1']
+                    wf.enqueue_role('r001/plan_l3', 'plan_l3',
+                        refs=[selection['id'], candidate, wf.brief['id']], context={
+                            'round': 1, 'selection': 'H1', 'selection_ref': selection['id'],
+                            'hypothesis_ref': candidate})
+                    advance_with_topic_fixture(wf)
+                    for sibling in wf.queue.ready():
+                        if (sibling['inputs'].get('purpose') == 'plan_l3'
+                                and sibling['inputs']['context'].get('slot') in ('H2', 'H3')):
+                            wf.submit(wf.queue.claim(sibling['task_id']),
+                                {'defer_reason': 'Single-branch recovery fixture; sibling not measured'}, 'fixture')
         self.fail("did not reach L3")
 
     def recorder(self, wf):
-        self.assertFalse(wf.advance())
+        self.assertFalse(advance_with_topic_fixture(wf))
         continuation = wf.tasks().get('r001/plan_l3/revision1')
         if continuation and continuation['state'] in ('pending', 'ready'):
             wf.queue.ready()
             revision = wf.queue.claim(continuation['task_id'])
             wf.submit(revision, {'defer_reason': 'Scripted fixture: preserve uncompleted L3 and proceed to review'}, 'fixture')
-            self.assertFalse(wf.advance())
+            self.assertFalse(advance_with_topic_fixture(wf))
         task = wf.tasks()["r001/record"]
         self.assertIn(task["task_id"], {t["task_id"] for t in wf.queue.ready()})
         task = wf.queue.claim(task["task_id"])
@@ -152,9 +168,9 @@ class L3Regression(TempCase):
                     wf.queue.finish(trial["task_id"], result={"status": "rejected", "reason": reason})
                 task, context = self.recorder(wf)
                 self.assertIn("l3_outcome", context)
-                outcome = context["l3_outcome"]
+                outcome = context["l3_outcome"]["candidates"]["H1"]
                 self.assertEqual(outcome["status"], 'deferred' if state in ('failed', 'rejected') else state)
-                self.assertIn(reason, str(outcome))
+                self.assertIn(reason, str(context["l3_outcome"]))
                 self.assertIn("execution_state", outcome)
                 self.assertTrue(outcome["valid_evidence_missing"])
                 self.assertFalse(outcome["formal_validation_success"])
@@ -227,12 +243,13 @@ class L3Regression(TempCase):
                 wf.broker.validate_evidence_for(experiment, invalid)
         wf.queue.finish(trial["task_id"], outputs=[evidence["id"]], result={"status": "completed", "evidence_ref": evidence["id"]})
         task, context = self.recorder(wf)
-        self.assertTrue(context["l3_outcome"]["formal_validation_success"])
+        self.assertTrue(context["l3_outcome"]["candidates"]["H1"]["formal_validation_success"])
+        self.assertFalse(context["l3_outcome"]["formal_validation_success"])
         self.assertFalse(context["l3_outcome"]["valid_evidence_missing"])
         wf.submit(task, meta(1, task['inputs']['context']['recording_batch']['judgment_refs']), "fixture")
         report = wf.run()
         self.assertTrue(report["workflow_completed"])
-        self.assertTrue(report["formal_validation_success"])  # 仅测试报告判定，不是实测科研成功。
+        self.assertFalse(report["formal_validation_success"])  # Two siblings remain explicitly deferred.
         Path(evidence["payload"]["artifacts"][0]["path"]).write_text("tampered fixture")
         self.assertFalse(wf.summary()["formal_validation_success"])
 
@@ -250,12 +267,12 @@ class L3Regression(TempCase):
         _, evidence = self.evidence(wf, trial)
         wf.queue.fail(trial["task_id"], {"message": "fixture interpretation failed after execution"})
         _, context = self.recorder(wf)
-        outcome = context["l3_outcome"]
+        outcome = context["l3_outcome"]["candidates"]["H1"]
         self.assertEqual(outcome["execution_state"], "completed")
         self.assertEqual(outcome["valid_evidence_refs"], [evidence["id"]])
         self.assertFalse(outcome["valid_evidence_missing"])
         self.assertTrue(outcome["formal_validation_success"])
-        self.assertTrue(wf.summary('blocked')['formal_validation_success'])
+        self.assertFalse(wf.summary('blocked')['formal_validation_success'])
         self.assertFalse(wf.summary('blocked')['workflow_completed'])
 
     def test_cached_evidence_survives_interpretation_failure(self):
@@ -272,11 +289,11 @@ class L3Regression(TempCase):
         wf.queue.claim(interpretation)
         wf.queue.fail(interpretation, {"message": "fixture cached interpretation failed"})
         wf.wait_children_or_fail(wf.queue.get(cached_id), [interpretation])
-        outcome = wf.l3_outcome(2)
+        outcome = wf.request_outcome(wf.queue.get(cached_id), required_level="L3")
         self.assertEqual(outcome["execution_state"], "cache_reused")
         self.assertEqual(outcome["valid_evidence_refs"], [evidence["id"]])
         self.assertFalse(outcome["valid_evidence_missing"])
-        self.assertIn("fixture cached interpretation failed", str(outcome))
+        self.assertIn("fixture cached interpretation failed", str(wf.queue.get(cached_id)["error"]))
         self.assertTrue(outcome["formal_validation_success"])
         self.assertEqual(outcome['interpretation_state'], 'failed')
 
@@ -284,7 +301,7 @@ class L3Regression(TempCase):
         wf, _ = self.planned("plan-failure", plan_state="failed")
         _, context = self.recorder(wf)
         self.assertIn("fixture plan failure", str(context["l3_outcome"]))
-        self.assertEqual(context["l3_outcome"]["execution_state"], "not_started")
+        self.assertEqual(context["l3_outcome"]["candidates"]["H1"]["execution_state"], "not_started")
 
 
 class ProfileRegression(TempCase):

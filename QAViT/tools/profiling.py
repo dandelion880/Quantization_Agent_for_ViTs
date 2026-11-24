@@ -119,3 +119,91 @@ def register_trials(host, bindings):
         host.state["profile_feedback"].append(record)
     host.save()
 
+
+
+def inspect_run_model(brief, cpu_threads=4):
+    if brief['model'].get('adapter', {}).get('kind') not in ('server', 'factory'):
+        return None
+    import torch
+    previous = torch.get_num_threads()
+    try:
+        torch.set_num_threads(cpu_threads)
+        return _inspect_run_model(brief)
+    finally:
+        torch.set_num_threads(previous)
+
+
+def _inspect_run_model(brief):
+    """One CPU-only binding for a new run. No search, calibration fit or performance metric."""
+    from collections import Counter
+    from copy import deepcopy
+    from tools.experiments import bind_backend
+    from tools.experiment_worker import backend_and_data
+    from tools.vision_models import segmentation_assets
+    from ptq_agent.profiling.torch_profiler import TorchProfiler
+    from ptq_agent.execution.sites import site_catalog
+
+    model = brief['model']
+    adapter = model.get('adapter', {})
+    seg = any(e.get('kind') == 'ade_frozen' for e in brief['evaluation_protocol'].get('evaluations', []))
+    bound = bind_backend(adapter, segmentation=seg)
+    probe = deepcopy(bound)
+    probe.setdefault('backend_overrides', {})['device'] = 'cpu'
+    backend, cfg, data = backend_and_data({'backend': probe}, inspect_without_data=True)
+    data_identity = data.identity if data is not None else {}
+    spec = getattr(backend, 'spec', {})
+    actual_id = spec.get('model_id', cfg['backend'].get('model_id'))
+    declared = model.get('model_id', model.get('scope', {}).get('model'))
+    if adapter.get('kind') == 'server' and any(i and i != actual_id for i in
+            (model.get('model_id'), model.get('scope', {}).get('model'))):
+        raise ContractError(f'ResearchBrief model identity {declared} differs from bound model {actual_id}')
+    catalog = site_catalog(backend, cfg)
+    blocks = spec.get('block_paths', [])
+    summary = {k: spec[k] for k in ('family', 'architecture', 'patch_size', 'depth', 'hidden_dim', 'num_heads',
+               'cls_token_count', 'special_token_type', 'special_token_count', 'prefix_token_count',
+               'block_forward', 'block_type', 'task_forward', 'classification_head') if k in spec}
+    summary.update(model_id=actual_id, checkpoint_sha256=backend.identity().get('checkpoint_sha256'),
+                   site_counts=dict(Counter(row['kind'] for row in catalog.values())),
+                   site_examples={kind: next(s for s, r in catalog.items() if r['kind'] == kind)
+                                  for kind in sorted({r['kind'] for r in catalog.values()})},
+                   classification_head=getattr(backend, 'task_head', None) or spec.get('classification_head'),
+                   preprocessing=data_identity.get('preprocessing'), pool_counts=data_identity.get('counts'),
+                   split_sources=data_identity.get('split_sources'))
+    if isinstance(summary.get('classification_head'), dict):
+        summary['classification_head'] = {k: summary['classification_head'][k] for k in
+            ('kind', 'feature', 'protected_module', 'sha256') if k in summary['classification_head']}
+    profile = None
+    if blocks and getattr(backend, 'data_adapter', None) and callable(getattr(backend, 'samples', None)):
+        # Use the existing FP structure profiler on one identified calibration input.
+        # No quantizer fitting and no per-role profiling; keep the module tree on disk.
+        profiler = TorchProfiler(backend, cfg['constraints'])
+        profile = profiler.structure([blocks[0]], 1, cfg['backend']['seed'], 0)
+        row = next(r for r in profile['modules'] if r['name'] == blocks[0])
+        summary.update(first_block=blocks[0], last_block=blocks[-1], example_block_call=row['calls'][0],
+                       input=profile['input'], example_sample_ids=profile['sample_ids'])
+        summary['task_output'] = profile['output']
+    if spec.get('prefix_token_count') is not None:
+        prefix = spec['prefix_token_count']
+        summary['sequence'] = {'cls': [0,spec['cls_token_count']], 'special': [spec['cls_token_count'],prefix],
+                               'patch_start':prefix, 'intervals':'half-open, image sequence'}
+    if bound.get('segmentation_assets'):
+        _, settings, _, receipt = segmentation_assets(cfg['backend'])
+        if receipt.get('backbone_sha256', receipt.get('deit_backbone_sha256')) != summary['checkpoint_sha256']:
+            raise ContractError("分割 head 与指定模型身份不同")
+        summary['segmentation'] = {'feature_interface': settings['model']['backbone']['type'],
+            'out_indices': settings['model']['backbone']['out_indices'], 'test_cfg': settings['model']['test_cfg'],
+            'head_sha256': receipt['checkpoint_sha256'], 'preprocessing': settings['pipeline']}
+    summary['profile_tools'] = ['query_ptq_sites', 'profile_structure', 'profile_distribution', 'read_profile_evidence']
+    binding = {'sha256': fingerprint(bound), 'segmentation': bool(bound.get('segmentation_assets'))}
+    if model.get('allowed_adapters'):
+        from tools.experiments import model_task_identity
+        binding['alternate_source'] = model_task_identity(backend, cfg['backend'])
+        binding['task_assets'] = [a['sha256'] for a in bound.get('segmentation_assets', [])]
+    # Preview the existing evaluator order without loading extra images. Profiles
+    # with their own seed report their actual IDs in their Evidence.
+    previews = {s: data.ids(s)[:32] for s in ('calibration', 'search')} if data is not None else {}
+    summary['sample_selection'] = {'detail_field': 'sample_views', 'ordering_seeds': data_identity.get('ordering_seeds'),
+        'meaning': 'evaluation/fit use the fixed per-split order; seeded profiling reports its own actual IDs'}
+    return {'summary': summary, 'sample_views': previews, 'asset_binding': bound, 'module_inventory': backend.modules(),
+            'site_catalog': catalog, 'structure_profile': profile,
+            'binding': binding}

@@ -1,0 +1,456 @@
+{
+  "schema_version": "qavit.gonly.delivery/1",
+  "baseline_commit": "8800006b687c56205ad624bae2ad7156c326d873",
+  "baseline_tag": "full-baseline-20261110-8800006",
+  "branch": "ablation/gonly",
+  "merged_to_main": false,
+  "worktree": "/root/data-fs/projects/Quantization_Agent_for_ViTs_gonly",
+  "tested_source": {
+    "core_sha256": "8c76550850c9f3a29bb4898784b75c9048f0f4ea22abe304dfc72ad3885869da",
+    "numerical_library_sha256": "f00b614ad7b4d408a2468113fd83d25ee31f7c5e73725a2ebf6ca05842d60ce4"
+  },
+  "cpu": {
+    "status": "passed",
+    "tests_run": 625,
+    "elapsed_seconds": 515.387,
+    "source": "full_cpu_final.log"
+  },
+  "structure": {
+    "status": "passed",
+    "errors": [],
+    "syntax_files": 182,
+    "snapshot_file_count": 287
+  },
+  "knowledge": {
+    "status": "passed",
+    "errors": [],
+    "skill_count": 4,
+    "method_count": 21,
+    "checked_pages": 54
+  },
+  "runs": {
+    "live_gonly_r2": {
+      "status": "budget_stopped",
+      "state_saved": true,
+      "elapsed_seconds": 796.2515480518341,
+      "completed_rounds": [
+        1
+      ],
+      "scope_target_reached": false,
+      "hypotheses": [
+        {
+          "evidence_refs": [
+            "EvidenceCard-8c18487f022044858cd9bc89349da013@1",
+            "EvidenceCard-018a00f22010452aafbdc58b1ca4ece0@1"
+          ],
+          "feedback_used": [],
+          "ref": "HypothesisCard-5307d3b475d34426a3936752e56e847b@1",
+          "round": 1,
+          "slot": "H1",
+          "title": "保留 RepQ 完整种子的 FC2 静态通道尺度适配"
+        },
+        {
+          "evidence_refs": [
+            "EvidenceCard-8c18487f022044858cd9bc89349da013@1",
+            "EvidenceCard-018a00f22010452aafbdc58b1ca4ece0@1"
+          ],
+          "feedback_used": [],
+          "ref": "HypothesisCard-aac14477382f4518b1e52439d61187e9@1",
+          "round": 1,
+          "slot": "H2",
+          "title": "RepQ 完整种子上的 FC2 输出误差约束静态 A4 粒度选择"
+        }
+      ],
+      "selected_slot": "H1",
+      "first_round_missing_slots": [
+        "H3"
+      ],
+      "missing_h3_cause": "account/read transport failure before model call",
+      "second_round": "Memory delivered and two new L2 measurements saved; candidate submissions unfinished at budget closeout",
+      "formal_l3_executed": false,
+      "no_retired_research_tasks": true,
+      "routes": {
+        "audits": 16,
+        "model_calls_started": 15,
+        "generation_requests_astra_high": 15,
+        "actual_model_echo": "unknown where not reported; requested identity is not substituted"
+      },
+      "measurements": [
+        {
+          "evidence_ref": "EvidenceCard-8c18487f022044858cd9bc89349da013@1",
+          "experiment_ref": "ExperimentCard-cc7869b4b62c4fbe935818d7cbd3845f@1",
+          "execution_id": "task-8f65e9a346ef6aecff6ae2d0-a0001",
+          "source": "synthetic_computation",
+          "level": "L2",
+          "site": "blocks.0.mlp.fc2",
+          "granularity": "per_tensor",
+          "actual_data": {
+            "calibration": {
+              "full_dataset": false,
+              "sample_count": 2,
+              "sample_ids": [
+                "synthetic-calibration-0",
+                "synthetic-calibration-1"
+              ],
+              "split": "calibration"
+            },
+            "pilot": {
+              "full_dataset": false,
+              "sample_count": 4,
+              "sample_ids": [
+                "synthetic-search-0",
+                "synthetic-search-2",
+                "synthetic-search-1",
+                "synthetic-search-3"
+              ],
+              "split": "search"
+            }
+          },
+          "input_relative_mse": 0.03092112350913701,
+          "operator_output_relative_mse": 0.03187111017077041,
+          "pilot_output_relative_mse": 0.001483887590544394
+        },
+        {
+          "evidence_ref": "EvidenceCard-018a00f22010452aafbdc58b1ca4ece0@1",
+          "experiment_ref": "ExperimentCard-dcad9e49235547bba1bb5867564c9633@1",
+          "execution_id": "task-ed7642f79cbd47f6f59bdc68-a0001",
+          "source": "synthetic_computation",
+          "level": "L2",
+          "site": "blocks.0.mlp.fc2",
+          "granularity": "per_channel",
+          "actual_data": {
+            "calibration": {
+              "full_dataset": false,
+              "sample_count": 2,
+              "sample_ids": [
+                "synthetic-calibration-0",
+                "synthetic-calibration-1"
+              ],
+              "split": "calibration"
+            },
+            "pilot": {
+              "full_dataset": false,
+              "sample_count": 4,
+              "sample_ids": [
+                "synthetic-search-0",
+                "synthetic-search-2",
+                "synthetic-search-1",
+                "synthetic-search-3"
+              ],
+              "split": "search"
+            }
+          },
+          "input_relative_mse": 0.005291091549801143,
+          "operator_output_relative_mse": 0.005259901909797835,
+          "pilot_output_relative_mse": 0.00022766676269876248
+        },
+        {
+          "evidence_ref": "EvidenceCard-4a55eee8c02c40c2941a4103d7186974@1",
+          "experiment_ref": "ExperimentCard-5ac689e1593c473387b661deca17a3fb@1",
+          "execution_id": "task-d3222f20dbe43f1637b75eeb-a0001",
+          "source": "synthetic_computation",
+          "level": "L2",
+          "site": "blocks.0.mlp.fc2",
+          "granularity": "per_tensor",
+          "actual_data": {
+            "calibration": {
+              "full_dataset": false,
+              "sample_count": 1,
+              "sample_ids": [
+                "synthetic-calibration-0"
+              ],
+              "split": "calibration"
+            },
+            "pilot": {
+              "full_dataset": false,
+              "sample_count": 4,
+              "sample_ids": [
+                "synthetic-search-0",
+                "synthetic-search-2",
+                "synthetic-search-1",
+                "synthetic-search-3"
+              ],
+              "split": "search"
+            }
+          },
+          "input_relative_mse": 0.010512665482927895,
+          "operator_output_relative_mse": 0.008537670017844482,
+          "pilot_output_relative_mse": 0.0003248715633476709
+        },
+        {
+          "evidence_ref": "EvidenceCard-9f524511e4114a40aee510a54dcd8eba@1",
+          "experiment_ref": "ExperimentCard-192a048d81cb4e3ea6da2d54db79f73b@1",
+          "execution_id": "task-0d15627fb375f40cfdfbbe83-a0001",
+          "source": "synthetic_computation",
+          "level": "L2",
+          "site": "blocks.0.mlp.fc2",
+          "granularity": "per_channel",
+          "actual_data": {
+            "calibration": {
+              "full_dataset": false,
+              "sample_count": 1,
+              "sample_ids": [
+                "synthetic-calibration-0"
+              ],
+              "split": "calibration"
+            },
+            "pilot": {
+              "full_dataset": false,
+              "sample_count": 4,
+              "sample_ids": [
+                "synthetic-search-0",
+                "synthetic-search-2",
+                "synthetic-search-1",
+                "synthetic-search-3"
+              ],
+              "split": "search"
+            }
+          },
+          "input_relative_mse": 0.003037795165849222,
+          "operator_output_relative_mse": 0.0020440605390945935,
+          "pilot_output_relative_mse": 0.00035894607856461663
+        }
+      ]
+    },
+    "real_deit_code_r2": {
+      "status": "passed",
+      "full_research_loop_started": false,
+      "formal_l3_executed": false,
+      "researcher_ref": "HypothesisCard-e24f75fdc01547cea92bc3dea29d0a8a@1",
+      "safeguard_refs": [
+        "ReviewDecisionCard-9788e50348ba4fae8981ca35e50c526a@1"
+      ],
+      "routes": {
+        "audits": 10,
+        "model_calls_started": 10,
+        "generation_requests_astra_high": 3,
+        "actual_model_echo": "unknown where not reported; requested identity is not substituted"
+      },
+      "measurements": [
+        {
+          "evidence_ref": "EvidenceCard-6a40757b321547c1ae87b1f3ab5f4af5@1",
+          "experiment_ref": "ExperimentCard-21089144f6f84ce3b387f47c34013460@1",
+          "execution_id": "task-38a868da3d035ec654d3c5b4-a0001",
+          "source": "real",
+          "level": "L1",
+          "site": "blocks.0.attn.proj",
+          "granularity": "per_tensor",
+          "actual_data": {
+            "calibration": {
+              "full_dataset": false,
+              "sample_count": 4,
+              "sample_ids": [
+                "train/n01751748/n01751748_5926.JPEG",
+                "train/n02442845/n02442845_19600.JPEG",
+                "train/n04131690/n04131690_11080.JPEG",
+                "train/n03065424/n03065424_37483.JPEG"
+              ],
+              "split": "calibration"
+            }
+          },
+          "input_relative_mse": 0.1358864943515518,
+          "operator_output_relative_mse": 0.050842464070052204,
+          "pilot_output_relative_mse": null
+        }
+      ],
+      "data_scope": "4 calibration images actually consumed; search/final not read. Frozen dataset manifest unchanged."
+    },
+    "live_h3_r2": {
+      "status": "validation_completed",
+      "hypotheses": [
+        {
+          "evidence_refs": null,
+          "feedback_used": [],
+          "ref": "HypothesisCard-81e38926e14a496c8222c66111b80797@1",
+          "round": 1,
+          "slot": "H3",
+          "title": "固定A4码本下的跨token守恒舍入：抑制残差支路相干误差"
+        }
+      ],
+      "routes": {
+        "audits": 1,
+        "model_calls_started": 1,
+        "generation_requests_astra_high": 1,
+        "actual_model_echo": "unknown where not reported; requested identity is not substituted"
+      },
+      "measurements": [],
+      "scope": "Independent H3 proposal using Brief-reported historical numbers; no claim of newly measured evidence, implementation, novelty, or performance."
+    }
+  },
+  "historical_validation_failures": {
+    "live_gonly_r1": "Harness execution_guidance incorrectly supplied as a string; no measurements or hypotheses. Preserved.",
+    "real_deit_code_r1": "Harness backend count override contradicted frozen manifest; correctly rejected, no real Evidence. Preserved.",
+    "live_h3_r1": "180-second call timeout and remaining-budget retry ended without a submitted H3. Preserved.",
+    "full_cpu.log": "Two failures: overlap with a real subscription lock, and unnecessary Recorder for unstarted cancelled generation. Isolated execution and implementation correction; final full suite passed."
+  },
+  "journal_audits": {
+    "live_gonly_r1": {
+      "status": "passed",
+      "commits": 59,
+      "cards": 45,
+      "memory_version": 1,
+      "head": "15b6c8f35d466c1cbe70eaf1bdc8b46b63cc1c398c44a62e0287f3134a3be3cb"
+    },
+    "live_gonly_r2": {
+      "status": "passed",
+      "commits": 296,
+      "cards": 257,
+      "memory_version": 17,
+      "head": "81c87a1dc2097ecc90007e43303408b2f0ba3d22c4facdb44098bf8317f97940"
+    },
+    "real_deit_code_r1": {
+      "status": "passed",
+      "commits": 134,
+      "cards": 114,
+      "memory_version": 5,
+      "head": "2da297da1136ac86f9d4f30271c60988519860483cb9edf01225eb7a7fb3663c"
+    },
+    "real_deit_code_r2": {
+      "status": "passed",
+      "commits": 132,
+      "cards": 112,
+      "memory_version": 6,
+      "head": "be18a6d2d5f8effe0fce5595f61117db531923d4f26fa73c8c1efc64f5f0deda"
+    },
+    "live_h3_r1": {
+      "status": "passed",
+      "commits": 30,
+      "cards": 22,
+      "memory_version": 1,
+      "head": "8c000a2a0df3bcb110340b3693aaeaa4e6e079020be17fbf8af0e86ce1f584b8"
+    },
+    "live_h3_r2": {
+      "status": "passed",
+      "commits": 10,
+      "cards": 7,
+      "memory_version": 2,
+      "head": "d685c91615c70e4e3307f1ad989c09affb760d41b9836489261ac9415afd1558"
+    }
+  },
+  "offline_evaluation": {
+    "status": "verified",
+    "directory": "EXP/evaluations/gonly_20261110_r1",
+    "cases": 5,
+    "source_files": 630,
+    "quality_judge_called": false,
+    "select_quality_scoring": "gonly_selection_rubric_unavailable; full trajectory and costs retained"
+  },
+  "unverified": [
+    "Full ImageNet + ADE20K L3 and actual Top-3 promotion at dataset scale",
+    "Scientific quality, accuracy, or cost improvement versus Full",
+    "A live uninterrupted two-round run completing all H1/H2/H3 and L3; CPU regressions cover that control flow",
+    "Implementation and numerical benefit of the new H3 proposal"
+  ],
+  "artifacts": [
+    {
+      "path": "EXP/validation/gonly_20261110_r1/full_cpu_final.log",
+      "sha256": "0c600c4772357aafdf0d1cc968bb0892c3d462ed8de1c31dc9e8606f7bb38b09",
+      "bytes": 77927
+    },
+    {
+      "path": "EXP/validation/gonly_20261110_r1/structure_audit_final.json",
+      "sha256": "9c2cd2d601cd3d17eec9182b52bb4493c61cdeaec31a23138c379b65bf683e57",
+      "bytes": 165912
+    },
+    {
+      "path": "EXP/validation/gonly_20261110_r1/knowledge_audit_final.log",
+      "sha256": "a018f3191b07d93e1ee926872b8e770043c5646cb937ea390a5f81ce1121ff01",
+      "bytes": 106
+    },
+    {
+      "path": "EXP/validation/gonly_20261110_r1/cpu_contracts_final/contracts.json",
+      "sha256": "f38267a4fbf3fb473ffcf2ea8a2f94d7a8608e4eb8003c4cf84f966f50941520",
+      "bytes": 455657
+    },
+    {
+      "path": "EXP/validation/gonly_20261110_r1/generation_preflight.json",
+      "sha256": "eff728a20f2b80c47dba541544ae0a7bafac84593c2206c747a5f74557b888d2",
+      "bytes": 476
+    },
+    {
+      "path": "EXP/validation/gonly_20261110_r1/evaluation_rules.json",
+      "sha256": "44f1b34bf96e50bf8e73498e1e3b27518dd92142b0223ebe3d5139fa3d5189bb",
+      "bytes": 242
+    },
+    {
+      "path": "EXP/validation/gonly_20261110_r1/evaluation_prepare.log",
+      "sha256": "6fc3fead7e4e567da69ca1ebfbb7736e7485b9faaa439a285135514196cee6bb",
+      "bytes": 157
+    },
+    {
+      "path": "EXP/validation/gonly_20261110_r1/evaluation_verify.log",
+      "sha256": "fadc29515ff918d1069029e79afa8bb491da7c90161d39edcce53a61de68cced",
+      "bytes": 51
+    },
+    {
+      "path": "EXP/validation/gonly_20261110_r1/journal_audits.json",
+      "sha256": "eee94c9aef38ad4b16ec9999ce1be4672cbb468b9b48bc519c313f42e881dfb2",
+      "bytes": 1151
+    },
+    {
+      "path": "EXP/validation/gonly_20261110_r1/live_gonly_r1_result.json",
+      "sha256": "36c7386cc8e4a43277f2697367011d2acf5e0a89754eae20a3e29af7c074b968",
+      "bytes": 9053
+    },
+    {
+      "path": "EXP/validation/gonly_20261110_r1/live_gonly_r2_result.json",
+      "sha256": "4c8fc6c52a930ce3cad06e8a5b3315e08ca0e320145dec88cb4f1cf0e63b14ac",
+      "bytes": 48653
+    },
+    {
+      "path": "EXP/validation/gonly_20261110_r1/real_deit_code_r1/service_validation.json",
+      "sha256": "fa7d3f398f2c3b34b49aef2f26d38bdea8795004295e6ea5a97f9b09f1a265e3",
+      "bytes": 148
+    },
+    {
+      "path": "EXP/validation/gonly_20261110_r1/real_deit_code_r2/service_validation.json",
+      "sha256": "569c24638f5cf53a77a63b4ce6e10cc21a578e253c7e7ab5ae06f354c3bc8dde",
+      "bytes": 3542
+    },
+    {
+      "path": "EXP/validation/gonly_20261110_r1/live_h3_r1_result.json",
+      "sha256": "c9aff9cb2603eba88e804ec760fcfb24b444fb2b1f5a8ee5137c8240a684b96c",
+      "bytes": 6697
+    },
+    {
+      "path": "EXP/validation/gonly_20261110_r1/live_h3_r2_result.json",
+      "sha256": "f3569005273e152884da1cdca8ce63dff6aad0f8c6e7379cd857298b78bb6b75",
+      "bytes": 4475
+    },
+    {
+      "path": "EXP/validation/gonly_20261110_r1/live_gonly_r2_input.json",
+      "sha256": "7294de6abdc7b8e0fa4da37038ced53e1ecfe3e1d8d78755ff57c75667d41414",
+      "bytes": 2907
+    },
+    {
+      "path": "EXP/validation/gonly_20261110_r1/live_h3_r1_input.json",
+      "sha256": "0bf6be28f90005076475b54ded08f87f34bc7f85dc1e2fdf38fad0e204fbe03f",
+      "bytes": 3308
+    },
+    {
+      "path": "EXP/validation/gonly_20261110_r1/live_h3_r2_input.json",
+      "sha256": "fbf3a44f1353521c4995003062a7b90de9891524e6bd57ca747a272037a2a1fa",
+      "bytes": 3417
+    },
+    {
+      "path": "EXP/validation/gonly_20261110_r1/real_deit_code_input.json",
+      "sha256": "f44420042ce16c3b4b4645d77c87b020f731030dbe3bf984ee8b8ff9b45dfe1b",
+      "bytes": 4444
+    },
+    {
+      "path": "EXP/validation/gonly_20261110_r1/real_deit_code_input_r2.json",
+      "sha256": "5e2f355fd54d9fb9cd05b4ed5ff29d0a6877f7b7ef0799740be625667515a43a",
+      "bytes": 4347
+    },
+    {
+      "path": "EXP/validation/gonly_20261110_r1/real_deit_code_question.txt",
+      "sha256": "700d2341cd4a0b3d6aa5618d6126839166957973dbebbe194b84e80e4a7490a9",
+      "bytes": 1320
+    },
+    {
+      "path": "EXP/validation/gonly_20261110_r1/live_smoke.py",
+      "sha256": "b9700b0e7d40395355a780519a7256d72c7b766f5b2e4e1dcf9e7affd8a0b36a",
+      "bytes": 8208
+    }
+  ]
+}

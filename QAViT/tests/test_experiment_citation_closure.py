@@ -7,7 +7,7 @@ from unittest.mock import patch
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from core.cards import ContractError, make_card
 from tests.test_infrastructure import TempCase
-from tests.test_serial_debate_memory import SerialDebateMemoryRegression
+from tests import test_serial_debate_memory as serial
 from tests.support import experiment_payload
 from tools.safeguards import write_artifact
 
@@ -16,7 +16,7 @@ SOURCE = 'def fit(x, parameters):\n    return parameters\ndef apply(x, state, pa
 
 
 class ExperimentCitationClosure(TempCase):
-    debate_task = SerialDebateMemoryRegression.debate_task
+    debate_task = serial.SerialDebateMemoryRegression.debate_task
 
     def setUp(self):
         super().setUp()
@@ -46,8 +46,17 @@ class ExperimentCitationClosure(TempCase):
         return draft
 
     def plan(self, wf, name, *, parent=None):
+        selection = wf.selection_card(1)
+        if selection is None and parent is None:
+            from tests.test_gonly import GOnlyRegression
+            wf, task = GOnlyRegression.drive(self, wf, stop=lambda t: t['inputs']['purpose'] == 'select')
+            wf.submit(task, {'selected_slot': 'H1', 'rationale': 'citation fixture'}, None)
+            selection = wf.selection_card(1)
+        context = {'round': 1}
+        if selection:
+            context.update(slot='H1', selection_ref=selection['id'], hypothesis_ref=selection['payload']['candidate_refs']['H1'])
         tid = wf.enqueue_role('fixture/plan/' + name, 'plan_l3', refs=[wf.brief['id']],
-                              context={'round': 1}, parent_task=parent)
+                              context=context, parent_task=parent)
         wf.queue.ready()
         return wf.queue.claim(tid)
 

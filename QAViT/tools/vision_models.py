@@ -1,8 +1,7 @@
-"""本地DeiT模型与冻结ADE头适配；沿用已验证构造、加载和推理数学。"""
+"""绑定本地官方构造器及冻结任务头。模型源码、权重和前向语义来自所选资产。"""
 from pathlib import Path
 import collections.abc
 import importlib.util
-import os
 import sys
 import types
 from runtime.paths import ROOT
@@ -11,23 +10,43 @@ from runtime.files import read, file_hash
 QAVIT = ROOT / 'QAViT'
 
 
+def construct_model(spec):
+    """Dispatch on the bound source API. Constructor names belong to the asset."""
+    root = Path(spec['code_path']).resolve()
+    source = spec['code_source']['repo_url'].removesuffix('.git').rstrip('/')
+    if source == 'https://github.com/facebookresearch/deit':
+        shim = types.ModuleType('torch._six')
+        shim.container_abcs = collections.abc
+        sys.modules.setdefault('torch._six', shim)
+        import timm
+        if timm.__version__ != '0.3.2':
+            raise ValueError('此 DeiT 源码须使用 timm 0.3.2')
+        entry = importlib.util.spec_from_file_location('qavit_official_deit', root / 'models.py')
+        module = importlib.util.module_from_spec(entry)
+        sys.modules[entry.name] = module
+        entry.loader.exec_module(module)
+    elif source == 'https://github.com/facebookresearch/dinov3':
+        import torch._dynamo.config as dynamo
+        # Official block.py sets this compiler cache option at import time.
+        if not hasattr(dynamo, 'accumulated_cache_size_limit'):
+            dynamo._config['accumulated_cache_size_limit'] = 1024
+            dynamo._default['accumulated_cache_size_limit'] = 1024
+            dynamo._allowed_keys.add('accumulated_cache_size_limit')
+        sys.path.insert(0, str(root))
+        try:
+            from dinov3.hub import backbones as module
+        finally:
+            sys.path.remove(str(root))
+        if Path(module.__file__).resolve() != root / 'dinov3/hub/backbones.py':
+            raise ValueError('DINOv3 constructor import 与绑定源码目录不一致')
+    else:
+        raise ValueError('模型构造接口尚未适配，可绑定显式 factory: ' + source)
+    return getattr(module, spec['constructor'])(pretrained=False)
+
+
 def load_model(spec):
-    """官方timm 0.3.2 DeiT，strict加载并逐张量核对；不下载或训练。"""
     import torch
-    if spec['family'] != 'DeiT' or spec['model_id'] != 'deit_base_patch16_224':
-        raise ValueError('本版已验证本地模型入口仅支持指定non-distilled DeiT-B')
-    shim = types.ModuleType('torch._six')
-    shim.container_abcs = collections.abc
-    sys.modules.setdefault('torch._six', shim)
-    import timm
-    if timm.__version__ != '0.3.2':
-        raise ValueError('分类模型必须使用已验证timm 0.3.2')
-    path = Path(spec['code_path']) / 'models.py'
-    module_spec = importlib.util.spec_from_file_location('qavit_official_deit', path)
-    module = importlib.util.module_from_spec(module_spec)
-    sys.modules[module_spec.name] = module
-    module_spec.loader.exec_module(module)
-    model = module.deit_base_patch16_224(pretrained=False).float().eval()
+    model = construct_model(spec).float().eval()
     payload = torch.load(spec['checkpoint_path'], map_location='cpu', weights_only=True)
     state = payload.get('model', payload)
     result = model.load_state_dict(state, strict=True)
@@ -69,68 +88,159 @@ def setup_segmentation(seed=42, threads=None):
     torch.backends.cudnn.allow_tf32 = False
 
 
-def build_ade(device, receipt_path):
+def segmentation_settings(config):
+    """Resolve task-specific settings. Only exact archived assets have legacy bindings."""
+    path = config.get('segmentation_config')
+    legacy_settings = {}
+    if not path and config.get('asset_manifest'):
+        legacy = read(QAVIT / 'configs/assets/legacy_task_bindings.json')
+        rows = legacy.get(file_hash(Path(config['asset_manifest'])), {})
+        legacy_settings = rows.get(config.get('model_id'), {})
+        relative = legacy_settings.get('segmentation_config')
+        if relative:
+            path = QAVIT / 'configs' / relative
+    if not path:
+        raise ValueError('ade_frozen 需要绑定该骨干的 segmentation_config')
+    path = Path(path).resolve()
+    settings = read(path)
+    if "expected_images" in legacy_settings:
+        settings.setdefault("expected_images", legacy_settings["expected_images"])
+    return path, settings
+
+
+def segmentation_assets(config):
+    path, settings = segmentation_settings(config)
+    receipt_path = (path.parent / settings['head_receipt']).resolve()
+    receipt = read(receipt_path)
+    if receipt.get('task_definition_sha256'):
+        from core.cards import fingerprint
+        if fingerprint({k: settings[k] for k in ('model', 'pipeline')}) != receipt['task_definition_sha256']:
+            raise ValueError('任务特征层、头或预处理与冻结 head 的训练配置不符')
+    return path, settings, receipt_path, receipt
+
+
+def build_ade(backend, settings, receipt_path, receipt):
     import torch
     from torch import nn
-    from contextlib import nullcontext
     import timm
     from mmseg.registry import MODELS
     from mmseg.utils import register_all_modules
     from mmengine.config import ConfigDict
-    settings = read(QAVIT / 'configs/ade_evaluation.json')
-    asset = read(QAVIT / 'configs/assets/deit_model_manifest.json')['models'][0]
-    checkpoint = (QAVIT / 'configs/assets' / asset['checkpoint_path']).resolve()
-    if file_hash(checkpoint) != asset['checkpoint_hash']['value']:
-        raise ValueError('DeiT母模型hash改变')
+    from copy import deepcopy
+    from timm.layers import resample_abs_pos_embed
 
-    @MODELS.register_module(force=True)
-    class DeiTDualTaskBackbone(nn.Module):
-        def __init__(self, freeze_backbone=True, out_indices=(2, 5, 8, 11)):
+    device = backend.device
+    config = deepcopy(settings['model'])
+    binding = config['backbone']
+    indices = tuple(binding['out_indices'])
+    if not indices or tuple(sorted(set(indices))) != indices or indices[0] < 0 or indices[-1] >= backend.spec['depth']:
+        raise ValueError('分割任务头的特征层超出绑定骨干')
+    checkpoint = (receipt_path.parent / receipt['checkpoint']).resolve()
+    parent_hash = receipt.get('backbone_sha256', receipt.get('deit_backbone_sha256'))
+    if receipt['task'] != 'ade' or parent_hash != backend.checkpoint_hash or file_hash(checkpoint) != receipt['checkpoint_sha256']:
+        raise ValueError('分割 head 与实际母模型或 checkpoint 身份不符')
+    from ptq_agent.profiling.adapters import ProfileAdapter
+    patch = backend.spec['patch_size']
+    ph, pw = (patch, patch) if isinstance(patch, int) else patch
+
+    class Features(nn.Module):
+        def __init__(self, model):
             super().__init__()
-            self.model = timm.create_model('deit_base_patch16_224.fb_in1k', pretrained=False, dynamic_img_size=True)
-            self.model.load_state_dict(torch.load(checkpoint, map_location='cpu', weights_only=True)['model'], strict=True)
-            if self.model.num_prefix_tokens != 1 or len(self.model.blocks) != 12:
-                raise ValueError('非预期DeiT架构')
-            self.model.head = nn.Identity()
-            self.model.float().eval().requires_grad_(False)
-            self.freeze_backbone = freeze_backbone
-            self.out_indices = tuple(out_indices)
-            if self.out_indices != (2, 5, 8, 11):
-                raise ValueError('固定四级patch特征层')
+            self.model = model
+
         def forward(self, x):
-            if x.ndim != 4 or x.shape[-1] % 16 or x.shape[-2] % 16:
-                raise ValueError('输入必须是patch对齐的BCHW')
-            with torch.no_grad() if self.freeze_backbone else nullcontext():
-                out = self.model.forward_intermediates(x, indices=self.out_indices, norm=True,
+            b, _, h, w = x.shape
+            if h % ph or w % pw:
+                raise ValueError('分割输入须 patch 对齐')
+            if binding['type'] == 'DINOv3MMSegBackbone':
+                features = self.model.get_intermediate_layers(x, n=indices, reshape=True, norm=True,
+                    return_class_token=False, return_extra_tokens=False)
+            elif binding['type'] == 'DeiTDualTaskBackbone':
+                # timm 0.3.2 PatchEmbed asserts fixed image size. Use the original
+                # projection and the trained MMSeg reference's position interpolation.
+                m = self.model
+                tokens = m.patch_embed.proj(x).flatten(2).transpose(1, 2)
+                tokens = torch.cat((m.cls_token.expand(b, -1, -1), tokens), 1)
+                tokens = getattr(m.pos_drop, '_ptq_embedding_tokens', nn.Identity())(tokens)
+                pos = resample_abs_pos_embed(m.pos_embed, (h // ph, w // pw),
+                    num_prefix_tokens=backend.spec['prefix_token_count'], interpolation='bicubic', antialias=True)
+                pos = getattr(m.pos_drop, '_ptq_position_embedding', nn.Identity())(pos)
+                tokens = m.pos_drop(getattr(m.pos_drop, '_ptq_embedding_sum', nn.Identity())(tokens + pos))
+                features = []
+                for i, block in enumerate(m.blocks):
+                    tokens = block(tokens)
+                    if i in indices:
+                        start, stop = ProfileAdapter().token_layout(backend, backend.spec['block_paths'][i],
+                            tokens.shape, x.shape)['patch_slice']
+                        patches = m.norm(tokens)[:, start:stop]
+                        features.append(patches.transpose(1, 2).reshape(b, -1, h // ph, w // pw))
+            else:
+                raise ValueError('未适配的任务特征接口: ' + binding['type'])
+            shape = (b, backend.spec['hidden_dim'], h // ph, w // pw)
+            if len(features) != len(indices) or any(tuple(f.shape) != shape for f in features):
+                raise ValueError('patch 特征数量/形状与任务头不符')
+            return tuple(features)
+
+    if binding['type'] == 'DeiTDualTaskBackbone':
+        # Reference consumer used to train this specific archived head.
+        if receipt.get('status') != 'formal_head_complete' or not receipt.get('backbone_unchanged'):
+            raise ValueError('缺少冻结 head 来源')
+        modern = timm.create_model('deit_base_patch16_224.fb_in1k', pretrained=False, dynamic_img_size=True)
+        modern.load_state_dict(backend.model.state_dict(), strict=True)
+        modern.head = nn.Identity()
+        if state_sha(modern) != receipt['backbone_state_sha256']:
+            raise ValueError('分割参考骨干与 head 训练来源不匹配')
+        class Reference(nn.Module):
+            def __init__(self):
+                super().__init__()
+                self.model = modern
+            def forward(self, x):
+                return self.model.forward_intermediates(x, indices=indices, norm=True,
                     intermediates_only=True, output_fmt='NCHW')
-            shape = (x.shape[0], 768, x.shape[-2] // 16, x.shape[-1] // 16)
-            if len(out) != 4 or any(tuple(t.shape) != shape for t in out):
-                raise ValueError('patch特征索引/形状不匹配')
-            return tuple(out)
-        def train(self, mode=True):
-            super().train(mode)
-            self.model.eval()
-            return self
+        reference = Reference()
+        payload = torch.load(checkpoint, map_location='cpu')
+    elif binding['type'] == 'DINOv3MMSegBackbone' and receipt['format'] == 'mmseg_state_dict':
+        # Compare all backbone tensors in the original MMSeg checkpoint, then
+        # load only neck/head. An attached classifier is a separate frozen asset.
+        saved = torch.load(checkpoint, map_location='cpu')['state_dict']
+        source = {k.removeprefix('backbone.model.'): v for k, v in saved.items() if k.startswith('backbone.model.')}
+        state = {k: v for k, v in backend.model.state_dict().items()
+                 if not (backend.task_head and k.startswith(backend.task_head['protected_module'] + '.'))}
+        if source.keys() != state.keys() or any(not torch.equal(v.cpu(), source[k]) for k, v in state.items()):
+            raise ValueError('MMSeg checkpoint 骨干与绑定 FP 骨干不同')
+        payload = {n: {k[len(n)+1:]: v for k,v in saved.items() if k.startswith(n + '.')}
+                   for n in ('neck', 'decode_head')}
+        class Reference(nn.Module):
+            def __init__(self, model):
+                super().__init__()
+                self.model = model
+
+            def forward(self, x):
+                from ptq_agent.profiling.adapters import boundary_tensor
+                layers, handles = {}, []
+                try:
+                    for i in indices:
+                        def capture(_module, _args, output, index=i):
+                            layers[index] = boundary_tensor(output)
+                        handles.append(self.model.blocks[i].register_forward_hook(capture))
+                    self.model.forward_features(x)
+                finally:
+                    for handle in handles:
+                        handle.remove()
+                prefix = backend.spec['prefix_token_count']
+                return tuple(self.model.norm(layers[i][:, prefix:]).transpose(1, 2).reshape(
+                    x.shape[0], -1, x.shape[-2] // ph, x.shape[-1] // pw) for i in indices)
+        reference = Reference(backend.model)
+    else:
+        raise ValueError('未适配的冻结分割 backbone/head 接口')
 
     register_all_modules(init_default_scope=True)
-    segmentor = MODELS.build(ConfigDict(settings['model']))
-    backbone = segmentor.backbone.model
+    # MMSeg builds the configured neck, head and preprocessor normally.
+    config['backbone'] = {'type': lambda: reference}
+    segmentor = MODELS.build(ConfigDict(config))
     heads = [segmentor.neck, segmentor.decode_head]
-    before = state_sha(backbone)
-    receipt = read(receipt_path)
-    if receipt['status'] != 'formal_head_complete' or receipt['task'] != 'ade':
-        raise ValueError('缺少正式ADE head来源')
-    if receipt['training_budget'] != 160000 or not receipt['backbone_unchanged']:
-        raise ValueError('head训练来源不符合已验证协议')
-    if receipt['deit_backbone_sha256'] != asset['checkpoint_hash']['value']:
-        raise ValueError('head母模型来源不匹配')
-    if file_hash(receipt['checkpoint']) != receipt['checkpoint_sha256']:
-        raise ValueError('head checkpoint hash不匹配')
-    payload = torch.load(receipt['checkpoint'], map_location='cpu')
     for name, head in zip(('neck', 'decode_head'), heads):
         head.load_state_dict(payload[name], strict=True)
-    if before != receipt['backbone_state_sha256'] or state_sha(backbone) != before:
-        raise ValueError('head覆盖了骨干，或骨干来源不匹配')
 
     class SegLogits(nn.Module):
         def __init__(self, segmentor):
@@ -151,7 +261,7 @@ def build_ade(device, receipt_path):
             return self.segmentor.test_step(data)
 
     model = SegLogits(segmentor).float().to(device).eval().requires_grad_(False)
-    return model, backbone, heads, 'segmentor.backbone.model'
+    return model, Features, heads
 
 
 def checked_segmentation_step(model, packed):

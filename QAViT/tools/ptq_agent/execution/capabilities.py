@@ -2,6 +2,7 @@
 
 import shutil
 
+from ..backends.base import native_classifier
 from ..schemas import require, validate, fingerprint
 from ..profiling.contracts import linear_forward_supported
 from .contracts import FORMATS, RAW_FLOATS, BLOCKS, PLAN_SCHEMA, validate_spec, validate_execution_requirements
@@ -87,7 +88,7 @@ def validate_plan(backend, plan, config, capabilities, shapes=None, *, diagnosti
         for name, shape in (shapes or {}).items():
             if name in catalog:
                 catalog[name]["activation_shape"] = shape
-        classification_available = (backend.spec.get("classification_head") == "official pretrained ImageNet-1k head retained"
+        classification_available = (native_classifier(backend)
                                     or bool(getattr(backend, "task_head", None)))
         rows = validate_composition(plan, catalog, config, classification_available=classification_available,
                                     diagnostic=diagnostic, allow_unknown_shapes=allow_unknown_shapes)
@@ -196,7 +197,9 @@ def plan_key(plan):
                     item[target + "_calibration"] = calibration(layer, target)
             layers.append(item)
         # 省略默认值不是新实验；与pipeline实际默认值一致，不改提交的plan。
-        execution = {"within_stage": "parallel", "operator_calibration": "float", **plan["execution"]}
+        execution = {"within_stage": "parallel", "operator_calibration": "float",
+                     "calibration_unit": "operator", "layer_order": "forward",
+                     "reestimate_passes": 1, "calibration_context": "current", **plan["execution"]}
         preprocess = []
         for prep in plan["preprocess"]:
             item = {k: v for k, v in prep.items() if k != "evidence"}

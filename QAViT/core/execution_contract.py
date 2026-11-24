@@ -8,7 +8,8 @@ from core.cards import ContractError, canonical
 
 TARGETS = ("weight", "activation")
 EXECUTION_FIELDS = {"mode", "compute_dtype", "activation_calibration", "order", "within_stage",
-                    "operator_calibration", "observer_batch_size"}
+                    "operator_calibration", "observer_batch_size", "calibration_unit", "block_modules",
+                    "layer_order", "reestimate_passes", "calibration_context"}
 SPEC_FIELDS = {"bits", "format", "granularity", "axis", "group_size", "symmetric", "scale"}
 CONTRACT_FIELDS = {"required_sites", "required_site_targets", "required_kinds", "specs", "methods",
                    "calibrations", "site_overrides", "execution", "preprocess", "operators",

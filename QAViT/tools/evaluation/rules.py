@@ -43,13 +43,25 @@ class Rules:
                 for criterion in criteria:
                     if set(criterion["anchors"]) != {"0", "1", "2"}:
                         raise EvalError("incomplete anchors")
-        catalog = task_catalog()
-        expected = {p for p, t in catalog.items() if t["role"] != "supervisor"}
-        if set(self.selected) != expected or len(rubric_ids) != 6:
-            raise EvalError("rubrics do not cover the current six roles / LLM purposes")
-        if any(catalog[p]["role"] != r["role"] for p, r in self.selected.items()):
-            raise EvalError("role mapping mismatch")
+        # Coverage belongs to this immutable package, never today's TASKS.
+        # A new/retired research purpose must not invalidate old evaluations.
+        expected = set(self.schema['properties']['purpose']['enum'])
+        roles = set(self.schema['properties']['role']['enum'])
+        if set(self.selected) != expected:
+            raise EvalError('rubrics do not cover their frozen package purpose contract')
+        if any(r['role'] not in roles for r in self.selected.values()):
+            raise EvalError('rubric role outside frozen package contract')
         self.version = fingerprint(self.provenance)
+
+    def accepts_role(self, purpose, role):
+        # Historical plan_l3 moved from Judger to Generation. Both frozen
+        # routes are explicit compatibility, not a dependency on current TASKS.
+        return purpose in self.selected and (role == self.selected[purpose]['role']
+            or purpose == 'plan_l3' and role in ('judger', 'generation'))
+
+    def coverage(self):
+        return {p: ('covered' if p in self.selected else 'not_covered')
+                for p, t in task_catalog().items() if t['role'] != 'supervisor'}
 
     def criteria(self, purpose):
         r = self.selected[purpose]

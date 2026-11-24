@@ -1,0 +1,383 @@
+{
+  "status": "completed",
+  "base_commit": "f7a7864c10b5044f3dea17e2c863a48ff4ae3c2c",
+  "source_core_sha256": "5d9f18f51abf0c4db6d0c4d53d7180ff0c3a4a6811eae377a68036500f6b69e0",
+  "numerical_library_sha256": "980be0711cf59e90783f388e8fcd929c49baab76db10ecf4de9e63f4da933713",
+  "source_changes": [
+    ".gitignore",
+    "QAViT/README.md",
+    "QAViT/agents/interaction.py",
+    "QAViT/agents/prompts/generation.md",
+    "QAViT/agents/prompts/recorder.md",
+    "QAViT/agents/prompts/tasks/generate.md",
+    "QAViT/agents/prompts/tasks/record.md",
+    "QAViT/agents/prompts/tasks/select.md",
+    "QAViT/agents/roles.py",
+    "QAViT/agents/tasks.py",
+    "QAViT/core/cards.py",
+    "QAViT/core/experiment_requests.py",
+    "QAViT/core/inspirations.py",
+    "QAViT/core/solutions.py",
+    "QAViT/core/workflow.py",
+    "QAViT/docs/EXECUTION.md",
+    "QAViT/docs/RESOURCE_LIFECYCLE.md",
+    "QAViT/knowledge/INDEX.md",
+    "QAViT/runtime/driver.py",
+    "QAViT/runtime/task_queue.py",
+    "QAViT/tests/data/prompt_readiness_baseline.json",
+    "QAViT/tests/support.py",
+    "QAViT/tests/test_candidate_revision.py",
+    "QAViT/tests/test_controlled_scope.py",
+    "QAViT/tests/test_generation_loop.py",
+    "QAViT/tests/test_gonly.py",
+    "QAViT/tests/test_infrastructure.py",
+    "QAViT/tests/test_inspirations.py",
+    "QAViT/tests/test_memory_delivery.py",
+    "QAViT/tests/test_minimal_fixes.py",
+    "QAViT/tests/test_multi_candidate_l3.py",
+    "QAViT/tests/test_recorder_scheduling_cost.py",
+    "QAViT/tests/test_request_continuation.py",
+    "QAViT/tests/test_research_refactor.py",
+    "QAViT/tests/test_round_validation_scope.py",
+    "QAViT/tests/test_run_readiness.py",
+    "QAViT/tests/test_structure.py",
+    "README.md",
+    "STRUCTURE.md",
+    "EXP/validation/research_topics_20261117_r1/PSEUDOCODE.md",
+    "EXP/validation/research_topics_20261117_r1/REPORT.md",
+    "EXP/validation/research_topics_20261117_r1/RESULTS.json",
+    "EXP/validation/research_topics_20261117_r1/explain_simplify_r1_result.json",
+    "EXP/validation/research_topics_20261117_r1/new_evidence_r1_result.json",
+    "EXP/validation/research_topics_20261117_r1/no_gain_r1_result.json",
+    "EXP/validation/research_topics_20261117_r1/no_gain_r2_result.json",
+    "EXP/validation/research_topics_20261117_r1/replay.py",
+    "QAViT/agents/prompts/tasks/focus.md",
+    "QAViT/core/topics.py",
+    "QAViT/tests/test_research_topics.py"
+  ],
+  "state_tests": [
+    {
+      "log": "regression.log",
+      "sha256": "7f28793edd1ac0ce015a6fbac5183e48aa510bd01ec29ece2e991cd2865ee0dd",
+      "executions": 67,
+      "elapsed_seconds": 152.09,
+      "status": "passed",
+      "failure_summary": []
+    },
+    {
+      "log": "fixture_compatibility.log",
+      "sha256": "87bf3a5ccc096a98bded47e8d6e693694a1c748cad9b6d354db6c76a90a9b35d",
+      "executions": 139,
+      "elapsed_seconds": 251.569,
+      "status": "initial_failures_resolved",
+      "failure_summary": [
+        "test_new_planning_revision_is_current_before_request_exists (QAViT.tests.test_round_validation_scope.RoundValidationScope)",
+        "test_monitor_enforces_deadline_on_real_cpu_sleep_process (QAViT.tests.test_controlled_scope.ActiveSegments)",
+        "test_real_preflight_is_repeated_and_no_call_before_success (QAViT.tests.test_controlled_scope.PreflightRecovery)",
+        "test_partial_generation_children_last_receipt_and_repeat_resume (QAViT.tests.test_controlled_scope.ScopeBoundary)",
+        "test_closeout_records_partial_round_without_fabricating_completion (QAViT.tests.test_run_readiness.ReadinessRegression)"
+      ]
+    },
+    {
+      "log": "repairs.log",
+      "sha256": "dc6e84b5f7dbf3359e776c034ef0fa3161171fc1b2240925124d786ae4f82af7",
+      "executions": 30,
+      "elapsed_seconds": 57.896,
+      "status": "initial_failures_resolved",
+      "failure_summary": [
+        "test_legacy_unscoped_method_sources_are_readable_and_handed_to_coding (QAViT.tests.test_research_topics.TopicTests)"
+      ]
+    },
+    {
+      "log": "final_state.log",
+      "sha256": "bd6e693929cd59a7004902dfe4566a64339fc9930702ec015c37b5f226c722cd",
+      "executions": 26,
+      "elapsed_seconds": 42.013,
+      "status": "passed",
+      "failure_summary": []
+    },
+    {
+      "log": "final_recovery.log",
+      "sha256": "f9e29c9da76dd6d49ebac27a1199823a2eb9694492c99b76cc8b46db1d7bc977",
+      "executions": 45,
+      "elapsed_seconds": 43.469,
+      "status": "passed",
+      "failure_summary": []
+    },
+    {
+      "log": "method_binding_final.log",
+      "sha256": "a3e0cc0480362eef216d5b1dc4a21939f45849a535d521c301d598387c7d12aa",
+      "executions": 10,
+      "elapsed_seconds": 15.481,
+      "status": "passed",
+      "failure_summary": []
+    }
+  ],
+  "repair_explanation": [
+    "旧流程夹具显式完成共同 focus，避免无条件 queue.ready 改变其它待处理任务状态；共同选题也应被 Recorder 记录。",
+    "并行真实回放占用全局订阅锁，模拟预检在截止前未进入 mock 模型；CPU短时测试另受并行负载影响。隔离复测均通过，未改预算实现或阈值。",
+    "新方法 handoff 夹具补充原请求的 Generation parent；无主题方法源码授权通过。",
+    "主题发布前卡片中断窗口以稳定决定身份和原 TaskCard 复用修复；追加断电与暂停后三个 L3 规划测试通过。",
+    "真实回放后，仅修正显式其他 method_id 对照的归属优先级；最终10项状态回归通过，未重复模型调用。"
+  ],
+  "tests_are_scripted_state_fixtures": true,
+  "test_execution_counts_include_repeats": true,
+  "static_checks": {
+    "syntax": {
+      "status": "passed",
+      "files": 29
+    },
+    "knowledge": {
+      "status": "passed",
+      "errors": [],
+      "skill_count": 7,
+      "method_count": 21,
+      "checked_pages": 77
+    },
+    "git_diff_check": "passed"
+  },
+  "real_generation": [
+    {
+      "case": "no_gain",
+      "attempt": "r1",
+      "status": "completed",
+      "result_file": "no_gain_r1_result.json",
+      "result_sha256": "43595ba3317fc4a0b59e22747547ef6c3c71a8e7a25590532f16347061d9557f",
+      "input_summary_local_file": "no_gain_r1_input_summary.json",
+      "input_summary_sha256": "1f78565da8fb05c402feea168c7c9e427ebf1f65e756622882509e310dc21652",
+      "source_core_sha256": "2aeb825edef1a6fffa063a6dbc54bd1882e40b3bef3fa0d2f0a01014731bd114",
+      "same_as_final_source": false,
+      "final_source_changes": [
+        "agents/interaction.py",
+        "core/topics.py",
+        "runtime/task_queue.py",
+        "tests/support.py",
+        "tests/test_controlled_scope.py",
+        "tests/test_research_topics.py",
+        "tests/test_run_readiness.py"
+      ],
+      "model_calls": 2,
+      "requested_model": "gpt-6-astra",
+      "requested_effort": "high",
+      "actual_model_effort": "not reported by CLI",
+      "usage": {
+        "input_tokens": 45483,
+        "cached_input_tokens": 8448,
+        "output_tokens": 1843,
+        "reasoning_output_tokens": 565
+      },
+      "elapsed_seconds": 90.31626253388822,
+      "model_call_seconds": 86.85837800055742,
+      "decision": "narrow",
+      "objective": "先检验量化干预是否真实生效，再区分局部误差代理失配与实现未生效；当前优先机制解释而非宣称性能提升。",
+      "observation": "读取原源码/配置后保留灵感，因干预尚未实现而收窄至可判别的配对检查；不因低分自动结束。",
+      "decision_ref": "ReviewDecisionCard-fe6cfdea70764d0cab030bb203f26b1e@1",
+      "original_code_sha256": "0de12827011fc896e4aa383ce2a9d9e38c2ce6aab9a0f263a28b2e505e4df049",
+      "read_original_before_decision": true,
+      "retained_same_active_inspiration": true,
+      "new_numeric_workers": 0,
+      "new_evidence_cards": 0,
+      "evaluation": "manual conditional-behavior review; no unique correct choice label",
+      "same_final_prompts": true
+    },
+    {
+      "case": "new_evidence",
+      "attempt": "r1",
+      "status": "completed",
+      "result_file": "new_evidence_r1_result.json",
+      "result_sha256": "82489b0186ed369ab7669ce0fa360cf7090b57701bf6acad37a0093e8c251e48",
+      "input_summary_local_file": "new_evidence_r1_input_summary.json",
+      "input_summary_sha256": "22ad0f04a61866a86d07dd2067150c314e45358b2bb9b7d6c542f5c7d8fa2583",
+      "source_core_sha256": "2aeb825edef1a6fffa063a6dbc54bd1882e40b3bef3fa0d2f0a01014731bd114",
+      "same_as_final_source": false,
+      "final_source_changes": [
+        "agents/interaction.py",
+        "core/topics.py",
+        "runtime/task_queue.py",
+        "tests/support.py",
+        "tests/test_controlled_scope.py",
+        "tests/test_research_topics.py",
+        "tests/test_run_readiness.py"
+      ],
+      "model_calls": 2,
+      "requested_model": "gpt-6-astra",
+      "requested_effort": "high",
+      "actual_model_effort": "not reported by CLI",
+      "usage": {
+        "input_tokens": 45848,
+        "cached_input_tokens": 0,
+        "output_tokens": 2058,
+        "reasoning_output_tokens": 622
+      },
+      "elapsed_seconds": 93.22356383502483,
+      "model_call_seconds": 90.14882151968777,
+      "decision": "expand",
+      "objective": "先检验干预有效性并解释归一化不变性，再研究输入误差与传播误差的关系；不以代码安装或代理变化宣称性能提升。",
+      "observation": "区分条件性机制解释和工程未实现；扩大有效候选及干预位置，暂存旧动作，列出反向证据及重新收窄条件。",
+      "decision_ref": "ReviewDecisionCard-061f5d17ba4842b0b9b048bcc232548a@1",
+      "original_code_sha256": "0de12827011fc896e4aa383ce2a9d9e38c2ce6aab9a0f263a28b2e505e4df049",
+      "read_original_before_decision": true,
+      "retained_same_active_inspiration": true,
+      "new_numeric_workers": 0,
+      "new_evidence_cards": 0,
+      "evaluation": "manual conditional-behavior review; no unique correct choice label",
+      "same_final_prompts": true
+    },
+    {
+      "case": "explain_simplify",
+      "attempt": "r1",
+      "status": "completed",
+      "result_file": "explain_simplify_r1_result.json",
+      "result_sha256": "1db15de9567569468db561a188c8c470a7061ad6a5e9e7656c45136a98d2159e",
+      "input_summary_local_file": "explain_simplify_r1_input_summary.json",
+      "input_summary_sha256": "df83750eb786e9401e1aae89c12c9fee5aa1ebf09c6ff2141a5cd39167570f0b",
+      "source_core_sha256": "2aeb825edef1a6fffa063a6dbc54bd1882e40b3bef3fa0d2f0a01014731bd114",
+      "same_as_final_source": false,
+      "final_source_changes": [
+        "agents/interaction.py",
+        "core/topics.py",
+        "runtime/task_queue.py",
+        "tests/support.py",
+        "tests/test_controlled_scope.py",
+        "tests/test_research_topics.py",
+        "tests/test_run_readiness.py"
+      ],
+      "model_calls": 2,
+      "requested_model": "gpt-6-astra",
+      "requested_effort": "high",
+      "actual_model_effort": "not reported by CLI",
+      "usage": {
+        "input_tokens": 46303,
+        "cached_input_tokens": 0,
+        "output_tokens": 1928,
+        "reasoning_output_tokens": 395
+      },
+      "elapsed_seconds": 90.4393176753074,
+      "model_call_seconds": 87.04228984937072,
+      "decision": "narrow",
+      "objective": "优先检验组件必要性并寻找可解释的简化，而非继续叠加复杂度。复杂度降低、机制支持与正式性能提升分别报告。",
+      "observation": "在来源不清的假想收益情境下选择必要性与简化目标，提出配对撤除与成本/保真度判断；不冒充正式指标改善。",
+      "decision_ref": "ReviewDecisionCard-466f8c88519b43e6b172b2998a739893@1",
+      "original_code_sha256": "0de12827011fc896e4aa383ce2a9d9e38c2ce6aab9a0f263a28b2e505e4df049",
+      "read_original_before_decision": true,
+      "retained_same_active_inspiration": true,
+      "new_numeric_workers": 0,
+      "new_evidence_cards": 0,
+      "evaluation": "manual conditional-behavior review; no unique correct choice label",
+      "same_final_prompts": true
+    },
+    {
+      "case": "no_gain",
+      "attempt": "r2",
+      "status": "completed",
+      "result_file": "no_gain_r2_result.json",
+      "result_sha256": "475761cfd05ab29a4c0a2dea039cc11643f735639ea3c4515a69811389d9f2d3",
+      "input_summary_local_file": "no_gain_r2_input_summary.json",
+      "input_summary_sha256": "2371bc9a9022d850b531a356a4e7132a22527480b79a75d06fd2cad578d8595f",
+      "source_core_sha256": "2cebb13cb9c411ccdf9d9296838969ed8dd55da2dd19f14afdb961a74dde3daf",
+      "same_as_final_source": false,
+      "final_source_changes": [
+        "core/topics.py",
+        "tests/test_research_topics.py"
+      ],
+      "model_calls": 2,
+      "requested_model": "gpt-6-astra",
+      "requested_effort": "high",
+      "actual_model_effort": "not reported by CLI",
+      "usage": {
+        "input_tokens": 45769,
+        "cached_input_tokens": 0,
+        "output_tokens": 1939,
+        "reasoning_output_tokens": 481
+      },
+      "elapsed_seconds": 95.04007637314498,
+      "model_call_seconds": 92.10675822012126,
+      "decision": "narrow",
+      "objective": "先区分实现有效性、裁剪效应与误差传播解释，获得是否值得继续输出敏感量化研究的可证伪依据，而非宣称指标改善。",
+      "observation": "读取原源码/配置后保留灵感，因干预尚未实现而收窄至可判别的配对检查；不因低分自动结束。",
+      "decision_ref": "ReviewDecisionCard-c5b772628bb9d8bee67e0cc30c3ef13f@1",
+      "original_code_sha256": "0de12827011fc896e4aa383ce2a9d9e38c2ce6aab9a0f263a28b2e505e4df049",
+      "read_original_before_decision": true,
+      "retained_same_active_inspiration": true,
+      "new_numeric_workers": 0,
+      "new_evidence_cards": 0,
+      "evaluation": "manual conditional-behavior review; no unique correct choice label",
+      "same_final_prompts": true
+    }
+  ],
+  "usage_notes": "cached input is included in input_tokens; reasoning is included in output_tokens; no double counting. Cost measures the added common focus stage, not an A/B net end-to-end delta.",
+  "evidence_classes": {
+    "seed_state": "explicit scripted topic/idea/method/source fixtures; identity/no-op code is not a validated quantizer",
+    "scenario_observations": "hypothetical conditions, not new Evidence",
+    "historical_numeric": [
+      {
+        "file": "/root/data-fs/projects/Quantization_Agent_for_ViTs_gonly/EXP/runs/deitb_static_w4a4_gonly_20261115_r2/solution_library/22bb57be0494f08bd7a1cfe852f1c3ffa558c70c575f0a8b9fc0b0bcaf15c54d.json",
+        "metrics": {
+          "mIoU": 28.47913645190287,
+          "top1": 72.394
+        },
+        "model_ref": "c1c5ac43b4957e8afca2e8c4caca8f3cd1d3cc75eb72e0c8529bf2d00b6a27db",
+        "origin": "historical numerical result, not a new/current measurement",
+        "original_evidence_id": "EvidenceCard-46fbe7b34ad44eea8f72d04756d69074@1",
+        "scope": "original run/protocol only; comparisons are not paired causal controls",
+        "sha256": "e692108a50613c63ac05ab40f940fef6738225f938e189035ac71756093a6ad7"
+      },
+      {
+        "file": "/root/data-fs/projects/Quantization_Agent_for_ViTs_gonly/EXP/runs/deitb_static_w4a4_gonly_20261115_r2/solution_library/32871c6e77a22a7fd89c4acf491b7ec0dac411447cbd8d593bcfffc8eddd1693.json",
+        "metrics": {
+          "mIoU": 4.418857411135278,
+          "top1": 72.274
+        },
+        "model_ref": "4609369da995d8d81595821555611f0ae6c4a50c03756c1cd7019234a75f59fe",
+        "origin": "historical numerical result, not a new/current measurement",
+        "original_evidence_id": "EvidenceCard-15a015a9c39044759caf9a9edd7a0c22@1",
+        "scope": "original run/protocol only; comparisons are not paired causal controls",
+        "sha256": "474bed85c9581d5b855ad4c4e64ad7fcffbd67958a01943d9113e02e39dc5843"
+      },
+      {
+        "file": "/root/data-fs/projects/Quantization_Agent_for_ViTs_gonly/EXP/runs/deitb_static_w4a4_gonly_20261115_r2/solution_library/acaf7ebee8b31658a824b04a53f0a4cd6e47fe6e4df7a0efa025b1f7db513141.json",
+        "metrics": {
+          "mIoU": 28.555077689970183,
+          "top1": 72.19
+        },
+        "model_ref": "6e5761dc523e30f6bde2ea3e3801e6adb8c5520a14ce3d6caffa96145f85a7a2",
+        "origin": "historical numerical result, not a new/current measurement",
+        "original_evidence_id": "EvidenceCard-ad61016bc2954c3695078601425890ae@1",
+        "scope": "original run/protocol only; comparisons are not paired causal controls",
+        "sha256": "adc64b00a862020ee44f521304f498a2a64d54ac93b88cb9a929d7c1caae8eef"
+      },
+      {
+        "file": "/root/data-fs/projects/Quantization_Agent_for_ViTs_gonly/EXP/runs/deitb_static_w4a4_gonly_20261115_r2/solution_library/db3a462b50f6d5dca6c3d9ed6e26ab26febb5f62d734f1bc5029d8f56a800d79.json",
+        "metrics": {
+          "mIoU": 28.459681850757335,
+          "top1": 72.35
+        },
+        "model_ref": "14e4fd32745a705cfa3d748250c5a16b756d7bcd48e12707df484ea5a0956857",
+        "origin": "historical numerical result, not a new/current measurement",
+        "original_evidence_id": "EvidenceCard-34132bb00ead4c6f8f6b8ecbc4a26107@1",
+        "scope": "original run/protocol only; comparisons are not paired causal controls",
+        "sha256": "4be9170f13a019fd1008d783c408573f1321b828560c35f25b12a5243cd26f3c"
+      },
+      {
+        "file": "/root/data-fs/projects/Quantization_Agent_for_ViTs_gonly/EXP/runs/deitb_static_w4a4_gonly_20261115_r2/solution_library/dfbcba7cc7693d69803e97052a5a166f5bba3797f61de145aeb0e0085fe42bbd.json",
+        "metrics": {
+          "mIoU": 28.055647558635677,
+          "top1": 72.482
+        },
+        "model_ref": "3fa2102e9a6efeec9dba2b6606dc274f00c44252609e0e0c6f0a92c8fefd8cc6",
+        "origin": "historical numerical result, not a new/current measurement",
+        "original_evidence_id": "EvidenceCard-e643fc1b1e154c17a7553394f97281f1@1",
+        "scope": "original run/protocol only; comparisons are not paired causal controls",
+        "sha256": "63c4b84c3d0be1729b3eaf911733e999978fe38f6a3c67ceca32450853556af8"
+      }
+    ],
+    "model_behavior": "real subscription output and tool reads, not a scripted decision"
+  },
+  "limitations": [
+    "No high-cost end-to-end or new GPU/ImageNet/ADE20K validation.",
+    "No scientific accuracy improvement claim.",
+    "Small conditional behavior sample influenced by an explicitly no-op source fixture.",
+    "Long-run topic quality/context growth and net total token cost not measured.",
+    "Run-local state only; no cross-run automatic migration. Historical recovery still requires original source intervention rules."
+  ]
+}

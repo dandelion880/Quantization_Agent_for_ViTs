@@ -6,6 +6,9 @@ import re
 import sys
 
 QAVIT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(QAVIT))
+from core.skills import metadata
+
 SKILLS = QAVIT / 'docs/skills'
 START, END = '<!-- SKILL_CATALOG_START -->', '<!-- SKILL_CATALOG_END -->'
 
@@ -13,13 +16,11 @@ START, END = '<!-- SKILL_CATALOG_START -->', '<!-- SKILL_CATALOG_END -->'
 def skill_table(root=SKILLS):
     rows = ['| Skill | 何时使用 / 何时不需要 |', '|---|---|']
     for path in sorted(root.glob('*/SKILL.md')):
-        metadata = path.read_text(encoding='utf-8').split('---', 2)[1]
-        name = re.search(r'^name: ([a-z0-9-]+)$', metadata, re.M).group(1)
+        header = metadata(path.read_text(encoding='utf-8'))
+        name = header['name']
         if name != path.parent.name:
             raise ValueError(f'Skill name 与目录不同: {path}')
-        # The pack uses plain name and a folded multiline description (>-).
-        block = re.search(r'^description: >-\n((?:  [^\n]*\n?)+)', metadata, re.M).group(1)
-        description = ' '.join(line.strip() for line in block.splitlines()).replace('|', '\\|')
+        description = ' '.join(header['description'].splitlines()).replace('|', '\\|')
         rows.append(f'| [{name}]({name}/SKILL.md) | {description} |')
     return '\n'.join(rows)
 

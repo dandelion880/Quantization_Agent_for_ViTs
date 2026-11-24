@@ -137,7 +137,8 @@ class InnerJSONRepairChain(TempCase):
             (working / 'answer.json').write_text(final, encoding='utf-8')
             return 0, event_text(events(final, usage)), stderr
         identities = [identity, {**identity, 'core_sha256': 'changed'}] if identity_change else [identity, identity]
-        with patch('runtime.model_router.client_for', return_value=client), patch('runtime.model_router.cli.run', side_effect=run), \
+        with patch('runtime.model_router.ROOT', wf.run_dir), patch('runtime.model_router.client_for', return_value=client), \
+             patch('runtime.model_router.cli.run', side_effect=run), \
              patch.object(sys, 'argv', ['task_worker.py', str(path)]), \
              patch('runtime.task_worker.process_identity', return_value=None), \
              patch('runtime.task_worker.code_identity', side_effect=identities), redirect_stderr(StringIO()):

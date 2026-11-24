@@ -170,6 +170,22 @@ class EvalTest(unittest.TestCase):
         for name, entry in self.rules.provenance["files"].items():
             self.assertEqual(digest((self.rules.root / name).read_bytes()), entry["sha256"])
 
+    def test_new_focus_does_not_break_old_prepare_report_or_frozen_loading(self):
+        for purpose in ('focus','generate'):
+            task=self.history.task(purpose)
+            self.history.call(task);self.history.finish(task)
+        for version in ('v0_1','gonly_v0_2','gonly_v0_3'):
+            rules=Rules(QAVIT/'configs/evaluation'/version)
+            output=self.root/version;output.mkdir()
+            prepare(self.history.root,output,rules)
+            _,cases=load_evaluation(output,rules)
+            build_report(output,rules)
+            self.assertIn('generate',{c['purpose'] for c in cases})
+            if version=='gonly_v0_3':
+                self.assertIn('focus',{c['purpose'] for c in cases})
+            else:
+                self.assertEqual(read_json(output/'run.json')['excluded_tasks'][0]['reason'],'rubric_not_covered')
+
     def test_all_purpose_cases_and_generation_slots(self):
         for purpose in self.rules.selected:
             for slot in (["H1", "H2", "H3"] if purpose == "generate" else [None]):
@@ -192,6 +208,28 @@ class EvalTest(unittest.TestCase):
         self.assertFalse(m["cases"])
         excluded = read_json(self.output / "run.json")["excluded_tasks"]
         self.assertEqual(len(excluded), 2)
+
+    def test_gonly_selection_cost_is_kept_without_using_full_debate_rubric(self):
+        select = self.history.task('select', context={'selection_stage': 'gonly_preselection'})
+        self.history.call(select)
+        self.history.finish(select, {'selected_slot': 'H1', 'rationale': 'fixture'})
+        plan = self.history.task('plan_l3')
+        self.history.call(plan)
+        self.history.finish(plan)
+        # Preserve historical plan_l3 role compatibility as well.
+        legacy = self.history.task('plan_l3')
+        legacy['role'] = 'judger'
+        self.history.snapshot(legacy)
+        self.history.call(legacy)
+        self.history.finish(legacy)
+        manifest = prepare(self.history.root, self.output, self.rules)
+        self.assertEqual({c['role'] for c in manifest['cases']}, {'generation', 'judger'})
+        run = read_json(self.output / 'run.json')
+        self.assertEqual(run['excluded_tasks'][0]['reason'], 'gonly_selection_rubric_unavailable')
+        self.assertEqual(len(run['calls']), 3)
+        case = read_json(self.output / 'cases' / (manifest['cases'][0]['case_id'] + '.json'))
+        if case['role'] == 'generation':
+            self.assertIn('G-only 路由说明', render(self.output, case, self.rules)['case_prompt'])
 
     def test_rank_parent_final_separate_groups(self):
         for stage in ("parent", "final"):

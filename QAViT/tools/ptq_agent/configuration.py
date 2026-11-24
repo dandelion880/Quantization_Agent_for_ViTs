@@ -24,9 +24,9 @@ CONFIG_SCHEMA = obj({
                  "max_error": NULL_NUMBER, "goal_error": NULL_NUMBER}),
     "constraints": CONSTRAINTS_SCHEMA,
     "backend": obj({"kind": {"enum": ["server"]}, "seed": INT,
-                    "calibration_samples": {"type": "integer", "minimum": 1, "maximum": 256},
-                    "search_samples": {"type": "integer", "minimum": 1, "maximum": 50000},
-                    "final_samples": {"type": "integer", "minimum": 1, "maximum": 50000},
+                    "calibration_samples": {"type": "integer", "minimum": 1},
+                    "search_samples": {"type": "integer", "minimum": 1},
+                    "final_samples": {"type": "integer", "minimum": 1},
                     "data_seeds": obj({"calibration": INT, "search": INT, "final": INT}),
                     "model_path": NULL_STR, "data_path": NULL_STR}),
     "budget": obj({"trials": INT, "tools": INT, "agents": INT, "measurements": INT,
@@ -38,7 +38,7 @@ CONFIG_SCHEMA = obj({
 CONFIG_SCHEMA["properties"]["backend"]["properties"].update({
     "asset_manifest": NULL_STR, "model_id": NULL_STR, "device": STR,
     "data_protocol": {"enum": ["imagefolder_manifest_v1", "imagefolder_manifest_v2"]},
-    "data_sha256": STR,
+    "data_sha256": STR, "segmentation_config": STR,
     "task_head": obj({"kind": {"enum": ["normalized_cls_linear"]}, "path": STR,
                       "sha256": STR, "backbone_sha256": STR}),
 })
@@ -78,15 +78,20 @@ def validate_config(config: JSON) -> None:
                 "mixed 模式使用 fixed_layers 表达局部固定约束", "$.constraints")
 
 
+def resolve_backend_paths(backend, base):
+    for key in ("model_path", "data_path", "asset_manifest", "segmentation_config"):
+        if backend.get(key):
+            backend[key] = str((base / backend[key]).resolve())
+    if backend.get("task_head"):
+        head = backend["task_head"]
+        head["path"] = str((base / head["path"]).resolve())
+    return backend
+
+
 def load_config(path: Path) -> JSON:
     config = json.loads(path.read_text(encoding="utf-8-sig"))
     validate_config(config)
     for key in ("output_dir", "memory_dir"):
         config[key] = str((path.resolve().parent / config[key]).resolve())
-    for key in ("model_path", "data_path", "asset_manifest"):
-        if config["backend"].get(key):
-            config["backend"][key] = str((path.resolve().parent / config["backend"][key]).resolve())
-    if config["backend"].get("task_head"):
-        head = config["backend"]["task_head"]
-        head["path"] = str((path.resolve().parent / head["path"]).resolve())
+    resolve_backend_paths(config["backend"], path.resolve().parent)
     return config

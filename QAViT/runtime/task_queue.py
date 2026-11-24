@@ -107,7 +107,7 @@ class GlobalTaskQueue:
         refs = list(dict.fromkeys(task.get("outputs", []) + list(task.get("input_versions", {}))))
         card = make_card("TaskCard", self.journal.run_id, data, previous=previous, refs=refs)
         path = self.journal.card_path(card['id'])
-        if (task['inputs'].get('purpose') == 'record' and task['state'] == 'completed'
+        if (task['inputs'].get('purpose') in ('record', 'focus') and task['state'] == 'completed'
                 and path.exists() and card['id'] not in self.journal.cards):
             pending = read_json(path)
             # cards_written 后断电：同一已验证草稿的重试只允许时间戳不同。
@@ -179,7 +179,8 @@ class GlobalTaskQueue:
         patch = {"attempt": attempt, "started_unix": time.time(),
                  "input_versions": input_versions or {},
                  "memory_version": self.journal.memory_version if memory_version is None else memory_version,
-                 "request_path": request_path, "process": None, "receipt_seen_unix": None}
+                 "request_path": request_path, "process": None, "receipt_seen_unix": None,
+                 "secondary_lease_transferred": False}
         self.change(task_id, "running", patch=patch)
         return self.get(task_id)
 

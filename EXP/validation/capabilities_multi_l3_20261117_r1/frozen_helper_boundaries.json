@@ -1,0 +1,38 @@
+[
+  {
+    "case": "L3",
+    "rejected": true,
+    "error": "ContractError",
+    "message": "level=L3 与 execution.service=frozen_helper 支持的实验层级不一致"
+  },
+  {
+    "case": "final",
+    "rejected": true,
+    "error": "ContractError",
+    "message": "frozen propagation accepts calibration/search; scale selection accepts calibration only"
+  },
+  {
+    "case": "search_scales",
+    "rejected": true,
+    "error": "ContractError",
+    "message": "frozen propagation accepts calibration/search; scale selection accepts calibration only"
+  },
+  {
+    "case": "no_source",
+    "rejected": true,
+    "error": "RequestRevisionRequired",
+    "message": "load_frozen source is missing or ambiguous; Generation must cite/select an exact Evidence or evaluated solution"
+  },
+  {
+    "case": "count_null_offset",
+    "selection": {
+      "split": "calibration",
+      "count": null,
+      "offset": 1
+    }
+  },
+  {
+    "case": "selection_split_mirror",
+    "split": "search"
+  }
+]

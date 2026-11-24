@@ -1,0 +1,298 @@
+{
+  "archive": {
+    "path": "/root/data-fs/projects/qavit_skill_system_20261116.zip",
+    "sha256": "e5d6871fd3025788c05bb124330c0ff01b840d4019b23cf151f0ec224cf17da1",
+    "size_bytes": 135583
+  },
+  "manifest_verified_files": 41,
+  "files": [
+    {
+      "source": "skills/adapt-quantization-method/SKILL.md",
+      "source_sha256": "ac429e359b82bc74bf4b376c39feceefbe4a7c65e15e1a280cd820912412c1a8",
+      "installed": "QAViT/docs/skills/adapt-quantization-method/SKILL.md",
+      "installed_sha256": "e72d0cd92d3c0ea43888c5e95949979221f4b5dc5c6893c0eaedce50b75ba43a",
+      "content_note": "relative links adapted where needed; research meaning preserved"
+    },
+    {
+      "source": "skills/adapt-quantization-method/references/innovation-and-failure-cases.md",
+      "source_sha256": "70a800e61d06d47a333108707e6ba393431820c1cf4357bb30845c9051c2ede1",
+      "installed": "QAViT/docs/skills/adapt-quantization-method/references/innovation-and-failure-cases.md",
+      "installed_sha256": "70a800e61d06d47a333108707e6ba393431820c1cf4357bb30845c9051c2ede1",
+      "content_note": "relative links adapted where needed; research meaning preserved"
+    },
+    {
+      "source": "skills/adapt-quantization-method/references/intervention-design.md",
+      "source_sha256": "d7d91f890f5f939bd4e2fa1320f346158bae7a306036c46bf9f823a05175d96a",
+      "installed": "QAViT/docs/skills/adapt-quantization-method/references/intervention-design.md",
+      "installed_sha256": "d7d91f890f5f939bd4e2fa1320f346158bae7a306036c46bf9f823a05175d96a",
+      "content_note": "relative links adapted where needed; research meaning preserved"
+    },
+    {
+      "source": "skills/adapt-quantization-method/references/mechanism-patterns.md",
+      "source_sha256": "d94fec9a86458ee5ecbfb7ab5ccc861fdd23373e47debd8e6b75f77f0ed05f7f",
+      "installed": "QAViT/docs/skills/adapt-quantization-method/references/mechanism-patterns.md",
+      "installed_sha256": "4eeae14e4c800f8f63e29ec987385ebf5939fc958a4d9796596d9019a9ddaaef",
+      "content_note": "relative links adapted where needed; research meaning preserved"
+    },
+    {
+      "source": "skills/design-discriminative-experiment/SKILL.md",
+      "source_sha256": "b206c6e7ee278cff14e10943e4079c0c763f6e9459df4b25c5f458a900fe5b09",
+      "installed": "QAViT/docs/skills/design-discriminative-experiment/SKILL.md",
+      "installed_sha256": "b206c6e7ee278cff14e10943e4079c0c763f6e9459df4b25c5f458a900fe5b09",
+      "content_note": "relative links adapted where needed; research meaning preserved"
+    },
+    {
+      "source": "skills/design-discriminative-experiment/references/decision-examples.md",
+      "source_sha256": "97b8cd8f908151247c3ab5e0e4e292e17659f58a74638880c278f1b7c29f2320",
+      "installed": "QAViT/docs/skills/design-discriminative-experiment/references/decision-examples.md",
+      "installed_sha256": "97b8cd8f908151247c3ab5e0e4e292e17659f58a74638880c278f1b7c29f2320",
+      "content_note": "relative links adapted where needed; research meaning preserved"
+    },
+    {
+      "source": "skills/design-discriminative-experiment/references/experiment-patterns.md",
+      "source_sha256": "55509bc34d6752b706ca5a4a92a8fdd87929f7845dd6b80864913d49ba080ce3",
+      "installed": "QAViT/docs/skills/design-discriminative-experiment/references/experiment-patterns.md",
+      "installed_sha256": "55509bc34d6752b706ca5a4a92a8fdd87929f7845dd6b80864913d49ba080ce3",
+      "content_note": "relative links adapted where needed; research meaning preserved"
+    },
+    {
+      "source": "skills/design-scale-calibration/SKILL.md",
+      "source_sha256": "4d087e1f7ca74609b891c01c023ec3055298bb406eb298e28f93e7688407c42a",
+      "installed": "QAViT/docs/skills/design-scale-calibration/SKILL.md",
+      "installed_sha256": "20dcf7d23553a651c85b5a3b04748719f02b8aad108a81efd2bf960aa25f27b6",
+      "content_note": "relative links adapted where needed; research meaning preserved"
+    },
+    {
+      "source": "skills/design-scale-calibration/references/candidates-and-groups.md",
+      "source_sha256": "6ce7dbee2db4d6850451d507ce31697305074b1dc5a57e8b3ee590e871c6b84c",
+      "installed": "QAViT/docs/skills/design-scale-calibration/references/candidates-and-groups.md",
+      "installed_sha256": "6ce7dbee2db4d6850451d507ce31697305074b1dc5a57e8b3ee590e871c6b84c",
+      "content_note": "relative links adapted where needed; research meaning preserved"
+    },
+    {
+      "source": "skills/design-scale-calibration/references/schedule-and-state.md",
+      "source_sha256": "0e54961438a8b7757a948e3ed783fdff50493acf98d26f179efe0dad84a8a87c",
+      "installed": "QAViT/docs/skills/design-scale-calibration/references/schedule-and-state.md",
+      "installed_sha256": "0e54961438a8b7757a948e3ed783fdff50493acf98d26f179efe0dad84a8a87c",
+      "content_note": "relative links adapted where needed; research meaning preserved"
+    },
+    {
+      "source": "skills/diagnose-ptq-failure/SKILL.md",
+      "source_sha256": "e312b7a3af224702c52356266bba7b1a8a83cc0905c1a6d523c59d9a036c74bc",
+      "installed": "QAViT/docs/skills/diagnose-ptq-failure/SKILL.md",
+      "installed_sha256": "e312b7a3af224702c52356266bba7b1a8a83cc0905c1a6d523c59d9a036c74bc",
+      "content_note": "relative links adapted where needed; research meaning preserved"
+    },
+    {
+      "source": "skills/diagnose-ptq-failure/references/baseline-and-scope.md",
+      "source_sha256": "0f5b022670a102e5f144152f8cab5d8cef102dfcdf52d4a078e86017f53cb27e",
+      "installed": "QAViT/docs/skills/diagnose-ptq-failure/references/baseline-and-scope.md",
+      "installed_sha256": "0f5b022670a102e5f144152f8cab5d8cef102dfcdf52d4a078e86017f53cb27e",
+      "content_note": "relative links adapted where needed; research meaning preserved"
+    },
+    {
+      "source": "skills/diagnose-ptq-failure/references/diagnosis-cases.md",
+      "source_sha256": "bb0af2065ca155bf6547fcfb6e125318c40b27e2daf7bb099ed03cfddd2b49b8",
+      "installed": "QAViT/docs/skills/diagnose-ptq-failure/references/diagnosis-cases.md",
+      "installed_sha256": "e1c36d3fc8cc5068fc7fec5d7a3e1c47b1f75028d78b2546496ef5ac728ea3d9",
+      "content_note": "relative links adapted where needed; research meaning preserved"
+    },
+    {
+      "source": "skills/diagnose-ptq-failure/references/error-propagation-and-intervention.md",
+      "source_sha256": "2a5d6a638013a1989bf16d93764a23eec7f00cb8771efc5ee3590477a2d6bb4a",
+      "installed": "QAViT/docs/skills/diagnose-ptq-failure/references/error-propagation-and-intervention.md",
+      "installed_sha256": "f2a49a76728d545d707e243c46be29850eed7fd56be9b25b4c0e593c929b13c5",
+      "content_note": "relative links adapted; frozen propagation API link retained"
+    },
+    {
+      "source": "skills/evaluate-ptq-candidate/SKILL.md",
+      "source_sha256": "293a4ffbd4c9e6882d1001ec6c3262eb8e7abc5f73686e22dd967c879fa32aa7",
+      "installed": "QAViT/docs/skills/evaluate-ptq-candidate/SKILL.md",
+      "installed_sha256": "293a4ffbd4c9e6882d1001ec6c3262eb8e7abc5f73686e22dd967c879fa32aa7",
+      "content_note": "relative links adapted where needed; research meaning preserved"
+    },
+    {
+      "source": "skills/evaluate-ptq-candidate/references/evidence-and-comparison.md",
+      "source_sha256": "1af9a64e2c0e55e84098cdea5371a5f2444ac3d9e2abd9e4a5eb8fa763a1778e",
+      "installed": "QAViT/docs/skills/evaluate-ptq-candidate/references/evidence-and-comparison.md",
+      "installed_sha256": "1af9a64e2c0e55e84098cdea5371a5f2444ac3d9e2abd9e4a5eb8fa763a1778e",
+      "content_note": "relative links adapted where needed; research meaning preserved"
+    },
+    {
+      "source": "skills/evaluate-ptq-candidate/references/oracle-transfer-and-selection.md",
+      "source_sha256": "628771a021df5dc644159a4bf3bbd8ca98009e23c397910e67ebdf97ba9df972",
+      "installed": "QAViT/docs/skills/evaluate-ptq-candidate/references/oracle-transfer-and-selection.md",
+      "installed_sha256": "628771a021df5dc644159a4bf3bbd8ca98009e23c397910e67ebdf97ba9df972",
+      "content_note": "relative links adapted where needed; research meaning preserved"
+    },
+    {
+      "source": "skills/learn-from-reference-solution/SKILL.md",
+      "source_sha256": "cd145b678e533a0083d82a31095c872cc260fe9ec8142f957e85c67beabd622a",
+      "installed": "QAViT/docs/skills/learn-from-reference-solution/SKILL.md",
+      "installed_sha256": "1bd06e8558ab062b22b2fd1965a2841c78e22c00c04810296f7149dc38cf8189",
+      "content_note": "relative links adapted where needed; research meaning preserved"
+    },
+    {
+      "source": "skills/learn-from-reference-solution/references/pattern-to-method.md",
+      "source_sha256": "52c6eba5e1b4b2a6fffd6d23617a5f91e91e8f5f7fe69193286ab6fcaf10b444",
+      "installed": "QAViT/docs/skills/learn-from-reference-solution/references/pattern-to-method.md",
+      "installed_sha256": "52c6eba5e1b4b2a6fffd6d23617a5f91e91e8f5f7fe69193286ab6fcaf10b444",
+      "content_note": "relative links adapted where needed; research meaning preserved"
+    },
+    {
+      "source": "skills/learn-from-reference-solution/references/reference-construction.md",
+      "source_sha256": "d4f686a2f504f05f15b50ed587dd01c925153e8df86826006259ccd9595ea716",
+      "installed": "QAViT/docs/skills/learn-from-reference-solution/references/reference-construction.md",
+      "installed_sha256": "fde136e80111e61b7d45102281f2e43e0f6bc0a9ad40eec14323c67b3cab1a2f",
+      "content_note": "relative links adapted; current training permission documentation linked"
+    },
+    {
+      "source": "skills/select-calibration-objective/SKILL.md",
+      "source_sha256": "0792450726ae72213868ca091f51d3d014ae33213491620bd0bc783b886e2cd6",
+      "installed": "QAViT/docs/skills/select-calibration-objective/SKILL.md",
+      "installed_sha256": "00af6c86d5aab3a0f5e5291ee3d550c65568f14b7404837db57972354f1eb5e9",
+      "content_note": "relative links adapted where needed; research meaning preserved"
+    },
+    {
+      "source": "skills/select-calibration-objective/references/objective-design.md",
+      "source_sha256": "74179a9690549b6e51a647d0357376352d679c66a3e129030359c43f3ba6818d",
+      "installed": "QAViT/docs/skills/select-calibration-objective/references/objective-design.md",
+      "installed_sha256": "74179a9690549b6e51a647d0357376352d679c66a3e129030359c43f3ba6818d",
+      "content_note": "relative links adapted where needed; research meaning preserved"
+    },
+    {
+      "source": "skills/select-calibration-objective/references/ranking-validation.md",
+      "source_sha256": "6b12bcf3e8b14abf03c96617f7c9ce1a4b2d00587dfa75ecf58aa75cf1ab892f",
+      "installed": "QAViT/docs/skills/select-calibration-objective/references/ranking-validation.md",
+      "installed_sha256": "c5d704b91c1481398bda9716f716d77f53f2f07ccd26af0ac99b6fb4d5712176",
+      "content_note": "relative links adapted where needed; research meaning preserved"
+    },
+    {
+      "source": "shared/RESEARCH_CONVENTIONS.md",
+      "source_sha256": "7e8d626da849630117813e4bdf07d655a1280086098c395d30e556057b975e00",
+      "installed": "QAViT/knowledge/research-skills/RESEARCH_CONVENTIONS.md",
+      "installed_sha256": "7e8d626da849630117813e4bdf07d655a1280086098c395d30e556057b975e00",
+      "content_note": "relative links adapted where needed; research meaning preserved"
+    },
+    {
+      "source": "shared/research-routes/INDEX.md",
+      "source_sha256": "3bea5ef96b05afaf6eb949f19dff609219dc31c33cf603080d0c8b9459c9f970",
+      "installed": "QAViT/knowledge/research-skills/research-routes/INDEX.md",
+      "installed_sha256": "3bea5ef96b05afaf6eb949f19dff609219dc31c33cf603080d0c8b9459c9f970",
+      "content_note": "relative links adapted where needed; research meaning preserved"
+    },
+    {
+      "source": "shared/research-routes/PAPER_SOURCES.md",
+      "source_sha256": "cd3fefed77305a2d3a610999991bf342681df103fb83a8c8e94de834e35da1b9",
+      "installed": "QAViT/knowledge/research-skills/research-routes/PAPER_SOURCES.md",
+      "installed_sha256": "cd3fefed77305a2d3a610999991bf342681df103fb83a8c8e94de834e35da1b9",
+      "content_note": "relative links adapted where needed; research meaning preserved"
+    },
+    {
+      "source": "shared/research-routes/adalog.md",
+      "source_sha256": "c9e198e09800f51a277a527248f33d10af601a894664574dc46213b155b4b3b7",
+      "installed": "QAViT/knowledge/research-skills/research-routes/adalog.md",
+      "installed_sha256": "c9e198e09800f51a277a527248f33d10af601a894664574dc46213b155b4b3b7",
+      "content_note": "relative links adapted where needed; research meaning preserved"
+    },
+    {
+      "source": "shared/research-routes/erq.md",
+      "source_sha256": "981cc361b1ca843624a1b99539d980d9f8561cee0c22eecaf44be5480a670711",
+      "installed": "QAViT/knowledge/research-skills/research-routes/erq.md",
+      "installed_sha256": "981cc361b1ca843624a1b99539d980d9f8561cee0c22eecaf44be5480a670711",
+      "content_note": "relative links adapted where needed; research meaning preserved"
+    },
+    {
+      "source": "shared/research-routes/gptaq.md",
+      "source_sha256": "0b71e3fa9a382d8620b35e875cbbe98fe50c6dbae0c818904e90c2d1d28cbc0b",
+      "installed": "QAViT/knowledge/research-skills/research-routes/gptaq.md",
+      "installed_sha256": "0b71e3fa9a382d8620b35e875cbbe98fe50c6dbae0c818904e90c2d1d28cbc0b",
+      "content_note": "relative links adapted where needed; research meaning preserved"
+    },
+    {
+      "source": "shared/research-routes/ptq4dino.md",
+      "source_sha256": "da83f57ce1977a652c57d350eca200f781e765f3b88839dfb1b69854d7747734",
+      "installed": "QAViT/knowledge/research-skills/research-routes/ptq4dino.md",
+      "installed_sha256": "ac7f05afdeb55bd716e84c3051cf8de85ec4ff58515f475a6358cde8e569801f",
+      "content_note": "relative links adapted; package-author provenance wording clarified"
+    },
+    {
+      "source": "shared/research-routes/ptq4vit.md",
+      "source_sha256": "a33e1f67dc2b8707ceb1a0d9da3b1c3ac0c9289f0e98dfaf543c0c00d63b5e08",
+      "installed": "QAViT/knowledge/research-skills/research-routes/ptq4vit.md",
+      "installed_sha256": "a33e1f67dc2b8707ceb1a0d9da3b1c3ac0c9289f0e98dfaf543c0c00d63b5e08",
+      "content_note": "relative links adapted where needed; research meaning preserved"
+    },
+    {
+      "source": "shared/research-routes/repq-vit.md",
+      "source_sha256": "4fd434bff0e0cc82466f9a66b913d642a84d416a8faa9b43d2cceaef9015bf18",
+      "installed": "QAViT/knowledge/research-skills/research-routes/repq-vit.md",
+      "installed_sha256": "4fd434bff0e0cc82466f9a66b913d642a84d416a8faa9b43d2cceaef9015bf18",
+      "content_note": "relative links adapted where needed; research meaning preserved"
+    },
+    {
+      "source": "evaluation/CASES.md",
+      "source_sha256": "2e137d48f67cf8ea785d0e7f1287507b0e5cb190980d5802d4af98dcd153ecf2",
+      "installed": "QAViT/tests/skill_evals/seven_skills_20261116/CASES.md",
+      "installed_sha256": "2e137d48f67cf8ea785d0e7f1287507b0e5cb190980d5802d4af98dcd153ecf2",
+      "content_note": "relative links adapted where needed; research meaning preserved"
+    },
+    {
+      "source": "evaluation/REVIEW_GUIDE.md",
+      "source_sha256": "539bd52e72d96b5ce8c57a846ffd27763660a5db601508673d55ad57759ed588",
+      "installed": "QAViT/tests/skill_evals/seven_skills_20261116/REVIEW_GUIDE.md",
+      "installed_sha256": "539bd52e72d96b5ce8c57a846ffd27763660a5db601508673d55ad57759ed588",
+      "content_note": "relative links adapted where needed; research meaning preserved"
+    },
+    {
+      "source": "evaluation/TRYOUT_NOTES.md",
+      "source_sha256": "5a63b26106fe0f6f06b9c53e797ee9c1b992f7099ea38a9b4ce237b6b23d29ad",
+      "installed": "QAViT/tests/skill_evals/seven_skills_20261116/TRYOUT_NOTES.md",
+      "installed_sha256": "5a63b26106fe0f6f06b9c53e797ee9c1b992f7099ea38a9b4ce237b6b23d29ad",
+      "content_note": "relative links adapted where needed; research meaning preserved"
+    }
+  ],
+  "derived_files": [
+    {
+      "installed": "QAViT/docs/SCIENTIFIC_SKILLS_COMPATIBILITY.md",
+      "installed_sha256": "a4dc0d45e6646a1b7b1a9fcd9fd0ec0d97bcb6036e249f063f3db390c1add9fb",
+      "sources": [
+        {
+          "path": "integration/SOURCE_COMPATIBILITY_NOTES.md",
+          "sha256": "01edb262de7e23cdde82f86b7ce664497ff0284bdc4ff633c1b491cd6f1f822e"
+        }
+      ],
+      "note": "Repository-facing documentation derived from package and actual source; original package preserved separately."
+    },
+    {
+      "installed": "QAViT/docs/SCIENTIFIC_SKILLS.md",
+      "installed_sha256": "14f0c08f15399a460d8a6ab54af9da285dfa07d7b4e8906d4ae84a66b39a789c",
+      "sources": [
+        {
+          "path": "START_HERE.md",
+          "sha256": "3b8db8d27223dcdadc9b4da74296f5010cd60c6ff06bdb963ea5b66211dafcbd"
+        },
+        {
+          "path": "integration/CODEX_TASK.md",
+          "sha256": "2503ab635743fcce77b4621fd1ad498f201d3cd2da7d72170a17c7b0689b20c9"
+        }
+      ],
+      "note": "Repository-facing documentation derived from package and actual source; original package preserved separately."
+    },
+    {
+      "installed": "QAViT/knowledge/research-skills/SOURCES.md",
+      "installed_sha256": "37411032c97c8a81e79bb0469e475954c6c87ec8809dc50f6f9987560e84b878",
+      "sources": [
+        {
+          "path": "SOURCES.md",
+          "sha256": "5bdc5646ddc33644c2a9219f380a5bd6921208f2f10a3335efe455b6edc6df6b"
+        },
+        {
+          "path": "MANIFEST.json",
+          "sha256": "fa59d72b04ba6f40ba2a3d4322489cb9f882b589dc5467904cd7d2e45e14c090"
+        }
+      ],
+      "note": "Repository-facing documentation derived from package and actual source; original package preserved separately."
+    }
+  ]
+}

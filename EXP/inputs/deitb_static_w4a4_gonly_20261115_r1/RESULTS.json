@@ -1,0 +1,2223 @@
+{
+  "schema": "qavit.gonly.completed_experiment/1",
+  "run_id": "deitb_static_w4a4_gonly_20261115_r1",
+  "run": "EXP/runs/deitb_static_w4a4_gonly_20261115_r1",
+  "evaluation": "EXP/evaluations/deitb_static_w4a4_gonly_20261115_r1_l0",
+  "journal": {
+    "head": "e92be184e5f62fa0a15e0742a0d007e474c210ab05c9d6193085a42afa8242e1",
+    "sequence": 7928
+  },
+  "conclusion": "Two-round evidence-driven workflow completed with one external engineering intervention. Valid L3 results exist for both rounds; novel H3 algorithms remain untested. No causal Full-vs-G-only claim.",
+  "terminal": {
+    "run_id": "deitb_static_w4a4_gonly_20261115_r1",
+    "architecture": "gonly",
+    "status": "completed",
+    "completed_rounds": [
+      1,
+      2
+    ],
+    "workflow_completed": true,
+    "formal_validation_success": true,
+    "numerical_validation_status": "validated",
+    "scientific_review_complete": true,
+    "state_saved": true,
+    "monitor_cleanup_completed": true,
+    "finalization_errors": [],
+    "supervisor_exit_code": 0,
+    "current_implementation_matches": true,
+    "recording_status": {
+      "deferred_task_refs": [],
+      "engineering_source_count": 0,
+      "facts": "archived_in_journal",
+      "knowledge": "no_pending_updates",
+      "meaning": "completed 表示没有待复盘科学材料；纯工程补记只归档，不冒充已发布科学综合。pending 知识独立保留。",
+      "pending_knowledge_count": 0,
+      "pending_knowledge_more": null,
+      "pending_knowledge_updates": [],
+      "pending_scientific_count": 0,
+      "pending_source_count": 0,
+      "scientific_review": "completed"
+    },
+    "memory_sizes": {
+      "L2": 3,
+      "L3": 2
+    },
+    "managed_terminal_provenance": "EXP/inputs/deitb_static_w4a4_gonly_20261115_r1/managed_terminal.json"
+  },
+  "budget": {
+    "config": {
+      "clock_mode": "active_segments",
+      "exclude_numeric_wait": true,
+      "max_rounds": 2,
+      "wall_seconds": 10800
+    },
+    "elapsed_seconds": 6135.015323638916,
+    "excluded_numeric_wait_seconds": 14041.374110221863,
+    "remaining_seconds": 4664.984676361084,
+    "extensions": [],
+    "active_segment": null
+  },
+  "run_intervals": {
+    "segment_union_seconds": 20176.38943386078,
+    "first_segment_started_unix": 1794719843.5653007,
+    "last_segment_stopped_unix": 1794740877.8863387,
+    "end_to_end_seconds_including_pause": 21034.321038007736,
+    "pause_gap_seconds": 857.9316041469574
+  },
+  "source_identity": {
+    "initial_commit": "b6fd75e2689e15add23611005639bcbd5f250cc6",
+    "repair_commit": "42cbdd293fd2c39e19ca9e7fcc2a157d9a4f935f",
+    "main_unchanged_commit": "8800006b687c56205ad624bae2ad7156c326d873"
+  },
+  "formal_l3": [
+    {
+      "key": "r001/L3/execute",
+      "execution_id": "task-b82d0e9c4c38354f3e31a579-a0001",
+      "classification": {
+        "sample_count": 50000,
+        "status": "completed",
+        "full_dataset_evaluation": true,
+        "metrics": {
+          "top1": 72.274,
+          "top5": 91.752,
+          "baseline_top1": 81.796,
+          "baseline_top5": 95.594,
+          "top1_drop_pp": 9.522000000000006,
+          "latency_ms": 41.3854394108057,
+          "baseline_latency_ms": 7.825620099902153
+        },
+        "health": {
+          "finite_outputs": true,
+          "matching_output_shapes": true,
+          "original_state_unchanged": true,
+          "quantization_state_unchanged": true
+        },
+        "counts": {
+          "baseline_top1": 40898,
+          "baseline_top5": 47797,
+          "top1": 36137,
+          "top5": 45876
+        }
+      },
+      "segmentation": {
+        "images": 2000,
+        "full_dataset_evaluation": true,
+        "delta_mIoU_pp": -35.41072508423832,
+        "trained": false,
+        "recalibrated": false,
+        "head_unchanged": true,
+        "backbones_unchanged": true,
+        "metrics": {
+          "fp": {
+            "mIoU": 39.8295824953736,
+            "mAcc": 50.60654191157785,
+            "aAcc": 78.75318055624219
+          },
+          "quantized": {
+            "mIoU": 4.418857411135278,
+            "mAcc": 7.779772340769655,
+            "aAcc": 34.45958781312675
+          }
+        }
+      },
+      "reload": {
+        "comparison": "torch.equal for all floating outputs",
+        "evaluated_instance": "reloaded",
+        "host_verified": true,
+        "passed": true,
+        "sample_ids": [
+          "train/n04522168/n04522168_9121.JPEG"
+        ],
+        "samples": 1,
+        "split": "search"
+      },
+      "result": "EXP/runs/deitb_static_w4a4_gonly_20261115_r1/jobs/task-b82d0e9c4c38354f3e31a579-a0001/result.json",
+      "file_hashes": {
+        "classification.json": "83dabd263c598a050521c0d8b4e80f6363998f96235d4c1578bc282aae5492de",
+        "segmentation.json": "23ab43892369969135d0f87bafc6140ea780e329836005771d88f5af70f70408",
+        "result.json": "bb1cd30ebca325c5c4c4605ceb0bc67c9c30494e5804c214bada51fff10c1ad8",
+        "model/manifest.json": "ee0dd3443a1c19f89ada680cf9925d1ecc38f27bcb90ddc509be0551e9eed941",
+        "model/weights.pt": "8d63f282303bab91640d31cf176aea67a724f7919bf06162d6cf7b065b4e0200"
+      }
+    },
+    {
+      "key": "r002/L3/revision2/execute",
+      "execution_id": "task-97cee009a3d280bd3aa744d2-a0001",
+      "classification": {
+        "sample_count": 50000,
+        "status": "completed",
+        "full_dataset_evaluation": true,
+        "metrics": {
+          "top1": 72.482,
+          "top5": 90.294,
+          "baseline_top1": 81.796,
+          "baseline_top5": 95.594,
+          "top1_drop_pp": 9.314000000000007,
+          "latency_ms": 42.11007356643677,
+          "baseline_latency_ms": 7.844472676515579
+        },
+        "health": {
+          "finite_outputs": true,
+          "matching_output_shapes": true,
+          "original_state_unchanged": true,
+          "quantization_state_unchanged": true
+        },
+        "counts": {
+          "baseline_top1": 40898,
+          "baseline_top5": 47797,
+          "top1": 36241,
+          "top5": 45147
+        }
+      },
+      "segmentation": {
+        "images": 2000,
+        "full_dataset_evaluation": true,
+        "delta_mIoU_pp": -11.773934936737923,
+        "trained": false,
+        "recalibrated": false,
+        "head_unchanged": true,
+        "backbones_unchanged": true,
+        "metrics": {
+          "fp": {
+            "mIoU": 39.8295824953736,
+            "mAcc": 50.60654191157785,
+            "aAcc": 78.75318055624219
+          },
+          "quantized": {
+            "mIoU": 28.055647558635677,
+            "mAcc": 37.78810984849403,
+            "aAcc": 71.3913832791876
+          }
+        }
+      },
+      "reload": {
+        "comparison": "torch.equal for all floating outputs",
+        "evaluated_instance": "reloaded",
+        "host_verified": true,
+        "loader": "approved_custom_executor",
+        "passed": true,
+        "sample_ids": [
+          "train/n04522168/n04522168_9121.JPEG"
+        ],
+        "samples": 1,
+        "split": "search"
+      },
+      "result": "EXP/runs/deitb_static_w4a4_gonly_20261115_r1/jobs/task-97cee009a3d280bd3aa744d2-a0001/result.json",
+      "file_hashes": {
+        "classification.json": "cb6e6cdf79c0bb45bce6a80ee3faa8c226172ebd63b2833aa1962cbb3150217a",
+        "segmentation.json": "b3633c9f42e95504f94aace2bb57531cb51695a1d8210772b3dd4c389058fc17",
+        "result.json": "247a0c4b7df7edbf356ba348e532251db5cbec7bf2f0b046d470d04f5c0b1917",
+        "model/manifest.json": "2163120251281f5f91d8ad1d269c7c17f6ad661bed921b3f585a070c6e516a9b",
+        "model/weights.pt": "5f92230229388d5afadabd3c05b6fa406746ad94b75b2b2f4f019c911024e614"
+      }
+    }
+  ],
+  "research_metrics": {
+    "cost": {
+      "amount": null,
+      "basis": "unknown_subscription_cost",
+      "currency": null,
+      "known_subtotal": null,
+      "missing_calls": 119,
+      "note": "Subscription tokens are usage, not a verified monetary charge."
+    },
+    "duration": {
+      "missing_elapsed_attempts": 0,
+      "note": "Router elapsed includes preflight/lock waits; sum is not run wall time. CLI inner reconnects are not observable.",
+      "observed_model_interval_union_seconds": 3963.376524448395,
+      "pure_inference_seconds": null,
+      "router_elapsed_sum_seconds": 4297.30889124237,
+      "subscription_lock_wait_seconds": null
+    },
+    "execution_attempts": 119,
+    "failed_attempts": 0,
+    "incomplete_attempts": 0,
+    "model_calls_completed": 119,
+    "model_calls_failed": 0,
+    "model_calls_start_unknown": 0,
+    "model_calls_started": 119,
+    "preflight_only_attempts": 0,
+    "tokens": {
+      "cache_write_input_tokens": {
+        "known_calls": 119,
+        "known_sum": 0,
+        "missing_calls": 0
+      },
+      "cached_input_tokens": {
+        "known_calls": 119,
+        "known_sum": 299776,
+        "missing_calls": 0
+      },
+      "input_tokens": {
+        "known_calls": 119,
+        "known_sum": 9194676,
+        "missing_calls": 0
+      },
+      "output_tokens": {
+        "known_calls": 119,
+        "known_sum": 117421,
+        "missing_calls": 0
+      },
+      "reasoning_output_tokens": {
+        "known_calls": 119,
+        "known_sum": 30699,
+        "missing_calls": 0
+      }
+    }
+  },
+  "role_metrics": [
+    {
+      "role": "coding",
+      "task_count": 9,
+      "execution_attempts": 42,
+      "model_calls_started": 42,
+      "model_calls_start_unknown": 0,
+      "preflight_only_attempts": 0,
+      "model_calls_completed": 42,
+      "failed_attempts": 0,
+      "model_calls_failed": 0,
+      "incomplete_attempts": 0,
+      "tokens": {
+        "input_tokens": {
+          "known_sum": 3977112,
+          "known_calls": 42,
+          "missing_calls": 0
+        },
+        "output_tokens": {
+          "known_sum": 55211,
+          "known_calls": 42,
+          "missing_calls": 0
+        },
+        "cached_input_tokens": {
+          "known_sum": 86784,
+          "known_calls": 42,
+          "missing_calls": 0
+        },
+        "reasoning_output_tokens": {
+          "known_sum": 11366,
+          "known_calls": 42,
+          "missing_calls": 0
+        },
+        "cache_write_input_tokens": {
+          "known_sum": 0,
+          "known_calls": 42,
+          "missing_calls": 0
+        }
+      },
+      "duration": {
+        "router_elapsed_sum_seconds": 1673.8628811910748,
+        "missing_elapsed_attempts": 0,
+        "observed_model_interval_union_seconds": 1552.224250793457,
+        "pure_inference_seconds": null,
+        "subscription_lock_wait_seconds": null,
+        "note": "Router elapsed includes preflight/lock waits; sum is not run wall time. CLI inner reconnects are not observable."
+      },
+      "cost": {
+        "amount": null,
+        "known_subtotal": null,
+        "currency": null,
+        "basis": "unknown_subscription_cost",
+        "missing_calls": 42,
+        "note": "Subscription tokens are usage, not a verified monetary charge."
+      }
+    },
+    {
+      "role": "generation",
+      "task_count": 12,
+      "execution_attempts": 45,
+      "model_calls_started": 45,
+      "model_calls_start_unknown": 0,
+      "preflight_only_attempts": 0,
+      "model_calls_completed": 45,
+      "failed_attempts": 0,
+      "model_calls_failed": 0,
+      "incomplete_attempts": 0,
+      "tokens": {
+        "input_tokens": {
+          "known_sum": 2447293,
+          "known_calls": 45,
+          "missing_calls": 0
+        },
+        "output_tokens": {
+          "known_sum": 47507,
+          "known_calls": 45,
+          "missing_calls": 0
+        },
+        "cached_input_tokens": {
+          "known_sum": 79744,
+          "known_calls": 45,
+          "missing_calls": 0
+        },
+        "reasoning_output_tokens": {
+          "known_sum": 13636,
+          "known_calls": 45,
+          "missing_calls": 0
+        },
+        "cache_write_input_tokens": {
+          "known_sum": 0,
+          "known_calls": 45,
+          "missing_calls": 0
+        }
+      },
+      "duration": {
+        "router_elapsed_sum_seconds": 2005.0453867986798,
+        "missing_elapsed_attempts": 0,
+        "observed_model_interval_union_seconds": 1884.7263436317444,
+        "pure_inference_seconds": null,
+        "subscription_lock_wait_seconds": null,
+        "note": "Router elapsed includes preflight/lock waits; sum is not run wall time. CLI inner reconnects are not observable."
+      },
+      "cost": {
+        "amount": null,
+        "known_subtotal": null,
+        "currency": null,
+        "basis": "unknown_subscription_cost",
+        "missing_calls": 45,
+        "note": "Subscription tokens are usage, not a verified monetary charge."
+      }
+    },
+    {
+      "role": "recorder",
+      "task_count": 2,
+      "execution_attempts": 4,
+      "model_calls_started": 4,
+      "model_calls_start_unknown": 0,
+      "preflight_only_attempts": 0,
+      "model_calls_completed": 4,
+      "failed_attempts": 0,
+      "model_calls_failed": 0,
+      "incomplete_attempts": 0,
+      "tokens": {
+        "input_tokens": {
+          "known_sum": 244699,
+          "known_calls": 4,
+          "missing_calls": 0
+        },
+        "output_tokens": {
+          "known_sum": 7291,
+          "known_calls": 4,
+          "missing_calls": 0
+        },
+        "cached_input_tokens": {
+          "known_sum": 71424,
+          "known_calls": 4,
+          "missing_calls": 0
+        },
+        "reasoning_output_tokens": {
+          "known_sum": 4065,
+          "known_calls": 4,
+          "missing_calls": 0
+        },
+        "cache_write_input_tokens": {
+          "known_sum": 0,
+          "known_calls": 4,
+          "missing_calls": 0
+        }
+      },
+      "duration": {
+        "router_elapsed_sum_seconds": 166.34628044627607,
+        "missing_elapsed_attempts": 0,
+        "observed_model_interval_union_seconds": 150.8984010219574,
+        "pure_inference_seconds": null,
+        "subscription_lock_wait_seconds": null,
+        "note": "Router elapsed includes preflight/lock waits; sum is not run wall time. CLI inner reconnects are not observable."
+      },
+      "cost": {
+        "amount": null,
+        "known_subtotal": null,
+        "currency": null,
+        "basis": "unknown_subscription_cost",
+        "missing_calls": 4,
+        "note": "Subscription tokens are usage, not a verified monetary charge."
+      }
+    },
+    {
+      "role": "safeguard",
+      "task_count": 8,
+      "execution_attempts": 28,
+      "model_calls_started": 28,
+      "model_calls_start_unknown": 0,
+      "preflight_only_attempts": 0,
+      "model_calls_completed": 28,
+      "failed_attempts": 0,
+      "model_calls_failed": 0,
+      "incomplete_attempts": 0,
+      "tokens": {
+        "input_tokens": {
+          "known_sum": 2525572,
+          "known_calls": 28,
+          "missing_calls": 0
+        },
+        "output_tokens": {
+          "known_sum": 7412,
+          "known_calls": 28,
+          "missing_calls": 0
+        },
+        "cached_input_tokens": {
+          "known_sum": 61824,
+          "known_calls": 28,
+          "missing_calls": 0
+        },
+        "reasoning_output_tokens": {
+          "known_sum": 1632,
+          "known_calls": 28,
+          "missing_calls": 0
+        },
+        "cache_write_input_tokens": {
+          "known_sum": 0,
+          "known_calls": 28,
+          "missing_calls": 0
+        }
+      },
+      "duration": {
+        "router_elapsed_sum_seconds": 452.05434280633926,
+        "missing_elapsed_attempts": 0,
+        "observed_model_interval_union_seconds": 375.52752900123596,
+        "pure_inference_seconds": null,
+        "subscription_lock_wait_seconds": null,
+        "note": "Router elapsed includes preflight/lock waits; sum is not run wall time. CLI inner reconnects are not observable."
+      },
+      "cost": {
+        "amount": null,
+        "known_subtotal": null,
+        "currency": null,
+        "basis": "unknown_subscription_cost",
+        "missing_calls": 28,
+        "note": "Subscription tokens are usage, not a verified monetary charge."
+      }
+    }
+  ],
+  "purpose_metrics": [
+    {
+      "role": "coding",
+      "purpose": "code",
+      "slot": null,
+      "task_count": 9,
+      "execution_attempts": 42,
+      "model_calls_started": 42,
+      "model_calls_start_unknown": 0,
+      "preflight_only_attempts": 0,
+      "model_calls_completed": 42,
+      "failed_attempts": 0,
+      "model_calls_failed": 0,
+      "incomplete_attempts": 0,
+      "tokens": {
+        "input_tokens": {
+          "known_sum": 3977112,
+          "known_calls": 42,
+          "missing_calls": 0
+        },
+        "output_tokens": {
+          "known_sum": 55211,
+          "known_calls": 42,
+          "missing_calls": 0
+        },
+        "cached_input_tokens": {
+          "known_sum": 86784,
+          "known_calls": 42,
+          "missing_calls": 0
+        },
+        "reasoning_output_tokens": {
+          "known_sum": 11366,
+          "known_calls": 42,
+          "missing_calls": 0
+        },
+        "cache_write_input_tokens": {
+          "known_sum": 0,
+          "known_calls": 42,
+          "missing_calls": 0
+        }
+      },
+      "duration": {
+        "router_elapsed_sum_seconds": 1673.8628811910748,
+        "missing_elapsed_attempts": 0,
+        "observed_model_interval_union_seconds": 1552.224250793457,
+        "pure_inference_seconds": null,
+        "subscription_lock_wait_seconds": null,
+        "note": "Router elapsed includes preflight/lock waits; sum is not run wall time. CLI inner reconnects are not observable."
+      },
+      "cost": {
+        "amount": null,
+        "known_subtotal": null,
+        "currency": null,
+        "basis": "unknown_subscription_cost",
+        "missing_calls": 42,
+        "note": "Subscription tokens are usage, not a verified monetary charge."
+      }
+    },
+    {
+      "role": "generation",
+      "purpose": "generate",
+      "slot": "H1",
+      "task_count": 2,
+      "execution_attempts": 6,
+      "model_calls_started": 6,
+      "model_calls_start_unknown": 0,
+      "preflight_only_attempts": 0,
+      "model_calls_completed": 6,
+      "failed_attempts": 0,
+      "model_calls_failed": 0,
+      "incomplete_attempts": 0,
+      "tokens": {
+        "input_tokens": {
+          "known_sum": 155590,
+          "known_calls": 6,
+          "missing_calls": 0
+        },
+        "output_tokens": {
+          "known_sum": 6280,
+          "known_calls": 6,
+          "missing_calls": 0
+        },
+        "cached_input_tokens": {
+          "known_sum": 0,
+          "known_calls": 6,
+          "missing_calls": 0
+        },
+        "reasoning_output_tokens": {
+          "known_sum": 971,
+          "known_calls": 6,
+          "missing_calls": 0
+        },
+        "cache_write_input_tokens": {
+          "known_sum": 0,
+          "known_calls": 6,
+          "missing_calls": 0
+        }
+      },
+      "duration": {
+        "router_elapsed_sum_seconds": 262.92014510929585,
+        "missing_elapsed_attempts": 0,
+        "observed_model_interval_union_seconds": 249.73842668533325,
+        "pure_inference_seconds": null,
+        "subscription_lock_wait_seconds": null,
+        "note": "Router elapsed includes preflight/lock waits; sum is not run wall time. CLI inner reconnects are not observable."
+      },
+      "cost": {
+        "amount": null,
+        "known_subtotal": null,
+        "currency": null,
+        "basis": "unknown_subscription_cost",
+        "missing_calls": 6,
+        "note": "Subscription tokens are usage, not a verified monetary charge."
+      }
+    },
+    {
+      "role": "generation",
+      "purpose": "generate",
+      "slot": "H2",
+      "task_count": 2,
+      "execution_attempts": 15,
+      "model_calls_started": 15,
+      "model_calls_start_unknown": 0,
+      "preflight_only_attempts": 0,
+      "model_calls_completed": 15,
+      "failed_attempts": 0,
+      "model_calls_failed": 0,
+      "incomplete_attempts": 0,
+      "tokens": {
+        "input_tokens": {
+          "known_sum": 638517,
+          "known_calls": 15,
+          "missing_calls": 0
+        },
+        "output_tokens": {
+          "known_sum": 12609,
+          "known_calls": 15,
+          "missing_calls": 0
+        },
+        "cached_input_tokens": {
+          "known_sum": 19968,
+          "known_calls": 15,
+          "missing_calls": 0
+        },
+        "reasoning_output_tokens": {
+          "known_sum": 3259,
+          "known_calls": 15,
+          "missing_calls": 0
+        },
+        "cache_write_input_tokens": {
+          "known_sum": 0,
+          "known_calls": 15,
+          "missing_calls": 0
+        }
+      },
+      "duration": {
+        "router_elapsed_sum_seconds": 561.9689821004868,
+        "missing_elapsed_attempts": 0,
+        "observed_model_interval_union_seconds": 521.3258430957794,
+        "pure_inference_seconds": null,
+        "subscription_lock_wait_seconds": null,
+        "note": "Router elapsed includes preflight/lock waits; sum is not run wall time. CLI inner reconnects are not observable."
+      },
+      "cost": {
+        "amount": null,
+        "known_subtotal": null,
+        "currency": null,
+        "basis": "unknown_subscription_cost",
+        "missing_calls": 15,
+        "note": "Subscription tokens are usage, not a verified monetary charge."
+      }
+    },
+    {
+      "role": "generation",
+      "purpose": "generate",
+      "slot": "H3",
+      "task_count": 2,
+      "execution_attempts": 6,
+      "model_calls_started": 6,
+      "model_calls_start_unknown": 0,
+      "preflight_only_attempts": 0,
+      "model_calls_completed": 6,
+      "failed_attempts": 0,
+      "model_calls_failed": 0,
+      "incomplete_attempts": 0,
+      "tokens": {
+        "input_tokens": {
+          "known_sum": 180533,
+          "known_calls": 6,
+          "missing_calls": 0
+        },
+        "output_tokens": {
+          "known_sum": 10976,
+          "known_calls": 6,
+          "missing_calls": 0
+        },
+        "cached_input_tokens": {
+          "known_sum": 23808,
+          "known_calls": 6,
+          "missing_calls": 0
+        },
+        "reasoning_output_tokens": {
+          "known_sum": 5165,
+          "known_calls": 6,
+          "missing_calls": 0
+        },
+        "cache_write_input_tokens": {
+          "known_sum": 0,
+          "known_calls": 6,
+          "missing_calls": 0
+        }
+      },
+      "duration": {
+        "router_elapsed_sum_seconds": 475.51110249757767,
+        "missing_elapsed_attempts": 0,
+        "observed_model_interval_union_seconds": 460.80474519729614,
+        "pure_inference_seconds": null,
+        "subscription_lock_wait_seconds": null,
+        "note": "Router elapsed includes preflight/lock waits; sum is not run wall time. CLI inner reconnects are not observable."
+      },
+      "cost": {
+        "amount": null,
+        "known_subtotal": null,
+        "currency": null,
+        "basis": "unknown_subscription_cost",
+        "missing_calls": 6,
+        "note": "Subscription tokens are usage, not a verified monetary charge."
+      }
+    },
+    {
+      "role": "generation",
+      "purpose": "plan_l3",
+      "slot": null,
+      "task_count": 4,
+      "execution_attempts": 13,
+      "model_calls_started": 13,
+      "model_calls_start_unknown": 0,
+      "preflight_only_attempts": 0,
+      "model_calls_completed": 13,
+      "failed_attempts": 0,
+      "model_calls_failed": 0,
+      "incomplete_attempts": 0,
+      "tokens": {
+        "input_tokens": {
+          "known_sum": 1036487,
+          "known_calls": 13,
+          "missing_calls": 0
+        },
+        "output_tokens": {
+          "known_sum": 13597,
+          "known_calls": 13,
+          "missing_calls": 0
+        },
+        "cached_input_tokens": {
+          "known_sum": 23296,
+          "known_calls": 13,
+          "missing_calls": 0
+        },
+        "reasoning_output_tokens": {
+          "known_sum": 3163,
+          "known_calls": 13,
+          "missing_calls": 0
+        },
+        "cache_write_input_tokens": {
+          "known_sum": 0,
+          "known_calls": 13,
+          "missing_calls": 0
+        }
+      },
+      "duration": {
+        "router_elapsed_sum_seconds": 506.2573491949588,
+        "missing_elapsed_attempts": 0,
+        "observed_model_interval_union_seconds": 469.3811891078949,
+        "pure_inference_seconds": null,
+        "subscription_lock_wait_seconds": null,
+        "note": "Router elapsed includes preflight/lock waits; sum is not run wall time. CLI inner reconnects are not observable."
+      },
+      "cost": {
+        "amount": null,
+        "known_subtotal": null,
+        "currency": null,
+        "basis": "unknown_subscription_cost",
+        "missing_calls": 13,
+        "note": "Subscription tokens are usage, not a verified monetary charge."
+      }
+    },
+    {
+      "role": "generation",
+      "purpose": "select",
+      "slot": null,
+      "task_count": 2,
+      "execution_attempts": 5,
+      "model_calls_started": 5,
+      "model_calls_start_unknown": 0,
+      "preflight_only_attempts": 0,
+      "model_calls_completed": 5,
+      "failed_attempts": 0,
+      "model_calls_failed": 0,
+      "incomplete_attempts": 0,
+      "tokens": {
+        "input_tokens": {
+          "known_sum": 436166,
+          "known_calls": 5,
+          "missing_calls": 0
+        },
+        "output_tokens": {
+          "known_sum": 4045,
+          "known_calls": 5,
+          "missing_calls": 0
+        },
+        "cached_input_tokens": {
+          "known_sum": 12672,
+          "known_calls": 5,
+          "missing_calls": 0
+        },
+        "reasoning_output_tokens": {
+          "known_sum": 1078,
+          "known_calls": 5,
+          "missing_calls": 0
+        },
+        "cache_write_input_tokens": {
+          "known_sum": 0,
+          "known_calls": 5,
+          "missing_calls": 0
+        }
+      },
+      "duration": {
+        "router_elapsed_sum_seconds": 198.38780789636075,
+        "missing_elapsed_attempts": 0,
+        "observed_model_interval_union_seconds": 183.47613954544067,
+        "pure_inference_seconds": null,
+        "subscription_lock_wait_seconds": null,
+        "note": "Router elapsed includes preflight/lock waits; sum is not run wall time. CLI inner reconnects are not observable."
+      },
+      "cost": {
+        "amount": null,
+        "known_subtotal": null,
+        "currency": null,
+        "basis": "unknown_subscription_cost",
+        "missing_calls": 5,
+        "note": "Subscription tokens are usage, not a verified monetary charge."
+      }
+    },
+    {
+      "role": "recorder",
+      "purpose": "record",
+      "slot": null,
+      "task_count": 2,
+      "execution_attempts": 4,
+      "model_calls_started": 4,
+      "model_calls_start_unknown": 0,
+      "preflight_only_attempts": 0,
+      "model_calls_completed": 4,
+      "failed_attempts": 0,
+      "model_calls_failed": 0,
+      "incomplete_attempts": 0,
+      "tokens": {
+        "input_tokens": {
+          "known_sum": 244699,
+          "known_calls": 4,
+          "missing_calls": 0
+        },
+        "output_tokens": {
+          "known_sum": 7291,
+          "known_calls": 4,
+          "missing_calls": 0
+        },
+        "cached_input_tokens": {
+          "known_sum": 71424,
+          "known_calls": 4,
+          "missing_calls": 0
+        },
+        "reasoning_output_tokens": {
+          "known_sum": 4065,
+          "known_calls": 4,
+          "missing_calls": 0
+        },
+        "cache_write_input_tokens": {
+          "known_sum": 0,
+          "known_calls": 4,
+          "missing_calls": 0
+        }
+      },
+      "duration": {
+        "router_elapsed_sum_seconds": 166.34628044627607,
+        "missing_elapsed_attempts": 0,
+        "observed_model_interval_union_seconds": 150.8984010219574,
+        "pure_inference_seconds": null,
+        "subscription_lock_wait_seconds": null,
+        "note": "Router elapsed includes preflight/lock waits; sum is not run wall time. CLI inner reconnects are not observable."
+      },
+      "cost": {
+        "amount": null,
+        "known_subtotal": null,
+        "currency": null,
+        "basis": "unknown_subscription_cost",
+        "missing_calls": 4,
+        "note": "Subscription tokens are usage, not a verified monetary charge."
+      }
+    },
+    {
+      "role": "safeguard",
+      "purpose": "safeguard",
+      "slot": null,
+      "task_count": 8,
+      "execution_attempts": 28,
+      "model_calls_started": 28,
+      "model_calls_start_unknown": 0,
+      "preflight_only_attempts": 0,
+      "model_calls_completed": 28,
+      "failed_attempts": 0,
+      "model_calls_failed": 0,
+      "incomplete_attempts": 0,
+      "tokens": {
+        "input_tokens": {
+          "known_sum": 2525572,
+          "known_calls": 28,
+          "missing_calls": 0
+        },
+        "output_tokens": {
+          "known_sum": 7412,
+          "known_calls": 28,
+          "missing_calls": 0
+        },
+        "cached_input_tokens": {
+          "known_sum": 61824,
+          "known_calls": 28,
+          "missing_calls": 0
+        },
+        "reasoning_output_tokens": {
+          "known_sum": 1632,
+          "known_calls": 28,
+          "missing_calls": 0
+        },
+        "cache_write_input_tokens": {
+          "known_sum": 0,
+          "known_calls": 28,
+          "missing_calls": 0
+        }
+      },
+      "duration": {
+        "router_elapsed_sum_seconds": 452.05434280633926,
+        "missing_elapsed_attempts": 0,
+        "observed_model_interval_union_seconds": 375.52752900123596,
+        "pure_inference_seconds": null,
+        "subscription_lock_wait_seconds": null,
+        "note": "Router elapsed includes preflight/lock waits; sum is not run wall time. CLI inner reconnects are not observable."
+      },
+      "cost": {
+        "amount": null,
+        "known_subtotal": null,
+        "currency": null,
+        "basis": "unknown_subscription_cost",
+        "missing_calls": 28,
+        "note": "Subscription tokens are usage, not a verified monetary charge."
+      }
+    }
+  ],
+  "model_routes": [
+    {
+      "role": "coding",
+      "requested_model": "gpt-6.1-sol",
+      "requested_effort": "medium",
+      "actual_model": null,
+      "actual_effort": null,
+      "calls": 42
+    },
+    {
+      "role": "generation",
+      "requested_model": "gpt-6-astra",
+      "requested_effort": "high",
+      "actual_model": null,
+      "actual_effort": null,
+      "calls": 45
+    },
+    {
+      "role": "recorder",
+      "requested_model": "gpt-6-luna",
+      "requested_effort": "high",
+      "actual_model": null,
+      "actual_effort": null,
+      "calls": 4
+    },
+    {
+      "role": "safeguard",
+      "requested_model": "gpt-6.1-sol",
+      "requested_effort": "medium",
+      "actual_model": null,
+      "actual_effort": null,
+      "calls": 28
+    }
+  ],
+  "numeric_summary": {
+    "execution_count": 8,
+    "states": {
+      "completed": 5,
+      "failed": 3
+    },
+    "wall_seconds_sum": 13927.443117866293,
+    "failed_wall_seconds_sum": 2584.540132753551,
+    "closed_execution_interval_union_seconds": 13927.460001707077,
+    "peak_simultaneous_numeric_workers": 1,
+    "gpu_assignments": [
+      [
+        2
+      ],
+      [
+        0
+      ],
+      [
+        0
+      ],
+      [
+        0
+      ],
+      [
+        0
+      ],
+      [
+        0
+      ],
+      [
+        0
+      ],
+      [
+        0
+      ]
+    ],
+    "note": "Worker wall and active-budget excluded waits have different boundaries; do not add or equate them."
+  },
+  "numeric_executions": [
+    {
+      "key": "r001/generate/H2/tools/a3/8d5a75aa76de/execute/revision1",
+      "execution_id": "task-b00b3a6071b967a2166fbd4d-a0001",
+      "level": "L1",
+      "status": "completed",
+      "error": null,
+      "result": "EXP/runs/deitb_static_w4a4_gonly_20261115_r1/jobs/task-b00b3a6071b967a2166fbd4d-a0001/result.json",
+      "wall_seconds": 77.79241304472089
+    },
+    {
+      "key": "r001/L3/execute",
+      "execution_id": "task-b82d0e9c4c38354f3e31a579-a0001",
+      "level": "L3",
+      "status": "completed",
+      "error": null,
+      "result": "EXP/runs/deitb_static_w4a4_gonly_20261115_r1/jobs/task-b82d0e9c4c38354f3e31a579-a0001/result.json",
+      "wall_seconds": 5586.749266022816
+    },
+    {
+      "key": "r002/generate/H2/tools/a3/231b6cb77992/execute",
+      "execution_id": "task-c65b9c4b8b55cbad108d0054-a0001",
+      "level": "L2",
+      "status": "completed",
+      "error": null,
+      "result": "EXP/runs/deitb_static_w4a4_gonly_20261115_r1/jobs/task-c65b9c4b8b55cbad108d0054-a0001/result.json",
+      "wall_seconds": 70.83208864741027
+    },
+    {
+      "key": "r002/select/tools/a1/ec4af871a12d/execute",
+      "execution_id": "task-62a3ef4c0d40d8838dda0433-a0001",
+      "level": "L2",
+      "status": "failed",
+      "error": {
+        "code": "RuntimeError",
+        "message": "Model must remain eval",
+        "origin": "implementation"
+      },
+      "result": "EXP/runs/deitb_static_w4a4_gonly_20261115_r1/jobs/task-62a3ef4c0d40d8838dda0433-a0001/result.json",
+      "wall_seconds": 38.34874486550689
+    },
+    {
+      "key": "r002/select/tools/a1/ec4af871a12d/execute/revision1",
+      "execution_id": "task-fc2bcdf9948fc4acfc95f88a-a0001",
+      "level": "L2",
+      "status": "completed",
+      "error": null,
+      "result": "EXP/runs/deitb_static_w4a4_gonly_20261115_r1/jobs/task-fc2bcdf9948fc4acfc95f88a-a0001/result.json",
+      "wall_seconds": 160.14251717180014
+    },
+    {
+      "key": "r002/L3/execute",
+      "execution_id": "task-4c0b12d7d5df8e29a01f0f16-a0001",
+      "level": "L3",
+      "status": "failed",
+      "error": {
+        "code": "invalid_config",
+        "message": "AdaLog LUT 与 base/bit 不一致",
+        "origin": "host",
+        "path": "$",
+        "retryable": false
+      },
+      "result": "EXP/runs/deitb_static_w4a4_gonly_20261115_r1/jobs/task-4c0b12d7d5df8e29a01f0f16-a0001/result.json",
+      "wall_seconds": 1159.3374385647476
+    },
+    {
+      "key": "r002/L3/revision1/execute",
+      "execution_id": "task-2ffae453010aea5d09234525-a0001",
+      "level": "L3",
+      "status": "failed",
+      "error": {
+        "code": "ContractError",
+        "message": "static W4A4 audit lacks frozen quantizer state",
+        "origin": "host"
+      },
+      "result": "EXP/runs/deitb_static_w4a4_gonly_20261115_r1/jobs/task-2ffae453010aea5d09234525-a0001/result.json",
+      "wall_seconds": 1386.8539493232965
+    },
+    {
+      "key": "r002/L3/revision2/execute",
+      "execution_id": "task-97cee009a3d280bd3aa744d2-a0001",
+      "level": "L3",
+      "status": "completed",
+      "error": null,
+      "result": "EXP/runs/deitb_static_w4a4_gonly_20261115_r1/jobs/task-97cee009a3d280bd3aa744d2-a0001/result.json",
+      "wall_seconds": 5447.386700225994
+    }
+  ],
+  "hypotheses": [
+    {
+      "ref": "HypothesisCard-413b230f9e544b6c8f35af59e02445d6@1",
+      "round": 1,
+      "slot": "H1",
+      "title": "保留 GPTAQ v1 完整静态 W4A4 种子：用原始浮点输入对齐补偿量化前缀偏差",
+      "hypothesis_type": "existing_method",
+      "evidence_refs": []
+    },
+    {
+      "ref": "HypothesisCard-48a55e0c0ba046ca98623d488cff560d@1",
+      "round": 1,
+      "slot": "H2",
+      "title": "GPTAQ 静态 W4A4 的 PV 感知概率尺度校准：以输出误差替代概率张量误差",
+      "hypothesis_type": "engineering",
+      "evidence_refs": [
+        "EvidenceCard-cecf07bdab8c47d48027bd02a932160c@1"
+      ]
+    },
+    {
+      "ref": "HypothesisCard-9f35a961bee94d72b0337b8104940ebd@1",
+      "round": 1,
+      "slot": "H3",
+      "title": "固定概率码本上的行内误差反馈编码：以耦合舍入抑制注意力质量漂移",
+      "hypothesis_type": "new_algorithm",
+      "evidence_refs": []
+    },
+    {
+      "ref": "HypothesisCard-19d67c99082648a5b9607415ca5a8bb1@1",
+      "round": 2,
+      "slot": "H1",
+      "title": "保留零码的 AdaLog 完整静态 W4A4：以局部输出重建选择非线性激活的对数网格",
+      "hypothesis_type": "existing_method",
+      "evidence_refs": [
+        "EvidenceCard-15a015a9c39044759caf9a9edd7a0c22@1"
+      ]
+    },
+    {
+      "ref": "HypothesisCard-75329f020226451d9546cc97180d98ac@1",
+      "round": 2,
+      "slot": "H2",
+      "title": "冻结 GPTAQ 上仅替换首层概率尺度：以真实 A4 V 的 PV 误差选择静态码器",
+      "hypothesis_type": "engineering",
+      "evidence_refs": [
+        "EvidenceCard-646077308373429fb07082f8d3e0e3d5@1",
+        "EvidenceCard-15a015a9c39044759caf9a9edd7a0c22@1"
+      ]
+    },
+    {
+      "ref": "HypothesisCard-3fe168ba898f4bc4b3971ec0ae7a53cf@1",
+      "round": 2,
+      "slot": "H3",
+      "title": "固定概率码本上的交换对称耦合舍入：以静态行质量惩罚控制PV均值方向误差",
+      "hypothesis_type": "new_algorithm",
+      "evidence_refs": [
+        "EvidenceCard-15a015a9c39044759caf9a9edd7a0c22@1"
+      ]
+    }
+  ],
+  "components": {
+    "skill_catalog_deliveries_per_call": {
+      "recorder": 4,
+      "generation": 45
+    },
+    "skill_body_or_reference_reads": 0,
+    "method_reads": 13,
+    "method_documents": 6,
+    "solution_document_reads": 11,
+    "solution_asset_reads": 7,
+    "memory_retrieval_count": 5,
+    "tool_counts": {
+      "read_asset": {
+        "cache_reused": 0,
+        "observed_model_requests": 150,
+        "requests_without_linked_task": 0,
+        "states": {
+          "completed": 148,
+          "failed": 2
+        },
+        "tasks": 150
+      },
+      "read_card": {
+        "cache_reused": 0,
+        "observed_model_requests": 29,
+        "requests_without_linked_task": 0,
+        "states": {
+          "completed": 28,
+          "failed": 1
+        },
+        "tasks": 29
+      },
+      "request_experiment": {
+        "cache_reused": 0,
+        "observed_model_requests": 3,
+        "requests_without_linked_task": 0,
+        "states": {
+          "completed": 5,
+          "failed": 2
+        },
+        "tasks": 7
+      },
+      "retrieve_memory": {
+        "cache_reused": 0,
+        "observed_model_requests": 5,
+        "requests_without_linked_task": 0,
+        "states": {
+          "completed": 5
+        },
+        "tasks": 5
+      }
+    },
+    "library_final": [
+      {
+        "id": "3fa2102e9a6efeec9dba2b6606dc274f00c44252609e0e0c6f0a92c8fefd8cc6",
+        "title": "H1 round 2",
+        "status": "evaluated",
+        "metrics": {
+          "mIoU": 28.055647558635677,
+          "top1": 72.482
+        },
+        "evidence_ref": "EvidenceCard-e643fc1b1e154c17a7553394f97281f1@1"
+      },
+      {
+        "id": "4609369da995d8d81595821555611f0ae6c4a50c03756c1cd7019234a75f59fe",
+        "title": "H1 round 1",
+        "status": "evaluated",
+        "metrics": {
+          "mIoU": 4.418857411135278,
+          "top1": 72.274
+        },
+        "evidence_ref": "EvidenceCard-15a015a9c39044759caf9a9edd7a0c22@1"
+      },
+      {
+        "id": "gptaq_w4a4",
+        "title": "GPTAQ v1 static W4A4 adaptation",
+        "status": "pending_evaluation",
+        "metrics": {
+          "mIoU": null,
+          "top1": null
+        },
+        "evidence_ref": null
+      }
+    ],
+    "issues": [
+      "No Skill body/reference read; catalog exposure does not establish use.",
+      "FP ADE metrics exist in raw artifacts but were not retrieved by either Recorder.",
+      "R2 resolved prefix-PV question remains in final L1 open_questions.",
+      "Pending and measured GPTAQ recipes occupy two final library positions."
+    ]
+  },
+  "eval_l0": {
+    "report": "EXP/evaluations/deitb_static_w4a4_gonly_20261115_r1_l0/reports/report-0003.json",
+    "groups": [
+      {
+        "Q_distribution": {
+          "max": 100.0,
+          "mean": 96.66666666666667,
+          "median": 100.0,
+          "min": 90.0,
+          "missing": 6,
+          "n": 3
+        },
+        "case_ids": [
+          "case-9f4e77b974ecbf89be7bdab5",
+          "case-c682261937b669764c689dac",
+          "case-18694b6e3b61df9120e35598",
+          "case-07fa9233fdf42d6ec1ea2208",
+          "case-3ffd64aa39349aa05a8a172b",
+          "case-e0a1120d2633eee175d3b7d4",
+          "case-07f91d3c4bd44bc4e4bf7a93",
+          "case-b74278600c4b2bb1a332f63e",
+          "case-f7ef17c4bb8f7fbe66941b6f"
+        ],
+        "cost_estimate_distribution": {
+          "max": null,
+          "mean": null,
+          "median": null,
+          "min": null,
+          "missing": 9,
+          "n": 0
+        },
+        "criterion_counts": {
+          "applicable": 13,
+          "not_applicable": 2,
+          "scored": 12,
+          "total": 15,
+          "unknown": 1
+        },
+        "critical_flags": {},
+        "difficulty": "not independently labeled",
+        "effective_evidence_coverage": 0.9230769230769231,
+        "error_strata": {},
+        "input_token_distribution_known_only": {
+          "max": 1591312,
+          "mean": 441901.3333333333,
+          "median": 250312,
+          "min": 24518,
+          "missing": 0,
+          "n": 9
+        },
+        "judged_task_count": 3,
+        "purpose": "code",
+        "role": "coding",
+        "router_elapsed_distribution_known_only": {
+          "max": 492.1579361576587,
+          "mean": 185.9847645767861,
+          "median": 170.4239839296788,
+          "min": 25.380891418084502,
+          "missing": 0,
+          "n": 9
+        },
+        "selection_stage": null,
+        "slot": null,
+        "task_count": 9,
+        "task_states": {
+          "completed": 9
+        },
+        "unjudged_task_count": 6
+      },
+      {
+        "Q_distribution": {
+          "max": 100.0,
+          "mean": 100.0,
+          "median": 100.0,
+          "min": 100.0,
+          "missing": 0,
+          "n": 2
+        },
+        "case_ids": [
+          "case-849439cf6a7282f2f03a0ef3",
+          "case-498dbbb5147082933be3ba33"
+        ],
+        "cost_estimate_distribution": {
+          "max": null,
+          "mean": null,
+          "median": null,
+          "min": null,
+          "missing": 2,
+          "n": 0
+        },
+        "criterion_counts": {
+          "applicable": 10,
+          "not_applicable": 0,
+          "scored": 10,
+          "total": 10,
+          "unknown": 0
+        },
+        "critical_flags": {},
+        "difficulty": "not independently labeled",
+        "effective_evidence_coverage": 1.0,
+        "error_strata": {},
+        "input_token_distribution_known_only": {
+          "max": 86554,
+          "mean": 77795,
+          "median": 77795.0,
+          "min": 69036,
+          "missing": 0,
+          "n": 2
+        },
+        "judged_task_count": 2,
+        "purpose": "generate",
+        "role": "generation",
+        "router_elapsed_distribution_known_only": {
+          "max": 140.78853027895093,
+          "mean": 131.46007255464792,
+          "median": 131.46007255464792,
+          "min": 122.13161483034492,
+          "missing": 0,
+          "n": 2
+        },
+        "selection_stage": null,
+        "slot": "H1",
+        "task_count": 2,
+        "task_states": {
+          "completed": 2
+        },
+        "unjudged_task_count": 0
+      },
+      {
+        "Q_distribution": {
+          "max": 100.0,
+          "mean": 100.0,
+          "median": 100.0,
+          "min": 100.0,
+          "missing": 1,
+          "n": 1
+        },
+        "case_ids": [
+          "case-445ab8ce95a7447ad58cb4e3",
+          "case-0d5a81025905ce5336575360"
+        ],
+        "cost_estimate_distribution": {
+          "max": null,
+          "mean": null,
+          "median": null,
+          "min": null,
+          "missing": 2,
+          "n": 0
+        },
+        "criterion_counts": {
+          "applicable": 5,
+          "not_applicable": 0,
+          "scored": 5,
+          "total": 5,
+          "unknown": 0
+        },
+        "critical_flags": {},
+        "difficulty": "not independently labeled",
+        "effective_evidence_coverage": 1.0,
+        "error_strata": {},
+        "input_token_distribution_known_only": {
+          "max": 441832,
+          "mean": 319258.5,
+          "median": 319258.5,
+          "min": 196685,
+          "missing": 0,
+          "n": 2
+        },
+        "judged_task_count": 1,
+        "purpose": "generate",
+        "role": "generation",
+        "router_elapsed_distribution_known_only": {
+          "max": 313.20246940106153,
+          "mean": 280.9844910502434,
+          "median": 280.9844910502434,
+          "min": 248.76651269942522,
+          "missing": 0,
+          "n": 2
+        },
+        "selection_stage": null,
+        "slot": "H2",
+        "task_count": 2,
+        "task_states": {
+          "completed": 2
+        },
+        "unjudged_task_count": 1
+      },
+      {
+        "Q_distribution": {
+          "max": 100.0,
+          "mean": 100.0,
+          "median": 100.0,
+          "min": 100.0,
+          "missing": 0,
+          "n": 2
+        },
+        "case_ids": [
+          "case-4879ba6edb17acaec3fc9249",
+          "case-cf59739fcf715a38a50745eb"
+        ],
+        "cost_estimate_distribution": {
+          "max": null,
+          "mean": null,
+          "median": null,
+          "min": null,
+          "missing": 2,
+          "n": 0
+        },
+        "criterion_counts": {
+          "applicable": 10,
+          "not_applicable": 0,
+          "scored": 10,
+          "total": 10,
+          "unknown": 0
+        },
+        "critical_flags": {},
+        "difficulty": "not independently labeled",
+        "effective_evidence_coverage": 1.0,
+        "error_strata": {},
+        "input_token_distribution_known_only": {
+          "max": 133187,
+          "mean": 90266.5,
+          "median": 90266.5,
+          "min": 47346,
+          "missing": 0,
+          "n": 2
+        },
+        "judged_task_count": 2,
+        "purpose": "generate",
+        "role": "generation",
+        "router_elapsed_distribution_known_only": {
+          "max": 276.4256273172796,
+          "mean": 237.75555124878883,
+          "median": 237.75555124878883,
+          "min": 199.0854751802981,
+          "missing": 0,
+          "n": 2
+        },
+        "selection_stage": null,
+        "slot": "H3",
+        "task_count": 2,
+        "task_states": {
+          "completed": 2
+        },
+        "unjudged_task_count": 0
+      },
+      {
+        "Q_distribution": {
+          "max": 100.0,
+          "mean": 100.0,
+          "median": 100.0,
+          "min": 100.0,
+          "missing": 2,
+          "n": 2
+        },
+        "case_ids": [
+          "case-4826700dd65813c9ba5823bc",
+          "case-5179957d3f237df4710a538c",
+          "case-6abf728121e183ea39c9bab8",
+          "case-c3a532b6239fbd90ef3cca3e"
+        ],
+        "cost_estimate_distribution": {
+          "max": null,
+          "mean": null,
+          "median": null,
+          "min": null,
+          "missing": 4,
+          "n": 0
+        },
+        "criterion_counts": {
+          "applicable": 6,
+          "not_applicable": 0,
+          "scored": 6,
+          "total": 6,
+          "unknown": 0
+        },
+        "critical_flags": {},
+        "difficulty": "not independently labeled",
+        "effective_evidence_coverage": 1.0,
+        "error_strata": {},
+        "input_token_distribution_known_only": {
+          "max": 325756,
+          "mean": 259121.75,
+          "median": 259409.0,
+          "min": 191913,
+          "missing": 0,
+          "n": 4
+        },
+        "judged_task_count": 2,
+        "purpose": "plan_l3",
+        "role": "generation",
+        "router_elapsed_distribution_known_only": {
+          "max": 210.75967459008098,
+          "mean": 126.5643372987397,
+          "median": 103.76490191929042,
+          "min": 87.96787076629698,
+          "missing": 0,
+          "n": 4
+        },
+        "selection_stage": null,
+        "slot": null,
+        "task_count": 4,
+        "task_states": {
+          "completed": 4
+        },
+        "unjudged_task_count": 2
+      },
+      {
+        "Q_distribution": {
+          "max": null,
+          "mean": null,
+          "median": null,
+          "min": null,
+          "missing": 2,
+          "n": 0
+        },
+        "case_ids": [
+          "case-81d2cd7972a9ceaf999516d1",
+          "case-6d422ddafeeb2bba902e5286"
+        ],
+        "cost_estimate_distribution": {
+          "max": null,
+          "mean": null,
+          "median": null,
+          "min": null,
+          "missing": 2,
+          "n": 0
+        },
+        "criterion_counts": {
+          "applicable": 0,
+          "not_applicable": 0,
+          "scored": 0,
+          "total": 0,
+          "unknown": 0
+        },
+        "critical_flags": {},
+        "difficulty": "not independently labeled",
+        "effective_evidence_coverage": null,
+        "error_strata": {},
+        "input_token_distribution_known_only": {
+          "max": 189054,
+          "mean": 122349.5,
+          "median": 122349.5,
+          "min": 55645,
+          "missing": 0,
+          "n": 2
+        },
+        "judged_task_count": 0,
+        "purpose": "record",
+        "role": "recorder",
+        "router_elapsed_distribution_known_only": {
+          "max": 110.49982360936701,
+          "mean": 83.17314022313803,
+          "median": 83.17314022313803,
+          "min": 55.846456836909056,
+          "missing": 0,
+          "n": 2
+        },
+        "selection_stage": null,
+        "slot": null,
+        "task_count": 2,
+        "task_states": {
+          "completed": 2
+        },
+        "unjudged_task_count": 2
+      },
+      {
+        "Q_distribution": {
+          "max": 100.0,
+          "mean": 100.0,
+          "median": 100.0,
+          "min": 100.0,
+          "missing": 6,
+          "n": 2
+        },
+        "case_ids": [
+          "case-db0df1a43e24dfb5cbfb5a81",
+          "case-ee45cb6f1adcd2e77792011e",
+          "case-c73556134c3cc0afa10fde08",
+          "case-9ec2d8cce130a284b506fd2a",
+          "case-7fbc97df20f08bbc726670a8",
+          "case-577280db7b3d8a85d01f892a",
+          "case-0aa3691fb8574b8929944bab",
+          "case-5b4ecb30fa6a0595e3504a78"
+        ],
+        "cost_estimate_distribution": {
+          "max": null,
+          "mean": null,
+          "median": null,
+          "min": null,
+          "missing": 8,
+          "n": 0
+        },
+        "criterion_counts": {
+          "applicable": 8,
+          "not_applicable": 0,
+          "scored": 8,
+          "total": 8,
+          "unknown": 0
+        },
+        "critical_flags": {},
+        "difficulty": "not independently labeled",
+        "effective_evidence_coverage": 1.0,
+        "error_strata": {},
+        "input_token_distribution_known_only": {
+          "max": 497611,
+          "mean": 315696.5,
+          "median": 319417.5,
+          "min": 68744,
+          "missing": 0,
+          "n": 8
+        },
+        "judged_task_count": 2,
+        "purpose": "safeguard",
+        "role": "safeguard",
+        "router_elapsed_distribution_known_only": {
+          "max": 87.08731226995587,
+          "mean": 56.50679285079241,
+          "median": 55.48462629597634,
+          "min": 23.20246754772961,
+          "missing": 0,
+          "n": 8
+        },
+        "selection_stage": null,
+        "slot": null,
+        "task_count": 8,
+        "task_states": {
+          "completed": 8
+        },
+        "unjudged_task_count": 6
+      }
+    ],
+    "judge_overhead": {
+      "cost": {
+        "amount": null,
+        "basis": "unknown_subscription_cost",
+        "currency": null,
+        "known_subtotal": null,
+        "missing_calls": 12,
+        "note": "Subscription tokens are usage, not a verified monetary charge."
+      },
+      "duration": {
+        "missing_elapsed_attempts": 0,
+        "note": "Router elapsed includes preflight/lock waits; sum is not run wall time. CLI inner reconnects are not observable.",
+        "observed_model_interval_union_seconds": 383.3949203491211,
+        "pure_inference_seconds": null,
+        "router_elapsed_sum_seconds": 412.0369408354163,
+        "subscription_lock_wait_seconds": null
+      },
+      "execution_attempts": 12,
+      "failed_attempts": 0,
+      "incomplete_attempts": 0,
+      "model_calls_completed": 12,
+      "model_calls_failed": 0,
+      "model_calls_start_unknown": 0,
+      "model_calls_started": 12,
+      "preflight_only_attempts": 0,
+      "tokens": {
+        "cache_write_input_tokens": {
+          "known_calls": 12,
+          "known_sum": 0,
+          "missing_calls": 0
+        },
+        "cached_input_tokens": {
+          "known_calls": 12,
+          "known_sum": 5248,
+          "missing_calls": 0
+        },
+        "input_tokens": {
+          "known_calls": 12,
+          "known_sum": 1419299,
+          "missing_calls": 0
+        },
+        "output_tokens": {
+          "known_calls": 12,
+          "known_sum": 13912,
+          "missing_calls": 0
+        },
+        "reasoning_output_tokens": {
+          "known_calls": 12,
+          "known_sum": 1142,
+          "missing_calls": 0
+        }
+      }
+    },
+    "case_status_counts": {
+      "validated": 12,
+      "input_limit": 17
+    },
+    "excluded_tasks": [
+      {
+        "purpose": "select",
+        "reason": "gonly_selection_rubric_unavailable",
+        "task_id": "task-81bbe870c37ef8c87431f2bb"
+      },
+      {
+        "purpose": "select",
+        "reason": "gonly_selection_rubric_unavailable",
+        "task_id": "task-62f0c0a5393679253776f9a6"
+      }
+    ],
+    "run_data_coverage": [],
+    "prepared_tasks": 29,
+    "effective_task_coverage": 0.41379310344827586,
+    "cases": [
+      {
+        "case_id": "case-849439cf6a7282f2f03a0ef3",
+        "task_key": "r001/generate/H1",
+        "role": "generation",
+        "purpose": "generate",
+        "judge_status": "validated",
+        "quality": {
+          "Q": 100.0,
+          "applicable": 5,
+          "confidence": {
+            "high": 5,
+            "low": 0,
+            "medium": 0
+          },
+          "effective_evidence_coverage": 1.0,
+          "not_applicable": 0,
+          "score_coverage": 1.0,
+          "scored": 5,
+          "total": 5,
+          "unknown": 0
+        }
+      },
+      {
+        "case_id": "case-445ab8ce95a7447ad58cb4e3",
+        "task_key": "r001/generate/H2",
+        "role": "generation",
+        "purpose": "generate",
+        "judge_status": "validated",
+        "quality": {
+          "Q": 100.0,
+          "applicable": 5,
+          "confidence": {
+            "high": 5,
+            "low": 0,
+            "medium": 0
+          },
+          "effective_evidence_coverage": 1.0,
+          "not_applicable": 0,
+          "score_coverage": 1.0,
+          "scored": 5,
+          "total": 5,
+          "unknown": 0
+        }
+      },
+      {
+        "case_id": "case-4879ba6edb17acaec3fc9249",
+        "task_key": "r001/generate/H3",
+        "role": "generation",
+        "purpose": "generate",
+        "judge_status": "validated",
+        "quality": {
+          "Q": 100.0,
+          "applicable": 5,
+          "confidence": {
+            "high": 5,
+            "low": 0,
+            "medium": 0
+          },
+          "effective_evidence_coverage": 1.0,
+          "not_applicable": 0,
+          "score_coverage": 1.0,
+          "scored": 5,
+          "total": 5,
+          "unknown": 0
+        }
+      },
+      {
+        "case_id": "case-9f4e77b974ecbf89be7bdab5",
+        "task_key": "r001/generate/H2/tools/a3/8d5a75aa76de/code",
+        "role": "coding",
+        "purpose": "code",
+        "judge_status": "input_limit",
+        "quality": null
+      },
+      {
+        "case_id": "case-c682261937b669764c689dac",
+        "task_key": "r001/generate/H2/tools/a3/8d5a75aa76de/code/revision1",
+        "role": "coding",
+        "purpose": "code",
+        "judge_status": "validated",
+        "quality": {
+          "Q": 90.0,
+          "applicable": 5,
+          "confidence": {
+            "high": 4,
+            "low": 0,
+            "medium": 1
+          },
+          "effective_evidence_coverage": 1.0,
+          "not_applicable": 0,
+          "score_coverage": 1.0,
+          "scored": 5,
+          "total": 5,
+          "unknown": 0
+        }
+      },
+      {
+        "case_id": "case-db0df1a43e24dfb5cbfb5a81",
+        "task_key": "r001/generate/H2/tools/a3/8d5a75aa76de/safeguard/8c76550850c9f3a2/revision1",
+        "role": "safeguard",
+        "purpose": "safeguard",
+        "judge_status": "validated",
+        "quality": {
+          "Q": 100.0,
+          "applicable": 4,
+          "confidence": {
+            "high": 4,
+            "low": 0,
+            "medium": 0
+          },
+          "effective_evidence_coverage": 1.0,
+          "not_applicable": 0,
+          "score_coverage": 1.0,
+          "scored": 4,
+          "total": 4,
+          "unknown": 0
+        }
+      },
+      {
+        "case_id": "case-4826700dd65813c9ba5823bc",
+        "task_key": "r001/plan_l3",
+        "role": "generation",
+        "purpose": "plan_l3",
+        "judge_status": "input_limit",
+        "quality": null
+      },
+      {
+        "case_id": "case-18694b6e3b61df9120e35598",
+        "task_key": "r001/L3/code",
+        "role": "coding",
+        "purpose": "code",
+        "judge_status": "validated",
+        "quality": {
+          "Q": 100.0,
+          "applicable": 4,
+          "confidence": {
+            "high": 4,
+            "low": 0,
+            "medium": 1
+          },
+          "effective_evidence_coverage": 1.0,
+          "not_applicable": 1,
+          "score_coverage": 1.0,
+          "scored": 4,
+          "total": 5,
+          "unknown": 0
+        }
+      },
+      {
+        "case_id": "case-ee45cb6f1adcd2e77792011e",
+        "task_key": "r001/L3/safeguard/8c76550850c9f3a2",
+        "role": "safeguard",
+        "purpose": "safeguard",
+        "judge_status": "input_limit",
+        "quality": null
+      },
+      {
+        "case_id": "case-81d2cd7972a9ceaf999516d1",
+        "task_key": "r001/record",
+        "role": "recorder",
+        "purpose": "record",
+        "judge_status": "input_limit",
+        "quality": null
+      },
+      {
+        "case_id": "case-498dbbb5147082933be3ba33",
+        "task_key": "r002/generate/H1",
+        "role": "generation",
+        "purpose": "generate",
+        "judge_status": "validated",
+        "quality": {
+          "Q": 100.0,
+          "applicable": 5,
+          "confidence": {
+            "high": 5,
+            "low": 0,
+            "medium": 0
+          },
+          "effective_evidence_coverage": 1.0,
+          "not_applicable": 0,
+          "score_coverage": 1.0,
+          "scored": 5,
+          "total": 5,
+          "unknown": 0
+        }
+      },
+      {
+        "case_id": "case-0d5a81025905ce5336575360",
+        "task_key": "r002/generate/H2",
+        "role": "generation",
+        "purpose": "generate",
+        "judge_status": "input_limit",
+        "quality": null
+      },
+      {
+        "case_id": "case-cf59739fcf715a38a50745eb",
+        "task_key": "r002/generate/H3",
+        "role": "generation",
+        "purpose": "generate",
+        "judge_status": "validated",
+        "quality": {
+          "Q": 100.0,
+          "applicable": 5,
+          "confidence": {
+            "high": 5,
+            "low": 0,
+            "medium": 0
+          },
+          "effective_evidence_coverage": 1.0,
+          "not_applicable": 0,
+          "score_coverage": 1.0,
+          "scored": 5,
+          "total": 5,
+          "unknown": 0
+        }
+      },
+      {
+        "case_id": "case-07fa9233fdf42d6ec1ea2208",
+        "task_key": "r002/generate/H2/tools/a3/231b6cb77992/code",
+        "role": "coding",
+        "purpose": "code",
+        "judge_status": "input_limit",
+        "quality": null
+      },
+      {
+        "case_id": "case-c73556134c3cc0afa10fde08",
+        "task_key": "r002/generate/H2/tools/a3/231b6cb77992/safeguard/8c76550850c9f3a2",
+        "role": "safeguard",
+        "purpose": "safeguard",
+        "judge_status": "input_limit",
+        "quality": null
+      },
+      {
+        "case_id": "case-3ffd64aa39349aa05a8a172b",
+        "task_key": "r002/select/tools/a1/ec4af871a12d/code",
+        "role": "coding",
+        "purpose": "code",
+        "judge_status": "input_limit",
+        "quality": null
+      },
+      {
+        "case_id": "case-9ec2d8cce130a284b506fd2a",
+        "task_key": "r002/select/tools/a1/ec4af871a12d/safeguard/8c76550850c9f3a2",
+        "role": "safeguard",
+        "purpose": "safeguard",
+        "judge_status": "input_limit",
+        "quality": null
+      },
+      {
+        "case_id": "case-e0a1120d2633eee175d3b7d4",
+        "task_key": "r002/select/tools/a1/ec4af871a12d/code/revision1",
+        "role": "coding",
+        "purpose": "code",
+        "judge_status": "input_limit",
+        "quality": null
+      },
+      {
+        "case_id": "case-7fbc97df20f08bbc726670a8",
+        "task_key": "r002/select/tools/a1/ec4af871a12d/safeguard/8c76550850c9f3a2/revision1",
+        "role": "safeguard",
+        "purpose": "safeguard",
+        "judge_status": "validated",
+        "quality": {
+          "Q": 100.0,
+          "applicable": 4,
+          "confidence": {
+            "high": 4,
+            "low": 0,
+            "medium": 0
+          },
+          "effective_evidence_coverage": 1.0,
+          "not_applicable": 0,
+          "score_coverage": 1.0,
+          "scored": 4,
+          "total": 4,
+          "unknown": 0
+        }
+      },
+      {
+        "case_id": "case-5179957d3f237df4710a538c",
+        "task_key": "r002/plan_l3",
+        "role": "generation",
+        "purpose": "plan_l3",
+        "judge_status": "validated",
+        "quality": {
+          "Q": 100.0,
+          "applicable": 3,
+          "confidence": {
+            "high": 3,
+            "low": 0,
+            "medium": 0
+          },
+          "effective_evidence_coverage": 1.0,
+          "not_applicable": 0,
+          "score_coverage": 1.0,
+          "scored": 3,
+          "total": 3,
+          "unknown": 0
+        }
+      },
+      {
+        "case_id": "case-07f91d3c4bd44bc4e4bf7a93",
+        "task_key": "r002/L3/code",
+        "role": "coding",
+        "purpose": "code",
+        "judge_status": "validated",
+        "quality": {
+          "Q": 100.0,
+          "applicable": 4,
+          "confidence": {
+            "high": 4,
+            "low": 0,
+            "medium": 1
+          },
+          "effective_evidence_coverage": 0.75,
+          "not_applicable": 1,
+          "score_coverage": 0.75,
+          "scored": 3,
+          "total": 5,
+          "unknown": 1
+        }
+      },
+      {
+        "case_id": "case-577280db7b3d8a85d01f892a",
+        "task_key": "r002/L3/safeguard/8c76550850c9f3a2",
+        "role": "safeguard",
+        "purpose": "safeguard",
+        "judge_status": "input_limit",
+        "quality": null
+      },
+      {
+        "case_id": "case-6abf728121e183ea39c9bab8",
+        "task_key": "r002/plan_l3/revision1",
+        "role": "generation",
+        "purpose": "plan_l3",
+        "judge_status": "input_limit",
+        "quality": null
+      },
+      {
+        "case_id": "case-b74278600c4b2bb1a332f63e",
+        "task_key": "r002/L3/revision1/code",
+        "role": "coding",
+        "purpose": "code",
+        "judge_status": "input_limit",
+        "quality": null
+      },
+      {
+        "case_id": "case-0aa3691fb8574b8929944bab",
+        "task_key": "r002/L3/revision1/safeguard/cb04d86178919244",
+        "role": "safeguard",
+        "purpose": "safeguard",
+        "judge_status": "input_limit",
+        "quality": null
+      },
+      {
+        "case_id": "case-c3a532b6239fbd90ef3cca3e",
+        "task_key": "r002/plan_l3/revision2",
+        "role": "generation",
+        "purpose": "plan_l3",
+        "judge_status": "validated",
+        "quality": {
+          "Q": 100.0,
+          "applicable": 3,
+          "confidence": {
+            "high": 3,
+            "low": 0,
+            "medium": 0
+          },
+          "effective_evidence_coverage": 1.0,
+          "not_applicable": 0,
+          "score_coverage": 1.0,
+          "scored": 3,
+          "total": 3,
+          "unknown": 0
+        }
+      },
+      {
+        "case_id": "case-f7ef17c4bb8f7fbe66941b6f",
+        "task_key": "r002/L3/revision2/code",
+        "role": "coding",
+        "purpose": "code",
+        "judge_status": "input_limit",
+        "quality": null
+      },
+      {
+        "case_id": "case-5b4ecb30fa6a0595e3504a78",
+        "task_key": "r002/L3/revision2/safeguard/cb04d86178919244",
+        "role": "safeguard",
+        "purpose": "safeguard",
+        "judge_status": "input_limit",
+        "quality": null
+      },
+      {
+        "case_id": "case-6d422ddafeeb2bba902e5286",
+        "task_key": "r002/record",
+        "role": "recorder",
+        "purpose": "record",
+        "judge_status": "input_limit",
+        "quality": null
+      }
+    ]
+  },
+  "external_monitor_usage_as_of": {
+    "schema": "qavit.external_monitor_usage/1",
+    "recorded_at": "2026-11-15T11:22:13.088376+00:00",
+    "session_id": "01a1dd9e-aed6-7052-918f-82b7c490ee2f",
+    "requested_by_user": "gpt-6.1-sol-ultra",
+    "local_turn_contexts": [
+      {
+        "model": "gpt-6.1-sol",
+        "effort": "max"
+      }
+    ],
+    "actual_server_identity": null,
+    "usage": {
+      "counter_timestamp": "2026-11-15T11:21:54.360Z",
+      "total_token_usage": {
+        "input_tokens": 134348144,
+        "cached_input_tokens": 133800576,
+        "cache_write_input_tokens": 0,
+        "output_tokens": 248956,
+        "reasoning_output_tokens": 149583,
+        "total_tokens": 134597100
+      }
+    },
+    "scope": "External monitor session counter, including preflight, engineering, monitoring and report work up to counter_timestamp. Excludes later archival work/final reply; research CLI and independent Judge are separate ledgers.",
+    "cost": null,
+    "cost_basis": "unknown_subscription_cost",
+    "provenance": "Read only model/effort metadata and token_count total usage from local session; no transcript or instructions copied."
+  },
+  "isolation_check": {
+    "source_files": 9897,
+    "changed_sources": [],
+    "original_run_matches_frozen_evaluation": true,
+    "elapsed_seconds": 4.972200747579336,
+    "journal": {
+      "head": "e92be184e5f62fa0a15e0742a0d007e474c210ab05c9d6193085a42afa8242e1",
+      "sequence": 7928
+    },
+    "scope": "Current historical run bytes compared with frozen extraction hashes; no research writes"
+  },
+  "hashes": {
+    "EXP/inputs/deitb_static_w4a4_gonly_20261115_r1/input.json": "f45c2dbbaabedb0b8582d696bf17f24a1183a8c095a59f448eb969030255bd4b",
+    "EXP/inputs/deitb_static_w4a4_gonly_20261115_r1/experiment_identity.json": "608850a4ec6dd9910f21eff083419457edb206c1797c2d5d79c7b55cd4623cbf",
+    "EXP/runs/deitb_static_w4a4_gonly_20261115_r1/research_run.json": "cf543f72de06e9a6d13cde433a55e817c443a2fa7b725cbc57b05047eb8f7af1",
+    "EXP/runs/deitb_static_w4a4_gonly_20261115_r1/summary.json": "722ebda723a11ba3ab8348e2ffd906b719fd4e5db043c770c59f87ec96c742a3",
+    "EXP/evaluations/deitb_static_w4a4_gonly_20261115_r1_l0/manifest.json": "2ef5a20fcaa3ce22bebfb3cb03ddfa4e9c1c101095ac73469b5bd5c13959f5c0",
+    "EXP/evaluations/deitb_static_w4a4_gonly_20261115_r1_l0/run.json": "5208ffb34d6cc50ba70b3fab35af74e84a186be02f971b711b4e2e710475b21b",
+    "EXP/evaluations/deitb_static_w4a4_gonly_20261115_r1_l0/reports/report-0003.json": "9a07bd413d63bc2f76818c558908be97f57d035e324ac35c3ff29d35edfe39b1"
+  },
+  "artifact_inventory": "EXP/inputs/deitb_static_w4a4_gonly_20261115_r1/ARTIFACTS.json",
+  "limitations": [
+    "Eval-L0 is observational and uses task-time delivered evidence.",
+    "Requested and actual model identities are distinct; missing actual identity remains unknown.",
+    "Cached input and reasoning output are subfields, not additional totals.",
+    "One external core repair and internal code revisions preclude an unassisted-autonomy claim.",
+    "No paired Full-vs-G-only causal comparison or independent scientific replication.",
+    "Judge task coverage is partial; ungraded tasks are never assigned zero or synthetic scores.",
+    "External monitor usage is a timestamped local counter, excludes later work, and is not a subscription invoice."
+  ]
+}

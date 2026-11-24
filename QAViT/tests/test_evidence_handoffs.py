@@ -28,6 +28,30 @@ class EvidenceHandoffRegression(TempCase):
         guard.start()
         self.addCleanup(guard.stop)
 
+    def test_next_focus_and_generation_receive_closed_candidate_results(self):
+        wf = self.workflow(1)
+        _, ev = self.measurement(wf, 'paired')
+        cards = {slot: make_card('HypothesisCard', wf.journal.run_id, hypothesis(1, slot))
+                 for slot in ('H1', 'H2', 'H3')}
+        wf.journal.commit('fixture/candidates', cards=list(cards.values()))
+        outcome = {'candidates': {slot: {'hypothesis_ref': card['id'],
+                    'status': 'completed' if slot == 'H2' else 'deferred',
+                    'valid_evidence_refs': [ev['id']] if slot == 'H2' else []}
+                    for slot, card in cards.items()}}
+        old_sequence = wf.journal.sequence
+        wf.event('round_finished', 'fixture/closed', round=1, l3_outcome=outcome)
+        for purpose in ('focus', 'generate'):
+            tid = wf.enqueue_role('r002/check/' + purpose, purpose, refs=[wf.brief['id']],
+                                  context={'round': 2, 'slot': 'H1', 'hypothesis_type': 'existing_method'})
+            task = wf.queue.get(tid)
+            self.assertFalse(wf.previous_candidate_results(task, old_sequence, set()))
+            rows = wf.context(task)['memory']['previous_candidate_results']
+            by_slot = {row['slot']: row for row in rows}
+            self.assertEqual(by_slot['H1']['measurements'], [])
+            self.assertEqual(by_slot['H3']['measurements'], [])
+            self.assertEqual(by_slot['H2']['candidate_ref'], cards['H2']['id'])
+            self.assertEqual(by_slot['H2']['measurements'][0]['ref'], ev['id'])
+
     def measurement(self, wf, label, *, observations=None, prior=None):
         payload = experiment_payload()
         payload['question'] = 'FIXTURE ' + label
@@ -54,14 +78,20 @@ class EvidenceHandoffRegression(TempCase):
         wf.journal.commit('subject/' + card['id'], cards=[card])
         return card
 
-    def assert_measurement(self, context, spec, evidence):
+    def assert_measurement(self, context, spec, evidence, *, engineering_task=None):
         cards = {c['id']: c for c in context['memory']['cards']}
         self.assertIn(spec['id'], cards)
         self.assertIn(evidence['id'], cards)
         payload = cards[evidence['id']]['payload']
         for key in ('status', 'scope', 'warnings', 'limitations', 'measurement_source', 'execution_id'):
             self.assertEqual(payload[key], evidence['payload'][key])
-        self.assertEqual(cards[spec['id']]['payload']['execution'], spec['payload']['execution'])
+        if engineering_task:
+            wf, task = engineering_task
+            pointer = cards[spec['id']]['read_card']
+            exact = self.read(wf, task, 'read_card', **pointer, field='/payload/execution')
+            self.assertEqual(exact['text'], canonical(spec['payload']['execution']))
+        else:
+            self.assertEqual(cards[spec['id']]['payload']['execution'], spec['payload']['execution'])
         self.assertEqual(len(cards), len(context['memory']['cards']))
         return payload
 
@@ -122,9 +152,9 @@ class EvidenceHandoffRegression(TempCase):
             with self.subTest(purpose=purpose):
                 task = self.task(wf, purpose, refs=[request['id'], frozen['id']],
                     request_ref=request['id'], experiment_ref=frozen['id'], candidate=artifact)
-                _, context = self.begin(wf, task)
-                self.assert_measurement(context, spec, evidence)
-                self.assert_measurement(context, trial_spec, trial_evidence)
+                task, context = self.begin(wf, task)
+                self.assert_measurement(context, spec, evidence, engineering_task=(wf, task))
+                self.assert_measurement(context, trial_spec, trial_evidence, engineering_task=(wf, task))
                 self.assertEqual(context['original_request']['id'], request['id'])
                 self.assertEqual(context['frozen_experiment']['id'], frozen['id'])
                 self.assertEqual(canonical(context).count('OBSERVATION_IMPLEMENT'), 1)
@@ -181,8 +211,8 @@ class EvidenceHandoffRegression(TempCase):
                                    profile_evidence_bindings=[None, {'evidence_ref': {}}, {'evidence_ref': evidence['id']}])
         request = make_card('ExperimentCard', wf.journal.run_id, payload, refs=[h['id'], decision['id']])
         wf.journal.commit('optional-extension-shapes', cards=[h, decision, request])
-        _, context = self.begin(wf, self.task(wf, 'code', refs=[request['id']], experiment_ref=request['id']))
-        self.assert_measurement(context, spec, evidence)
+        task, context = self.begin(wf, self.task(wf, 'code', refs=[request['id']], experiment_ref=request['id']))
+        self.assert_measurement(context, spec, evidence, engineering_task=(wf, task))
         self.assertNotIn(unused['id'], [c['id'] for c in context['memory']['cards']])
 
     def test_handoff_cannot_grant_opposite_exchange_or_future_evidence_access(self):

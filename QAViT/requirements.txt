@@ -4,6 +4,7 @@ torch==2.1.2+cu118
 torchvision==0.16.2+cu118
 # v2 标准卡片合同；本机已安装并核对版本。
 jsonschema==4.22.0
+PyYAML==6.0.1  # Agent Skills frontmatter
 # 文献工具的可选PDF读取依赖；当前环境未安装，不宣称PDF服务已通过验证。
 # pypdf==6.1.3
 # 随项目提供 .runtime_pkgs/common（不是自动 pip 安装清单）:

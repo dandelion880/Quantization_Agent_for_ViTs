@@ -6,6 +6,7 @@ import time
 import numpy as np
 import torch
 
+from ..backends.base import native_classifier
 from ..schemas import fingerprint, require
 from .model import forward, tensor_digest, QuantizedLinear
 from .sites import coverage
@@ -42,7 +43,7 @@ class VerifiedManifestData:
             offset += count
         self.labels = {}
         self.label_mapping = None
-        head_available = (backend.spec.get("classification_head") == "official pretrained ImageNet-1k head retained"
+        head_available = (native_classifier(backend)
                           or bool(getattr(backend, "task_head", None)))
         if config["loop"]["evaluation"] == "classification":
             require(
@@ -56,11 +57,12 @@ class VerifiedManifestData:
                 roots = {Path(r["path"]).parent.parent for r in rows}
                 require(len(roots) == 1, "分类图像目录不一致")
                 classes = sorted(p.name for p in next(iter(roots)).iterdir() if p.is_dir())
-                require(len(classes) == 1000 and all(n.startswith("n") for n in classes),
-                        "缺少 ImageNet 1000 类 ImageFolder 标签映射")
+                require(len(classes) == getattr(backend.model.head, "out_features", None),
+                        "ImageFolder 标签映射与任务头不匹配")
                 mapping = {n: i for i, n in enumerate(classes)}
             if getattr(backend, "head_class_mapping", None) is not None:
                 require(mapping == backend.head_class_mapping, "冻结分类头与数据标签映射不一致", code="asset_mismatch")
+            require(len(mapping) == backend.model.head.out_features, "分类头与标签映射维度不一致")
             self.labels = {r["sample_id"]: mapping[Path(r["path"]).parent.name] for r in rows}
             self.label_mapping = fingerprint(mapping)
         self.identity = {
@@ -70,7 +72,8 @@ class VerifiedManifestData:
             "preprocessing": getattr(backend.data_adapter, "PREPROCESS", "injected provider"),
             "label_mapping_sha256": self.label_mapping,
             "batch_size": 1,
-            "scope": ("disjoint train calibration/search; complete ImageNet validation final"
+            "split_sources": getattr(backend.data_adapter, "split_sources", None),
+            "scope": ("disjoint bound calibration/search; complete bound validation final"
                       if getattr(backend.data_adapter, "full_validation", False)
                       else "disjoint subset of verified manifest; not full dataset evaluation"),
             "full_validation": getattr(backend.data_adapter, "full_validation", False),
@@ -79,6 +82,9 @@ class VerifiedManifestData:
 
     def ids(self, split):
         return [r["sample_id"] for r in self.rows[split]]
+
+    def source_rows(self, split):
+        return iter(self.rows[split])
 
     def batches(self, split):
         for row in self.rows[split]:
@@ -145,7 +151,7 @@ class Evaluator:
                 handle.remove()
 
     def _evaluate(self, model, plan, split, *, native, observed=None):
-        require(split in ("search", "final"), "评价分区无效")
+        require(split in ("search", "final", "dev"), "评价分区无效")
         before = model_digest(model)
         baseline_before = model_digest(self.backend.model)
         for m in model.modules():
@@ -153,7 +159,7 @@ class Evaluator:
                 m.calls = 0
         errors = OutputErrors()
         top = {"baseline_top1": 0, "baseline_top5": 0, "top1": 0, "top5": 0}
-        ids = []
+        ids, predictions = [], []
         cuda = str(self.backend.device).startswith("cuda")
         memory_before = torch.cuda.memory_allocated(self.backend.device) if cuda else None
         if cuda:
@@ -166,14 +172,17 @@ class Evaluator:
                                               forward(self.backend, model, x))
             if self.data.labels:
                 require(
-                    list(reference) == ["output"] and reference["output"].shape == (1, 1000),
-                    "分类输出必须为 [1,1000]",
+                    list(reference) == ["output"] and reference["output"].shape == (1, self.backend.model.head.out_features),
+                    "分类输出必须为 [1,类别数]",
                 )
                 label = self.data.labels[sample_id]
+                row = {"label": label}
                 for prefix, values in (("baseline_", reference), ("", candidate)):
-                    indices = values["output"].topk(5, dim=-1).indices[0].tolist()
+                    indices = values["output"].topk(min(5, values["output"].shape[1]), dim=-1).indices[0].tolist()
                     top[prefix + "top1"] += label == indices[0]
                     top[prefix + "top5"] += label in indices
+                    row[prefix + "top5_indices"] = indices
+                predictions.append(row)
             ids.append(sample_id)
             if len(ids) % 100 == 0:
                 print(f"evaluation {split}: {len(ids)}/{len(self.data.ids(split))}; "
@@ -224,6 +233,7 @@ class Evaluator:
             "evaluation": self.options["evaluation"],
             "sample_count": len(ids),
             "classification_counts": top if self.data.labels else None,
+            **({"per_sample_predictions": predictions} if predictions else {}),
             "sample_ids": ids,
             "metrics": metrics,
             "coverage": observed_coverage,
@@ -244,7 +254,7 @@ class Evaluator:
             "task_accuracy_measured": bool(self.data.labels),
             "used_for_search": split == "search",
             "full_dataset_evaluation": split == "final" and self.data.identity.get("full_validation", False),
-            "scope": ("complete ImageNet validation 50000" if split == "final" and self.data.identity.get("full_validation", False)
+            "scope": ("complete validation manifest" if split == "final" and self.data.identity.get("full_validation", False)
                       else "subset; feature fidelity is not task accuracy"),
         }
 

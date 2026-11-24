@@ -55,3 +55,8 @@ class Backend:
 
     def hardware_metrics(self) -> JSON:
         self.missing("hardware_metrics")
+
+def native_classifier(backend):
+    """Trusted native logits head. Keep the archived asset declaration for old factories."""
+    spec = getattr(backend, "spec", {})
+    return spec.get("native_classifier", spec.get("classification_head") == "official pretrained ImageNet-1k head retained")

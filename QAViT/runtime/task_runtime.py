@@ -20,12 +20,60 @@ class TaskRuntime:
         self.children = {}
         self._gpu_bindings = None
 
+    def unserved_gpu_candidates(self, task):
+        """Include L3 plans still passing through serial Coding, without leases.
+
+        Candidate identity follows the immutable hypothesis version through the
+        request's parent link. Completed/failed candidates free their reservation;
+        a process with an unaccepted receipt still owns its primary card.
+        """
+        from runtime.task_queue import TERMINAL
+        from tools.experiment_worker import backend_device
+        tasks = self.queue.snapshot(fields=('task_id', 'kind', 'state', 'inputs'))
+
+        def identity(row):
+            seen = set()
+            root_id = row['task_id']
+            while row and row['task_id'] not in seen:
+                seen.add(row['task_id'])
+                root_id = row['task_id']
+                inputs = row['inputs']
+                context = inputs.get('context', {})
+                ref = inputs.get('hypothesis_ref') or context.get('hypothesis_ref')
+                if ref:
+                    return (inputs.get('round', context.get('round')), ref)
+                row = (tasks.get(inputs.get('parent_task')) or
+                       tasks.get(inputs.get('origin_task')))
+            return ('task', root_id)
+
+        requests = {identity(t) for t in tasks.values() if t['kind'] == 'experiment_request'}
+        waiting, served = set(), set()
+        for row in tasks.values():
+            inputs = row['inputs']
+            key = identity(row)
+            if row['kind'] == 'llm' and inputs.get('purpose') == 'plan_l3':
+                if row['state'] not in TERMINAL or (row['state'] == 'completed' and key not in requests):
+                    waiting.add(key)
+            elif row['kind'] == 'experiment_request' and row['state'] not in TERMINAL:
+                if inputs.get('hypothesis_ref') or inputs.get('draft', {}).get('level') == 'L3':
+                    waiting.add(key)
+            elif row['kind'] == 'experiment' and row['state'] not in TERMINAL:
+                ref = inputs.get('experiment_ref')
+                if not ref:
+                    continue
+                spec = self.queue.journal.card(ref)['payload']['execution']
+                if str(backend_device(spec)).startswith('cuda'):
+                    (served if row['state'] == 'running' else waiting).add(key)
+        return len(waiting - served - {identity(task)})
+
     def launch(self, task, body, *, input_versions):
         from runtime.gpu_resources import acquire, gpu_bindings
         fds = []
         try:
             if task['kind'] == 'experiment' and 'gpu_pool' in body:
-                from runtime.gpu_resources import ResourceBusy
+                from runtime.gpu_resources import ResourceBusy, ResourceUnavailable
+                if body.get('requires_gpu') and not body['gpu_pool']:
+                    raise ResourceUnavailable('No authorized GPU is available; preserve task for resource recovery')
                 # An exited worker can release its OS lease before its durable
                 # receipt is accepted. The queue claim must agree with placement.
                 held = self.queue.held_resources()
@@ -40,15 +88,20 @@ class TaskRuntime:
                 bindings = [by_index[g] for g in pool if g in by_index]
                 available = [row['index'] for row in bindings]
                 if pool and (not available or body['pinned_gpu'] is not None and body['pinned_gpu'] not in available):
-                    raise ResourceBusy('Authorized GPU is not currently visible; task remains queued')
-                gpus, fds = acquire(available, body['gpu_count'], body['pinned_gpu'], bindings=bindings)
+                    raise ResourceUnavailable('Authorized GPU is not currently visible; resume after resource recovery')
+                reserve = self.unserved_gpu_candidates(task) if body['gpu_count'] > 1 else 0
+                gpus, fds = acquire(available, body['gpu_count'], body['pinned_gpu'], bindings=bindings,
+                                    reserve=reserve)
                 bindings = [row for row in bindings if row['index'] in gpus]
                 body.update(gpus=gpus, gpu=gpus[0] if gpus else None, gpu_bindings=bindings)
                 if 'parallelism' in body:
-                    body['parallelism'].update(allocated_gpus=len(gpus))
+                    body['parallelism'].update(allocated_gpus=len(gpus),
+                        unserved_candidate_reservations=reserve,
+                        allocation_policy='candidate primary GPUs before intra-candidate parallelism')
                 keys = [k for k in task['resource_keys'] if not k.startswith(('gpu:', 'model:'))]
                 self.queue.change(task['task_id'], task['state'], patch={
-                    'resource_keys': keys + ['gpu:' + str(g) for g in gpus], 'allocated_gpus': gpus})
+                    'resource_keys': keys + ['gpu:' + str(g) for g in gpus], 'allocated_gpus': gpus,
+                    **({'resource_wait':None} if task.get('resource_wait') else {})})
                 task = self.queue.get(task['task_id'])
             return self._launch(task, body, input_versions=input_versions, lease_fds=fds)
         finally:
@@ -72,6 +125,8 @@ class TaskRuntime:
         state = self.budget.reserve(execution, task["kind"], estimated_seconds=estimated,
                                     resources={"keys": task["resource_keys"]})
         deadline = time.time() + estimated
+        if budget.get('absolute_worker_deadline_unix') is not None:
+            deadline = min(deadline, budget['absolute_worker_deadline_unix'])
         if not (task['kind'] == 'experiment' and self.budget.excludes_numeric):
             deadline = min(self.budget.snapshot()["worker_deadline_unix"], deadline)
         request = {**body, "task_id": task["task_id"], "execution_id": execution,
@@ -86,11 +141,9 @@ class TaskRuntime:
             for key in ("task_id", "execution_id", "input_versions"):
                 if saved.get(key) != request[key]:
                     raise ContractError("未完成启动意图已过期，需显式恢复而非覆盖请求")
-            if (saved.get('gpus') != request.get('gpus') or saved.get('gpu_bindings') != request.get('gpu_bindings')
-                    or saved['resource_keys'] != request['resource_keys']
-                    or saved["deadline_unix"] <= time.time() or saved["deadline_unix"] > deadline
-                    or saved.get("budget_segment_id") != request["budget_segment_id"]
-                    or saved["memory_version"] != request["memory_version"] or saved["core_sha256"] != request["core_sha256"]):
+            if ({k: v for k, v in saved.items() if k != 'deadline_unix'} !=
+                    {k: v for k, v in request.items() if k != 'deadline_unix'}
+                    or saved["deadline_unix"] <= time.time() or saved["deadline_unix"] > deadline):
                 path = directory / ("request-" + fingerprint(request)[:20] + ".json")
                 atomic_json(path, request)
             else:
@@ -100,12 +153,16 @@ class TaskRuntime:
         self.queue.claim(task["task_id"], input_versions=input_versions,
                          memory_version=request["memory_version"], request_path=str(path), execution_attempt=attempt)
         env = {k: v for k, v in os.environ.items() if not any(x in k.upper() for x in ("API_KEY", "TOKEN", "SECRET"))}
-        threads = str(body.get("cpu_threads", self.settings.get("cpu_threads", 4)))
+        # Placement, thread settings and descendants all use the exact persisted
+        # request selected above, including a recovered launch intent.
+        threads = str(request.get("cpu_threads", self.settings.get("cpu_threads", 4)))
         env.update(PYTHONDONTWRITEBYTECODE="1", OMP_NUM_THREADS=threads, MKL_NUM_THREADS=threads)
-        env["CUDA_VISIBLE_DEVICES"] = str(body["gpu"]) if body.get("gpu") is not None else ""
-        if body.get('gpu_bindings'):
-            env['CUDA_VISIBLE_DEVICES'] = body['gpu_bindings'][0]['uuid']
-            env['QAVIT_ASSIGNED_GPU_UUIDS'] = ','.join(g['uuid'] for g in body['gpu_bindings'])
+        env["CUDA_VISIBLE_DEVICES"] = str(request["gpu"]) if request.get("gpu") is not None else ""
+        env.pop('QAVIT_ASSIGNED_GPU_UUIDS', None)
+        if request.get('gpu_bindings'):
+            env['CUDA_VISIBLE_DEVICES'] = request['gpu_bindings'][0]['uuid']
+            env['QAVIT_ASSIGNED_GPU_UUIDS'] = ','.join(g['uuid'] for g in request['gpu_bindings'])
+        env['QAVIT_TASK_REQUEST_PATH'] = str(path.resolve())
         env['QAVIT_GPU_LEASE_FDS'] = ','.join(map(str, lease_fds))
         env['QAVIT_RESOURCE_ASSIGNED'] = '1'
         try:
@@ -143,6 +200,15 @@ class TaskRuntime:
             process = self.children.get(request["execution_id"])
             if process:
                 process.poll()  # reap 防止 zombie 被误认为活动任务。
+            transferred = directory / 'dual_secondary_transferred.json'
+            if len(request.get('gpus', [])) == 2 and not task.get('secondary_lease_transferred') and transferred.is_file():
+                phase = read_json(transferred)
+                secondary = request['gpus'][1]
+                child = directory / 'processes' / 'dual-segmentation.json'
+                if phase['gpu'] == secondary and child.is_file() and phase['process'] == read_json(child):
+                    self.queue.change(task['task_id'], 'running', patch={'secondary_lease_transferred': True,
+                        'resource_keys': [key for key in task['resource_keys'] if key != 'gpu:' + str(secondary)]})
+                    task = self.queue.get(task['task_id'])
             receipt = directory / "result.json"
             if receipt.exists():
                 result = read_json(receipt)

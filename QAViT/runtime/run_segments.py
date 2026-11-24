@@ -16,6 +16,19 @@ from runtime.paths import QAVIT
 from runtime.task_queue import process_alive, process_identity
 
 
+def collect_final_receipts(workflow):
+    workflow.poll()
+    workflow.runtime.settle_abandoned_intents()
+    # The last durable result can arrive after the Supervisor exits.
+    failures = []
+    for number in workflow.budget.snapshot()["rounds_started"]:
+        try:
+            workflow.consider_l3(number)
+        except Exception as exc:
+            failures.append({"step": "consider_l3", "round": number, "code": type(exc).__name__, "message": str(exc)})
+    return failures
+
+
 def run_managed(workflow, *, started_unix, readiness=None):
     with file_lock(workflow.run_dir / "segment_monitor.lock", timeout=0):
         state = workflow.budget.snapshot()
@@ -31,12 +44,16 @@ def run_managed(workflow, *, started_unix, readiness=None):
                         raise ContractError("旧 Supervisor 未停止，计时保持活跃")
             with file_lock(workflow.run_dir / "supervisor.lock", timeout=10):
                 workflow.runtime.stop()
-                workflow.poll()
-                workflow.runtime.settle_abandoned_intents()
+                failures = collect_final_receipts(workflow)
             workflow.budget.end_segment(processes_stopped=True, reason="recovery confirmation; unknown interval charged",
                                         recovered=True)
+            if failures:
+                workflow.event("run_status", "status/recovered_receipts/" + previous["segment_id"],
+                               status="recovery_required", error=failures)
         segment = workflow.budget.begin_segment(started_unix=started_unix, owner=process_identity(os.getpid()))
         state = workflow.budget.snapshot()
+        summary_path = workflow.run_dir / "summary.json"
+        prior_summary = summary_path.stat() if summary_path.exists() else None
         child = None
         interrupted = False
         try:
@@ -72,7 +89,9 @@ def run_managed(workflow, *, started_unix, readiness=None):
                     current = workflow.budget.snapshot()
                     if workflow.budget.excludes_numeric:
                         stop_at = current['deadline_unix'] - current['config'].get('shutdown_reserve_seconds', 0) / 2
-                    if time.time() >= stop_at and not workflow.numeric_running():
+                    hard = current['config'].get('absolute_deadline_unix')
+                    hard_stop = hard is not None and time.time() >= hard - current['config'].get('shutdown_reserve_seconds', 0) / 2
+                    if hard_stop or (time.time() >= stop_at and not workflow.numeric_running()):
                         workflow.runtime.stop_identity(identity)
                         break
                     try:
@@ -96,9 +115,11 @@ def run_managed(workflow, *, started_unix, readiness=None):
                 child.wait(timeout=5)
             with file_lock(workflow.run_dir / "supervisor.lock", timeout=10):
                 workflow.runtime.stop()
-                workflow.poll()
-                workflow.runtime.settle_abandoned_intents()
-                if workflow.mark_scope_target_if_ready():
+                failures = collect_final_receipts(workflow)
+                if failures:
+                    workflow.event("run_status", "status/monitor_reconcile/" + segment,
+                                   status="recovery_required", error=failures)
+                elif workflow.mark_scope_target_if_ready():
                     workflow.event("run_status", "status/last_receipt/" + segment,
                                    status="scope_target_reached")
                 report = workflow.summary()
@@ -109,12 +130,17 @@ def run_managed(workflow, *, started_unix, readiness=None):
                                    status=status, error="Supervisor 已停止；原始回执保留")
                 workflow.budget.end_segment(processes_stopped=True, reason="Supervisor and registered CLI/workers exited")
                 report = workflow.summary()
-                saved = read_json(workflow.run_dir / "summary.json") if (workflow.run_dir / "summary.json").exists() else {}
-                report.update(state_saved=True, stop_event_saved=True,
-                              finalization_errors=saved.get("finalization_errors", []),
+                # Only this Supervisor's new atomic report can contribute child errors.
+                errors = list(failures)
+                if child is not None and summary_path.exists():
+                    current = summary_path.stat()
+                    if prior_summary is None or current.st_ino != prior_summary.st_ino or current.st_mtime_ns != prior_summary.st_mtime_ns:
+                        errors.extend(read_json(summary_path).get("finalization_errors", []))
+                report.update(state_saved=not errors, stop_event_saved=True,
+                              finalization_errors=errors,
                               supervisor_exit_code=child.returncode if child else None,
                               monitor_cleanup_completed=True)
-                atomic_json(workflow.run_dir / "summary.json", report)
+                atomic_json(summary_path, report)
                 atomic_json(workflow.run_dir / "status.json", {"status": report["status"],
                     "sequence": workflow.journal.sequence, "active_segment": None})
         return report

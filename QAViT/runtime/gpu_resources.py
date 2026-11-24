@@ -19,6 +19,10 @@ class ResourceBusy(Exception):
     pass
 
 
+class ResourceUnavailable(ResourceBusy):
+    """Frozen authorization/visibility cannot execute this task on this resume."""
+
+
 def inventory():
     """NVML indices, CUDA UUIDs and device minors differ in restricted containers."""
     result = subprocess.run(['nvidia-smi', '--query-gpu=index,uuid', '--format=csv,noheader'],
@@ -162,7 +166,37 @@ def gpu_bindings(gpus, settings=None):
     return [by_index[g] for g in gpus if g in by_index]
 
 
-def placement(experiment, settings, brief=None):
+
+def approved_parallel_load(approval, *, native_only=False):
+    """Inspect the approved source without running it."""
+    if not approval or approval.get('status') != 'approved':
+        return False
+    return parallel_candidate(approval.get('candidate', {}), native_only=native_only)
+
+
+def parallel_candidate(candidate, *, native_only=False):
+    import ast
+    from core.journal import file_sha256
+    path = Path(candidate.get('path', ''))
+    if not path.is_file() or file_sha256(path) != candidate.get('source_sha256'):
+        raise ContractError('approved parallel executor source changed or missing')
+    tree = ast.parse(path.read_text())
+    if native_only:
+        # A build_plan/refine_frozen plugin can use the tested native loader.
+        # A custom factory requires its own validated parallel loading path.
+        return not any((isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef, ast.ClassDef)) and node.name == 'make_executor')
+                       or (isinstance(node, ast.Name) and node.id == 'make_executor')
+                       or (isinstance(node, ast.alias) and (node.asname or node.name) == 'make_executor')
+                       for node in ast.walk(tree))
+    declarations = []
+    for node in tree.body:
+        targets = node.targets if isinstance(node, ast.Assign) else [node.target] if isinstance(node, ast.AnnAssign) else []
+        if any(isinstance(t, ast.Name) and t.id == 'parallel_frozen_load' for t in targets):
+            declarations.append(node.value)
+    return (len(declarations) == 1 and isinstance(declarations[0], ast.Constant)
+            and declarations[0].value is True)
+
+def placement(experiment, settings, brief=None, *, approval=None):
     from tools.experiment_worker import backend_device
     payload = experiment['payload']
     spec, resources = payload['execution'], payload['resources']
@@ -170,18 +204,35 @@ def placement(experiment, settings, brief=None):
     cuda = str(device).startswith('cuda')
     pool = ([resources['gpu']] if resources.get('gpu') is not None
             else list(dict.fromkeys(settings.get('allowed_gpus', [])))) if cuda else []
-    requested = resources.get('gpu_count', 1)
+    from tools.result_contract import dual_task_fallback
+    dual = cuda and dual_task_fallback(payload) is None
+    native_only = settings.get('native_dual_task_only', False)
+    package = spec.get('evaluation_package') or {}
+    bound_code = package.get('candidate')
+    custom_serial = dual and (
+        (spec.get('requires_code') and not approved_parallel_load(approval, native_only=native_only))
+        or (bound_code and not parallel_candidate(bound_code, native_only=native_only)))
+    if custom_serial:
+        dual = False
+    requested = resources.get('gpu_count', 2 if dual else 1)
     from tools.result_contract import classification_shard_fallback
     fallback = classification_shard_fallback(payload, brief or {})
     supported = cuda and fallback is None
+    if dual:
+        fallback = None
+    elif custom_serial:
+        fallback = ('custom executor parallel frozen load not validated for this run' if native_only else
+                    'approved custom code has no literal parallel_frozen_load=True declaration')
     # An explicit gpu pins the primary; other authorized GPUs may supply shards.
-    if supported and requested > 1 and pool:
+    if (supported or dual) and requested > 1 and pool:
         pool += [g for g in settings.get('allowed_gpus', []) if g not in pool]
     useful = max((r.get('count') or requested for r in spec.get('evaluations', [])), default=requested)
-    return {'gpu_pool': pool, 'gpu_count': min(requested, useful) if supported else 1,
+    return {'gpu_pool': pool, 'requires_gpu': cuda,
+            'gpu_count': min(requested, 2) if dual else (min(requested, useful) if supported else 1),
             'pinned_gpu': resources.get('gpu') if cuda else None,
             'parallelism': {'requested_gpus': requested, 'classification_shards_supported': bool(supported),
-                            'fallback': None if supported else (fallback or 'CPU single-device execution')}}
+                            'dual_task_supported': dual, **({'native_dual_task_only': True} if native_only else {}),
+                            'fallback': None if supported or dual else (fallback or 'CPU single-device execution')}}
 
 
 _busy_cache = (0, set())
@@ -214,7 +265,7 @@ def externally_busy():
     return busy
 
 
-def acquire(pool, count=1, pinned=None, *, bindings=None):
+def acquire(pool, count=1, pinned=None, *, bindings=None, reserve=0):
     if not pool:
         return [], []
     busy = externally_busy()
@@ -236,11 +287,16 @@ def acquire(pool, count=1, pinned=None, *, bindings=None):
                     selected.append(gpu)
             if gpu == pinned and gpu not in selected:
                 break
-            if len(selected) >= count:
+            if len(selected) >= count + reserve:
                 break
         if not selected or (pinned is not None and pinned not in selected):
             raise ResourceBusy('GPU busy; task remains queued')
-        return selected, fds
+        # Probe leases as well as device occupancy before spending spare cards.
+        # Every unserved candidate gets priority over a second card for this one.
+        keep = min(count, max(1, len(selected) - reserve))
+        for fd in fds[keep:]:
+            os.close(fd)
+        return selected[:keep], fds[:keep]
     except BaseException:
         for fd in fds:
             os.close(fd)

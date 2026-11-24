@@ -1,0 +1,40 @@
+         79306828 function calls (65405303 primitive calls) in 42.817 seconds
+
+   Ordered by: cumulative time
+   List reduced from 5861 to 32 due to restriction <32>
+
+   ncalls  tottime  percall  cumtime  percall filename:lineno(function)
+      9/1    0.000    0.000   42.819   42.819 /root/data-fs/projects/Quantization_Agent_for_ViTs_gonly/QAViT/core/journal.py:80(wrapped)
+        1    0.098    0.098   42.686   42.686 /root/data-fs/projects/Quantization_Agent_for_ViTs_gonly/QAViT/agents/interaction.py:974(context)
+      330    0.019    0.000   36.411    0.110 /root/data-fs/projects/Quantization_Agent_for_ViTs_gonly/QAViT/core/journal.py:105(card)
+        1    0.010    0.010   28.763   28.763 /root/data-fs/projects/Quantization_Agent_for_ViTs_gonly/QAViT/core/memory.py:625(retrieve)
+13067025/7399   13.766    0.000   25.918    0.004 /root/miniconda3/lib/python3.10/copy.py:128(deepcopy)
+688875/7175    2.394    0.000   25.897    0.004 /root/miniconda3/lib/python3.10/copy.py:227(_deepcopy_dict)
+152379/11089    2.924    0.000   25.301    0.002 /root/miniconda3/lib/python3.10/copy.py:201(_deepcopy_list)
+      322    0.001    0.000    8.827    0.027 /root/data-fs/projects/Quantization_Agent_for_ViTs_gonly/QAViT/core/cards.py:29(canonical)
+      375    0.002    0.000    8.826    0.024 /root/miniconda3/lib/python3.10/json/__init__.py:183(dumps)
+      375    0.002    0.000    8.824    0.024 /root/miniconda3/lib/python3.10/json/encoder.py:182(encode)
+      296    8.551    0.029    8.551    0.029 /root/miniconda3/lib/python3.10/json/encoder.py:204(iterencode)
+       86    0.029    0.000    6.837    0.080 /root/data-fs/projects/Quantization_Agent_for_ViTs_gonly/QAViT/core/journal.py:20(read_json)
+       81    0.001    0.000    6.197    0.077 /root/data-fs/projects/Quantization_Agent_for_ViTs_gonly/QAViT/core/cards.py:255(validate_card)
+       87    0.006    0.000    5.881    0.068 /root/data-fs/projects/Quantization_Agent_for_ViTs_gonly/QAViT/core/cards.py:37(strict_loads)
+        1    0.005    0.005    4.210    4.210 /root/data-fs/projects/Quantization_Agent_for_ViTs_gonly/QAViT/core/memory.py:467(current_research_state)
+      118    0.015    0.000    3.588    0.030 /root/data-fs/projects/Quantization_Agent_for_ViTs_gonly/QAViT/core/cards.py:33(fingerprint)
+       89    0.001    0.000    2.916    0.033 /root/miniconda3/lib/python3.10/json/__init__.py:299(loads)
+       89    0.001    0.000    2.915    0.033 /root/miniconda3/lib/python3.10/json/decoder.py:332(decode)
+       89    2.413    0.027    2.914    0.033 /root/miniconda3/lib/python3.10/json/decoder.py:343(raw_decode)
+        1    0.011    0.011    2.802    2.802 /root/data-fs/projects/Quantization_Agent_for_ViTs_gonly/QAViT/agents/interaction.py:769(deliver_bound_feedback)
+       81    0.007    0.000    2.776    0.034 /root/data-fs/projects/Quantization_Agent_for_ViTs_gonly/QAViT/core/cards.py:199(validate_payload)
+ 26234026    2.542    0.000    2.542    0.000 {method 'get' of 'dict' objects}
+   1273/6    0.007    0.000    2.382    0.397 <frozen importlib._bootstrap>:1022(_find_and_load)
+   1273/6    0.005    0.000    2.382    0.397 <frozen importlib._bootstrap>:987(_find_and_load_unlocked)
+   1225/6    0.006    0.000    2.381    0.397 <frozen importlib._bootstrap>:664(_load_unlocked)
+   1201/6    0.003    0.000    2.381    0.397 <frozen importlib._bootstrap_external>:877(exec_module)
+  1645/11    0.001    0.000    2.379    0.216 <frozen importlib._bootstrap>:233(_call_with_frames_removed)
+   1547/6    0.034    0.000    2.373    0.395 {built-in method builtins.exec}
+        1    0.000    0.000    2.369    2.369 /root/data-fs/projects/Quantization_Agent_for_ViTs_gonly/QAViT/tools/profiling.py:1(<module>)
+    592/5    0.001    0.000    2.340    0.468 {built-in method builtins.__import__}
+  1431/42    0.004    0.000    2.317    0.055 <frozen importlib._bootstrap>:1053(_handle_fromlist)
+        1    0.000    0.000    2.002    2.002 /root/data-fs/projects/Quantization_Agent_for_ViTs_gonly/QAViT/tools/ptq_agent/profiling/host.py:1(<module>)
+
+

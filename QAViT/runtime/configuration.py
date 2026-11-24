@@ -1,12 +1,13 @@
 """运行输入校验与角色模型配置；模型默认值唯一来自 configs/models.json。"""
 import math
 
-from core.cards import ContractError, ROLES, validate_payload
+from core.cards import ContractError, ROLES, ACTIVE_ROLES, validate_payload
 from core.journal import read_json
 from runtime.paths import QAVIT
 
 
 NUMERIC_TASK_TIMEOUT_SECONDS = {"L1": 3600, "L2": 10800, "L3": 86400}
+GENERATION_ROUTES = {("gpt-6-astra", "high"), ("gpt-6.2-astra", "high")}
 
 
 def numeric_task_timeout(runtime, level="L1"):
@@ -19,22 +20,27 @@ def model_defaults():
     return read_json(QAVIT / "configs/models.json")
 
 
-def config_check(config, *, resolve_resources=False):
+def config_check(config, *, resolve_resources=False, historical=False):
     if config.get("schema_version") != "qavit.research/2":
         raise ContractError("不是 v2 研究配置")
     validate_payload("ResearchBrief", config["research_brief"])
     if config["research_brief"].get("unresolved_inputs"):
         raise ContractError("研究模板仍有待填写输入: " + str(config["research_brief"]["unresolved_inputs"]))
-    if config.get("purpose") not in ("research", "validation", "infrastructure_test"):
+    if config.get("purpose") not in ("research", "validation", "infrastructure_test", "baseline_measurement"):
         raise ContractError("必须明确本次运行用途")
     settings = config.setdefault("llm", {})
     settings.setdefault("provider", "codex_subscription")
     settings.setdefault("agent_models", model_defaults())
-    if set(settings["agent_models"]) != set(ROLES):
-        raise ContractError("需配置全部七角色模型路由")
+    if not set(ACTIVE_ROLES) <= set(settings["agent_models"]) <= set(ROLES):
+        raise ContractError("需配置 G-only 的 Generation、Coding、Safeguard、Recorder、Supervisor 模型路由")
     for value in settings["agent_models"].values():
         if not isinstance(value, (list, tuple)) or len(value) != 2 or not all(isinstance(v, str) and v for v in value):
             raise ContractError("模型路由须为 [model, effort]")
+    cap = settings.get('subscription_max_used_percent')
+    if cap is not None and (type(cap) not in (int, float) or not 0 < cap <= 100):
+        raise ContractError('subscription_max_used_percent 必须在 (0, 100] 内')
+    if not historical and tuple(settings["agent_models"]["generation"]) not in GENERATION_ROUTES:
+        raise ContractError("G-only Generation 需使用已核验的 Astra / high 路由；禁止静默降级")
     runtime = config.setdefault("runtime", {})
     if resolve_resources:
         from runtime.gpu_resources import resolve_runtime_resources
@@ -55,10 +61,14 @@ def config_check(config, *, resolve_resources=False):
             raise ContractError("运行资源需要正整数: " + key)
     if runtime["task_timeout_seconds"] <= 0:
         raise ContractError("任务超时必须为正数")
+    # Optional operational bounds; do not mutate historical frozen configuration.
+    for key in ('resource_wait_timeout_seconds', 'resource_poll_seconds'):
+        if key in runtime and (type(runtime[key]) not in (int,float) or not math.isfinite(runtime[key]) or runtime[key] <= 0):
+            raise ContractError(key + ' 必须为有限正秒数')
     if any(type(gpu) is not int or gpu < 0 for gpu in runtime.get("allowed_gpus", [])):
         raise ContractError("GPU编号必须为非负整数")
     if type(runtime["llm_concurrency"]) is not int or not 1 <= runtime["llm_concurrency"] <= 4:
-        raise ContractError("LLM 总并发须为1到4：最多3个Judger及1个其它角色")
+        raise ContractError("LLM 总并发须为1到4；沿用既有订阅资源互斥")
     if config.get("enable_l3") is not True and config.get("enable_l3") is not False:
         raise ContractError("请明确本次运行是否启用 L3；验证配置必须关闭")
     if config["purpose"] == "validation" and config["enable_l3"]:

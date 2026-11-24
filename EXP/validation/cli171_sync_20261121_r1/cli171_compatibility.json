@@ -1,12 +1,12 @@
 {
-  "checked_at_utc": "2026-11-21T06:32:44.041624+00:00",
+  "checked_at_utc": "2026-11-21T06:32:44.077536+00:00",
   "cli_version": "codex-cli 0.171.0",
   "cli_sha256": "b76a027d6b210f9a8da7aaf321dd235c700f0ef7a794d4a5314b9af6c134f0f0",
   "release": "https://github.com/openai/codex/releases/tag/rust-v0.171.0",
   "release_archive_sha256": "8391d67757496bfd14893eca6cbf0c96994bf2627566ff1f018f70600c9ef6b3",
   "provider": "codex_subscription",
-  "base_commit": "7f1e9e73346d58ba416a7cb6b5b7fa392d580c0b",
-  "models_config_sha256": "0aa488dc2da257723f9eb1e1bf29a26c58c844b89294fa019b5c7f44ee7854a9",
+  "base_commit": "6aa8f285fd5a6840050f47e77a3eff8522f67a7c",
+  "models_config_sha256": "34ff34b8b908b4fef177888fb4fded360b512d553ce400c3eadea7e49aa0f6ad",
   "scope": "Live account/catalog checks and structured decision probes for every default role route and the separate Eval-L0 Judge. No quantitative ViT experiments.",
   "exec_policy": "Existing isolation flags retained. New --remote options are unused.",
   "role_routes": [
@@ -44,9 +44,9 @@
       "usage": {
         "cache_write_input_tokens": 0,
         "cached_input_tokens": 0,
-        "input_tokens": 4681,
-        "output_tokens": 58,
-        "reasoning_output_tokens": 28
+        "input_tokens": 4685,
+        "output_tokens": 62,
+        "reasoning_output_tokens": 32
       }
     },
     {
@@ -83,18 +83,17 @@
       "usage": {
         "cache_write_input_tokens": 0,
         "cached_input_tokens": 0,
-        "input_tokens": 4681,
+        "input_tokens": 4685,
         "output_tokens": 28,
         "reasoning_output_tokens": 0
       }
     },
     {
       "roles": [
-        "generation",
-        "evolution"
+        "generation"
       ],
       "requested": {
-        "model": "gpt-6.2-sol",
+        "model": "gpt-6.2-astra",
         "reasoning_effort": "high"
       },
       "actual": {
@@ -112,7 +111,7 @@
           "max",
           "ultra"
         ],
-        "context_window": 500000,
+        "context_window": 272000,
         "tool_mode": "code_mode_only"
       },
       "request_sha256": "44767bf329a07ab77448ff272b0d5e66c8f7cb3f9dc46643daa319d11df23828",
@@ -124,14 +123,13 @@
       "usage": {
         "cache_write_input_tokens": 0,
         "cached_input_tokens": 0,
-        "input_tokens": 4777,
+        "input_tokens": 4783,
         "output_tokens": 28,
         "reasoning_output_tokens": 0
       }
     },
     {
       "roles": [
-        "judger",
         "coding",
         "safeguard"
       ],
@@ -157,7 +155,7 @@
         "context_window": 500000,
         "tool_mode": "code_mode_only"
       },
-      "request_sha256": "91cbf81c3725ab179e1c7350d1c3574700b0f021922a4bf05eea2aadde6b31a1",
+      "request_sha256": "9a993f1115ea470bace4d748f8b3a88e11be953bcd4acbd7bb88ecfbb767ea73",
       "exit_code": 0,
       "tool_host_disabled_verified": true,
       "decision": {
@@ -166,7 +164,7 @@
       "usage": {
         "cache_write_input_tokens": 0,
         "cached_input_tokens": 0,
-        "input_tokens": 4778,
+        "input_tokens": 4781,
         "output_tokens": 28,
         "reasoning_output_tokens": 0
       }
@@ -189,7 +187,7 @@
       "usage": {
         "cache_write_input_tokens": 0,
         "cached_input_tokens": 0,
-        "input_tokens": 4297,
+        "input_tokens": 4305,
         "output_tokens": 28,
         "reasoning_output_tokens": 0
       },
@@ -214,7 +212,7 @@
       "usage": {
         "cache_write_input_tokens": 0,
         "cached_input_tokens": 0,
-        "input_tokens": 4392,
+        "input_tokens": 4400,
         "output_tokens": 28,
         "reasoning_output_tokens": 0
       },
@@ -223,5 +221,9 @@
         "ok": true
       }
     }
-  ]
+  ],
+  "optional_native_coding": {
+    "status": "fallback",
+    "reason": "bwrap could not create an unprivileged user namespace on this host"
+  }
 }

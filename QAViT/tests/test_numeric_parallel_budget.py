@@ -100,6 +100,39 @@ assert report['status']=='completed', report
         self.assertIn('单任务超时', restored.input_receipt()['meaning'])
         self.assertNotIn('numeric_waits', restored.input_receipt())
 
+    def test_absolute_deadline_stops_numeric_drain_and_survives_resume(self):
+        from runtime.budget import BudgetExhausted
+        now = time.time()
+        journal = self.journal()
+        cfg = {'wall_seconds': 60, 'clock_mode': 'active_segments', 'exclude_numeric_wait': True,
+               'absolute_deadline_unix': now + 4, 'shutdown_reserve_seconds': 1}
+        budget = BudgetLedger(journal, cfg)
+        budget.begin_segment()
+        queue = GlobalTaskQueue(journal)
+        tid = queue.enqueue('numeric', 'experiment')
+        queue.promote()
+        runtime = TaskRuntime(journal.root, queue, budget, {})
+        try:
+            runtime.launch(queue.get(tid), {'kind': 'test_control', 'sleep_seconds': 60, 'estimated_seconds': 60},
+                           input_versions={})
+            request = read_json(queue.get(tid)['request_path'])
+            self.assertEqual(request['deadline_unix'], now + 3)
+            budget.numeric_wait(True)
+            until = time.monotonic() + 5
+            while time.time() < request['deadline_unix'] and time.monotonic() < until:
+                time.sleep(.02)
+            with self.assertRaises(BudgetExhausted):
+                budget.check(allow_numeric_drain=True)
+        finally:
+            runtime.stop()
+        self.assertFalse(runtime.live_processes())
+        budget.end_segment(processes_stopped=True, reason='absolute deadline test')
+        restored = BudgetLedger(journal)
+        restored.begin_segment()
+        self.assertEqual(restored.snapshot()['absolute_worker_deadline_unix'], now + 3)
+        with self.assertRaises(BudgetExhausted):
+            restored.check(allow_numeric_drain=True)
+
     def test_unknown_crash_interval_is_charged(self):
         clock = [0.]
         budget = BudgetLedger(self.journal(), {'wall_seconds': 100, 'clock_mode': 'active_segments',

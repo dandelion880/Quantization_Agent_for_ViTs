@@ -1,0 +1,1877 @@
+{
+  "evaluation": "dinov3b_static_w4a4_independent_20261121_r1",
+  "cases": {
+    "initial": {
+      "partition": "development",
+      "case_id": "case-fac6412816e2887f5bcb2d81",
+      "task_key": "r001/focus",
+      "role": "generation",
+      "execution_id": "task-8240ed4f54a7b40b74cd111a-a0001",
+      "manifest_sha256": "407a2834fe50375e61e09ee4ba849cc933dd28283893f553bbc8a1e5f75e311f",
+      "request_sha256": "f1bbe7dec3df6255882276e530f1fb14019f0bdbba08322a352c3a8ddea51a0a",
+      "source": "jobs/task-8240ed4f54a7b40b74cd111a-a0001/request.json",
+      "read_view": {
+        "memory_version": 1,
+        "sequence": 14
+      },
+      "input_versions": {
+        "ResearchBrief-ca92565286d3410da052af068b554f58@1": "09b91e4286c9f7a2d755a5864081e9c0eddd932d32b0c68bc59db1c997c4b8c8"
+      },
+      "tool_capabilities": [
+        "read_topic",
+        "read_method",
+        "read_inspiration",
+        "update_inspiration",
+        "read_card",
+        "read_asset",
+        "retrieve_memory"
+      ],
+      "responsibility": "依据冻结 Brief、模型资料、种子、B 与任务约束选择有判别力的问题",
+      "acceptance": {
+        "rubric": "qavit.eval_l0.focus.gonly_v0_3",
+        "version": "272f75b2717cd1926948e2f8974573f9fe5cae618289ad5f4e5f56036c659982",
+        "basis": "实际决定、执行及证据范围，接受有依据的不同路径"
+      },
+      "historical_step_cost": {
+        "elapsed_seconds": 12.33811242505908,
+        "usage": [
+          {
+            "cache_write_input_tokens": 0,
+            "cached_input_tokens": 0,
+            "input_tokens": 19958,
+            "output_tokens": 98,
+            "reasoning_output_tokens": 46
+          }
+        ]
+      },
+      "historical_task_metrics": {
+        "cost": {
+          "amount": null,
+          "basis": "unknown_subscription_cost",
+          "currency": null,
+          "known_subtotal": null,
+          "missing_calls": 2,
+          "note": "Subscription tokens are usage, not a verified monetary charge."
+        },
+        "duration": {
+          "missing_elapsed_attempts": 0,
+          "note": "Router elapsed includes preflight/lock waits; sum is not run wall time. CLI inner reconnects are not observable.",
+          "observed_model_interval_union_seconds": 60.340895652770996,
+          "pure_inference_seconds": null,
+          "router_elapsed_sum_seconds": 66.24950551427901,
+          "subscription_lock_wait_seconds": null
+        },
+        "execution_attempts": 2,
+        "failed_attempts": 0,
+        "incomplete_attempts": 0,
+        "model_calls_completed": 2,
+        "model_calls_failed": 0,
+        "model_calls_start_unknown": 0,
+        "model_calls_started": 2,
+        "note": "State intervals are bounded by committed snapshots; waiting may include tools, code, numeric jobs and scheduling.",
+        "observed_state_seconds": {
+          "pending": 0.205613374710083,
+          "ready": 0.5482625961303711,
+          "running": 67.61219096183777,
+          "waiting": 0.6767477989196777
+        },
+        "open_state": null,
+        "preflight_only_attempts": 0,
+        "recorded_format_repair_events": 0,
+        "recorded_retry_events": 0,
+        "task_wall_seconds": 69.04034209251404,
+        "tokens": {
+          "cache_write_input_tokens": {
+            "known_calls": 2,
+            "known_sum": 0,
+            "missing_calls": 0
+          },
+          "cached_input_tokens": {
+            "known_calls": 2,
+            "known_sum": 0,
+            "missing_calls": 0
+          },
+          "input_tokens": {
+            "known_calls": 2,
+            "known_sum": 42261,
+            "missing_calls": 0
+          },
+          "output_tokens": {
+            "known_calls": 2,
+            "known_sum": 1311,
+            "missing_calls": 0
+          },
+          "reasoning_output_tokens": {
+            "known_calls": 2,
+            "known_sum": 128,
+            "missing_calls": 0
+          }
+        },
+        "tools": {
+          "read_asset": {
+            "cache_reused": 0,
+            "observed_model_requests": 1,
+            "requests_without_linked_task": 0,
+            "states": {
+              "completed": 1
+            },
+            "tasks": 1
+          }
+        }
+      },
+      "source_versions": {
+        "core_sha256": "95b55dcb0ac6289c9eaceb5d7bd7d3e8a8107c7698d2fae836b31a361758f810",
+        "prompt_source_sha256": "282890edef17c27206c22d7c41093d7f6f9de2e5c3fda8e2300ed86a19e902a6",
+        "rules_fingerprint": "272f75b2717cd1926948e2f8974573f9fe5cae618289ad5f4e5f56036c659982",
+        "rubric_id": "qavit.eval_l0.focus.gonly_v0_3",
+        "case_sha256": "7681b33411103b3afaa339b573bbf38f09de0632138413408f646d5409a0d959",
+        "original_route": {
+          "model": "gpt-6.2-astra",
+          "reasoning_effort": "high"
+        }
+      },
+      "visible_materials": {
+        "spec": "/spec/context",
+        "prior_messages": "/spec/messages",
+        "tools": "/spec/tools",
+        "permissions": "/read_permissions",
+        "parent_versions": "/input_versions"
+      }
+    },
+    "h1_block": {
+      "partition": "development",
+      "case_id": "case-b51fea7e377c0e202eed82e2",
+      "task_key": "r003/generate/H1",
+      "role": "generation",
+      "execution_id": "task-b26b66a59dee56a67ebc6625-a0005",
+      "manifest_sha256": "407a2834fe50375e61e09ee4ba849cc933dd28283893f553bbc8a1e5f75e311f",
+      "request_sha256": "89d6080cfa877b75e9bf291a2cf6cc6e43bca9575010e652602304e7ff3b5ba8",
+      "source": "jobs/task-b26b66a59dee56a67ebc6625-a0005/request.json",
+      "read_view": {
+        "memory_version": 110,
+        "sequence": 10530
+      },
+      "input_versions": {
+        "MetareviewCard-427ec51fc4eb4dd692c8c2e08a9db71e@1": "f468e6b2daa3bc0bc7fd093b036ac7fd694a1509e43d216118b7c10bb7ee85b4",
+        "ResearchBrief-ca92565286d3410da052af068b554f58@1": "09b91e4286c9f7a2d755a5864081e9c0eddd932d32b0c68bc59db1c997c4b8c8"
+      },
+      "tool_capabilities": [
+        "revise_topic",
+        "read_topic",
+        "read_method",
+        "update_inspiration",
+        "read_inspiration",
+        "read_card",
+        "read_asset",
+        "literature_search",
+        "literature_fetch",
+        "retrieve_memory",
+        "request_experiment"
+      ],
+      "responsibility": "解释研究视图受阻的影响，修订、暂缓或继续机制研究并注明证据范围",
+      "acceptance": {
+        "rubric": "qavit.eval_l0.generation.gonly_v0_3",
+        "version": "272f75b2717cd1926948e2f8974573f9fe5cae618289ad5f4e5f56036c659982",
+        "basis": "实际决定、执行及证据范围，接受有依据的不同路径"
+      },
+      "historical_step_cost": {
+        "elapsed_seconds": 28.748125415295362,
+        "usage": [
+          {
+            "cache_write_input_tokens": 0,
+            "cached_input_tokens": 0,
+            "input_tokens": 54798,
+            "output_tokens": 1038,
+            "reasoning_output_tokens": 103
+          }
+        ]
+      },
+      "historical_task_metrics": {
+        "cost": {
+          "amount": null,
+          "basis": "unknown_subscription_cost",
+          "currency": null,
+          "known_subtotal": null,
+          "missing_calls": 8,
+          "note": "Subscription tokens are usage, not a verified monetary charge."
+        },
+        "duration": {
+          "missing_elapsed_attempts": 0,
+          "note": "Router elapsed includes preflight/lock waits; sum is not run wall time. CLI inner reconnects are not observable.",
+          "observed_model_interval_union_seconds": 183.63494348526,
+          "pure_inference_seconds": null,
+          "router_elapsed_sum_seconds": 202.6124769486487,
+          "subscription_lock_wait_seconds": null
+        },
+        "execution_attempts": 8,
+        "failed_attempts": 0,
+        "incomplete_attempts": 0,
+        "model_calls_completed": 8,
+        "model_calls_failed": 0,
+        "model_calls_start_unknown": 0,
+        "model_calls_started": 8,
+        "note": "State intervals are bounded by committed snapshots; waiting may include tools, code, numeric jobs and scheduling.",
+        "observed_state_seconds": {
+          "pending": 2.0362558364868164,
+          "ready": 97.31909608840942,
+          "running": 297.07297945022583,
+          "waiting": 4304.198932647705
+        },
+        "open_state": null,
+        "preflight_only_attempts": 0,
+        "recorded_format_repair_events": 0,
+        "recorded_retry_events": 0,
+        "task_wall_seconds": 4700.439470767975,
+        "tokens": {
+          "cache_write_input_tokens": {
+            "known_calls": 8,
+            "known_sum": 0,
+            "missing_calls": 0
+          },
+          "cached_input_tokens": {
+            "known_calls": 8,
+            "known_sum": 13056,
+            "missing_calls": 0
+          },
+          "input_tokens": {
+            "known_calls": 8,
+            "known_sum": 508399,
+            "missing_calls": 0
+          },
+          "output_tokens": {
+            "known_calls": 8,
+            "known_sum": 6259,
+            "missing_calls": 0
+          },
+          "reasoning_output_tokens": {
+            "known_calls": 8,
+            "known_sum": 650,
+            "missing_calls": 0
+          }
+        },
+        "tools": {
+          "read_asset": {
+            "cache_reused": 0,
+            "observed_model_requests": 7,
+            "requests_without_linked_task": 0,
+            "states": {
+              "completed": 7
+            },
+            "tasks": 7
+          },
+          "read_card": {
+            "cache_reused": 0,
+            "observed_model_requests": 2,
+            "requests_without_linked_task": 0,
+            "states": {
+              "completed": 2
+            },
+            "tasks": 2
+          },
+          "request_experiment": {
+            "cache_reused": 0,
+            "observed_model_requests": 4,
+            "requests_without_linked_task": 0,
+            "states": {
+              "completed": 3,
+              "failed": 1
+            },
+            "tasks": 4
+          },
+          "retrieve_memory": {
+            "cache_reused": 0,
+            "observed_model_requests": 2,
+            "requests_without_linked_task": 0,
+            "states": {
+              "completed": 2
+            },
+            "tasks": 2
+          }
+        }
+      },
+      "source_versions": {
+        "core_sha256": "95b55dcb0ac6289c9eaceb5d7bd7d3e8a8107c7698d2fae836b31a361758f810",
+        "prompt_source_sha256": "282890edef17c27206c22d7c41093d7f6f9de2e5c3fda8e2300ed86a19e902a6",
+        "rules_fingerprint": "272f75b2717cd1926948e2f8974573f9fe5cae618289ad5f4e5f56036c659982",
+        "rubric_id": "qavit.eval_l0.generation.gonly_v0_3",
+        "case_sha256": "2d38e906f780ccf17f83e9a79444fc9b5f16fafd38fa46e8d1c1362327e3bc8c",
+        "original_route": {
+          "model": "gpt-6.2-astra",
+          "reasoning_effort": "high"
+        }
+      },
+      "visible_materials": {
+        "spec": "/spec/context",
+        "prior_messages": "/spec/messages",
+        "tools": "/spec/tools",
+        "permissions": "/read_permissions",
+        "parent_versions": "/input_versions"
+      }
+    },
+    "h2_parent": {
+      "partition": "development",
+      "case_id": "case-ab6aef25d8e821a85f12b078",
+      "task_key": "r003/generate/H2",
+      "role": "generation",
+      "execution_id": "task-acb29a50673d2a1319105e5f-a0001",
+      "manifest_sha256": "407a2834fe50375e61e09ee4ba849cc933dd28283893f553bbc8a1e5f75e311f",
+      "request_sha256": "f8f291c31b1e388daf3d691b196b579c1ff70ad58cbaf185506151a1ea41d956",
+      "source": "jobs/task-acb29a50673d2a1319105e5f-a0001/request.json",
+      "read_view": {
+        "memory_version": 102,
+        "sequence": 9647
+      },
+      "input_versions": {
+        "MetareviewCard-427ec51fc4eb4dd692c8c2e08a9db71e@1": "f468e6b2daa3bc0bc7fd093b036ac7fd694a1509e43d216118b7c10bb7ee85b4",
+        "ResearchBrief-ca92565286d3410da052af068b554f58@1": "09b91e4286c9f7a2d755a5864081e9c0eddd932d32b0c68bc59db1c997c4b8c8"
+      },
+      "tool_capabilities": [
+        "revise_topic",
+        "read_topic",
+        "read_method",
+        "update_inspiration",
+        "read_inspiration",
+        "read_card",
+        "read_asset",
+        "literature_search",
+        "literature_fetch",
+        "retrieve_memory",
+        "request_experiment"
+      ],
+      "responsibility": "在完整父方案上选择可追踪的工程改良与可反驳对照",
+      "acceptance": {
+        "rubric": "qavit.eval_l0.generation.gonly_v0_3",
+        "version": "272f75b2717cd1926948e2f8974573f9fe5cae618289ad5f4e5f56036c659982",
+        "basis": "实际决定、执行及证据范围，接受有依据的不同路径"
+      },
+      "historical_step_cost": {
+        "elapsed_seconds": 14.125468894839287,
+        "usage": [
+          {
+            "cache_write_input_tokens": 0,
+            "cached_input_tokens": 0,
+            "input_tokens": 48074,
+            "output_tokens": 300,
+            "reasoning_output_tokens": 47
+          }
+        ]
+      },
+      "historical_task_metrics": {
+        "cost": {
+          "amount": null,
+          "basis": "unknown_subscription_cost",
+          "currency": null,
+          "known_subtotal": null,
+          "missing_calls": 6,
+          "note": "Subscription tokens are usage, not a verified monetary charge."
+        },
+        "duration": {
+          "missing_elapsed_attempts": 0,
+          "note": "Router elapsed includes preflight/lock waits; sum is not run wall time. CLI inner reconnects are not observable.",
+          "observed_model_interval_union_seconds": 229.7978959083557,
+          "pure_inference_seconds": null,
+          "router_elapsed_sum_seconds": 242.97071881964803,
+          "subscription_lock_wait_seconds": null
+        },
+        "execution_attempts": 6,
+        "failed_attempts": 0,
+        "incomplete_attempts": 0,
+        "model_calls_completed": 6,
+        "model_calls_failed": 0,
+        "model_calls_start_unknown": 0,
+        "model_calls_started": 6,
+        "note": "State intervals are bounded by committed snapshots; waiting may include tools, code, numeric jobs and scheduling.",
+        "observed_state_seconds": {
+          "pending": 2.0254831314086914,
+          "ready": 82.71714234352112,
+          "running": 288.30646657943726,
+          "waiting": 4398.479373693466
+        },
+        "open_state": null,
+        "preflight_only_attempts": 0,
+        "recorded_format_repair_events": 0,
+        "recorded_retry_events": 0,
+        "task_wall_seconds": 4771.330380439758,
+        "tokens": {
+          "cache_write_input_tokens": {
+            "known_calls": 6,
+            "known_sum": 0,
+            "missing_calls": 0
+          },
+          "cached_input_tokens": {
+            "known_calls": 6,
+            "known_sum": 19200,
+            "missing_calls": 0
+          },
+          "input_tokens": {
+            "known_calls": 6,
+            "known_sum": 328262,
+            "missing_calls": 0
+          },
+          "output_tokens": {
+            "known_calls": 6,
+            "known_sum": 7439,
+            "missing_calls": 0
+          },
+          "reasoning_output_tokens": {
+            "known_calls": 6,
+            "known_sum": 3278,
+            "missing_calls": 0
+          }
+        },
+        "tools": {
+          "read_asset": {
+            "cache_reused": 0,
+            "observed_model_requests": 4,
+            "requests_without_linked_task": 0,
+            "states": {
+              "completed": 4
+            },
+            "tasks": 4
+          },
+          "read_card": {
+            "cache_reused": 0,
+            "observed_model_requests": 8,
+            "requests_without_linked_task": 0,
+            "states": {
+              "completed": 8
+            },
+            "tasks": 8
+          },
+          "request_experiment": {
+            "cache_reused": 0,
+            "observed_model_requests": 1,
+            "requests_without_linked_task": 0,
+            "states": {
+              "failed": 1
+            },
+            "tasks": 1
+          }
+        }
+      },
+      "source_versions": {
+        "core_sha256": "95b55dcb0ac6289c9eaceb5d7bd7d3e8a8107c7698d2fae836b31a361758f810",
+        "prompt_source_sha256": "282890edef17c27206c22d7c41093d7f6f9de2e5c3fda8e2300ed86a19e902a6",
+        "rules_fingerprint": "272f75b2717cd1926948e2f8974573f9fe5cae618289ad5f4e5f56036c659982",
+        "rubric_id": "qavit.eval_l0.generation.gonly_v0_3",
+        "case_sha256": "3d967ba5b1892d5b62c87570a99b71fe0b516d334ea77579fdff780dd2d305b4",
+        "original_route": {
+          "model": "gpt-6.2-astra",
+          "reasoning_effort": "high"
+        }
+      },
+      "visible_materials": {
+        "spec": "/spec/context",
+        "prior_messages": "/spec/messages",
+        "tools": "/spec/tools",
+        "permissions": "/read_permissions",
+        "parent_versions": "/input_versions"
+      }
+    },
+    "h3_continue": {
+      "partition": "development",
+      "case_id": "case-0ca24b42b95cc72855387f7e",
+      "task_key": "r002/generate/H3",
+      "role": "generation",
+      "execution_id": "task-a238997730cc0bfde9650575-a0002",
+      "manifest_sha256": "407a2834fe50375e61e09ee4ba849cc933dd28283893f553bbc8a1e5f75e311f",
+      "request_sha256": "97e51e3b7e43abb08edb794f2760946e28e7d2662b765f016fd181a22afcefff",
+      "source": "jobs/task-a238997730cc0bfde9650575-a0002/request.json",
+      "read_view": {
+        "memory_version": 55,
+        "sequence": 5290
+      },
+      "input_versions": {
+        "MetareviewCard-6abf50836bc04799aa49b7c21bc62ddb@1": "b2a9e9ab277179f4ac2a6edd867afeae03499da6e2b12ce3d3c683ccd27434de",
+        "ResearchBrief-ca92565286d3410da052af068b554f58@1": "09b91e4286c9f7a2d755a5864081e9c0eddd932d32b0c68bc59db1c997c4b8c8"
+      },
+      "tool_capabilities": [
+        "revise_topic",
+        "read_topic",
+        "read_method",
+        "update_inspiration",
+        "read_inspiration",
+        "read_card",
+        "read_asset",
+        "literature_search",
+        "literature_fetch",
+        "retrieve_memory",
+        "request_experiment"
+      ],
+      "responsibility": "恢复灵感的现有版本，阐明发展、修复或暂停的理由",
+      "acceptance": {
+        "rubric": "qavit.eval_l0.generation.gonly_v0_3",
+        "version": "272f75b2717cd1926948e2f8974573f9fe5cae618289ad5f4e5f56036c659982",
+        "basis": "实际决定、执行及证据范围，接受有依据的不同路径"
+      },
+      "historical_step_cost": {
+        "elapsed_seconds": 29.41981858573854,
+        "usage": [
+          {
+            "cache_write_input_tokens": 0,
+            "cached_input_tokens": 0,
+            "input_tokens": 95291,
+            "output_tokens": 615,
+            "reasoning_output_tokens": 18
+          }
+        ]
+      },
+      "historical_task_metrics": {
+        "cost": {
+          "amount": null,
+          "basis": "unknown_subscription_cost",
+          "currency": null,
+          "known_subtotal": null,
+          "missing_calls": 5,
+          "note": "Subscription tokens are usage, not a verified monetary charge."
+        },
+        "duration": {
+          "missing_elapsed_attempts": 0,
+          "note": "Router elapsed includes preflight/lock waits; sum is not run wall time. CLI inner reconnects are not observable.",
+          "observed_model_interval_union_seconds": 191.84523105621338,
+          "pure_inference_seconds": null,
+          "router_elapsed_sum_seconds": 204.74561079777777,
+          "subscription_lock_wait_seconds": null
+        },
+        "execution_attempts": 5,
+        "failed_attempts": 0,
+        "incomplete_attempts": 0,
+        "model_calls_completed": 5,
+        "model_calls_failed": 0,
+        "model_calls_start_unknown": 0,
+        "model_calls_started": 5,
+        "note": "State intervals are bounded by committed snapshots; waiting may include tools, code, numeric jobs and scheduling.",
+        "observed_state_seconds": {
+          "pending": 0.8306524753570557,
+          "ready": 49.69797205924988,
+          "retry": 2.925881862640381,
+          "running": 257.0869266986847,
+          "waiting": 5743.04386138916
+        },
+        "open_state": null,
+        "preflight_only_attempts": 0,
+        "recorded_format_repair_events": 1,
+        "recorded_retry_events": 0,
+        "task_wall_seconds": 6053.449299812317,
+        "tokens": {
+          "cache_write_input_tokens": {
+            "known_calls": 5,
+            "known_sum": 0,
+            "missing_calls": 0
+          },
+          "cached_input_tokens": {
+            "known_calls": 5,
+            "known_sum": 9600,
+            "missing_calls": 0
+          },
+          "input_tokens": {
+            "known_calls": 5,
+            "known_sum": 483922,
+            "missing_calls": 0
+          },
+          "output_tokens": {
+            "known_calls": 5,
+            "known_sum": 6079,
+            "missing_calls": 0
+          },
+          "reasoning_output_tokens": {
+            "known_calls": 5,
+            "known_sum": 248,
+            "missing_calls": 0
+          }
+        },
+        "tools": {
+          "read_asset": {
+            "cache_reused": 0,
+            "observed_model_requests": 2,
+            "requests_without_linked_task": 0,
+            "states": {
+              "completed": 2
+            },
+            "tasks": 2
+          },
+          "read_card": {
+            "cache_reused": 0,
+            "observed_model_requests": 2,
+            "requests_without_linked_task": 0,
+            "states": {
+              "completed": 2
+            },
+            "tasks": 2
+          },
+          "request_experiment": {
+            "cache_reused": 0,
+            "observed_model_requests": 2,
+            "requests_without_linked_task": 1,
+            "states": {
+              "completed": 1
+            },
+            "tasks": 1
+          },
+          "update_inspiration": {
+            "cache_reused": 0,
+            "observed_model_requests": 1,
+            "requests_without_linked_task": 0,
+            "states": {
+              "completed": 1
+            },
+            "tasks": 1
+          }
+        }
+      },
+      "source_versions": {
+        "core_sha256": "95b55dcb0ac6289c9eaceb5d7bd7d3e8a8107c7698d2fae836b31a361758f810",
+        "prompt_source_sha256": "282890edef17c27206c22d7c41093d7f6f9de2e5c3fda8e2300ed86a19e902a6",
+        "rules_fingerprint": "272f75b2717cd1926948e2f8974573f9fe5cae618289ad5f4e5f56036c659982",
+        "rubric_id": "qavit.eval_l0.generation.gonly_v0_3",
+        "case_sha256": "6b9cea823649e991576a5afd6460d32147b58046cf6c8fe210aec9fa9488a144",
+        "original_route": {
+          "model": "gpt-6.2-astra",
+          "reasoning_effort": "high"
+        }
+      },
+      "visible_materials": {
+        "spec": "/spec/context",
+        "prior_messages": "/spec/messages",
+        "tools": "/spec/tools",
+        "permissions": "/read_permissions",
+        "parent_versions": "/input_versions"
+      }
+    },
+    "code_repair": {
+      "partition": "development",
+      "case_id": "case-8ad8e3fb7178dfa4ce459182",
+      "task_key": "r001/generate/H2/tools/a1/5fc1c653fa5c/code/revision1",
+      "role": "coding",
+      "execution_id": "task-1403cbc14da66b4f04185caa-a0001",
+      "manifest_sha256": "407a2834fe50375e61e09ee4ba849cc933dd28283893f553bbc8a1e5f75e311f",
+      "request_sha256": "81e08b5a6ec0f96b12ef7b919dd103a58e3918fe77ac6a02d4b660f56bb8154e",
+      "source": "jobs/task-1403cbc14da66b4f04185caa-a0001/request.json",
+      "read_view": {
+        "memory_version": 7,
+        "sequence": 631
+      },
+      "input_versions": {
+        "ExperimentCard-6d5e1457a86b4c9c9bd482dea7c62003@1": "666e3f9c82ae80a27ba80320dc22e685fdfe00a944d00cbbca10fe21c40fbd15",
+        "ResearchBrief-ca92565286d3410da052af068b554f58@1": "09b91e4286c9f7a2d755a5864081e9c0eddd932d32b0c68bc59db1c997c4b8c8"
+      },
+      "tool_capabilities": [
+        "read_card",
+        "read_asset",
+        "edit_source"
+      ],
+      "responsibility": "回应审查并交付绑定原请求的可执行修订",
+      "acceptance": {
+        "rubric": "qavit.eval_l0.coding.v0_1",
+        "version": "272f75b2717cd1926948e2f8974573f9fe5cae618289ad5f4e5f56036c659982",
+        "basis": "实际决定、执行及证据范围，接受有依据的不同路径"
+      },
+      "historical_step_cost": {
+        "elapsed_seconds": 13.573377633467317,
+        "usage": [
+          {
+            "cache_write_input_tokens": 0,
+            "cached_input_tokens": 0,
+            "input_tokens": 31656,
+            "output_tokens": 258,
+            "reasoning_output_tokens": 0
+          }
+        ]
+      },
+      "historical_task_metrics": {
+        "cost": {
+          "amount": null,
+          "basis": "unknown_subscription_cost",
+          "currency": null,
+          "known_subtotal": null,
+          "missing_calls": 2,
+          "note": "Subscription tokens are usage, not a verified monetary charge."
+        },
+        "duration": {
+          "missing_elapsed_attempts": 0,
+          "note": "Router elapsed includes preflight/lock waits; sum is not run wall time. CLI inner reconnects are not observable.",
+          "observed_model_interval_union_seconds": 102.29869246482849,
+          "pure_inference_seconds": null,
+          "router_elapsed_sum_seconds": 108.64901034347713,
+          "subscription_lock_wait_seconds": null
+        },
+        "execution_attempts": 2,
+        "failed_attempts": 0,
+        "incomplete_attempts": 0,
+        "model_calls_completed": 2,
+        "model_calls_failed": 0,
+        "model_calls_start_unknown": 0,
+        "model_calls_started": 2,
+        "note": "State intervals are bounded by committed snapshots; waiting may include tools, code, numeric jobs and scheduling.",
+        "observed_state_seconds": {
+          "pending": 0.7633228302001953,
+          "ready": 87.4621729850769,
+          "running": 110.05172109603882,
+          "waiting": 2.3070695400238037
+        },
+        "open_state": null,
+        "preflight_only_attempts": 0,
+        "recorded_format_repair_events": 0,
+        "recorded_retry_events": 0,
+        "task_wall_seconds": 200.58039736747742,
+        "tokens": {
+          "cache_write_input_tokens": {
+            "known_calls": 2,
+            "known_sum": 0,
+            "missing_calls": 0
+          },
+          "cached_input_tokens": {
+            "known_calls": 2,
+            "known_sum": 6784,
+            "missing_calls": 0
+          },
+          "input_tokens": {
+            "known_calls": 2,
+            "known_sum": 63707,
+            "missing_calls": 0
+          },
+          "output_tokens": {
+            "known_calls": 2,
+            "known_sum": 4506,
+            "missing_calls": 0
+          },
+          "reasoning_output_tokens": {
+            "known_calls": 2,
+            "known_sum": 19,
+            "missing_calls": 0
+          }
+        },
+        "tools": {
+          "edit_source": {
+            "cache_reused": 0,
+            "observed_model_requests": 1,
+            "requests_without_linked_task": 0,
+            "states": {
+              "failed": 1
+            },
+            "tasks": 1
+          }
+        }
+      },
+      "source_versions": {
+        "core_sha256": "95b55dcb0ac6289c9eaceb5d7bd7d3e8a8107c7698d2fae836b31a361758f810",
+        "prompt_source_sha256": "282890edef17c27206c22d7c41093d7f6f9de2e5c3fda8e2300ed86a19e902a6",
+        "rules_fingerprint": "272f75b2717cd1926948e2f8974573f9fe5cae618289ad5f4e5f56036c659982",
+        "rubric_id": "qavit.eval_l0.coding.v0_1",
+        "case_sha256": "d880991f68fb8f322b9494cdc294bba56bef9db76412a1a092fb4be46afb49c0",
+        "original_route": {
+          "model": "gpt-6.2-sol",
+          "reasoning_effort": "medium"
+        }
+      },
+      "visible_materials": {
+        "spec": "/spec/context",
+        "prior_messages": "/spec/messages",
+        "tools": "/spec/tools",
+        "permissions": "/read_permissions",
+        "parent_versions": "/input_versions"
+      }
+    },
+    "safeguard": {
+      "partition": "development",
+      "case_id": "case-b63f4eed7c5c9ce8312bc453",
+      "task_key": "r001/generate/H2/tools/a1/5fc1c653fa5c/safeguard/95b55dcb0ac6289c",
+      "role": "safeguard",
+      "execution_id": "task-ec619ba7ad01a2fe479fdd6d-a0001",
+      "manifest_sha256": "407a2834fe50375e61e09ee4ba849cc933dd28283893f553bbc8a1e5f75e311f",
+      "request_sha256": "299b67b958a08dc050d4bbe3f2e6f35257ed1f4917d43160526ce9ae4ff10cba",
+      "source": "jobs/task-ec619ba7ad01a2fe479fdd6d-a0001/request.json",
+      "read_view": {
+        "memory_version": 6,
+        "sequence": 360
+      },
+      "input_versions": {
+        "ExperimentCard-40d37b5474cd4d0c88f6e3a1e4f90490@1": "69eb7ff50807fdcaca126124cf12946cc18ac26f7c63d7c00c5643f33cd9f6a3",
+        "ExperimentCard-6d5e1457a86b4c9c9bd482dea7c62003@1": "666e3f9c82ae80a27ba80320dc22e685fdfe00a944d00cbbca10fe21c40fbd15",
+        "ResearchBrief-ca92565286d3410da052af068b554f58@1": "09b91e4286c9f7a2d755a5864081e9c0eddd932d32b0c68bc59db1c997c4b8c8"
+      },
+      "tool_capabilities": [
+        "read_card",
+        "read_asset"
+      ],
+      "responsibility": "对照确切候选、冻结规格和数据条件作审查",
+      "acceptance": {
+        "rubric": "qavit.eval_l0.safeguard.v0_1",
+        "version": "272f75b2717cd1926948e2f8974573f9fe5cae618289ad5f4e5f56036c659982",
+        "basis": "实际决定、执行及证据范围，接受有依据的不同路径"
+      },
+      "historical_step_cost": {
+        "elapsed_seconds": 20.06436943821609,
+        "usage": [
+          {
+            "cache_write_input_tokens": 0,
+            "cached_input_tokens": 0,
+            "input_tokens": 39005,
+            "output_tokens": 181,
+            "reasoning_output_tokens": 34
+          }
+        ]
+      },
+      "historical_task_metrics": {
+        "cost": {
+          "amount": null,
+          "basis": "unknown_subscription_cost",
+          "currency": null,
+          "known_subtotal": null,
+          "missing_calls": 9,
+          "note": "Subscription tokens are usage, not a verified monetary charge."
+        },
+        "duration": {
+          "missing_elapsed_attempts": 0,
+          "note": "Router elapsed includes preflight/lock waits; sum is not run wall time. CLI inner reconnects are not observable.",
+          "observed_model_interval_union_seconds": 104.53927254676819,
+          "pure_inference_seconds": null,
+          "router_elapsed_sum_seconds": 134.6959653645754,
+          "subscription_lock_wait_seconds": null
+        },
+        "execution_attempts": 9,
+        "failed_attempts": 0,
+        "incomplete_attempts": 0,
+        "model_calls_completed": 9,
+        "model_calls_failed": 0,
+        "model_calls_start_unknown": 0,
+        "model_calls_started": 9,
+        "note": "State intervals are bounded by committed snapshots; waiting may include tools, code, numeric jobs and scheduling.",
+        "observed_state_seconds": {
+          "pending": 1.70001220703125,
+          "ready": 8.496485233306885,
+          "running": 143.61276578903198,
+          "waiting": 14.398039102554321
+        },
+        "open_state": null,
+        "preflight_only_attempts": 0,
+        "recorded_format_repair_events": 0,
+        "recorded_retry_events": 0,
+        "task_wall_seconds": 168.19207191467285,
+        "tokens": {
+          "cache_write_input_tokens": {
+            "known_calls": 9,
+            "known_sum": 0,
+            "missing_calls": 0
+          },
+          "cached_input_tokens": {
+            "known_calls": 9,
+            "known_sum": 19584,
+            "missing_calls": 0
+          },
+          "input_tokens": {
+            "known_calls": 9,
+            "known_sum": 456467,
+            "missing_calls": 0
+          },
+          "output_tokens": {
+            "known_calls": 9,
+            "known_sum": 2439,
+            "missing_calls": 0
+          },
+          "reasoning_output_tokens": {
+            "known_calls": 9,
+            "known_sum": 604,
+            "missing_calls": 0
+          }
+        },
+        "tools": {
+          "read_asset": {
+            "cache_reused": 0,
+            "observed_model_requests": 16,
+            "requests_without_linked_task": 0,
+            "states": {
+              "completed": 16
+            },
+            "tasks": 16
+          },
+          "read_card": {
+            "cache_reused": 0,
+            "observed_model_requests": 2,
+            "requests_without_linked_task": 0,
+            "states": {
+              "completed": 1,
+              "failed": 1
+            },
+            "tasks": 2
+          }
+        }
+      },
+      "source_versions": {
+        "core_sha256": "95b55dcb0ac6289c9eaceb5d7bd7d3e8a8107c7698d2fae836b31a361758f810",
+        "prompt_source_sha256": "282890edef17c27206c22d7c41093d7f6f9de2e5c3fda8e2300ed86a19e902a6",
+        "rules_fingerprint": "272f75b2717cd1926948e2f8974573f9fe5cae618289ad5f4e5f56036c659982",
+        "rubric_id": "qavit.eval_l0.safeguard.v0_1",
+        "case_sha256": "958fd3880c0f25567eff1e1fe8d948908faa58c97bde708c3439c9ec98f04846",
+        "original_route": {
+          "model": "gpt-6.2-sol",
+          "reasoning_effort": "medium"
+        }
+      },
+      "visible_materials": {
+        "spec": "/spec/context",
+        "prior_messages": "/spec/messages",
+        "tools": "/spec/tools",
+        "permissions": "/read_permissions",
+        "parent_versions": "/input_versions"
+      }
+    },
+    "synthesis": {
+      "partition": "development",
+      "case_id": "case-048352d441575cd339378762",
+      "task_key": "r002/select",
+      "role": "generation",
+      "execution_id": "task-4ff788d001afd07fbd69c8af-a0001",
+      "manifest_sha256": "407a2834fe50375e61e09ee4ba849cc933dd28283893f553bbc8a1e5f75e311f",
+      "request_sha256": "05c804f40accc39f08ddf9615bc7cb0112a60554cc6a131eaa368d2f9b7faf86",
+      "source": "jobs/task-4ff788d001afd07fbd69c8af-a0001/request.json",
+      "read_view": {
+        "memory_version": 85,
+        "sequence": 8373
+      },
+      "input_versions": {
+        "EvidenceCard-5bcd8a80f7ac4dcf9257c2874af42563@1": "b1a23d9550431cd1d618890891a66cf4979fac6ac59821282d66601badc2a075",
+        "EvidenceCard-9e69215250044e8d846c67226b2ee67a@1": "c0a8d3173645963c3ad74a8d10625ec7d0b37b2500ea5d7680aa686d08803fd1",
+        "HypothesisCard-94d498fd914c4d01ac76ddbf94bdb333@1": "9e8d648d0a22920439e0cfae12470f7b4bcc6399fd0631a9212f38c480a789f1",
+        "HypothesisCard-9c647c7ad37b4653b45006c3a23113c9@1": "4b6368c7c9ad58be4df3892a2e6a9dafadbf5a885daf294c265cef04a9e6203e",
+        "HypothesisCard-ca8f2e1ef7a947739a462689fb92668c@1": "8c966e9b4071004d96f5d314a8edab0a46dea2fd2d9428b3121d596bd729ff22",
+        "ResearchBrief-ca92565286d3410da052af068b554f58@1": "09b91e4286c9f7a2d755a5864081e9c0eddd932d32b0c68bc59db1c997c4b8c8",
+        "ReviewDecisionCard-0b94e4d859574c8a9ccfa2f8f320e2e7@1": "e2a2b6c8a1a553361ce53eae4342dc63c710d9518c9b37e9b0ff0f26cbeebeb5",
+        "ReviewDecisionCard-5d0ac36b9f144b64b1b8ade9d7790644@1": "29eedd4612a3a21582399f33fa6f301deaca018cf0b7863dd6ecb3b209b506fe",
+        "ReviewDecisionCard-682fd5b983354c3a880ddd6e29f2175d@1": "551b2e1e7bfe586d75d08f2437ad2e99352052bdd1bdd493ca4304bbedb91d3a",
+        "ReviewDecisionCard-6a511148abc94612bc1481f5e9a5e607@1": "aecb57d309cd11a1e41937ccebf2ece72a8c021284c8179f2b3796a07d423f17",
+        "ReviewDecisionCard-6b5ad6a4f4e7487b9f96844257ac30ce@1": "bc05601b673c16129a77e57612b35f405f0ff32267f21bd4c7bc212dfc289c59",
+        "ReviewDecisionCard-9e459ae0d2cf4ee788a018772d91ad1b@1": "ae427f7e89a738062dd7ba2a2f1e6cbe4e3a4d1fe31ecb5a63bcf9df776d151c",
+        "ReviewDecisionCard-b0bfe95409e342a79fbfc649673b4a9e@1": "b4dcda9374febc63458aaa06a849193f2cbca137a1bcc1e809d190f26c9547aa",
+        "ReviewDecisionCard-b8c3e14000384b01be150f5b19adb2d7@1": "efa774100eea4af222e3f8bd7412413cb3ba02b54a3db47b263530f2880d2bdf",
+        "ReviewDecisionCard-cebae8203deb4f6e8b8d5e0c24585cfd@1": "5f0b40f5217dc66f8042ba7c39b0504fcc0e4680ac71755e3965e441631582a7",
+        "ReviewDecisionCard-f3a0bea8f80647daaf46744fa0d90c29@1": "99426923d4cece81fc00d0fa7a43658e829789dbc27d2ac2301574d4dd8899e8",
+        "ReviewDecisionCard-f92130b1babca1a79fbd8781a78c9e3c@1": "c72059f190faf47a826bd38a7d54903eb45b6841258d6bc2d7cda311570f56f0"
+      },
+      "tool_capabilities": [
+        "revise_topic",
+        "read_topic",
+        "read_method",
+        "update_inspiration",
+        "read_inspiration",
+        "read_card",
+        "read_asset",
+        "literature_search",
+        "literature_fetch",
+        "retrieve_memory",
+        "request_experiment",
+        "revise_candidate"
+      ],
+      "responsibility": "综合三候选实际状态，允许修订与弱保底，维持各自 L3 资格",
+      "acceptance": {
+        "rubric": "qavit.eval_l0.select.gonly_v0_2.r20261117",
+        "version": "272f75b2717cd1926948e2f8974573f9fe5cae618289ad5f4e5f56036c659982",
+        "basis": "实际决定、执行及证据范围，接受有依据的不同路径"
+      },
+      "historical_step_cost": {
+        "elapsed_seconds": 44.88094037771225,
+        "usage": [
+          {
+            "cache_write_input_tokens": 0,
+            "cached_input_tokens": 0,
+            "input_tokens": 214562,
+            "output_tokens": 1663,
+            "reasoning_output_tokens": 169
+          }
+        ]
+      },
+      "historical_task_metrics": {
+        "cost": {
+          "amount": null,
+          "basis": "unknown_subscription_cost",
+          "currency": null,
+          "known_subtotal": null,
+          "missing_calls": 1,
+          "note": "Subscription tokens are usage, not a verified monetary charge."
+        },
+        "duration": {
+          "missing_elapsed_attempts": 0,
+          "note": "Router elapsed includes preflight/lock waits; sum is not run wall time. CLI inner reconnects are not observable.",
+          "observed_model_interval_union_seconds": 42.259021282196045,
+          "pure_inference_seconds": null,
+          "router_elapsed_sum_seconds": 44.88094037771225,
+          "subscription_lock_wait_seconds": null
+        },
+        "execution_attempts": 1,
+        "failed_attempts": 0,
+        "incomplete_attempts": 0,
+        "model_calls_completed": 1,
+        "model_calls_failed": 0,
+        "model_calls_start_unknown": 0,
+        "model_calls_started": 1,
+        "note": "State intervals are bounded by committed snapshots; waiting may include tools, code, numeric jobs and scheduling.",
+        "observed_state_seconds": {
+          "pending": 1.2239937782287598,
+          "ready": 10.576663970947266,
+          "running": 52.10552930831909
+        },
+        "open_state": null,
+        "preflight_only_attempts": 0,
+        "recorded_format_repair_events": 0,
+        "recorded_retry_events": 0,
+        "task_wall_seconds": 63.54893684387207,
+        "tokens": {
+          "cache_write_input_tokens": {
+            "known_calls": 1,
+            "known_sum": 0,
+            "missing_calls": 0
+          },
+          "cached_input_tokens": {
+            "known_calls": 1,
+            "known_sum": 0,
+            "missing_calls": 0
+          },
+          "input_tokens": {
+            "known_calls": 1,
+            "known_sum": 214562,
+            "missing_calls": 0
+          },
+          "output_tokens": {
+            "known_calls": 1,
+            "known_sum": 1663,
+            "missing_calls": 0
+          },
+          "reasoning_output_tokens": {
+            "known_calls": 1,
+            "known_sum": 169,
+            "missing_calls": 0
+          }
+        },
+        "tools": {}
+      },
+      "source_versions": {
+        "core_sha256": "95b55dcb0ac6289c9eaceb5d7bd7d3e8a8107c7698d2fae836b31a361758f810",
+        "prompt_source_sha256": "282890edef17c27206c22d7c41093d7f6f9de2e5c3fda8e2300ed86a19e902a6",
+        "rules_fingerprint": "272f75b2717cd1926948e2f8974573f9fe5cae618289ad5f4e5f56036c659982",
+        "rubric_id": "qavit.eval_l0.select.gonly_v0_2.r20261117",
+        "case_sha256": "587751062e20044c48bac6e9078027df731420599e0757e4105bc270fecd14b6",
+        "original_route": {
+          "model": "gpt-6.2-astra",
+          "reasoning_effort": "high"
+        }
+      },
+      "visible_materials": {
+        "spec": "/spec/context",
+        "prior_messages": "/spec/messages",
+        "tools": "/spec/tools",
+        "permissions": "/read_permissions",
+        "parent_versions": "/input_versions"
+      }
+    },
+    "plan": {
+      "partition": "development",
+      "case_id": "case-a28681194869ab1d70138c8d",
+      "task_key": "r002/plan_l3/H2/67b1b58b1f6fbf48",
+      "role": "generation",
+      "execution_id": "task-28ac644a5552628d17d3f7fc-a0001",
+      "manifest_sha256": "407a2834fe50375e61e09ee4ba849cc933dd28283893f553bbc8a1e5f75e311f",
+      "request_sha256": "b529c314a3ac5733cd3d75f221d27e91ec309363b1196dcdcfd33b8f02e6d130",
+      "source": "jobs/task-28ac644a5552628d17d3f7fc-a0001/request.json",
+      "read_view": {
+        "memory_version": 86,
+        "sequence": 8387
+      },
+      "input_versions": {
+        "HypothesisCard-94d498fd914c4d01ac76ddbf94bdb333@1": "9e8d648d0a22920439e0cfae12470f7b4bcc6399fd0631a9212f38c480a789f1",
+        "ResearchBrief-ca92565286d3410da052af068b554f58@1": "09b91e4286c9f7a2d755a5864081e9c0eddd932d32b0c68bc59db1c997c4b8c8",
+        "ReviewDecisionCard-4780f4f2c8d149f5960075f6a05818bf@1": "11898b1041c26ad12058e3ad4069a095cffa80e0cffa467c697b4d3e8e8c5a6b"
+      },
+      "tool_capabilities": [
+        "revise_topic",
+        "read_topic",
+        "read_method",
+        "update_inspiration",
+        "read_inspiration",
+        "read_card",
+        "read_asset",
+        "literature_search",
+        "literature_fetch",
+        "retrieve_memory",
+        "request_experiment"
+      ],
+      "responsibility": "形成与冻结任务一致的可实施双任务计划",
+      "acceptance": {
+        "rubric": "qavit.eval_l0.plan_l3.gonly_v0_3",
+        "version": "272f75b2717cd1926948e2f8974573f9fe5cae618289ad5f4e5f56036c659982",
+        "basis": "实际决定、执行及证据范围，接受有依据的不同路径"
+      },
+      "historical_step_cost": {
+        "elapsed_seconds": 56.80212969891727,
+        "usage": [
+          {
+            "cache_write_input_tokens": 0,
+            "cached_input_tokens": 0,
+            "input_tokens": 208340,
+            "output_tokens": 2159,
+            "reasoning_output_tokens": 42
+          }
+        ]
+      },
+      "historical_task_metrics": {
+        "cost": {
+          "amount": null,
+          "basis": "unknown_subscription_cost",
+          "currency": null,
+          "known_subtotal": null,
+          "missing_calls": 1,
+          "note": "Subscription tokens are usage, not a verified monetary charge."
+        },
+        "duration": {
+          "missing_elapsed_attempts": 0,
+          "note": "Router elapsed includes preflight/lock waits; sum is not run wall time. CLI inner reconnects are not observable.",
+          "observed_model_interval_union_seconds": 53.804097175598145,
+          "pure_inference_seconds": null,
+          "router_elapsed_sum_seconds": 56.80212969891727,
+          "subscription_lock_wait_seconds": null
+        },
+        "execution_attempts": 1,
+        "failed_attempts": 0,
+        "incomplete_attempts": 0,
+        "model_calls_completed": 1,
+        "model_calls_failed": 0,
+        "model_calls_start_unknown": 0,
+        "model_calls_started": 1,
+        "note": "State intervals are bounded by committed snapshots; waiting may include tools, code, numeric jobs and scheduling.",
+        "observed_state_seconds": {
+          "pending": 7.433586597442627,
+          "ready": 19.9185049533844,
+          "running": 73.37716317176819
+        },
+        "open_state": null,
+        "preflight_only_attempts": 0,
+        "recorded_format_repair_events": 0,
+        "recorded_retry_events": 0,
+        "task_wall_seconds": 100.72607398033142,
+        "tokens": {
+          "cache_write_input_tokens": {
+            "known_calls": 1,
+            "known_sum": 0,
+            "missing_calls": 0
+          },
+          "cached_input_tokens": {
+            "known_calls": 1,
+            "known_sum": 0,
+            "missing_calls": 0
+          },
+          "input_tokens": {
+            "known_calls": 1,
+            "known_sum": 208340,
+            "missing_calls": 0
+          },
+          "output_tokens": {
+            "known_calls": 1,
+            "known_sum": 2159,
+            "missing_calls": 0
+          },
+          "reasoning_output_tokens": {
+            "known_calls": 1,
+            "known_sum": 42,
+            "missing_calls": 0
+          }
+        },
+        "tools": {
+          "request_experiment": {
+            "cache_reused": 0,
+            "observed_model_requests": 0,
+            "requests_without_linked_task": 0,
+            "states": {
+              "completed": 1
+            },
+            "tasks": 1
+          }
+        }
+      },
+      "source_versions": {
+        "core_sha256": "95b55dcb0ac6289c9eaceb5d7bd7d3e8a8107c7698d2fae836b31a361758f810",
+        "prompt_source_sha256": "282890edef17c27206c22d7c41093d7f6f9de2e5c3fda8e2300ed86a19e902a6",
+        "rules_fingerprint": "272f75b2717cd1926948e2f8974573f9fe5cae618289ad5f4e5f56036c659982",
+        "rubric_id": "qavit.eval_l0.plan_l3.gonly_v0_3",
+        "case_sha256": "3e2599f4ce9d97227c8bf029c7163ae43ee22c32401f9e6fd567c38eb68552c2",
+        "original_route": {
+          "model": "gpt-6.2-astra",
+          "reasoning_effort": "high"
+        }
+      },
+      "visible_materials": {
+        "spec": "/spec/context",
+        "prior_messages": "/spec/messages",
+        "tools": "/spec/tools",
+        "permissions": "/read_permissions",
+        "parent_versions": "/input_versions"
+      }
+    },
+    "record": {
+      "partition": "development",
+      "case_id": "case-623e02a8a466d83cbfbbce99",
+      "task_key": "r001/record",
+      "role": "recorder",
+      "execution_id": "task-bf135918da06d1b8f63c014d-a0001",
+      "manifest_sha256": "407a2834fe50375e61e09ee4ba849cc933dd28283893f553bbc8a1e5f75e311f",
+      "request_sha256": "1dfbcbcf5d629b9bc35744b8a4da1269148a5fdffe8e2731db7e5492061a45ae",
+      "source": "jobs/task-bf135918da06d1b8f63c014d-a0001/request.json",
+      "read_view": {
+        "memory_version": 53,
+        "sequence": 5173
+      },
+      "input_versions": {
+        "EvidenceCard-1179e5b857464037a4e74fe40be13f4f@1": "37ca78d2abf377335b73f698d1a5df292acda451aeb9aa2c11a0c37ec3f1ce74",
+        "EvidenceCard-11b3557f5abd476caf6386bae413db8d@1": "159eef5d4cf1ba35a7e2fa6bfe58f58fe0f1cc1051679b872cf4437a1f166fae",
+        "EvidenceCard-49aa8266854a4683a44e2bd852e51813@1": "3cd728c121805776347448c9a3ddd95ad2074441b74bbe95c002ae439af2f315",
+        "EvidenceCard-86876d17517b4dfd9c12674b837d4e49@1": "a0f64fc71bf74eac1b68575947b370ed407f1ce8d651eaaff2d2f7c996cf7f32",
+        "EvidenceCard-9d1a362743a4447fa9bc3be30758b3c0@1": "e1fb93a0dccf4afaae401864d4baddf77954c8b39f0180bbc4a270b7107f36ea",
+        "EvidenceCard-af665dc6ea3645f98ee50f79e74ddbce@1": "47e02d8762239c64d9473d20aa13335589336207e01d304af2e4cb85b50fecc1",
+        "EvidenceCard-c8a84e1c2fb64e40a8b67450f49c2634@1": "981a04c6b5d0c04238f9fa1aea8140edb2178caa28b4fe70873e810180adbf93",
+        "EvidenceCard-cd17a58fb8934ebf913427e8832544e8@1": "171ba0de3de1654da0e7a25cdbc51e03e33d7099147f473aa2fa42b8d002f842",
+        "EvidenceCard-f5ae07b7f4644f34bd62d5e7e3148594@1": "3e894912163b72c40f7c17adf64515e444597e4017e173fe8896043c28b6f674",
+        "ExperimentCard-23ea15b83bd0462aacc05dbfbcf5a18a@1": "c76c20261e4d60907123c4ccf326e9fbabf2fb8a6b54fb85a7845599bb0d0fe3",
+        "ExperimentCard-368f45f219e04058bf3d386f0db44f78@1": "d1a3f1a173a74ba8baca3d2489b573d4bfa21fdcff657a7716245658064840c2",
+        "ExperimentCard-40d37b5474cd4d0c88f6e3a1e4f90490@1": "69eb7ff50807fdcaca126124cf12946cc18ac26f7c63d7c00c5643f33cd9f6a3",
+        "ExperimentCard-4a6e60364ca0473caca6d6ed2027e43f@1": "a87a08528baca21c0c32bb6048f0bc886b1598f2ed548e180fb20f2bfa5c900b",
+        "ExperimentCard-5e93c89dd6c2453ab7a8bf36cb7e77eb@1": "458714ccd83cb02411b44f5a8d39b3367532146447dea6281fb149d50c7e47d2",
+        "ExperimentCard-65e02d990bc44607b7851842b76c27a6@1": "55dd6513db5ccecdde3247ec210500c46d221ff3f0d308832437c5866b43d5e7",
+        "ExperimentCard-6d5e1457a86b4c9c9bd482dea7c62003@1": "666e3f9c82ae80a27ba80320dc22e685fdfe00a944d00cbbca10fe21c40fbd15",
+        "ExperimentCard-6eb1876b720e40eaa5af22381f0fb952@1": "47978a2f61451d68d15726d33e6282e3efac671d266a3e1f59ca0536662ce2a6",
+        "ExperimentCard-73d060744b3643e5bcc15ab26fea84ac@1": "b7eb6d360708ecd2cedcc190002ae9a7c687681ab3df47a2dc03abc36b8758ac",
+        "ExperimentCard-850b3c6593994a93a92e3448635e581d@1": "55a82b1f705523eeaa163eee7bad242887921d748a0623e94dbc2acb64d0c587",
+        "ExperimentCard-87476ebe5ebe4b18a09431c7805b03d0@1": "db9ebe842cec9d15ac8691612c9a14666f5e6d99384a3af3fb15a55fd69a3381",
+        "ExperimentCard-8cf094abd94f498c966018b61a678cc8@1": "f538354ba2bcc76c61084a21a2264501491edfcc494dde5371ae6d295f5341b8",
+        "ExperimentCard-912e41aac29447d98bfe0d5aa89faeab@1": "6b5cd1624d25a368112b8e23159b00622164d11549f43a05c9e0d5994a08b3a6",
+        "ExperimentCard-96a35c723350491192a0d40f9693868a@1": "d248646e2179182a32716a95e0946a68b581b4636d3d98f6149f617caf7a2552",
+        "ExperimentCard-97d71fc7879045ef8fd73aececbab7ae@1": "97ac8afc5a981e32f38c55a6f6a77af32aa51aea4d3cd53f4ad3d73fdde4ef0f",
+        "ExperimentCard-9c59dc1e724447c8b0da5f52acb73a60@1": "b68da0dd86afc862f0b349d757c5f221d71ff2f202e8df5bbdda62654e0ce964",
+        "ExperimentCard-a80e7213cf9b49d1afe5c1c5b1da7f9c@1": "a500096ba019638cba926376344202008bca38f923ca7a0cdf89d416a37182af",
+        "ExperimentCard-bc2d05aa68f94ba9934b2b270ac02bc1@1": "ea019f8f61e7c4b57a28c289567abd1c92180a2693d17b5295f4cfc5fc7b29e7",
+        "ExperimentCard-d34b3319a1674b9abb7f01c07aeccd8b@1": "7ee7ea6b08c50c57642d81d084f8a6602908b45f677ce85c7671cffb72ac94c4",
+        "ExperimentCard-d93859a3aee149c4bb637aa9bdbbe8fd@1": "0e9b4ad6100caab16dcaf53e04297b2fa641e40c4fa8ab897cd8a7532fbe83ae",
+        "ExperimentCard-e02875329e1e41b48a4265fc02e30136@1": "fc25659688e4eaabf13f5eb5f16cf006c6f52cc81cfc51db58443cd0c01b6205",
+        "ExperimentCard-e1f534c973b941618adb4e04b209d3b5@1": "9d69cd2721ff2265e1daab82247781968002945a235c7d69b5fdade57161ffac",
+        "ExperimentCard-f1008717733343dfb3d9b138d27817e2@1": "202bbd0afdfd98f0a334c5846f2a8fe8e8aad144c569356d5ba89779ac09b51e",
+        "ExperimentCard-f21281178ee3440eb80fd22611794b88@1": "457f7cfe35589de9bc955a08ca8f4ea1aba83eace89f6673287aa9445ac46ee3",
+        "HypothesisCard-a95e5c969f5944349d44025a56cebb73@1": "14582de0034c46f521786544dce6da651abfd547d162ebe963b433823dba782f",
+        "HypothesisCard-eec98e1754834668b73b9f096e404813@1": "85f745ca026f70977c9da90e96f06a160c5d5222f9517a5f3f5994f465155555",
+        "HypothesisCard-f53b4fa3249c4ae3bb1db2f4c6d2242b@1": "600f29cc30d72d7600c7764e23baf49c54804b1c54b67f21d245b3a7c6732755",
+        "ReviewDecisionCard-09954d9199cc40838491e74c90108036@1": "6caf4fa36564368b9b847a4672f7cbcaf6dc3ea482dff45c6708830962d0d53a",
+        "ReviewDecisionCard-142ef8c530633d778e906779f916f68a@1": "d58f76455f25280f12cfbe39dbd66789e437941b944af413900980cc2f81424c",
+        "ReviewDecisionCard-1c765f87b025473bb8b4cfda27604f70@1": "12eab86ba74f95134024c47b07dc22d76f14894bdf28c89cd348f1166eaadb80",
+        "ReviewDecisionCard-1fdab930ad524145be43ce4ade5f5e54@1": "258124dbed3909481077d400a8db9c087e584fa9b29f8892157f64be5df47ead",
+        "ReviewDecisionCard-3fc455081bce4a819e861ee5f1bd999c@1": "b3ade2eff193b756415f1122edd72d0641a3a6712b789a1dbf66cd3564dd69dc",
+        "ReviewDecisionCard-4774693137224095ba87fd6c3d1b58b0@1": "607ddcbf3c6823bb59830bab69c14cf89d9351f96e2de153bd973cf9ecd7dd24",
+        "ReviewDecisionCard-4be38173dd7f4ddf84e3881209084e42@1": "a1965c14ba1d430238d9e2d33b4efa9e89643a79df1947aa54e74bac86110c06",
+        "ReviewDecisionCard-4d02fc9a21124e28b390501a1253e017@1": "5c4a6d0b5063a60064bb37a5f485cb7d3d3c190abf7151f0b458414d0dc211e4",
+        "ReviewDecisionCard-5f60bcd8136b4bd3a2ff45e35af00e5e@1": "071b64d78303cadd1121a08769f179d466ad22ec82d9d3ba6413173df5d60fdb",
+        "ReviewDecisionCard-7274ea4e412f44168f6e6dc3f99bc6cc@1": "c40bcdcab865583fe12b7ba817c157fe32e166055e9cc03ff9e178fecb517429",
+        "ReviewDecisionCard-a61b584adfbb4d30957d8e71e9364214@1": "8cd69a150202299f452c221283ec6981ee6466c9e27684aa04e2247e127b1ebb",
+        "ReviewDecisionCard-b4ece780bd2c4392a7e2929aaaa72562@1": "66079b4b758aff5b502fc7474d5fa244b78bff1fef0898e1d571439f594f3446",
+        "ReviewDecisionCard-c81bf126328b4d038b04fa44dff26f5a@1": "b01a661ab30a3824a75f183b1825674f170257f104e511dc41d5817af5029bd8",
+        "ReviewDecisionCard-d2ae2a8ed92b4bea9b724ae0c9878d29@1": "f7a89471b1388cb94578013575f01e5b507cbeaddfe8f2be56309c3978003250",
+        "ReviewDecisionCard-e2aee776f29841189f0f030f9d7bb147@1": "63bd85892231785f2dd174861bfa305ba7b0a5ac297ae13b8b703388bcdb6bfd",
+        "ReviewDecisionCard-eddb6ec9571e458bb1c02bab42f4aa7b@1": "259495034d727c0f634783e08f754d8f022a1dcf553a89300adf06bb80f4ab0b",
+        "TaskCard-0872c0e1117941598c91662d91cd0811@13": "74e92c63376e9c74b2d87969123795cced9bb5bf3d6de6b9050ce9e6a7f828e1",
+        "TaskCard-0a43b0ec117a4e4cbc4dbe761f5a10a7@78": "4b2292a07545ce6a751ed96c266cceca2071bf8c5a9ca6f82309c8491bd8c84c",
+        "TaskCard-156d025fbadb43318beab1509c05fb6c@15": "7dde546a8b1b1bcb981db69f037e9e07b068452439b866c561622fbe560ca8df",
+        "TaskCard-1967c94d85b546ebb9a4459943ee326e@7": "d1ace4660c7a7a58971c0db699b8b4f2617495eb3613bd865fe30cc38f6dabd8",
+        "TaskCard-19f347124d2749a9a154036bdcc54619@22": "a5fba52b13c7407d42db43a555e20afd3f3d6b08b4af212493f81b3884d8ba6b",
+        "TaskCard-1dc96a6990bc489cabccf25484b339ea@21": "51a876cb4cff0503d85b838bb73353708b13768519b7efbf042b9a3801427647",
+        "TaskCard-2e9bb89b320144eeac9a0b1b175c4f15@81": "2f5007f6dc79981c6bbf84aa650b65e6fffdbf72054bf8c0a0a805775f59cba5",
+        "TaskCard-2f5fe2ea37534a07bb717393e494fa15@6": "1ca7e52fe34409d5db7f1b54ddad974d6907e9f0fb5142de8ef493588f057e57",
+        "TaskCard-328b1712d9074e4699811b285bea4e37@15": "f5768999edfd6b77069df08277e42ec4cfda08a3c3f9c88b6115c174deb09c52",
+        "TaskCard-3400282dcd79441989f4a679dc51e47e@7": "cbde1ae830f2a103eb225b37cca5219ff220a0ebf35561e2019866598190abca",
+        "TaskCard-3555675e0bb24557b178076b973dcdbf@17": "b5b25f20da844a274184e6f9a18ee39aa6c1726ec25eb2b3f6552065bcb7bfad",
+        "TaskCard-579bfbf518c548729603f4780087a85e@25": "b5974de96474f6837d17d2e7ee8c305a04f517a2a7ed99166885eef51863d837",
+        "TaskCard-59c66e887d8c43488561b879d5c5c30b@25": "73308a2bd4a686716bbf5a754944926b4d5d309585f41e3ce8fff13bb9f9912d",
+        "TaskCard-5d4a73929cc046ff84212de32280be9f@13": "07440c06456fce418f2387156bd23568c7e293a506b7eaa5bc6bcc3cf0d16260",
+        "TaskCard-5e6d8c0324554fdabb02fa6960941697@73": "bbfc9bf0d789ed36095c885becf0e237077e58ce4d82fee86bfba621babf2c3b",
+        "TaskCard-6504b0d39a7d4476becac2ef218bce34@25": "76e233fe923e5d2fd0c328a2a3d27c1b9d51487b535daa6091764119a1c36156",
+        "TaskCard-6a407fbb58f24fb29cd021d2e1485009@9": "4e3d527609ab19463c4d060b0296701d91d4f813bf70541ae787f87b2f5040fc",
+        "TaskCard-6bff01af1e8f464ba872d1a3115364f5@25": "a34bcbe14c4a8ad544ee0e49edab1caff4672a82ae7ed9ca6743f83d025b9139",
+        "TaskCard-73fd80e7271a4de4b8a1c7353b935bb0@29": "f7d5aba985e73835a6ee412e31409775b5981c5ebf107abd6a18db296255a382",
+        "TaskCard-75abc24afb1a453bb80870f41a6b736f@25": "05af039b647199355812ef9323d583db6dfb63beea77b620b1d2633a5192ed7a",
+        "TaskCard-7ae9a07f741f4291b2e816d6d85c4edf@13": "4cf02f036773f8c6988c8f6908235226bc3f1bdc34a803bc74ae94601cf86686",
+        "TaskCard-7d63119d4f9544c28504e6bf3127976b@7": "3e895fd7035db3a2bb2f8c3956b69b12ebd608e320b22f0919a391a245d10b0f",
+        "TaskCard-7ec8b237339a4ca4809ab986053dfacf@65": "12f2a18ca17e1b08ddba17bf31e3ddde1fe66c3d61d97112db3ec590c8cdef75",
+        "TaskCard-7f0b44cc50bc471cb7469e07889c4255@15": "bc0bf4098c07bdaa5b7cc904ce97f5dbecf126a05dc0b3e43f53b5e695d4162c",
+        "TaskCard-7f45179113c64f5db7ad987fd33070c5@28": "7905b638dbafc197c488167e0f2694ead3dcbb6137087e14d29b9c212d7bc423",
+        "TaskCard-961c51b155bb473fb081dc1da4071f95@6": "4651713565fd75b076d88f7b1af038a159197ef253796d1c33f0b0818595a841",
+        "TaskCard-976ade27dea642a695d2ef90d105b7de@7": "162b524156057be001e441cfd288e2593f4bc2f148f0f96631266ee89e35cd26",
+        "TaskCard-9c81d798abcf43b28990a72348f1ec21@7": "87b997352e9514cb2be80b430b5fb56c16fbc69c3ae269930ef2083ad5f78fb2",
+        "TaskCard-a0e3b8683d19494b9f177663a639dcca@9": "5d9f3504b2f17fb1283727cea528d6a269d44faf6afbb6725a06778c0e1e3346",
+        "TaskCard-a1078104e7964b49b5a5475ca80b4b0c@57": "d45c61e118ea6b56ac99f67183c28b6c030b080a4fa58ad2add342ac4c7d2c54",
+        "TaskCard-b0d52f77a80240e18e791685e6b27989@34": "4374e4b85c364474f3598563e8b5231a26e9d17302828836238c3b52e2e90630",
+        "TaskCard-b30c1f80e46247a99c51c05308ba684c@15": "85189b3c94e615b11edd8faf680ffadc1a00012b76c87fba0ffc082d5160bb64",
+        "TaskCard-b9b252f70d8e453eb2cb6f5a6232073d@29": "5787a9102034bc011ab68a6247f02fc34a85bcef72b94b77e90b022f6f269b0c",
+        "TaskCard-ba434d0546fb46f79fa25d5dfb6375d5@73": "13d22cd0aca15ee1d03f6ed8e8324e3cc930c140dc79c378668e58a82afa7e02",
+        "TaskCard-bc4285d695814aaea903b87a7c7ba941@22": "12846771259e88442704d1b050354b094a26bb0c4dfdc4dad56299ca4c56cb25",
+        "TaskCard-bf9e913ce6dc42da95650da5f3bf4c1c@41": "08634fd98f2165af149300fa96bf24a97f82d488be92ca8947ff720bdabc6708",
+        "TaskCard-c2f73eade5f94fbdaf7932c5a0cdeac1@5": "df7cfa0c761c57a272bb5f702a6520719825896542720e00494bece588015b2f",
+        "TaskCard-c8f5065ec9a44024bd3ca438d9ac53e7@38": "e2a2cbf3e992a2d6ceb4eec4c2e676b8f49717499cc0d1e3d43857f888829079",
+        "TaskCard-cbd4d3932d7442e5ae657f5932641d92@25": "a2eaebbd2ceebe1bd6cad16e7b87a923fb7420ca3e8c65a6640f3d6c956b6a2d",
+        "TaskCard-cfef43f4f5f44cd1a619785183bc3b71@15": "0c3897628af453174397e72028b0beac6fe333e3a4b6832fafa72980d6cea361",
+        "TaskCard-d1be7f8375c1492184bdbac6df30330c@8": "f00aa9cdbd76e98f878dca50eab5e151df5bd506c97b8f8a0bcc7671af7b933f",
+        "TaskCard-d5dd0cdbd07d48169451d0553c4d9cb6@29": "a92d43dec68a7291d7d8f43199f132c12ac4b4c4b501f0571281db28abf2e970",
+        "TaskCard-d97389bac5a04fa1bc6b9d46c455f209@5": "a6f5714c4901b0f89295f702e4e32874c831c2cba6b012fa2091a26ba6678a1b",
+        "TaskCard-e0b11ccffa6b430796a1243702e5b115@9": "00eea4f2c19d5e407a5f01643b2f34eb7c10ad32b8cb437f4b476f4bbe52660c",
+        "TaskCard-e8886e7b7eb247aaa3a3be8c9b98882f@7": "ef15fce4b073172649fc4bc0f92e973e7d5308612f1f3e0542b98ddf7f219870",
+        "TaskCard-e975f72d3fcc4f49afce4fdc6319097e@13": "50d7b6c3b0d7fed1507c9b1ab326e96c050a531c517c08bef4bfabc1d4a9a53f",
+        "TaskCard-eca3a86a904a404fa52b135abc0c67eb@21": "61525810cb77d0a5c55e64942777e8b538d63c726cbdaba6cb5f4b2a173bdffe",
+        "TaskCard-edd788a17e7f4525bb32dc895c844c57@7": "2d722faf44880ce7400b41582844b22bcf8b8dc7909205877cbf2856300eafc1",
+        "TaskCard-ef00e5333bae4e7d802b8834249ce86d@5": "643ea758627cf1843769901d620b7a536b277d5ecb809a933e8a52a581334d1e",
+        "TaskCard-f2c7bab7d5be49bd9d80f7bd60ca9452@29": "cb825277d83bbce849faca09a62e0288370f43438b803e0e7d9799a32d8150c4",
+        "TaskCard-f957a699bf69442f9845e3bfffbb767d@17": "284c207674c68eb7b4038cae578856b07019cd47022b6ff8bb4b0551ddbe4f6b",
+        "TaskCard-f95bbd533b264659a9c3d2c3fb1a8ad3@7": "1b7f25d7a3b13af999d972bbe869fa381c006f28c333e3acffb796559f7438e0",
+        "TaskCard-fa53571a7dfa47789a83327be4c2fcf4@7": "6470f8f7f8a590d6fbb972ca37cace429cba689c264d1d6f9f7add90c70e8709",
+        "TaskCard-fb5f98cce3294765bd5c9f85b7e2ef1b@5": "309d203ffffa19f2c5e2c58ea0daecc587c6eebbd02eec65068c8aaa7fcfb9c6",
+        "TaskCard-fccb1f8cf6294f9487d647582ef90c26@5": "9ba49e4d2b53f409acb84ec779d82df7f86efb3bac7346c4f3f7f8fca9f5a76a"
+      },
+      "tool_capabilities": [
+        "read_topic",
+        "read_method",
+        "update_inspiration",
+        "read_inspiration",
+        "read_card",
+        "read_asset",
+        "literature_search",
+        "literature_fetch",
+        "retrieve_memory"
+      ],
+      "responsibility": "按实际证据更新研究结论与下一轮问题",
+      "acceptance": {
+        "rubric": "qavit.eval_l0.recorder.gonly_v0_2.r20261117",
+        "version": "272f75b2717cd1926948e2f8974573f9fe5cae618289ad5f4e5f56036c659982",
+        "basis": "实际决定、执行及证据范围，接受有依据的不同路径"
+      },
+      "historical_step_cost": {
+        "elapsed_seconds": 16.58708560280502,
+        "usage": [
+          {
+            "cache_write_input_tokens": 0,
+            "cached_input_tokens": 0,
+            "input_tokens": 157221,
+            "output_tokens": 295,
+            "reasoning_output_tokens": 107
+          }
+        ]
+      },
+      "historical_task_metrics": {
+        "cost": {
+          "amount": null,
+          "basis": "unknown_subscription_cost",
+          "currency": null,
+          "known_subtotal": null,
+          "missing_calls": 3,
+          "note": "Subscription tokens are usage, not a verified monetary charge."
+        },
+        "duration": {
+          "missing_elapsed_attempts": 0,
+          "note": "Router elapsed includes preflight/lock waits; sum is not run wall time. CLI inner reconnects are not observable.",
+          "observed_model_interval_union_seconds": 117.02744841575623,
+          "pure_inference_seconds": null,
+          "router_elapsed_sum_seconds": 128.06863589957356,
+          "subscription_lock_wait_seconds": null
+        },
+        "execution_attempts": 3,
+        "failed_attempts": 0,
+        "incomplete_attempts": 0,
+        "model_calls_completed": 3,
+        "model_calls_failed": 0,
+        "model_calls_start_unknown": 0,
+        "model_calls_started": 3,
+        "note": "State intervals are bounded by committed snapshots; waiting may include tools, code, numeric jobs and scheduling.",
+        "observed_state_seconds": {
+          "pending": 1.0347673892974854,
+          "ready": 34.14038920402527,
+          "retry": 14.189429998397827,
+          "running": 169.54295825958252,
+          "waiting": 29.94905424118042
+        },
+        "open_state": null,
+        "preflight_only_attempts": 0,
+        "recorded_format_repair_events": 1,
+        "recorded_retry_events": 0,
+        "task_wall_seconds": 248.30285263061523,
+        "tokens": {
+          "cache_write_input_tokens": {
+            "known_calls": 3,
+            "known_sum": 0,
+            "missing_calls": 0
+          },
+          "cached_input_tokens": {
+            "known_calls": 3,
+            "known_sum": 0,
+            "missing_calls": 0
+          },
+          "input_tokens": {
+            "known_calls": 3,
+            "known_sum": 477065,
+            "missing_calls": 0
+          },
+          "output_tokens": {
+            "known_calls": 3,
+            "known_sum": 4183,
+            "missing_calls": 0
+          },
+          "reasoning_output_tokens": {
+            "known_calls": 3,
+            "known_sum": 342,
+            "missing_calls": 0
+          }
+        },
+        "tools": {
+          "read_asset": {
+            "cache_reused": 0,
+            "observed_model_requests": 1,
+            "requests_without_linked_task": 0,
+            "states": {
+              "failed": 1
+            },
+            "tasks": 1
+          },
+          "read_card": {
+            "cache_reused": 0,
+            "observed_model_requests": 2,
+            "requests_without_linked_task": 0,
+            "states": {
+              "completed": 2
+            },
+            "tasks": 2
+          }
+        }
+      },
+      "source_versions": {
+        "core_sha256": "95b55dcb0ac6289c9eaceb5d7bd7d3e8a8107c7698d2fae836b31a361758f810",
+        "prompt_source_sha256": "282890edef17c27206c22d7c41093d7f6f9de2e5c3fda8e2300ed86a19e902a6",
+        "rules_fingerprint": "272f75b2717cd1926948e2f8974573f9fe5cae618289ad5f4e5f56036c659982",
+        "rubric_id": "qavit.eval_l0.recorder.gonly_v0_2.r20261117",
+        "case_sha256": "d0863e706af5ba701426e338ffb11b8de806dc803082d0b170f085927bdb2b67",
+        "original_route": {
+          "model": "gpt-6.2-sol",
+          "reasoning_effort": "medium"
+        }
+      },
+      "visible_materials": {
+        "spec": "/spec/context",
+        "prior_messages": "/spec/messages",
+        "tools": "/spec/tools",
+        "permissions": "/read_permissions",
+        "parent_versions": "/input_versions"
+      }
+    },
+    "restore": {
+      "partition": "development",
+      "case_id": "case-e088d6337078f6b2ceb5e290",
+      "task_key": "r002/focus",
+      "role": "generation",
+      "execution_id": "task-a955ccca4ca28b6df66f33cb-a0001",
+      "manifest_sha256": "407a2834fe50375e61e09ee4ba849cc933dd28283893f553bbc8a1e5f75e311f",
+      "request_sha256": "dcbe2ced539427212ac3f750b9198ea7f661745d6dc18447061760016e514197",
+      "source": "jobs/task-a955ccca4ca28b6df66f33cb-a0001/request.json",
+      "read_view": {
+        "memory_version": 54,
+        "sequence": 5207
+      },
+      "input_versions": {
+        "MetareviewCard-6abf50836bc04799aa49b7c21bc62ddb@1": "b2a9e9ab277179f4ac2a6edd867afeae03499da6e2b12ce3d3c683ccd27434de",
+        "ResearchBrief-ca92565286d3410da052af068b554f58@1": "09b91e4286c9f7a2d755a5864081e9c0eddd932d32b0c68bc59db1c997c4b8c8"
+      },
+      "tool_capabilities": [
+        "read_topic",
+        "read_method",
+        "read_inspiration",
+        "update_inspiration",
+        "read_card",
+        "read_asset",
+        "retrieve_memory"
+      ],
+      "responsibility": "使用上一轮 Recorder 及可见来源，形成下一轮方向",
+      "acceptance": {
+        "rubric": "qavit.eval_l0.focus.gonly_v0_3",
+        "version": "272f75b2717cd1926948e2f8974573f9fe5cae618289ad5f4e5f56036c659982",
+        "basis": "实际决定、执行及证据范围，接受有依据的不同路径"
+      },
+      "historical_step_cost": {
+        "elapsed_seconds": 50.49648033641279,
+        "usage": [
+          {
+            "cache_write_input_tokens": 0,
+            "cached_input_tokens": 0,
+            "input_tokens": 105840,
+            "output_tokens": 1445,
+            "reasoning_output_tokens": 60
+          }
+        ]
+      },
+      "historical_task_metrics": {
+        "cost": {
+          "amount": null,
+          "basis": "unknown_subscription_cost",
+          "currency": null,
+          "known_subtotal": null,
+          "missing_calls": 1,
+          "note": "Subscription tokens are usage, not a verified monetary charge."
+        },
+        "duration": {
+          "missing_elapsed_attempts": 0,
+          "note": "Router elapsed includes preflight/lock waits; sum is not run wall time. CLI inner reconnects are not observable.",
+          "observed_model_interval_union_seconds": 48.32663345336914,
+          "pure_inference_seconds": null,
+          "router_elapsed_sum_seconds": 50.49648033641279,
+          "subscription_lock_wait_seconds": null
+        },
+        "execution_attempts": 1,
+        "failed_attempts": 0,
+        "incomplete_attempts": 0,
+        "model_calls_completed": 1,
+        "model_calls_failed": 0,
+        "model_calls_start_unknown": 0,
+        "model_calls_started": 1,
+        "note": "State intervals are bounded by committed snapshots; waiting may include tools, code, numeric jobs and scheduling.",
+        "observed_state_seconds": {
+          "pending": 0.6481010913848877,
+          "ready": 5.489699125289917,
+          "running": 53.75582695007324
+        },
+        "open_state": null,
+        "preflight_only_attempts": 0,
+        "recorded_format_repair_events": 0,
+        "recorded_retry_events": 0,
+        "task_wall_seconds": 59.890013694763184,
+        "tokens": {
+          "cache_write_input_tokens": {
+            "known_calls": 1,
+            "known_sum": 0,
+            "missing_calls": 0
+          },
+          "cached_input_tokens": {
+            "known_calls": 1,
+            "known_sum": 0,
+            "missing_calls": 0
+          },
+          "input_tokens": {
+            "known_calls": 1,
+            "known_sum": 105840,
+            "missing_calls": 0
+          },
+          "output_tokens": {
+            "known_calls": 1,
+            "known_sum": 1445,
+            "missing_calls": 0
+          },
+          "reasoning_output_tokens": {
+            "known_calls": 1,
+            "known_sum": 60,
+            "missing_calls": 0
+          }
+        },
+        "tools": {}
+      },
+      "source_versions": {
+        "core_sha256": "95b55dcb0ac6289c9eaceb5d7bd7d3e8a8107c7698d2fae836b31a361758f810",
+        "prompt_source_sha256": "282890edef17c27206c22d7c41093d7f6f9de2e5c3fda8e2300ed86a19e902a6",
+        "rules_fingerprint": "272f75b2717cd1926948e2f8974573f9fe5cae618289ad5f4e5f56036c659982",
+        "rubric_id": "qavit.eval_l0.focus.gonly_v0_3",
+        "case_sha256": "a3842aa79cc2f53297698f196f386a70870f34715724842e05169be131036a2d",
+        "original_route": {
+          "model": "gpt-6.2-astra",
+          "reasoning_effort": "high"
+        }
+      },
+      "visible_materials": {
+        "spec": "/spec/context",
+        "prior_messages": "/spec/messages",
+        "tools": "/spec/tools",
+        "permissions": "/read_permissions",
+        "parent_versions": "/input_versions"
+      }
+    },
+    "reserved_h3": {
+      "partition": "reserved",
+      "case_id": "case-180dfe0709ca14061ec19105",
+      "task_key": "r004/generate/H3",
+      "role": "generation",
+      "execution_id": "task-fbfdb0941266679c79ee649e-a0001",
+      "manifest_sha256": "407a2834fe50375e61e09ee4ba849cc933dd28283893f553bbc8a1e5f75e311f",
+      "request_sha256": "a37051725ce7f5aff2834834426f5daaefc3c7ab1fabff2bcd417984446c6c99",
+      "source": "jobs/task-fbfdb0941266679c79ee649e-a0001/request.json",
+      "read_view": {
+        "memory_version": 138,
+        "sequence": 12596
+      },
+      "input_versions": {
+        "MetareviewCard-512ca186b5524d78b27d2a30905ab173@1": "b96ff07de8ab80898aae39453b315ba44a53ead2e6c4c08c88ec7da6bdb689de",
+        "ResearchBrief-ca92565286d3410da052af068b554f58@1": "09b91e4286c9f7a2d755a5864081e9c0eddd932d32b0c68bc59db1c997c4b8c8"
+      },
+      "tool_capabilities": [
+        "revise_topic",
+        "read_topic",
+        "read_method",
+        "update_inspiration",
+        "read_inspiration",
+        "read_card",
+        "read_asset",
+        "literature_search",
+        "literature_fetch",
+        "retrieve_memory",
+        "request_experiment"
+      ],
+      "responsibility": "评估跨轮灵感与父状态的科学连续性",
+      "acceptance": {
+        "rubric": "qavit.eval_l0.generation.gonly_v0_3",
+        "version": "272f75b2717cd1926948e2f8974573f9fe5cae618289ad5f4e5f56036c659982",
+        "basis": "实际决定、执行及证据范围，接受有依据的不同路径"
+      },
+      "historical_step_cost": {
+        "elapsed_seconds": 15.274421453475952,
+        "usage": [
+          {
+            "cache_write_input_tokens": 0,
+            "cached_input_tokens": 0,
+            "input_tokens": 77884,
+            "output_tokens": 359,
+            "reasoning_output_tokens": 40
+          }
+        ]
+      },
+      "historical_task_metrics": {
+        "cost": {
+          "amount": null,
+          "basis": "unknown_subscription_cost",
+          "currency": null,
+          "known_subtotal": null,
+          "missing_calls": 3,
+          "note": "Subscription tokens are usage, not a verified monetary charge."
+        },
+        "duration": {
+          "missing_elapsed_attempts": 0,
+          "note": "Router elapsed includes preflight/lock waits; sum is not run wall time. CLI inner reconnects are not observable.",
+          "observed_model_interval_union_seconds": 91.78886342048645,
+          "pure_inference_seconds": null,
+          "router_elapsed_sum_seconds": 98.46042443811893,
+          "subscription_lock_wait_seconds": null
+        },
+        "execution_attempts": 3,
+        "failed_attempts": 0,
+        "incomplete_attempts": 0,
+        "model_calls_completed": 3,
+        "model_calls_failed": 0,
+        "model_calls_start_unknown": 0,
+        "model_calls_started": 3,
+        "note": "State intervals are bounded by committed snapshots; waiting may include tools, code, numeric jobs and scheduling.",
+        "observed_state_seconds": {
+          "pending": 2.9353342056274414,
+          "ready": 85.13416266441345,
+          "running": 123.1961441040039,
+          "waiting": 88.00370049476624
+        },
+        "open_state": null,
+        "preflight_only_attempts": 0,
+        "recorded_format_repair_events": 0,
+        "recorded_retry_events": 0,
+        "task_wall_seconds": 299.0192196369171,
+        "tokens": {
+          "cache_write_input_tokens": {
+            "known_calls": 3,
+            "known_sum": 0,
+            "missing_calls": 0
+          },
+          "cached_input_tokens": {
+            "known_calls": 3,
+            "known_sum": 0,
+            "missing_calls": 0
+          },
+          "input_tokens": {
+            "known_calls": 3,
+            "known_sum": 247900,
+            "missing_calls": 0
+          },
+          "output_tokens": {
+            "known_calls": 3,
+            "known_sum": 3018,
+            "missing_calls": 0
+          },
+          "reasoning_output_tokens": {
+            "known_calls": 3,
+            "known_sum": 524,
+            "missing_calls": 0
+          }
+        },
+        "tools": {
+          "read_asset": {
+            "cache_reused": 0,
+            "observed_model_requests": 5,
+            "requests_without_linked_task": 0,
+            "states": {
+              "completed": 5
+            },
+            "tasks": 5
+          },
+          "read_card": {
+            "cache_reused": 0,
+            "observed_model_requests": 2,
+            "requests_without_linked_task": 0,
+            "states": {
+              "completed": 2
+            },
+            "tasks": 2
+          }
+        }
+      },
+      "source_versions": {
+        "core_sha256": "95b55dcb0ac6289c9eaceb5d7bd7d3e8a8107c7698d2fae836b31a361758f810",
+        "prompt_source_sha256": "282890edef17c27206c22d7c41093d7f6f9de2e5c3fda8e2300ed86a19e902a6",
+        "rules_fingerprint": "272f75b2717cd1926948e2f8974573f9fe5cae618289ad5f4e5f56036c659982",
+        "rubric_id": "qavit.eval_l0.generation.gonly_v0_3",
+        "case_sha256": "8540f30ad37ea56988fdf741770d75918169c1c8e0e4ed19ed5ed1373ef4a765",
+        "original_route": {
+          "model": "gpt-6.2-astra",
+          "reasoning_effort": "high"
+        }
+      },
+      "visible_materials": {
+        "spec": "/spec/context",
+        "prior_messages": "/spec/messages",
+        "tools": "/spec/tools",
+        "permissions": "/read_permissions",
+        "parent_versions": "/input_versions"
+      }
+    },
+    "reserved_select": {
+      "partition": "reserved",
+      "case_id": "case-daad3f8a48a097395ece0876",
+      "task_key": "r004/select",
+      "role": "generation",
+      "execution_id": "task-b35e03ac333fe461d68feae1-a0001",
+      "manifest_sha256": "407a2834fe50375e61e09ee4ba849cc933dd28283893f553bbc8a1e5f75e311f",
+      "request_sha256": "6efb8991fb14ade604c34d51759b1e135d567352c6427104ef29d066ab77d221",
+      "source": "jobs/task-b35e03ac333fe461d68feae1-a0001/request.json",
+      "read_view": {
+        "memory_version": 141,
+        "sequence": 12709
+      },
+      "input_versions": {
+        "HypothesisCard-1a285b060d154c17b13684bf7d72013c@1": "cc651fe33e389a69fe5eb4c96a5baf00b1f53e8d25889a45f7bba6abbabf9751",
+        "HypothesisCard-7f506f5adec34ea2b4c937ca0b37955a@1": "5967a0f80cdc172862346f597b7fb212a3ad9373345acb08d8b54319d921e849",
+        "HypothesisCard-ff0a611eed9149a38707d7547a5a52f0@1": "2f4a7e0680adce0b7207ad60871b09432ca9bac51fc7d33e3d3af53eda8d2d24",
+        "ResearchBrief-ca92565286d3410da052af068b554f58@1": "09b91e4286c9f7a2d755a5864081e9c0eddd932d32b0c68bc59db1c997c4b8c8",
+        "ReviewDecisionCard-813e9ac2b157bbe5b0317ee950212c7a@1": "760768cd05a6d4538dbe11a48f1462e40e222c64a7d415adb28d8b54d4fbc101"
+      },
+      "tool_capabilities": [
+        "revise_topic",
+        "read_topic",
+        "read_method",
+        "update_inspiration",
+        "read_inspiration",
+        "read_card",
+        "read_asset",
+        "literature_search",
+        "literature_fetch",
+        "retrieve_memory",
+        "request_experiment",
+        "revise_candidate"
+      ],
+      "responsibility": "核对最新证据与三个候选的综合决策",
+      "acceptance": {
+        "rubric": "qavit.eval_l0.select.gonly_v0_2.r20261117",
+        "version": "272f75b2717cd1926948e2f8974573f9fe5cae618289ad5f4e5f56036c659982",
+        "basis": "实际决定、执行及证据范围，接受有依据的不同路径"
+      },
+      "historical_step_cost": {
+        "elapsed_seconds": 46.42200343683362,
+        "usage": [
+          {
+            "cache_write_input_tokens": 0,
+            "cached_input_tokens": 0,
+            "input_tokens": 220004,
+            "output_tokens": 1618,
+            "reasoning_output_tokens": 38
+          }
+        ]
+      },
+      "historical_task_metrics": {
+        "cost": {
+          "amount": null,
+          "basis": "unknown_subscription_cost",
+          "currency": null,
+          "known_subtotal": null,
+          "missing_calls": 1,
+          "note": "Subscription tokens are usage, not a verified monetary charge."
+        },
+        "duration": {
+          "missing_elapsed_attempts": 0,
+          "note": "Router elapsed includes preflight/lock waits; sum is not run wall time. CLI inner reconnects are not observable.",
+          "observed_model_interval_union_seconds": 43.604833126068115,
+          "pure_inference_seconds": null,
+          "router_elapsed_sum_seconds": 46.42200343683362,
+          "subscription_lock_wait_seconds": null
+        },
+        "execution_attempts": 1,
+        "failed_attempts": 0,
+        "incomplete_attempts": 0,
+        "model_calls_completed": 1,
+        "model_calls_failed": 0,
+        "model_calls_start_unknown": 0,
+        "model_calls_started": 1,
+        "note": "State intervals are bounded by committed snapshots; waiting may include tools, code, numeric jobs and scheduling.",
+        "observed_state_seconds": {
+          "pending": 2.3872344493865967,
+          "ready": 17.61926770210266,
+          "running": 53.50601363182068
+        },
+        "open_state": null,
+        "preflight_only_attempts": 0,
+        "recorded_format_repair_events": 0,
+        "recorded_retry_events": 0,
+        "task_wall_seconds": 73.05393099784851,
+        "tokens": {
+          "cache_write_input_tokens": {
+            "known_calls": 1,
+            "known_sum": 0,
+            "missing_calls": 0
+          },
+          "cached_input_tokens": {
+            "known_calls": 1,
+            "known_sum": 0,
+            "missing_calls": 0
+          },
+          "input_tokens": {
+            "known_calls": 1,
+            "known_sum": 220004,
+            "missing_calls": 0
+          },
+          "output_tokens": {
+            "known_calls": 1,
+            "known_sum": 1618,
+            "missing_calls": 0
+          },
+          "reasoning_output_tokens": {
+            "known_calls": 1,
+            "known_sum": 38,
+            "missing_calls": 0
+          }
+        },
+        "tools": {}
+      },
+      "source_versions": {
+        "core_sha256": "95b55dcb0ac6289c9eaceb5d7bd7d3e8a8107c7698d2fae836b31a361758f810",
+        "prompt_source_sha256": "282890edef17c27206c22d7c41093d7f6f9de2e5c3fda8e2300ed86a19e902a6",
+        "rules_fingerprint": "272f75b2717cd1926948e2f8974573f9fe5cae618289ad5f4e5f56036c659982",
+        "rubric_id": "qavit.eval_l0.select.gonly_v0_2.r20261117",
+        "case_sha256": "0c44ea6fae89e5b337a333966844ef704ac1f894badb41e09d26d5e991f5543e",
+        "original_route": {
+          "model": "gpt-6.2-astra",
+          "reasoning_effort": "high"
+        }
+      },
+      "visible_materials": {
+        "spec": "/spec/context",
+        "prior_messages": "/spec/messages",
+        "tools": "/spec/tools",
+        "permissions": "/read_permissions",
+        "parent_versions": "/input_versions"
+      }
+    }
+  }
+}

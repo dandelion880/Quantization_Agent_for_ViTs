@@ -1,0 +1,1036 @@
+{
+  "scope": "真实 FP32 参考 QDQ。小样本模型与任务接入，无完整 L3。百分数为各自配对样本。",
+  "source": {
+    "base_revision": "10b12fb",
+    "role_runtime_sha256": "d75c6f23e91a2cb6ceb74cb3ef523a6ab2a0c89af673f8b10d5c7549af7f32fd",
+    "delivery_runtime_sha256": "8c37394537ccff2226a42e657ace7f8fe17410ef782d0129d1f06c14b133f81d",
+    "numerical_library_sha256": "ed08198c2e7e152abde84fa1be52d8e9bdaaa4d9fef38365216c716019fb0bc7"
+  },
+  "instances": {
+    "deit": {
+      "directory": "EXP/validation/multi_vit_20261118_r1/deit_verified",
+      "raw_summary_sha256": "38c2d88f507f5a19a31a5c4c4673c6eb74e59857dd9334835e8756227fa065e5",
+      "model_id": "deit_base_patch16_224",
+      "checkpoint_sha256": "b5f2ef4d686982dcdab24fe285fd08fff40db01550d8d4833167a73dd85ca7a8",
+      "strict_load": {
+        "excluded_checkpoint_keys": [],
+        "loaded_tensor_count": 152,
+        "loaded_tensors_bitwise_equal": true,
+        "missing_keys": [],
+        "strict": true,
+        "unexpected_keys": []
+      },
+      "model_source": {
+        "repo_url": "https://github.com/facebookresearch/deit.git",
+        "commit": "7e160fe43f0252d17191b71cbb5826254114ea5b"
+      },
+      "manifest_sha256": "7e4819921623a644cab3d67214cdfe8b999195b19457a7283c8b7eab358acfb4",
+      "image_manifest_sha256": "7e560abfe98169fd72597ec87defd8bf12faadebdb3fb278bdbe9865ce400f4c",
+      "data_ordering_seeds": {
+        "calibration": 0,
+        "final": 20261009,
+        "search": 20261008
+      },
+      "device": "Tesla V100-SXM2-16GB",
+      "seed": 42,
+      "metadata": {
+        "architecture": "DeiT-B/16 non-distilled",
+        "block_forward": "(x)",
+        "block_type": "Block",
+        "checkpoint_sha256": "b5f2ef4d686982dcdab24fe285fd08fff40db01550d8d4833167a73dd85ca7a8",
+        "classification_head": "official pretrained ImageNet-1k head retained",
+        "cls_token_count": 1,
+        "depth": 12,
+        "example_block_call": {
+          "input": [
+            {
+              "device": "cpu",
+              "dtype": "torch.float32",
+              "shape": [
+                1,
+                197,
+                768
+              ]
+            }
+          ],
+          "kwargs": {},
+          "macs": null,
+          "output": {
+            "device": "cpu",
+            "dtype": "torch.float32",
+            "shape": [
+              1,
+              197,
+              768
+            ]
+          }
+        },
+        "example_sample_ids": [
+          "train/n15075141/n15075141_8773.JPEG"
+        ],
+        "family": "DeiT",
+        "first_block": "blocks.0",
+        "hidden_dim": 768,
+        "input": {
+          "device": "cpu",
+          "dtype": "torch.float32",
+          "shape": [
+            1,
+            3,
+            224,
+            224
+          ]
+        },
+        "last_block": "blocks.11",
+        "model_id": "deit_base_patch16_224",
+        "num_heads": 12,
+        "patch_size": 16,
+        "pool_counts": {
+          "calibration": 32,
+          "final": 50000,
+          "search": 1000
+        },
+        "prefix_token_count": 1,
+        "preprocessing": {
+          "antialias": true,
+          "crop_size": 224,
+          "interpolation": "bicubic",
+          "mean": [
+            0.485,
+            0.456,
+            0.406
+          ],
+          "resize_shorter": 256,
+          "std": [
+            0.229,
+            0.224,
+            0.225
+          ]
+        },
+        "profile_tools": [
+          "query_ptq_sites",
+          "profile_structure",
+          "profile_distribution",
+          "read_profile_evidence"
+        ],
+        "read_asset": {
+          "asset": "/root/data-fs/projects/Quantization_Agent_for_ViTs_gonly/EXP/validation/multi_vit_20261118_r1/deit_context_delivery/model_metadata.json"
+        },
+        "segmentation": {
+          "feature_interface": "DeiTDualTaskBackbone",
+          "head_sha256": "408c1c49568dfa0b6e500e23d0a9185501642fccb85e934830ffa90e697730b5",
+          "out_indices": [
+            2,
+            5,
+            8,
+            11
+          ],
+          "preprocessing": [
+            {
+              "type": "LoadImageFromFile"
+            },
+            {
+              "keep_ratio": true,
+              "scale": [
+                2048,
+                512
+              ],
+              "type": "Resize"
+            },
+            {
+              "reduce_zero_label": true,
+              "type": "LoadAnnotations"
+            },
+            {
+              "type": "PackSegInputs"
+            }
+          ],
+          "test_cfg": {
+            "crop_size": [
+              512,
+              512
+            ],
+            "mode": "slide",
+            "stride": [
+              341,
+              341
+            ]
+          }
+        },
+        "sequence": {
+          "cls": [
+            0,
+            1
+          ],
+          "intervals": "half-open, image sequence",
+          "patch_start": 1,
+          "special": [
+            1,
+            1
+          ]
+        },
+        "site_counts": {
+          "attention_key": 12,
+          "attention_logits": 12,
+          "attention_query": 12,
+          "attention_residual": 12,
+          "attention_value": 12,
+          "block_output": 12,
+          "conv2d": 1,
+          "embedding_sum": 1,
+          "embedding_tokens": 1,
+          "linear": 49,
+          "module_output": 50,
+          "position_embedding": 1,
+          "post_gelu": 12,
+          "post_layernorm": 25,
+          "post_softmax": 12,
+          "pre_layernorm": 25
+        },
+        "site_examples": {
+          "attention_key": "blocks.0.attn::attention_key",
+          "attention_logits": "blocks.0.attn::attention_logits",
+          "attention_query": "blocks.0.attn::attention_query",
+          "attention_residual": "blocks.0::attention_residual",
+          "attention_value": "blocks.0.attn::attention_value",
+          "block_output": "blocks.0::block_output",
+          "conv2d": "patch_embed.proj",
+          "embedding_sum": "pos_drop::embedding_sum",
+          "embedding_tokens": "pos_drop::embedding_tokens",
+          "linear": "blocks.0.attn.qkv",
+          "module_output": "patch_embed.proj::module_output",
+          "position_embedding": "pos_drop::position_embedding",
+          "post_gelu": "blocks.0.mlp.act::post_gelu",
+          "post_layernorm": "blocks.0.norm1::post_layernorm",
+          "post_softmax": "blocks.0.attn::post_softmax",
+          "pre_layernorm": "blocks.0.norm1::pre_layernorm"
+        },
+        "special_token_count": 0,
+        "special_token_type": "none",
+        "split_sources": {
+          "calibration": "train",
+          "final": "val",
+          "search": "train"
+        },
+        "task_forward": "forward",
+        "task_output": {
+          "device": "cpu",
+          "dtype": "torch.float32",
+          "shape": [
+            1,
+            1000
+          ]
+        }
+      },
+      "focus_prompt_sha256": "df0294cf0ab502c16c7a47d189b44dbe357d26008ebba3a702e5c50b18347700",
+      "protocol_hash": "72400ea8252160d5841c3f4a248b4f241546174e8c973d080e3cc5e5c086d39e",
+      "dry_l3_plan_checked": true,
+      "initial_B_status": "pending_no_verified_result",
+      "fp_and_native_features": {
+        "block_replay": "bitwise equal",
+        "logits": [
+          1,
+          1000
+        ],
+        "sample_id": "train/n01751748/n01751748_5926.JPEG"
+      },
+      "raw_block_profile": {
+        "captured": [
+          1,
+          197,
+          768
+        ],
+        "first_block": "blocks.0",
+        "input_shape": [
+          1,
+          3,
+          224,
+          224
+        ],
+        "same_tensor_both_tools": true,
+        "sample_ids": [
+          "train/n15075141/n15075141_8773.JPEG"
+        ]
+      },
+      "required_boundaries": 146,
+      "audited_frozen_boundaries": 146,
+      "model_ref": "3ef193ad8b45a0521b15e53279d857db129ae34dcd9ceda11beb9b71ac28af7e",
+      "tensor_state_sha256": "f588eb09ebab2991d46fb15e0563875ce3ec9c5a6319319a216c19a5f7d66fed",
+      "weights_file_sha256": "8cf99dc23b7a348ccec2c6b1fc065f369ce0d3172ee135bc0e3aa1012eb71317",
+      "calibration_ids": [
+        "train/n01751748/n01751748_5926.JPEG",
+        "train/n02442845/n02442845_19600.JPEG"
+      ],
+      "tasks": {
+        "classification": {
+          "full_dataset": false,
+          "metrics": {
+            "aggregate_relative_mse": 1.9798635664526005,
+            "baseline_latency_ms": 7.546094059944153,
+            "baseline_top1": 100.0,
+            "baseline_top5": 100.0,
+            "cosine_error": 0.9465294487451845,
+            "cuda_increment_mib": 13.8583984375,
+            "cuda_peak_memory_mib": 1669.716796875,
+            "delta_top1_pp": -100.0,
+            "delta_top5_pp": -100.0,
+            "deployment_peak_memory_mib": null,
+            "latency_ms": 37.142785266041756,
+            "measured_speedup": 0.20316446399735297,
+            "mse": 1.473485841213371,
+            "native_latency_ms": null,
+            "relative_mse": 1.9798635664526005,
+            "top1": 0.0,
+            "top1_drop_pp": 100.0,
+            "top5": 0.0
+          },
+          "sample_count": 2,
+          "sample_ids": [
+            "train/n04522168/n04522168_9121.JPEG",
+            "train/n02493793/n02493793_8263.JPEG"
+          ]
+        },
+        "segmentation": {
+          "full_dataset": false,
+          "metrics": {
+            "aAcc": 1.1309425773586104,
+            "baseline_aAcc": 81.12735962182482,
+            "baseline_mAcc": 73.08840823027536,
+            "baseline_mIoU": 52.28292074125188,
+            "delta_aAcc_pp": -79.99641704446621,
+            "delta_mAcc_pp": -72.58072147124192,
+            "delta_mIoU_pp": -52.13333236490588,
+            "mAcc": 0.5076867590334543,
+            "mIoU": 0.1495883763459944
+          },
+          "sample_count": 1,
+          "sample_ids": [
+            "/root/data-fs/projects/ptq_training_free/data/ade20k/images/validation/ADE_val_00000001.jpg"
+          ]
+        }
+      },
+      "reload": {
+        "comparison": "torch.equal for all floating outputs",
+        "evaluated_instance": "reloaded",
+        "host_verified": true,
+        "passed": true,
+        "sample_ids": [
+          "train/n04522168/n04522168_9121.JPEG"
+        ],
+        "samples": 1,
+        "split": "search"
+      },
+      "segmentation_fp_feature_parity": [
+        {
+          "max_abs": 2.1696090698242188e-05,
+          "relative_mse": 9.727607532915918e-13
+        },
+        {
+          "max_abs": 9.822845458984375e-05,
+          "relative_mse": 4.1344827547797985e-12
+        },
+        {
+          "max_abs": 0.00017452239990234375,
+          "relative_mse": 6.716236490942269e-12
+        },
+        {
+          "max_abs": 0.00021123886108398438,
+          "relative_mse": 8.87730259793857e-12
+        }
+      ],
+      "propagation_group_element_counts": {
+        "all": 151296,
+        "cls": 768,
+        "patch": 150528
+      },
+      "tensor_probes": {
+        "blocks.0.attn.qkv": {
+          "calibration_ids": [
+            "train/n01751748/n01751748_5926.JPEG"
+          ],
+          "elements": 151296,
+          "local_output": {
+            "aggregate_relative_mse": 0.06155236987142522,
+            "cosine_error": 0.030471498983007383,
+            "mse": 0.04488256275726394,
+            "outputs": {
+              "output": {
+                "cosine": 0.9695285010169926,
+                "elements": 453888,
+                "max_abs_error": 2.8003525733947754,
+                "mse": 0.04488256275726394,
+                "relative_mse": 0.06155236987142522
+              }
+            },
+            "relative_mse": 0.06155236987142522,
+            "relative_mse_reduction": "max_per_output_relative_mse_v1",
+            "undefined_relative_mse_outputs": [],
+            "worst_output": "output"
+          }
+        },
+        "blocks.0.attn::attention_key": {
+          "calibration_ids": [
+            "train/n01751748/n01751748_5926.JPEG"
+          ],
+          "elements": 151296,
+          "local_output": {
+            "aggregate_relative_mse": 0.005133753225501423,
+            "cosine_error": 0.0025218535223185956,
+            "mse": 4.481723809345402,
+            "outputs": {
+              "output": {
+                "cosine": 0.9974781464776814,
+                "elements": 465708,
+                "max_abs_error": 12.222668170928955,
+                "mse": 4.481723809345402,
+                "relative_mse": 0.005133753225501423
+              }
+            },
+            "relative_mse": 0.005133753225501423,
+            "relative_mse_reduction": "max_per_output_relative_mse_v1",
+            "undefined_relative_mse_outputs": [],
+            "worst_output": "output"
+          }
+        }
+      },
+      "final_evaluate_artifact_recheck": {
+        "full_dataset": false,
+        "identical_task_metrics_and_samples": true,
+        "source": "/root/data-fs/projects/Quantization_Agent_for_ViTs_gonly/EXP/validation/multi_vit_20261118_r1/deit_verified"
+      }
+    },
+    "dino": {
+      "directory": "EXP/validation/multi_vit_20261118_r1/dino_verified",
+      "raw_summary_sha256": "03ee9e9b0ca1fdd4b89a020c4075d5f75a0e1e8830ab8455ad94ee2c7ec87442",
+      "model_id": "dinov3_vitb16",
+      "checkpoint_sha256": "73cec8be7427c8655ceced13ce62f6e20a1fa90d1b4d4a550df17a1144081a7c",
+      "strict_load": {
+        "excluded_checkpoint_keys": [],
+        "loaded_tensor_count": 188,
+        "loaded_tensors_bitwise_equal": true,
+        "missing_keys": [],
+        "strict": true,
+        "unexpected_keys": []
+      },
+      "model_source": {
+        "repo_url": "https://github.com/facebookresearch/dinov3",
+        "commit": "6876159a11b4df116f30f667f8c9888617df0751"
+      },
+      "manifest_sha256": "4374426e0a4a344823a25d0a1fff97eb50e25bda8574ec3b51cfdab7ed8f3174",
+      "image_manifest_sha256": "7e560abfe98169fd72597ec87defd8bf12faadebdb3fb278bdbe9865ce400f4c",
+      "data_ordering_seeds": {
+        "calibration": 0,
+        "final": 20261009,
+        "search": 20261008
+      },
+      "device": "Tesla V100-SXM2-16GB",
+      "seed": 42,
+      "metadata": {
+        "architecture": "ViT-B/16",
+        "block_forward": "(x_or_x_list, rope_or_rope_list=None) -> List[torch.Tensor]",
+        "block_type": "SelfAttentionBlock",
+        "checkpoint_sha256": "73cec8be7427c8655ceced13ce62f6e20a1fa90d1b4d4a550df17a1144081a7c",
+        "classification_head": {
+          "feature": "x_norm_clstoken",
+          "kind": "verified frozen normalized-CLS linear head",
+          "protected_module": "head",
+          "sha256": "2e460dfaf7b9ddf1d40cdad225cafea6d19b8d5d749d2b5c8beb247d5c52a6b8"
+        },
+        "cls_token_count": 1,
+        "depth": 12,
+        "example_block_call": {
+          "input": [
+            [
+              {
+                "device": "cpu",
+                "dtype": "torch.float32",
+                "shape": [
+                  1,
+                  201,
+                  768
+                ]
+              }
+            ],
+            [
+              [
+                {
+                  "device": "cpu",
+                  "dtype": "torch.float32",
+                  "shape": [
+                    196,
+                    64
+                  ]
+                },
+                {
+                  "device": "cpu",
+                  "dtype": "torch.float32",
+                  "shape": [
+                    196,
+                    64
+                  ]
+                }
+              ]
+            ]
+          ],
+          "kwargs": {},
+          "macs": null,
+          "output": [
+            {
+              "device": "cpu",
+              "dtype": "torch.float32",
+              "shape": [
+                1,
+                201,
+                768
+              ]
+            }
+          ]
+        },
+        "example_sample_ids": [
+          "train/n15075141/n15075141_8773.JPEG"
+        ],
+        "family": "DINOv3-B",
+        "first_block": "blocks.0",
+        "hidden_dim": 768,
+        "input": {
+          "device": "cpu",
+          "dtype": "torch.float32",
+          "shape": [
+            1,
+            3,
+            224,
+            224
+          ]
+        },
+        "last_block": "blocks.11",
+        "model_id": "dinov3_vitb16",
+        "num_heads": 12,
+        "patch_size": 16,
+        "pool_counts": {
+          "calibration": 32,
+          "final": 50000,
+          "search": 1000
+        },
+        "prefix_token_count": 5,
+        "preprocessing": {
+          "antialias": true,
+          "crop_size": 224,
+          "interpolation": "bicubic",
+          "mean": [
+            0.485,
+            0.456,
+            0.406
+          ],
+          "resize_shorter": 256,
+          "std": [
+            0.229,
+            0.224,
+            0.225
+          ]
+        },
+        "profile_tools": [
+          "query_ptq_sites",
+          "profile_structure",
+          "profile_distribution",
+          "read_profile_evidence"
+        ],
+        "read_asset": {
+          "asset": "/root/data-fs/projects/Quantization_Agent_for_ViTs_gonly/EXP/validation/multi_vit_20261118_r1/dino_context_delivery/model_metadata.json"
+        },
+        "segmentation": {
+          "feature_interface": "DINOv3MMSegBackbone",
+          "head_sha256": "db894b760c37acbbfef84888b18b7554076b762664597c0f12d958f99c272927",
+          "out_indices": [
+            2,
+            5,
+            8,
+            11
+          ],
+          "preprocessing": [
+            {
+              "type": "LoadImageFromFile"
+            },
+            {
+              "keep_ratio": true,
+              "scale": [
+                2048,
+                512
+              ],
+              "type": "Resize"
+            },
+            {
+              "reduce_zero_label": true,
+              "type": "LoadAnnotations"
+            },
+            {
+              "type": "PackSegInputs"
+            }
+          ],
+          "test_cfg": {
+            "crop_size": [
+              512,
+              512
+            ],
+            "mode": "slide",
+            "stride": [
+              341,
+              341
+            ]
+          }
+        },
+        "sequence": {
+          "cls": [
+            0,
+            1
+          ],
+          "intervals": "half-open, image sequence",
+          "patch_start": 5,
+          "special": [
+            1,
+            5
+          ]
+        },
+        "site_counts": {
+          "attention_key": 12,
+          "attention_logits": 12,
+          "attention_query": 12,
+          "attention_value": 12,
+          "conv2d": 1,
+          "linear": 49,
+          "module_output": 50,
+          "post_gelu": 12,
+          "post_layernorm": 25,
+          "post_softmax": 12,
+          "pre_layernorm": 25
+        },
+        "site_examples": {
+          "attention_key": "blocks.0.attn::attention_key",
+          "attention_logits": "blocks.0.attn::attention_logits",
+          "attention_query": "blocks.0.attn::attention_query",
+          "attention_value": "blocks.0.attn::attention_value",
+          "conv2d": "patch_embed.proj",
+          "linear": "blocks.0.attn.qkv",
+          "module_output": "patch_embed.proj::module_output",
+          "post_gelu": "blocks.0.mlp.act::post_gelu",
+          "post_layernorm": "blocks.0.norm1::post_layernorm",
+          "post_softmax": "blocks.0.attn::post_softmax",
+          "pre_layernorm": "blocks.0.norm1::pre_layernorm"
+        },
+        "special_token_count": 4,
+        "special_token_type": "storage",
+        "split_sources": {
+          "calibration": "train",
+          "final": "val",
+          "search": "train"
+        },
+        "task_forward": "forward_features",
+        "task_output": {
+          "device": "cpu",
+          "dtype": "torch.float32",
+          "shape": [
+            1,
+            1000
+          ]
+        }
+      },
+      "focus_prompt_sha256": "df0294cf0ab502c16c7a47d189b44dbe357d26008ebba3a702e5c50b18347700",
+      "protocol_hash": "b2d3980c4fbc151c84e2b699b1b699f9b1b5150333514349ab49b64cd408e205",
+      "dry_l3_plan_checked": true,
+      "initial_B_status": "pending_no_verified_result",
+      "fp_and_native_features": {
+        "block_replay": "bitwise equal",
+        "features": {
+          "x_norm_clstoken": [
+            1,
+            768
+          ],
+          "x_norm_patchtokens": [
+            1,
+            196,
+            768
+          ],
+          "x_prenorm": [
+            1,
+            201,
+            768
+          ],
+          "x_storage_tokens": [
+            1,
+            4,
+            768
+          ]
+        },
+        "logits": [
+          1,
+          1000
+        ],
+        "native_intermediates_bitwise_equal": true,
+        "normalized_cls_logits_bitwise_equal": true,
+        "sample_id": "train/n01751748/n01751748_5926.JPEG"
+      },
+      "raw_block_profile": {
+        "captured": [
+          1,
+          201,
+          768
+        ],
+        "first_block": "blocks.0",
+        "input_shape": [
+          1,
+          3,
+          224,
+          224
+        ],
+        "same_tensor_both_tools": true,
+        "sample_ids": [
+          "train/n15075141/n15075141_8773.JPEG"
+        ]
+      },
+      "required_boundaries": 146,
+      "audited_frozen_boundaries": 146,
+      "model_ref": "ef5ee2381df6f112c26f456926e5c92ec4d30d22fe926e4c72a22e441087d6bf",
+      "tensor_state_sha256": "8d9e7213e9f0d5be35303a0ec5b29c2052eb13c8671637a0b48028f237f14f07",
+      "weights_file_sha256": "11d635c114f69d10858277d10bb034873d6230454878ccfc80195d8e36450aa0",
+      "calibration_ids": [
+        "train/n01751748/n01751748_5926.JPEG",
+        "train/n02442845/n02442845_19600.JPEG"
+      ],
+      "tasks": {
+        "classification": {
+          "full_dataset": false,
+          "metrics": {
+            "aggregate_relative_mse": 1.2509906212852233,
+            "baseline_latency_ms": 15.325675904750824,
+            "baseline_top1": 50.0,
+            "baseline_top5": 50.0,
+            "cosine_error": 0.9160000162566079,
+            "cuda_increment_mib": 14.80078125,
+            "cuda_peak_memory_mib": 1672.06494140625,
+            "delta_top1_pp": -50.0,
+            "delta_top5_pp": -50.0,
+            "deployment_peak_memory_mib": null,
+            "latency_ms": 41.69544503092766,
+            "measured_speedup": 0.3675623534748935,
+            "mse": 1.5126382091291561,
+            "native_latency_ms": null,
+            "relative_mse": 1.2509906212852233,
+            "top1": 0.0,
+            "top1_drop_pp": 50.0,
+            "top5": 0.0
+          },
+          "sample_count": 2,
+          "sample_ids": [
+            "train/n04522168/n04522168_9121.JPEG",
+            "train/n02493793/n02493793_8263.JPEG"
+          ]
+        },
+        "segmentation": {
+          "full_dataset": false,
+          "metrics": {
+            "aAcc": 0.46087210293484515,
+            "baseline_aAcc": 80.94416657275856,
+            "baseline_mAcc": 78.08216534029448,
+            "baseline_mIoU": 65.74010059042097,
+            "delta_aAcc_pp": -80.48329446982372,
+            "delta_mAcc_pp": -77.65304776207805,
+            "delta_mIoU_pp": -65.460008713261,
+            "mAcc": 0.42911757821643126,
+            "mIoU": 0.28009187715995615
+          },
+          "sample_count": 1,
+          "sample_ids": [
+            "/root/data-pub/ssdbackup/ssddata/data/chengzelu/ADEChallengeData2016/images/validation/ADE_val_00000001.jpg"
+          ]
+        }
+      },
+      "reload": {
+        "comparison": "torch.equal for all floating outputs",
+        "evaluated_instance": "reloaded",
+        "host_verified": true,
+        "passed": true,
+        "sample_ids": [
+          "train/n04522168/n04522168_9121.JPEG"
+        ],
+        "samples": 1,
+        "split": "search"
+      },
+      "segmentation_fp_feature_parity": [
+        {
+          "max_abs": 0.0,
+          "relative_mse": 0.0
+        },
+        {
+          "max_abs": 0.0,
+          "relative_mse": 0.0
+        },
+        {
+          "max_abs": 0.0,
+          "relative_mse": 0.0
+        },
+        {
+          "max_abs": 0.0,
+          "relative_mse": 0.0
+        }
+      ],
+      "propagation_group_element_counts": {
+        "all": 154368,
+        "cls": 768,
+        "patch": 150528,
+        "special": 3072
+      },
+      "tensor_probes": {
+        "blocks.0.attn.qkv": {
+          "calibration_ids": [
+            "train/n01751748/n01751748_5926.JPEG"
+          ],
+          "elements": 154368,
+          "local_output": {
+            "aggregate_relative_mse": 0.17335771448615178,
+            "cosine_error": 0.00894331380387603,
+            "mse": 505.2190102609697,
+            "outputs": {
+              "output": {
+                "cosine": 0.991056686196124,
+                "elements": 463104,
+                "max_abs_error": 142.26101684570312,
+                "mse": 505.2190102609697,
+                "relative_mse": 0.17335771448615178
+              }
+            },
+            "relative_mse": 0.17335771448615178,
+            "relative_mse_reduction": "max_per_output_relative_mse_v1",
+            "undefined_relative_mse_outputs": [],
+            "worst_output": "output"
+          }
+        },
+        "blocks.0.attn::attention_key": {
+          "calibration_ids": [
+            "train/n01751748/n01751748_5926.JPEG"
+          ],
+          "elements": 154368,
+          "local_output": {
+            "aggregate_relative_mse": 0.0005242802241447217,
+            "cosine_error": 0.0002620646547846217,
+            "mse": 41905763.674767315,
+            "outputs": {
+              "output": {
+                "cosine": 0.9997379353452154,
+                "elements": 484812,
+                "max_abs_error": 27200.4375,
+                "mse": 41905763.674767315,
+                "relative_mse": 0.0005242802241447217
+              }
+            },
+            "relative_mse": 0.0005242802241447217,
+            "relative_mse_reduction": "max_per_output_relative_mse_v1",
+            "undefined_relative_mse_outputs": [],
+            "worst_output": "output"
+          }
+        }
+      },
+      "final_evaluate_artifact_recheck": {
+        "full_dataset": false,
+        "identical_task_metrics_and_samples": true,
+        "source": "/root/data-fs/projects/Quantization_Agent_for_ViTs_gonly/EXP/validation/multi_vit_20261118_r1/dino_verified"
+      }
+    }
+  },
+  "identity_checks": {
+    "deit_loading_dino": {
+      "code": "identity_mismatch",
+      "message": "产物模型/数据/源码身份不匹配",
+      "path": "$",
+      "retryable": false
+    },
+    "historical_deit": {
+      "current_vs_original_fp_bitwise_equal": [
+        {
+          "logits_sha256": "a151c1e14fb926ff63bcd3754b80588a58722fc3f154a15bbdc88702344f5acf",
+          "sample": "train/n04522168/n04522168_9121.JPEG"
+        },
+        {
+          "logits_sha256": "5d192a1f33fc33136150789f14a067b1bd775a7e019e8bf0dbe6c3c75552e097",
+          "sample": "train/n02493793/n02493793_8263.JPEG"
+        }
+      ],
+      "evidence": "EvidenceCard-15a015a9c39044759caf9a9edd7a0c22@1",
+      "experiment": "ExperimentCard-5478836a056b4fee8e9f7ecc2762b6c5@1",
+      "loaded_without_prepare": true,
+      "logits_sha256": "8bf903a670bf14090d776face825417f8b8d7314168be0a8461e2414d133b826",
+      "model_dir": "/root/data-fs/projects/Quantization_Agent_for_ViTs_gonly/EXP/runs/deitb_static_w4a4_gonly_20261115_r1/jobs/task-b82d0e9c4c38354f3e31a579-a0001/model",
+      "model_ref": "4609369da995d8d81595821555611f0ae6c4a50c03756c1cd7019234a75f59fe",
+      "original_strict_load": true,
+      "run": "/root/data-fs/projects/Quantization_Agent_for_ViTs_gonly/EXP/runs/deitb_static_w4a4_gonly_20261115_r1",
+      "sample": "train/n04522168/n04522168_9121.JPEG",
+      "source_version": "8c76550850c9f3a29bb4898784b75c9048f0f4ea22abe304dfc72ad3885869da"
+    },
+    "local_L2_to_formal_protocol": {
+      "all_other_identity_fields_equal": true,
+      "formal_protocol": "b2d3980c4fbc151c84e2b699b1b699f9b1b5150333514349ab49b64cd408e205",
+      "loader": {
+        "code": "identity_mismatch",
+        "message": "产物模型/数据/源码身份不匹配",
+        "path": "$",
+        "retryable": false
+      },
+      "source_protocol": "647e9fe6d4cc6004f3d224edf8bef27d296d06cbbf6bdc7ce2d0ee6583571d5d"
+    },
+    "original_head_config": {
+      "checkpoint_cfg_sha256": "e18bcdc28881d2d227009f1bc82fffe8ca07769b1d51270d11f146c3d5e0b509",
+      "matches_bound_config": true,
+      "model_and_test_pipeline_sha256": "f99f0e77d249870654a2bde52073ce2eba0c5c8c2e017b02524a0fa651c37807"
+    },
+    "same_dino_other_protocol": {
+      "code": "identity_mismatch",
+      "message": "产物模型/数据/源码身份不匹配",
+      "path": "$",
+      "retryable": false
+    }
+  },
+  "weights_only_binding": {
+    "available_sites": {
+      "attention_key": 12,
+      "attention_logits": 12,
+      "attention_query": 12,
+      "attention_value": 12,
+      "conv2d": 1,
+      "linear": 48,
+      "module_output": 49,
+      "post_gelu": 12,
+      "post_layernorm": 25,
+      "post_softmax": 12,
+      "pre_layernorm": 25
+    },
+    "model_id": "dinov3_vitb16",
+    "pool_counts": null,
+    "raw_structure_measured": false
+  },
+  "alternate_provider": {
+    "reason": "备选执行适配器加载的模型、分类头或数据协议与冻结研究输入不同",
+    "same_research_protocol": true,
+    "wrong_backbone_rejected": true
+  },
+  "role_component": {
+    "directory": "EXP/validation/multi_vit_20261118_r1/roles3",
+    "focus": "ReviewDecisionCard-128bd80bebecfdb77e4083a5726ba095@1",
+    "experiment": "ExperimentCard-c41d5cd31a154e31b429eb78b4d55105@1",
+    "safeguard": "ReviewDecisionCard-0f2dea7f67154a8082c1e6266b6d5c7e@1",
+    "evidence": "EvidenceCard-36e01c63083c47509dab2e4d8e5e1cec@1",
+    "hypothesis": "HypothesisCard-c71605fab0664e8ebaf38efa87434a6c@1",
+    "recorder": "MetareviewCard-10398f9a3c234baa88b7a2ddd82e5957@1",
+    "evidence_used_by_candidate": [
+      "EvidenceCard-36e01c63083c47509dab2e4d8e5e1cec@1"
+    ],
+    "evidence_used_by_recorder": [
+      "EvidenceCard-36e01c63083c47509dab2e4d8e5e1cec@1"
+    ],
+    "title": "FC2 输入通道独立静态 A4：局部 W4A4 配置与重载验证",
+    "measurements": {
+      "relative_mse": 0.025613425462484424,
+      "cosine_error": 0.012867072407132363,
+      "fp_top1": 50.0,
+      "q_top1": 50.0,
+      "sample_ids": [
+        "train/n04522168/n04522168_9121.JPEG",
+        "train/n02493793/n02493793_8263.JPEG"
+      ],
+      "level": "L2",
+      "full_dataset": false
+    },
+    "next_decision": "保留该可重载的局部实现及其严格限定的 L2 结果，不把它表述为精度提升或 per-channel 优势。若后续授权最小机制对照，固定同一模型、W4 状态、minmax 规则、校准/评价输入及 FP 后缀，只把 FC2 的 A4 从 per-channel 改为 per-tensor；先比较共同输入上的局部 FC2 输出误差，再看同一 search 集整网输出偏差，二者分开报告。局部优势不传至整网时只保留局部结论；无局部优势则撤回粒度收益假说。只有获得更广样本和正式协议授权后才讨论任务泛化或 L3。",
+    "approved_file": "approved_candidate.py",
+    "source_sha256": "3712e2eeeab11fee3642610eb914677da772718a871293d349782fab8223221b",
+    "plan_sha256": "07221323d7bf62f6c932002255663204f6a50d23bac46847a1651c4cd3bf4263",
+    "layers": [
+      {
+        "activation": {
+          "axis": 2,
+          "bits": 4,
+          "format": "UINT4",
+          "granularity": "per_channel",
+          "group_size": null,
+          "scale": "minmax",
+          "symmetric": false
+        },
+        "activation_calibration": {
+          "strategy": "minmax"
+        },
+        "activation_method": "uniform_affine",
+        "kind": "linear",
+        "module": "blocks.0.mlp.fc2",
+        "options": {},
+        "weight": {
+          "axis": 0,
+          "bits": 4,
+          "format": "UINT4",
+          "granularity": "per_channel",
+          "group_size": null,
+          "scale": "minmax",
+          "symmetric": false
+        },
+        "weight_calibration": {
+          "strategy": "minmax"
+        },
+        "weight_method": "uniform_affine"
+      }
+    ],
+    "state_matches_export": true,
+    "actual_model_digest": "8e07eaa0e85e990c919b908c0f8f40a94c1462a43ccb3de64b81a620bbb14944",
+    "search_outputs_bitwise_equal": [
+      {
+        "logits_sha256": "3b9cfd6e30d393859b6f5f639483448e423375eb1ba58899bf864a1be757c04e",
+        "sample": "train/n04522168/n04522168_9121.JPEG"
+      },
+      {
+        "logits_sha256": "980c5302d4a2fef4466b87e776ce525b52aa08e0edd54b5853ac7dfe0f89f745",
+        "sample": "train/n02493793/n02493793_8263.JPEG"
+      }
+    ],
+    "manifest_sha256": "e562f0d9cb3038b828e3f62daa021ef812d48baf9f0a58642f45732b4c727d51",
+    "calibration_ids": [
+      "train/n01751748/n01751748_5926.JPEG"
+    ],
+    "model_ref": "297065dee2f3d1d78f1f54f0339ee419940573a78671a90bee51804a168ee8d7",
+    "B": "pending_no_verified_result",
+    "rebuild_execution": {
+      "backend": {
+        "kind": "server",
+        "config_path": "QAViT/configs/dinov3b_backend.json"
+      },
+      "calibration": {
+        "count": 1,
+        "offset": 0,
+        "split": "calibration"
+      },
+      "evaluations": [
+        {
+          "count": 2,
+          "full_dataset": false,
+          "kind": "classification",
+          "split": "search"
+        }
+      ],
+      "parameters": {},
+      "seed": 42,
+      "research_protocol_sha256": "647e9fe6d4cc6004f3d224edf8bef27d296d06cbbf6bdc7ce2d0ee6583571d5d"
+    },
+    "llm_calls": {
+      "limit": 22,
+      "remaining": 6,
+      "reserved": 16
+    },
+    "portable_rebuild_on_delivery_code": true
+  },
+  "tests": {
+    "cpu_regression": {
+      "path": "EXP/validation/multi_vit_20261118_r1/regression_complete.log",
+      "summary": "Ran 769 tests in 862.947s\n\nOK (skipped=2)",
+      "sha256": "c9fe312024415e6318777fe7e0f2ccb18d9c21d49a5e1c9c3dda9af774ccae4f"
+    },
+    "cuda_module": {
+      "path": "EXP/validation/multi_vit_20261118_r1/cuda_tests.log",
+      "summary": "5 tests passed including both CUDA-only cases",
+      "sha256": "001d101835008b987f4f2aa2851921ceab05c6f0678764c8194766153b4d4f81"
+    }
+  }
+}

@@ -1,18 +1,22 @@
 # 本次任务：制定本次 L3 实验计划
 
-依据 context.task.selection_ref 对应的 final 选择、hypothesis_ref 对应的完整最终候选、选择理由、相关证据及 ResearchBrief，提交一份实验需求草案。不要把 Evolution 前的 H* 选择当成最终候选。宿主会接收并安排该计划；不要再通过 request_experiment 重复提交同一份最终 L3 计划。
+依据 context.task.selection_ref 对应的 Generation 候选综合、hypothesis_ref 对应的完整最终候选、综合与修订理由、相关证据及 ResearchBrief，提交一份实验需求草案。保持本任务 slot/hypothesis_ref 绑定的完整候选身份，并落实其证据与限制；候选版本由宿主严格绑定；已有 B 的历史成绩不算本轮测量。每条最终候选独立提交计划，宿主按确切版本接收并安排；其他候选失败不取消本候选计划；不要再通过 request_experiment 重复提交同一份最终 L3 计划。
 
 L3 不以某项 L2 性能达标为前提。根据当前实际预算、资源与评测协议设计可执行计划；estimated_seconds 是数值任务自身的执行超时，可省略沿用独立 L3 默认 24 小时，也可按实际需求覆盖；不要求小于智能体活跃预算余额。若关键执行定义缺失，具体指出，不能用虚构路径或占位参数凑成计划。
 
 使用 context.data_receipt 核对可用数据池、split、样本范围、身份摘要及来源；可用池大小不等于本实验选定数量，未知项不能猜测。依据 context.budget_receipt 的 clock_mode、exclude_numeric_wait 和 meaning 解释余额：启用 exclude_numeric_wait 时，纯数值执行、等待资源和结果不消耗智能体时间，不要求数值耗时小于 research_remaining_seconds；期间重叠的推理、Coding、审核仍计时且不重复扣除。remaining_seconds/available_seconds 是该模式的智能体余额，research_remaining_seconds 已扣复盘/停机预留；暂停恢复保留已消费预算。历史显式模式沿用回执所述口径。不得仅因数值预计耗时超过智能体余额推迟 L3 或缩减协议。
 
-按 ResearchBrief.evaluation_protocol 明确的任务、数据范围和完成条件制定计划；有 evaluations 时保持其 kind、split、count 等明确要求，不自动增加分类、分割或完整数据评测。协议允许的子集 L3 只支持其实际范围；协议要求完整评测时，不能因时间不足缩减后仍称完成。记录规定量化覆盖与例外、模型导出及重载身份、数据视图和指标口径；已有合格冻结模型包可按协议复用。小样本搜索、单点回放和历史指标不能冒充协议尚未完成的评测。
+按当前阶段绑定的协议制定计划，开发阶段取 execution_guidance.development，官方阶段取 ResearchBrief.evaluation_protocol；有 evaluations 时保持其 kind、split、count 等明确要求，不自动增加分类、分割或完整数据评测。协议允许的子集 L3 只支持其实际范围；协议要求完整评测时，不能因时间不足缩减后仍称完成。记录规定量化覆盖与例外、模型导出及重载身份、数据视图和指标口径；已有合格冻结模型包可按协议复用。小样本搜索、单点回放和历史指标不能冒充协议尚未完成的评测。
 
 按 payload_contract.schema_location 指向的同一实验草案 Schema 提交，level=L3。常规执行参数已经在 context.experiment_interface；明确研究问题、所需测量和科学约束；有明确预测及决策影响时再提供。宿主生成固定字段与执行镜像。已有方法直接给 plan，已有模型包用 evaluate_artifact；真正新增能力才经 Coding 交付单份实现，程序补齐执行记录并交 Safeguard 对照原始需求审查。无需提交内部变量名、固定输出树或测试夹具。
 
-提交的是待执行计划，不是实验结果。L3 流程完成、协议范围内的有效验证、完整数据评测及 incumbent 资格分别判断；incumbent 仍须通过后续程序检查，Brief 禁止晋升时不得声称可晋升。
+提交的是待执行计划，不是实验结果。L3 流程完成、协议范围内的有效验证、完整数据评测及 incumbent 资格分别判断；incumbent 仍须通过后续程序检查，Brief 禁止晋升时不得声称可晋升。最终方法要求 training-free 时，模型可见的构造请求显式声明 execution.training=false（宿主规范化为 execution.resolved_choices.training）；即使研究中获准 STE，也从参考优化前状态独立重建参数、组成员和选择规则。oracle 包或复制其答案的包不能通过仅 evaluate_artifact、移除 optimizer 或更名变成独立方法；已有包的复用须符合该来源定义。冻结迁移仍使用同一最终状态。
 
 
 若 context.task.request_feedback 存在，这是原计划执行反馈后的新版本任务。依据所附原始需求、真实失败/拒绝或 Coding/Safeguard 问题修订草案，旧计划与结果保持不变。优先用已有证据解决科学澄清；实现失败、预算拒绝或缓存均不等于假说反驳，缓存不算独立重复。缺少只有用户才能决定的信息时才使用 clarify。若本轮现有条件确实无法完成规定协议，可提交 {"defer_reason":"具体原因及未完成项"}，保留未完成状态并进入正常复盘；不得虚构数据、缩减必需协议或重复相同失败。
 
 有效 Evidence 保存并通过规定数值协议后即返回；不会为返回实验结果另行强制调用 interpret。已有原研究步骤和轮末 Recorder 负责解释；解释或复盘失败不撤销已成立的数值验证。
+
+资源由宿主调度：优先每个候选一张 GPU 完成校准、冻结和双任务，候选需求满足后余卡用于已有支持的候选内部双任务并行；卡少正常排队。Coding 保持串行；协议指定双任务冻结迁移时，两项评测使用同一冻结模型。
+
+若 execution_guidance.development 已绑定，三个完成候选分别提交该配置的完整双任务开发视图，沿用任务头与几何，冻结后评价。Generation 可以在综合前对中间完整候选取同一开发证据。开发视图的 FP 保持率与官方阶段分别记载。官方阶段只评价事先冻结的方法和必要对照。

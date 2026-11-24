@@ -22,9 +22,12 @@ def read_json(path):
 
 
 def atomic_json(path, value):
+    atomic_bytes(path, (canonical(value) + "\n").encode())
+
+
+def atomic_bytes(path, raw):
     path = Path(path)
     path.parent.mkdir(parents=True, exist_ok=True)
-    raw = (canonical(value) + "\n").encode()
     fd, name = tempfile.mkstemp(prefix=".pending-", dir=path.parent)
     try:
         with os.fdopen(fd, "wb") as stream:
@@ -150,6 +153,14 @@ class Journal:
     def refresh(self):
         with self._mutex:
             directory = self.root / "commits"
+            try:
+                stat = directory.stat()
+                signature = (stat.st_dev, stat.st_ino, stat.st_mtime_ns, stat.st_ctime_ns)
+            except FileNotFoundError:
+                signature = None
+            if (signature == getattr(self, '_directory_signature', False)
+                    and not (directory / f'{len(self.commits)+1:09d}.json').exists()):
+                return self
             files = sorted(directory.glob("*.json")) if directory.exists() else []
             if len(files) < len(self.commits):
                 raise ContractError("已提交日志被删除")
@@ -182,6 +193,7 @@ class Journal:
                 self.commits.append(commit)
                 self.keys[commit["key"]] = commit
                 self.events.extend(dict(event, commit_sequence=seq) for event in commit["events"])
+            self._directory_signature = signature
             return self
 
     def commit(self, key, *, cards=(), events=(), expected_sequence=None, fault=None):

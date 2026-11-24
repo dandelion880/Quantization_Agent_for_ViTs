@@ -15,7 +15,7 @@ def validation_config():
     config["runtime"]["experiment_concurrency"] = 1
     config["research_brief"] = {
         "scientific_question": "在随机小型ViT中，低比特激活输入MSE能否预测局部输出与整网输出偏差？请提出已有方法、工程改进和新机制三个可证伪假设，通过真实局部实验审查，不能外推为ImageNet/ADE精度。",
-        "goals": {"validation": "两轮小规模真实Agent职责验证；主动取证、H4改进、Memory反馈。至少针对真实争议取得一次L1/L2测量，必要时请求Coding扩展量化器。"},
+        "goals": {"validation": "两轮小规模真实Agent职责验证；H1/H2/H3、主动取证与方案修订、证据预选、Memory反馈。自主选择有决策价值的L1/L2测量，必要时请求Coding扩展量化器。"},
         "model": {"name": "seeded tiny ViT", "scope": {"model": "tiny_vit"}, "adapter": {
             "kind": "fixture", "factory": "QAViT/tests/fixtures.py:tiny_backend",
             "config_path": "QAViT/configs/deitb_backend.json", "backend_overrides": {
@@ -50,6 +50,45 @@ def experiment_payload(level="L1"):
             "replication": {"requested": False, "purpose": "", "configuration_difference": {}},
             "scope": {"model": "tiny_vit", "activation_bits": 4, "site": "blocks.0.mlp.fc2", "method": "rtn"},
             "validation": {"baseline": "FP32 original", "scope": "controlled local QDQ, not full-model accuracy"}}
+
+
+def scheduler_l3_draft():
+    from tests.test_plan_execution_consistency import numeric_plan
+    plan = numeric_plan(granularity='per_tensor')
+    plan['layers'] = [row for row in plan['layers'] if row['module'] == 'blocks.0.mlp.fc2']
+    for target in ('weight', 'activation'):
+        plan['layers'][0][target].update(format='INT4', bits=4)
+    draft = experiment_payload('L3')
+    draft['execution'].update(service='quantize_evaluate', parameters={}, plan=plan,
+                              evaluations=[{'kind':'classification','split':'final','count':2}])
+    return draft
+
+
+def topic_decision(wf):
+    """Scripted direction for old lifecycle fixtures, never scientific evidence."""
+    current=wf.topics.active()
+    return {'decision':'continue' if current else 'establish',
+        **({'topic_id':current['id']} if current else {}),
+        'question':'fixture question', 'mutable_dimensions':['metric','grouping'],
+        'held_conditions':['original Brief and evaluation'], 'objective':'test continuation',
+        'rationale':'scripted state fixture, not research reasoning',
+        'next_step':'measure the paired downstream error',
+        'reconsider_when':'revisit if the paired measurement rules out this mechanism'}
+
+
+def advance_with_topic_fixture(wf):
+    """Exercise the new shared decision, then preserve legacy test entry points."""
+    done=wf.advance()
+    if not any(t['inputs'].get('purpose')=='focus' and t['state'] in ('pending','ready')
+               for t in wf.tasks().values()):
+        return done
+    for ready in wf.queue.ready():
+        if ready['inputs'].get('purpose')=='focus':
+            task=wf.queue.claim(ready['task_id'])
+            if task:
+                wf.submit(task,topic_decision(wf),'SCRIPTED_TOPIC_FIXTURE')
+                return wf.advance()
+    return done
 
 
 def hypothesis(number, slot):

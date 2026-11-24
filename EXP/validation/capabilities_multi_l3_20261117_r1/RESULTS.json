@@ -1,0 +1,75 @@
+{
+  "status": "completed",
+  "formal_next_round_started": false,
+  "source_core_sha256": "63f3d8a00f4db76237e4dd036ec933f98c2748189c2e76caa3e0844362afc728",
+  "numerical_library_sha256": "980be0711cf59e90783f388e8fcd929c49baab76db10ecf4de9e63f4da933713",
+  "full_regression": {
+    "executed": 730,
+    "passed_initially": 722,
+    "failures_initially": 4,
+    "errors_initially": 2,
+    "skipped": 2,
+    "log": "full_regression.log",
+    "note": "Initial failures retained; corrected fixtures, documentation/baseline and legacy L3 engineering result projection are covered by final targeted reruns."
+  },
+  "gpu_helpers": {
+    "status": "passed",
+    "report": "frozen_helpers_gpu/summary.json",
+    "original_assets_unchanged": true,
+    "scope": "real DeiT frozen source; 2 ImageNet images each; propagation and three-scale search exact direct/adapter equality"
+  },
+  "gpu_scheduler": {
+    "report": "scheduler_validation_summary.json",
+    "three_candidate_subset": "gpu_candidates_r2_report.json",
+    "same_frozen_dual_report": "gpu_same_frozen_parallel_r1_report.json",
+    "dual_overlap_seconds": 6.080300807952881,
+    "same_frozen_metrics_equal": true,
+    "pause_resume_verified": true,
+    "scope": "DeiT-B two MLP sites W8A8; calibration2 / classification3 / ADE1; not full W4A4 L3"
+  },
+  "not_verified": [
+    "New full ImageNet/ADE20K W4A4 formal L3 run",
+    "New live-LLM complete scientific round",
+    "GPU CE-gradient metric",
+    "Two CUDA AdaLog transport regressions skipped in CPU suite"
+  ],
+  "final_logs": [
+    "final_integration_r2.log",
+    "scheduler_final_regression.log",
+    "frozen_helper_final_tests.log",
+    "multi_l3_final_regression.log",
+    "science_delivery_final.log",
+    "multi_l3_final_assertions.log"
+  ],
+  "final_targeted": {
+    "multi_l3": {
+      "covered_tests": 59,
+      "logs": [
+        "multi_l3_final_regression.log",
+        "multi_l3_final_assertions.log"
+      ],
+      "note": "One failing method with three subcases fixed to check deduplicated top-level engineering facts; all 7 L3 tests rerun passed."
+    },
+    "integration": {
+      "covered_tests": 49,
+      "logs": [
+        "final_integration_r2.log",
+        "science_delivery_final.log"
+      ],
+      "note": "48 passed in integration; remaining historical derived-view assertion corrected; all 11 science delivery tests rerun passed."
+    },
+    "scheduler": {
+      "tests": 34,
+      "log": "scheduler_final_regression.log",
+      "status": "passed"
+    },
+    "helper": {
+      "tests": 6,
+      "log": "frozen_helper_final_tests.log",
+      "status": "passed"
+    },
+    "structure_audit": "final_structure_audit.json"
+  },
+  "all_initial_failures_retested_successfully": true,
+  "full_suite_repeated_after_fixes": false
+}

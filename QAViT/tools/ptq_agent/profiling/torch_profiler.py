@@ -8,6 +8,7 @@ import time
 
 from ..schemas import PTQError, require
 from .contracts import linear_forward_supported
+from .adapters import boundary_tensor
 
 
 class TorchProfiler:
@@ -89,14 +90,14 @@ class TorchProfiler:
             return hook
 
         def after(name):
-            def hook(m, args, out):
+            def hook(m, args, kwargs, out):
                 if name in calls:
                     macs = None
                     if torch.is_tensor(out) and isinstance(m, torch.nn.Linear) and linear_forward_supported(m):
                         macs = out.numel() * m.in_features
                     elif torch.is_tensor(out) and type(m).forward is torch.nn.Conv2d.forward:
                         macs = out.numel() * (m.in_channels // m.groups) * math.prod(m.kernel_size)
-                    calls[name].append({"input": self.describe(args), "output": self.describe(out), "macs": macs})
+                    calls[name].append({"input": self.describe(args), "kwargs": self.describe(kwargs), "output": self.describe(out), "macs": macs})
                 require(stack.pop() == name, "模块调用栈不一致")
             return hook
 
@@ -129,9 +130,10 @@ class TorchProfiler:
             with self.protected_run():
                 for name, m in self.named.items():
                     handles.extend((m.register_forward_pre_hook(before(name)),
-                                    m.register_forward_hook(after(name), always_call=True)))
+                                    m.register_forward_hook(after(name), with_kwargs=True, always_call=True)))
                 with ShapeDispatch():
-                    self.check_output(self.forward(x))
+                    output = self.forward(x)
+                    self.check_output(output)
         finally:
             for handle in handles:
                 handle.remove()
@@ -146,7 +148,7 @@ class TorchProfiler:
         relevant = [f for f in functional if not names or f["module"] in names
                     or any(f["module"].startswith(n + ".") for n in names)]
         return {"modules": rows, "functional_sites": relevant, "sites": sites, "sample_ids": ids,
-            "input": self.describe(x), "parameter_count": sum(p.numel() for p in self.model.parameters()),
+            "input": self.describe(x), "output": self.describe(output), "parameter_count": sum(p.numel() for p in self.model.parameters()),
             "parameter_bytes": sum(p.numel() * p.element_size() for p in self.model.parameters()),
             "buffer_bytes": sum(p.numel() * p.element_size() for p in self.model.buffers()),
             "counted_macs": sum(c["macs"] or 0 for row in rows for c in row["calls"]) + sum(f["macs"] for f in relevant),
@@ -163,8 +165,8 @@ class TorchProfiler:
         def capture(name):
             def hook(m, args):
                 nonlocal used
-                require(args and torch.is_tensor(args[0]), "仅支持模块第一个 tensor 输入")
-                value = args[0]
+                require(bool(args), "模块缺少图像流输入")
+                value = boundary_tensor(args[0])
                 require(name not in values, "重复调用模块需要独立调用位点，不能静默拼接")
                 used += value.numel() * value.element_size()
                 require(used <= max_bytes, "张量采集超过 128 MiB；请显式缩小位点或样本范围", code="profile_memory_budget")

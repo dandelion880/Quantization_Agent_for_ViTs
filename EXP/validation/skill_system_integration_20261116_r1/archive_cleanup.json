@@ -1,0 +1,10 @@
+{
+  "status": "deleted",
+  "path": "/root/data-fs/projects/qavit_skill_system_20261116.zip",
+  "verified_sha256_before_deletion": "e5d6871fd3025788c05bb124330c0ff01b840d4019b23cf151f0ec224cf17da1",
+  "size_bytes": 135583,
+  "deleted_at_utc": "2026-11-16T14:26:28.502250+00:00",
+  "absent_after_deletion": true,
+  "extracted_originals_retained": true,
+  "manifest_path": "source_package/qavit_skill_system_20261116/MANIFEST.json"
+}

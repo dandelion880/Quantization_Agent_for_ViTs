@@ -16,6 +16,7 @@ import numpy as np
 
 from .base import Backend
 from ..schemas import JSON, PTQError, fingerprint, require
+from ..profiling.adapters import ProfileAdapter, boundary_tensor, inspect_vit
 
 
 def file_sha256(path: Path) -> str:
@@ -49,9 +50,9 @@ def state_sha256(model) -> str:
 class ServerBackend(Backend):
     def __init__(self, config: JSON):
         self.config = deepcopy(config)
-        required = ("asset_manifest", "model_id", "model_path")
+        required = ("asset_manifest", "model_id")
         if not all(config.get(k) for k in required):
-            raise PTQError("backend_not_configured", "请填写 asset_manifest/model_id/model_path",
+            raise PTQError("backend_not_configured", "请绑定 asset_manifest/model_id",
                            status="unconfigured")
         import torch
         self.torch = torch
@@ -68,9 +69,7 @@ class ServerBackend(Backend):
             str((manifest_path.parent / path).resolve()): value
             for path, value in self.spec['code_source']['source_file_sha256'].items()}
         require(self.spec.get("preparation_status") == "ready", "资产尚未验证完成", code="asset_mismatch")
-        if self.spec["family"] == "ViT":
-            raise PTQError("unsupported_backend", "原始 Google ViT 需要独立 JAX 适配器，不能替换为 timm ViT", status="unsupported")
-        self.checkpoint = Path(config["model_path"])
+        self.checkpoint = Path(config.get("model_path") or self.spec["checkpoint_path"])
         require(self.checkpoint.resolve() == Path(self.spec["checkpoint_path"]).resolve(),
                 "配置 checkpoint 与已验证资产不一致", code="asset_mismatch")
         self.checkpoint_hash = file_sha256(self.checkpoint)
@@ -88,8 +87,11 @@ class ServerBackend(Backend):
         # strict=True + 逐张量相等校验；不创建随机下游分类头。
         self.model, self.load_report = loader.load_model(self.spec)
         self.model = self.model.to(device).eval().requires_grad_(False)
-        require(sum(p.numel() for p in self.model.parameters()) == self.spec["num_params"],
+        self.spec.update(inspect_vit(self.model, self.spec))
+        count = sum(p.numel() for p in self.model.parameters())
+        require(self.spec.setdefault("num_params", count) == count,
                 "实际参数量与资产 manifest 不一致", code="asset_mismatch")
+        self.spec['native_classifier'] = isinstance(getattr(self.model, 'head', None), torch.nn.Linear)
         self.task_head, self.head_class_mapping = None, None
         if config.get("task_head"):
             from .task_heads import attach_head
@@ -105,8 +107,8 @@ class ServerBackend(Backend):
             linear = isinstance(module, torch.nn.Linear)
             protected = not linear or name == "head" or name.startswith(("head.", "neck.", "decode_head."))
             weight = getattr(module, "weight", None)
-            parts = name.split(".")
-            block = int(parts[1]) if len(parts) > 1 and parts[0] == "blocks" and parts[1].isdigit() else None
+            block = next((i for i, b in enumerate(self.spec["block_paths"])
+                          if name == b or name.startswith(b + ".")), None)
             self._modules.append({"name": name, "type": type(module).__name__, "block": block,
                 "protected": protected, "weight_shape": list(weight.shape) if weight is not None else [],
                 "activation_shape": None, "activation_layout": "captured at runtime; no assumed feature axis"})
@@ -132,7 +134,7 @@ class ServerBackend(Backend):
             else:
                 raise ValueError("请显式配置 imagefolder_manifest_v1/v2；框架不加载旧项目的数据适配源码")
             self.rows = self.data_adapter.records()
-            require(config["calibration_samples"] <= len(self.rows), "输入池超过 manifest 大小")
+            require(config["calibration_samples"] <= len(self.data_adapter.splits["calibration"]), "输入池超过 manifest 大小")
             self._identity["data"] = {"manifest_sha256": file_sha256(Path(config["data_path"])),
                 "preprocessing": self.data_adapter.PREPROCESS, "adapter_sha256": file_sha256(data_module),
                 "use": ("explicit disjoint calibration/search/final manifests" if hasattr(self.data_adapter, "splits")
@@ -146,7 +148,7 @@ class ServerBackend(Backend):
         if self.task_head:
             from .task_heads import forward_head
             return forward_head(model, inputs)
-        return model.forward_features(inputs) if self.spec["family"].startswith(("DINOv2", "DINOv3")) else model(inputs)
+        return model.forward_features(inputs) if self.spec["task_forward"] == "forward_features" else model(inputs)
 
     def modules(self) -> list[JSON]:
         return deepcopy(self._modules)
@@ -165,7 +167,7 @@ class ServerBackend(Backend):
                 "native_low_precision_latency_ms": {"value": None, "reason": "当前仅 FP forward，无原生低精度 kernel"}}
 
     def samples(self, split, count=None, seed=0, offset=0):
-        require(split == "calibration", "真实数据仅用于只读统计；search/final 尚未配置", code="data_protocol_mismatch")
+        require(split == "calibration", "只读 profiling 只访问 calibration 分区", code="data_protocol_mismatch")
         require(self.data_adapter is not None, "缺少只读输入 manifest", code="backend_not_configured")
         total = self.config["calibration_samples"]
         count = total if count is None else count
@@ -191,8 +193,8 @@ class ServerBackend(Backend):
         inputs, ids = self.samples("calibration", count, seed, offset)
         values = []
         def capture(_module, args):
-            require(args and self.torch.is_tensor(args[0]), "模块第一个输入必须为张量")
-            values.append(args[0].detach().cpu().numpy().copy())
+            require(bool(args), "模块缺少图像流输入")
+            values.append(boundary_tensor(args[0]).detach().cpu().numpy().copy())
         handle = item.register_forward_pre_hook(capture)
         try:
             for image in inputs:
@@ -212,11 +214,12 @@ class ServerBackend(Backend):
         self.reset()
         size = self.spec["smoke_input_size"]
         generator = torch.Generator(device="cpu").manual_seed(self.config["seed"])
-        x = torch.randn(1, 3, size, size, generator=generator).to(self.device)
+        spatial = (size, size) if isinstance(size, int) else tuple(size)
+        x = torch.randn(1, self.model.patch_embed.proj.in_channels, *spatial, generator=generator).to(self.device)
         try:
             outputs = self._forward(x)
             if self.task_head:
-                require(tuple(outputs.shape) == (1, 1000), "冻结分类头输出形状错误")
+                require(tuple(outputs.shape) == (1, self.model.head.out_features), "冻结分类头输出形状错误")
                 with torch.inference_mode():
                     outputs = {"output": outputs, **self.model.forward_features(x)}
             outputs = outputs if isinstance(outputs, dict) else {"output": outputs}
@@ -224,18 +227,18 @@ class ServerBackend(Backend):
             require(bool(tensors) and all(torch.isfinite(v).all().item() for v in tensors.values()),
                     "forward 输出为空或非有限", code="numerical_error")
             tokens = None
-            if self.spec["family"].startswith(("DINOv2", "DINOv3")):
-                storage, width = self.spec["special_token_count"], self.spec["hidden_dim"]
-                patch_count = (size // self.spec["patch_size"]) ** 2
-                require(tuple(tensors["x_norm_patchtokens"].shape) == (1, patch_count, width), "patch token 形状错误")
+            if "x_prenorm" in tensors:
+                layout = ProfileAdapter().token_layout(self, self.spec["block_paths"][-1], tensors["x_prenorm"].shape, x.shape)
+                start, stop = layout["patch_slice"]
+                width = self.spec["hidden_dim"]
+                require(tuple(tensors["x_norm_patchtokens"].shape) == (1, stop - start, width), "patch token 形状错误")
                 require(tuple(tensors["x_norm_clstoken"].shape) == (1, width), "CLS token 形状错误")
                 token_key = "x_storage_tokens" if "x_storage_tokens" in tensors else "x_norm_regtokens"
-                require(tuple(tensors[token_key].shape) == (1, storage, width), "storage/register token 形状错误")
-                require(tuple(tensors["x_prenorm"].shape) == (1, 1 + storage + patch_count, width), "完整 token 序列形状错误")
-                tokens = {"cls_index": 0, "special_slice": [1, 1 + storage],
-                          "patch_slice": [1 + storage, 1 + storage + patch_count], "slice_convention": "[start, stop)"}
+                require(tuple(tensors[token_key].shape) == (1, self.spec["special_token_count"], width), "storage/register token 形状错误")
+                tokens = {"cls_index": layout["cls_slice"][0], "special_slice": layout["special_slice"],
+                          "patch_slice": layout["patch_slice"], "slice_convention": "[start, stop)"}
             else:
-                width = 1000 if self.spec["family"] in ("DeiT", "Swin") else self.spec["hidden_dim"]
+                width = self.model.head.out_features
                 require(tuple(tensors["output"].shape) == (1, width), "官方 forward 输出形状不符")
             result = {"status": "passed", "kind": "synthetic_forward_preflight", "dataset_images": 0,
                 "input_shape": list(x.shape), "output_shapes": {k: list(v.shape) for k, v in tensors.items()},

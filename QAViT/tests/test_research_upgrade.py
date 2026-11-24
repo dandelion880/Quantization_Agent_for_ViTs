@@ -203,7 +203,11 @@ class UpgradeTests(TempCase):
         plugin=SimpleNamespace(execute=lambda p,c:{'observations':{'status':'engineering_blocked','reason':'incompatible graph'}})
         with self.assertRaises(EngineeringBlocked):
             execute_custom(plugin,payload,SimpleNamespace(model=torch.nn.Linear(2,2)),{},data,self.root)
-        self.assertFalse(ExperimentRequests.revisable_failure({'error':{'code':'EngineeringBlocked','origin':'implementation'}}))
+        # A blocked host dependency is not a Coding repair. An identity-checked
+        # implementation origin outranks a coincidentally identical error name.
+        self.assertFalse(ExperimentRequests.revisable_failure({'error':{'code':'EngineeringBlocked','origin':'host'}}))
+        self.assertFalse(ExperimentRequests.revisable_failure({'error':{'code':'EngineeringBlocked'}}))
+        self.assertTrue(ExperimentRequests.revisable_failure({'error':{'code':'EngineeringBlocked','origin':'implementation'}}))
 
     def test_top3_persistence_protocol_and_miou_priority(self):
         wf=self.workflow(1)
@@ -232,7 +236,8 @@ class UpgradeTests(TempCase):
         second=SolutionLibrary(fresh,wf.brief['payload'],shared=False);second.root=restored.root
         second.initialize()
         self.assertEqual(second.snapshot(),before)
-        self.assertIn(str(wf.run_dir/'research_run.json'),second.assets())
+        self.assertNotIn(str(wf.run_dir/'research_run.json'),second.assets())
+        self.assertTrue(any(row.get('source_snapshot', {}).get('path') == str(wf.run_dir/'research_run.json') for row in second.available()))
 
 
     def test_cross_request_source_and_failure_handoff(self):

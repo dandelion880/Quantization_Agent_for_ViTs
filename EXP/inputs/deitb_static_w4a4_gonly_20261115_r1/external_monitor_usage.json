@@ -1,0 +1,28 @@
+{
+  "schema": "qavit.external_monitor_usage/1",
+  "recorded_at": "2026-11-15T11:22:13.088376+00:00",
+  "session_id": "01a1dd9e-aed6-7052-918f-82b7c490ee2f",
+  "requested_by_user": "gpt-6.1-sol-ultra",
+  "local_turn_contexts": [
+    {
+      "model": "gpt-6.1-sol",
+      "effort": "max"
+    }
+  ],
+  "actual_server_identity": null,
+  "usage": {
+    "counter_timestamp": "2026-11-15T11:21:54.360Z",
+    "total_token_usage": {
+      "input_tokens": 134348144,
+      "cached_input_tokens": 133800576,
+      "cache_write_input_tokens": 0,
+      "output_tokens": 248956,
+      "reasoning_output_tokens": 149583,
+      "total_tokens": 134597100
+    }
+  },
+  "scope": "External monitor session counter, including preflight, engineering, monitoring and report work up to counter_timestamp. Excludes later archival work/final reply; research CLI and independent Judge are separate ledgers.",
+  "cost": null,
+  "cost_basis": "unknown_subscription_cost",
+  "provenance": "Read only model/effort metadata and token_count total usage from local session; no transcript or instructions copied."
+}

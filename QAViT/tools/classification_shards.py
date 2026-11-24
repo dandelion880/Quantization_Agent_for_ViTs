@@ -4,12 +4,14 @@ import os
 import subprocess
 import sys
 import time
+import traceback
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from core.cards import ContractError
 from core.journal import atomic_json, read_json, file_sha256
 from runtime.paths import QAVIT
 from runtime.task_queue import process_identity
+from runtime.failures import RemoteWorkerError, failure_details
 from tools.evaluating import evaluate, aggregate
 
 
@@ -20,7 +22,7 @@ def row(value, experiment, model_dir, identity):
             'cpu_seconds': None, 'elapsed_seconds': None, 'peak_rss_kib': None}
 
 
-def evaluate_parallel(experiment, backend, cfg, data, model, plan, requested, model_dir, directory, gpus):
+def evaluate_parallel(experiment, backend, cfg, data, model, plan, requested, model_dir, directory, gpus, *, deadline_unix=None):
     from runtime.codex_cli import parent_guard
     from runtime.task_runtime import TaskRuntime
     from ptq_agent.execution.evaluation import model_digest
@@ -33,13 +35,14 @@ def evaluate_parallel(experiment, backend, cfg, data, model, plan, requested, mo
     lease_fds = tuple(int(fd) for fd in os.environ.get('QAVIT_GPU_LEASE_FDS', '').split(',') if fd)
     digest, baseline = model_digest(model), model_digest(backend.model)
     assets = {str(p.relative_to(model_dir)): file_sha256(p) for p in model_dir.rglob('*') if p.is_file()}
+    deadline = deadline_unix
     try:
         for index, gpu in enumerate(gpus[1:], 1):
             output = directory / 'shards' / str(index)
             output.mkdir(parents=True, exist_ok=True)
             request = {'experiment': experiment, 'model_dir': str(model_dir), 'model_assets': assets,
                        'model_digest': digest, 'baseline_digest': baseline,
-                       'split': split, 'count': count, 'shard': [index, len(gpus)]}
+                       'split': split, 'count': count, 'shard': [index, len(gpus)], 'deadline_unix': deadline}
             path = output / 'request.json'
             atomic_json(path, request)
             uuids = os.environ.get('QAVIT_ASSIGNED_GPU_UUIDS', '').split(',')
@@ -59,13 +62,20 @@ def evaluate_parallel(experiment, backend, cfg, data, model, plan, requested, mo
         for child, output, identity in children:
             # The parent task timer remains the single timeout for all shards.
             while not (output / 'result.json').exists() and child.poll() is None:
+                if deadline is not None and time.time() >= deadline:
+                    raise TimeoutError('classification shard deadline exceeded')
                 time.sleep(.05)
             if not (output / 'result.json').exists():
-                raise ContractError('classification shard failed: ' + str(output))
+                raise RemoteWorkerError({'code': 'ChildProcessError', 'origin': 'host',
+                    'message': 'classification shard exited without result', 'returncode': child.poll()},
+                    worker='classification', receipt=output / 'result.json', worker_log=output / 'worker.log')
             result = read_json(output / 'result.json')
             if (result.get('request_sha256') != file_sha256(output / 'request.json')
                     or result['model_digest'] != digest or result['baseline_digest'] != baseline):
                 raise ContractError('classification shards did not use the same frozen models')
+            if result.get('status', 'completed') != 'completed':
+                raise RemoteWorkerError(result.get('error'), worker='classification',
+                    receipt=output / 'result.json', worker_log=output / 'worker.log')
             rows.append(row(result['evaluation'], experiment, model_dir, data.identity))
             received.add(child.pid)
         value = aggregate(rows)['data']['evaluation']
@@ -89,14 +99,12 @@ def evaluate_parallel(experiment, backend, cfg, data, model, plan, requested, mo
                 pass  # registered identity remains owned by TaskRuntime
 
 
-def main():
+def run(request, path):
     from tools.experiment_worker import backend_and_data
     from ptq_agent.execution.model import RTNExecutor
     from ptq_agent.execution.evaluation import model_digest
     from tools.experiments import verify_assets
     import torch
-    path = Path(sys.argv[1])
-    request = read_json(path)
     experiment = request['experiment']
     verify_assets(experiment['payload']['execution'])
     torch.set_num_threads(experiment['payload']['resources']['cpu_threads'])
@@ -104,15 +112,31 @@ def main():
     if request['model_assets'] != {str(p.relative_to(model_dir)): file_sha256(p) for p in model_dir.rglob('*') if p.is_file()}:
         raise ContractError('frozen shard model package changed')
     backend, cfg, data = backend_and_data(experiment['payload']['execution'])
-    model, manifest = RTNExecutor(backend, cfg, data).load(model_dir)
+    from tools.frozen import FrozenData
+    model, manifest = RTNExecutor(backend, cfg, FrozenData(data)).load(model_dir)
     digest, baseline = model_digest(model), model_digest(backend.model)
     if digest != request['model_digest'] or baseline != request['baseline_digest']:
         raise ContractError('loaded shard model identity differs')
     start = time.time()
     value = evaluate(backend, cfg, data, model, manifest['plan'], request['split'], request['count'], request['shard'])
-    atomic_json(path.parent / 'result.json', {'evaluation': value, 'model_digest': digest,
+    return {'evaluation': value, 'model_digest': digest,
                 'baseline_digest': baseline, 'request_sha256': file_sha256(path),
-                'started_unix': start, 'finished_unix': time.time()})
+                'started_unix': start, 'finished_unix': time.time(), 'status': 'completed'}
+
+
+def main():
+    path = Path(sys.argv[1])
+    request = read_json(path)
+    try:
+        result = run(request, path)
+    except BaseException as exc:
+        traceback.print_exc()
+        result = {'status': 'failed', 'error': failure_details(exc, request),
+                  'request_sha256': file_sha256(path), 'model_digest': request['model_digest'],
+                  'baseline_digest': request['baseline_digest'], 'finished_unix': time.time()}
+    atomic_json(path.parent / 'result.json', result)
+    if result['status'] != 'completed':
+        raise SystemExit(1)
 
 
 if __name__ == '__main__':

@@ -31,15 +31,29 @@ def code_identity():
     files = {str(p.relative_to(QAVIT)): file_sha256(p) for p in source_files()}
     library = {n: sha for n, sha in files.items() if n.startswith('tools/ptq_agent/')}
     own = {n: sha for n, sha in files.items() if n not in library}
-    return {'core_sha256': fingerprint(files), 'numerical_library_sha256': fingerprint(library),
+    runtime = {n: sha for n, sha in files.items() if runtime_source(n)}
+    return {'identity_schema': 'qavit.source/3', 'core_sha256': fingerprint(runtime),
+            'archive_sha256': fingerprint(files), 'runtime_files': runtime,
+            'numerical_library_sha256': fingerprint(library),
             'core_files': own, 'numerical_files': library}
+
+
+def runtime_source(name):
+    """Keep the full archive; isolate offline/history-only dependencies from runs."""
+    if name.startswith(('tools/evaluation/', 'configs/evaluation/', 'tests/')):
+        return name == 'tests/fixtures.py'  # Actually loaded by validation factories.
+    if name in ('agents/prompts/judger.md', 'agents/prompts/evolution.md', 'docs/HISTORY.md', 'docs/EVAL_L0.md'):
+        return False
+    return name not in {'agents/prompts/tasks/' + p + '.md'
+                       for p in ('screen','position','arbitrate','rank','evolve','interpret')}
 
 
 def measurement_implementation():
     identity = code_identity()
     # 不手写移动文件清单；后续新增 worker、数值/模型子目录自动纳入。
     files = {n: sha for n, sha in identity['core_files'].items()
-             if n.startswith(('tools/', 'runtime/', 'configs/')) or n in ('core/cards.py', 'core/journal.py')}
+             if runtime_source(n) and (n.startswith(('tools/', 'runtime/', 'configs/'))
+                                       or n in ('core/cards.py', 'core/journal.py'))}
     return {'files': files, 'numerical_library_sha256': identity['numerical_library_sha256']}
 
 

@@ -1,20 +1,25 @@
 # 科研实验接口速查
 
-Generation/Evolution 可在 H 正式提交前直接 request_experiment，多次实验后继续分析，也可不实验直接形成 H。程序检查后执行，结果回原任务，无常规 Judger 审批/解释。可选 research_note 保存当前认识、缺口和下一步判据；失败/预算拒绝不等于测量。需要新代码时使用 Coding 单实现与 Safeguard 科学审查。
+新运行的 `context.model_metadata` 摘要来自当前模型、实际模块/位点目录、任务资产及 FP 结构 profile。通过其中的 read_asset 入口读取完整目录。形状示例保留采样 ID 和 block 的实际参数结构。校准池、实验所选视图和正式评测条件分别以数据收据、请求和冻结 Brief 为准。显式 `evaluation_protocol.final_training` 只约束 L3；全程训练限制仍以 hard_constraints 为准。
+
+Generation 可在共同选题、分支研究及综合时直接 request_experiment，多次实验后继续分析，也可不实验直接形成 H。程序检查后执行，结果回原任务，由 Generation 决定继续或提交。可选 research_note 保存当前认识、缺口和下一步判据；失败/预算拒绝不等于测量。需要新代码时使用 Coding 单实现与 Safeguard 科学审查。
 
 使用唯一 request_experiment(experiment)，或 plan_l3 直接提交同一草案。所有研究角色均直接接收有效 Evidence 或失败反馈；已提交的最终 L3 计划需要修订时，程序创建同角色新计划任务并保留旧版本。无法继续完成规定协议时可仅提交 defer_reason，不伪称验证完成。
 
 最小科学请求只需 question 与 measurements；controls 表达必要科学约束。prediction、decision_impact 可省略。程序保存原始需求、补齐可确定的模型/数据身份、资源、默认值与参数镜像；未知科学参数由研究者或 Coding 按职责决定，不编造预测或测量。
 
-已有服务直接选择 execution.service 与必要参数；不额外安排 Coding 或模型审批。需要新代码时 execution 可省略，程序按 custom_experiment 提供上下文，Coding 完成单份实现及必要 execution_choices 后再绑定完整可执行记录。独立重复需要 replication.requested=true 和科学目的；缓存不算独立重复。
+统一简短能力目录随 context.capability_catalog 交付；[完整调用说明](CAPABILITIES.md) 按需读取，科学正文仍由原 Skill/Method 唯一维护。已有服务直接选择 execution.service 与必要参数；不额外安排 Coding 或模型审批。需要新代码时 execution 可省略，程序按 custom_experiment 提供上下文，Coding 完成单份实现及必要 execution_choices 后再绑定完整可执行记录。独立重复需要 replication.requested=true 和科学目的；缓存不算独立重复。
 
 | service | 科学执行参数与能力 |
 |---|---|
 | profile（L1） | tool、arguments；接口参数见下表。查询结构不等于测得性能。 |
+| frozen_helper（L1/L2） | tool=profile_frozen_propagation/search_frozen_scales/score_frozen_candidates、arguments、source_ref；顶层 evidence_refs/solution_refs 绑定冻结来源，原 helper 观测返回 Evidence。传播不改状态；搜索只修改作业内副本并返回选中参数，不默认导出模型。 |
 | tensor_probe（L1/L2） | site、method、parameters={bits,signed,granularity,axis,group_size}、calibration={count,offset?}；L2 另给 evaluation={split,count}。L1 只在校准输入测局部误差，L2 额外单点替换整网回放。 |
-| quantize_evaluate（L2/L3） | calibration={count,offset?}、evaluations=[{kind,split,count}]、plan。现有方法直接使用数值计划；相同设置的 layer 可用 modules 数组代替单个 module，宿主逐位点展开。没有 plan 表示需新增 executor_v1 实现。 |
+| quantize_evaluate（L2/L3） | evaluations、计划来源及所需 calibration。可提交 plan 或从 parent_ref 接受有评分 Evidence 的 accept_trial。现有方法直接使用数值计划；相同设置的 layer 可用 modules 数组代替单个 module，宿主逐位点展开。自定义构造可使用经审查的 executor_v1。接受候选时可省略 calibration；如显式给出，须与评分 Evidence 的原图选择一致。manifest 另记继承的累计样本。 |
 | evaluate_artifact（L2/L3） | model_dir、evaluations；实际加载标准 plan v2/package v1 或 plan v3/package v2 模型包并评测；不通用加载自定义包。 |
 | custom_experiment（L1/L2/L3） | 新方法/统计的目的、所需结果和科学约束；Coding 完成单份源码与必要执行选择，再由 Safeguard 对照原始需求审查。 |
+
+局部自定义统计可声明 execution.parameters.diagnostic_view={split,count,offset?,ordering_seed?}。它只绑定解码前的有序研究子视图，无需声明分类指标。
 
 仅实际需要校准时声明 calibration；无图像的权重统计、能力查询和纯浮点对照不要求虚构校准。已声明的 calibration.count 必须为正整数或显式 null（从 offset 到末尾）。tensor_probe/quantize_evaluate 固定 calibration split。样本池容量不等于本次用量，见 data_receipt。L3 必须符合 Brief 的实际评测协议；不能用较小样本冒充完成。L1/L2 的局部干预、消融和浮点对照不继承最终候选的全网覆盖/位宽要求，整网评估不改变实际干预范围。自定义实现可使用新方法名、observer 和参数，无须给内置计划 parameter_bindings；实际选择内置执行器时仍受其能力约束。输出层级、任务性能、泛化及硬件加速分别判断。
 
@@ -36,8 +41,22 @@ Generation/Evolution 可在 H 正式提交前直接 request_experiment，多次�
 
 内置计划先规范化唯一确定的表示，再校验完整数值合同：格式对应 bits，per_tensor 的空 axis/group_size，禁用目标的空 method，以及格式自身唯一规定的 scale 等可省略；冲突仍报具体字段。方法、非唯一量化选择和未知轴由科研角色决定；需要真实 shape 的检查在正常准备捕获后完成，不要求额外发起实验。自定义 make_executor 使用自己的表示，不能据内置枚举拒绝新算法。
 
-资源由宿主按本运行允许池分配；新输入 allowed_gpus=auto 使用实际可见与获分配设备的交集，也可集中显式指定编号/UUID。无需猜选固定卡，默认一实验一卡。resources.gpu 可固定主卡；gpu_count 可选并按能力/空闲卡尽力启用，目前仅 server 原生非训练冻结包的纯分类评测分片，其余沿单卡。必需时延、显存指标或不兼容结果协议保留原单卡测量，不能删指标、减样本或降低量化覆盖来启用多卡。卡忙正常排队，不消耗尝试。启用 exclude_numeric_wait 的运行中，estimated_seconds 仍是单任务超时，不因超过智能体余额拒绝实验；重叠的推理/Coding/审核正常计时。实际范围和回退原因由回执记录。
+资源由宿主按本运行允许池分配；新输入 allowed_gpus=auto 使用实际可见与获分配设备的交集，也可集中显式指定编号/UUID。无需猜选固定卡，默认一实验一卡。resources.gpu 可固定主卡；gpu_count 可选并按能力/空闲卡尽力启用，支持 server 原生非训练冻结包纯分类分片，以及同冻结包 classification+ade_frozen 的双任务进程并行（custom executor 须显式支持 parallel_frozen_load）。优先满足各候选一张主卡，再将余卡给候选内部并行；校准/冻结各在主卡完成一次，双任务重载同一冻结包，少卡正常排队或回到已支持的单卡路径。必需时延、显存指标或不兼容结果协议保留原单卡测量，不能删指标、减样本或降低量化覆盖来启用多卡。卡忙正常排队，不消耗尝试。启用 exclude_numeric_wait 的运行中，estimated_seconds 仍是单任务超时，不因超过智能体余额拒绝实验；重叠的推理/Coding/审核正常计时。实际范围和回退原因由回执记录。
 
 数值超时独立于 LLM 的 runtime.task_timeout_seconds。省略 resources.estimated_seconds 时按 runtime.numeric_task_timeout_seconds 的 L1/L2/L3 取值，默认分别为 3600/10800/86400 秒（轻量诊断/较重局部实验/完整 L3）；可在运行配置按层级覆盖，或用 resources.estimated_seconds 显式覆盖本次任务，不增加估时审批。
 
-H1/H2 可引用 context.complete_solutions 的完整起点，局部改动不覆盖原方案。方法适配允许，缺失官方代码不阻塞自主实现。新最终 W4A4 使用 [STATIC_W4A4.md](STATIC_W4A4.md)；局部诊断不继承全网覆盖。exact frozen-state 消融在 evidence_refs 引用已发布包，Coding 可用 experiment_v1 的 load_frozen 回调；需要新实例时明确写新实例，不能替代确切包。
+H1/H2 可引用 context.complete_solutions 的完整起点，局部改动不覆盖原方案。方法适配允许，缺失官方代码不阻塞自主实现。新最终 W4A4 使用 [STATIC_W4A4.md](STATIC_W4A4.md)；局部诊断不继承全网覆盖。exact frozen-state 消融在顶层 `evidence_refs: ["EvidenceCard-…@1"]` 或 `solution_refs: ["完整方案ID"]` 明确来源，Coding 用 `experiment_v1` 的 `context["load_frozen"](ref)` 加载。兼容 `controls.evidence_refs` / `controls.solution_refs` 的既有明确列表并合并去重；不从自然语言、路径或“当前B”猜来源。多个已引用来源可用于对照，调用时须明确选择；唯一绑定包时可省略 ref。已绑定包的确切 model_ref 与其 Evidence/solution id 可互换，身份或包有歧义时返回 Generation 修订请求。需要新实例时明确写新实例，不能替代确切包。
+
+完整冻结方案传播诊断可直接请求 `execution.service="frozen_helper", tool="profile_frozen_propagation"`，也兼容在现有 `experiment_v1` 中调用 `ptq_agent.execution.propagation.profile_frozen_propagation`：经 `context["load_frozen"](ref)` 读取明确引用的模型，再选择 block 边界和可选冻结干预。返回配对 FP/Q 输入与输出、同 Q 输入的 FP block 重放、局部新增/上游映射/总误差和交叉项、CLS/patch 与命名任务输出；记录样本和状态哈希，禁止 final 选点、不重校准。API、来源声明示例及覆盖限制见 [冻结传播参考](skills/diagnose-ptq-failure/references/frozen-propagation.md)。直接适配与 custom 路径复用同一数值 helper，均经原来源绑定与 Evidence 返回链；不新增实验配额或替代双任务评价。参数和状态影响见 [能力目录](CAPABILITIES.md)。
+
+校准的原生计划选项为 `execution.plan.execution.{calibration_unit,block_modules,layer_order,reestimate_passes,calibration_context}`，与已有 `order/within_stage` 一起实际调度，见 [校准顺序](methods/calibration_order.md)。完整冻结背景中的 block 输出/少样本整网选参可直接请求 `frozen_helper` 的 `search_frozen_scales`，或沿 custom 调用同一数值 API `ptq_agent.execution.calibration_search.search_frozen_scales`，见 [目标与样本合同](methods/scale_selection.md#完整冻结背景中的block整网目标)。不要把参数拟合分数当作外层search或最终双任务成绩。
+
+获准研究参考优化与最终 training-free 的已有字段、产物边界和真实工具限制见 [科研 Skill 兼容说明](SCIENTIFIC_SKILLS_COMPATIBILITY.md)。STE 需现有 custom 实现；全程禁训合同不会被研究用途或 Skill 覆盖。
+
+模型请求的训练声明使用 `execution.training`，Coding 使用 `execution_choices.training`；宿主在 `normalize_execution` 生成 `execution.resolved_choices.training`。旧内部写法仅兼容已有程序/历史接口；两者同时出现必须一致，不能用字段别名绕过冻结 Brief。
+
+### 固定开发视图
+
+可在 execution_guidance.development 绑定 manifest（path、sha256、bytes）和 evaluations。完整候选以 L3 请求双任务 classification/dev 和 ade_frozen/ade_dev，两个 count 对应固定清单的全长。可在 Generation 取证或三候选规划时使用。result_protocol 区分此次开发评价和 evaluation_protocol 中保留的官方评价。complete_view 表示当前视图遍历完成，full_dataset 表示官方全量。开发记录随模型身份保存在方案库 development 字段；官方 Top-3 和 B 单独维护。相同冻结包可以有多个评价记录。
+
+同任务续调中，research_note 记录作者当前理解。最近成对实验与刚读的材料可直接使用。可随请求以 `active_materials` 列出现阶段仍需保留的调用 ID 或 Evidence 版本，空数组取消保留。历史结果附原始 TaskCard；已读页面省略正文时可按 read_card 或带摘要哈希的 version_read 重新展开。初次共同选题会交付 Brief 中明确绑定的父方案片段与测量出处，取证与直接决定共用现有预算。已有 STE 等训练参考记录独立来源、投入与比较用途，最终 training-free 构造须能从许可数据独立重建。

@@ -81,8 +81,14 @@ class RealResearchFollowup(TempCase):
         task, context = self.begin(wf, self.task(wf, refs=[evidence['id']]))
         self.assertFalse(context['memory']['required_reads'])
         shown = next(c for c in context['memory']['cards'] if c.get('id') == evidence['id'])
-        self.assertEqual(shown, evidence)
-        self.assertIn(evidence['id'], context['memory']['read_manifest']['refs'])
+        original_view = deepcopy(shown)
+        facts = original_view['payload'].pop('key_facts')
+        self.assertEqual(original_view, evidence)  # Original science remains complete.
+        samples = facts['conditions']['data']['calibration']['sample_ids']
+        self.assertEqual(samples['read_card'], {'ref': evidence['id'],
+            'field': '/payload/scope/data/calibration/sample_ids'})
+        self.assertEqual(wf.card_field(evidence, samples['read_card']['field']), ['fixture-0'])
+        self.assertIn(evidence['id'], context['memory']['read_manifest']['projected_refs'])
 
     def test_omitted_scope_copies_only_identical_verified_evidence_scopes(self):
         wf = self.workflow(1)

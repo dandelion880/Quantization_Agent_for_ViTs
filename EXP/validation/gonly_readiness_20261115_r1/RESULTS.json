@@ -1,0 +1,393 @@
+{
+  "status": "completed_scoped_validation",
+  "branch": "ablation/gonly",
+  "base_commit": "2be2af1",
+  "main_unchanged": "8800006b687c56205ad624bae2ad7156c326d873",
+  "core_sha256": "18b97f153ceb64d701ee49e89e41c7a8bbf5f627757ddcee8ef1012670aaf54f",
+  "checks": {
+    "initial_integration": {
+      "tests": 190,
+      "passed": 184,
+      "failures_or_errors": 6,
+      "log": "regression.log"
+    },
+    "final_affected_integration": {
+      "tests": 80,
+      "passed": 80,
+      "seconds": 91.492,
+      "log": "regression_final.log"
+    },
+    "final_gpu_resource_cpu": {
+      "tests": 33,
+      "passed": 33,
+      "seconds": 17.594,
+      "log": "gpu/final_cpu.log"
+    },
+    "exact_l3_execution_binding": {
+      "tests": 1,
+      "passed": 1,
+      "seconds": 1.512,
+      "log": "version_execution_final.log"
+    },
+    "real_evidence_projection": {
+      "status": "passed",
+      "kind": "read_only_projection_of_real_historical_evidence",
+      "source_run": "/root/data-fs/projects/Quantization_Agent_for_ViTs_gonly/EXP/runs/deitb_static_w4a4_gonly_20261115_r1",
+      "evidence_count": 5,
+      "new_measurements": 0,
+      "immutable_sources_checked": {
+        "/root/data-fs/projects/Quantization_Agent_for_ViTs_gonly/EXP/runs/deitb_static_w4a4_gonly_20261115_r1/cards/10fe3e670c6e52a5bc3330131265a815570f18f31e7eb4ea899d344991a085f0.json": "5c798cf388e6c015b22d45623cd7040e9126c58741cb37fcd18d58de62142b88",
+        "/root/data-fs/projects/Quantization_Agent_for_ViTs_gonly/EXP/runs/deitb_static_w4a4_gonly_20261115_r1/jobs/task-b82d0e9c4c38354f3e31a579-a0001/segmentation.json": "23ab43892369969135d0f87bafc6140ea780e329836005771d88f5af70f70408",
+        "/root/data-fs/projects/Quantization_Agent_for_ViTs_gonly/EXP/runs/deitb_static_w4a4_gonly_20261115_r1/cards/30938f3680fb208ea3a72d126782683caa6adc175db9261b4dcd115e3c3e3f3a.json": "905681f953829efd4a8be303cb5777611abc899fdca03f48ac0fe361e686a0f9",
+        "/root/data-fs/projects/Quantization_Agent_for_ViTs_gonly/EXP/runs/deitb_static_w4a4_gonly_20261115_r1/cards/6cf00240062bd45aea45930cf3f53d3d47506fdbc7d3fb575b6f1a4ef9a108e9.json": "60fb6d69561ff6c4f663c714db0f5028e38498d42da3c3f7638aa37388f77460",
+        "/root/data-fs/projects/Quantization_Agent_for_ViTs_gonly/EXP/runs/deitb_static_w4a4_gonly_20261115_r1/jobs/task-97cee009a3d280bd3aa744d2-a0001/segmentation.json": "b3633c9f42e95504f94aace2bb57531cb51695a1d8210772b3dd4c389058fc17",
+        "/root/data-fs/projects/Quantization_Agent_for_ViTs_gonly/EXP/runs/deitb_static_w4a4_gonly_20261115_r1/cards/7c58132e03bc718cff613d9bbd5fe6de4bcfd06feef34644fcefe6b51790eaeb.json": "99e4169eae1b554d50ecf7c787a7c69bbcca497c4fe0944ff05d103a4c32b97e",
+        "/root/data-fs/projects/Quantization_Agent_for_ViTs_gonly/EXP/runs/deitb_static_w4a4_gonly_20261115_r1/cards/95fa3f9033ec11cea0b11ae1b87154b161be5928cc4691d7361719e0dd9f0e18.json": "46e9ad79ad95203f5ec95b6367f0a3c893ea6d2a4923eaa707bce4c61163f520"
+      },
+      "changed_sources": [],
+      "checks": [
+        "FP/Q/delta/unit/full scope and identity",
+        "actual L2 arms remain distinct",
+        "immutable raw Evidence and ADE assets"
+      ],
+      "sizes": [
+        {
+          "ref": "EvidenceCard-15a015a9c39044759caf9a9edd7a0c22@1",
+          "source_bytes": 12274856,
+          "projection_characters": 12122
+        },
+        {
+          "ref": "EvidenceCard-646077308373429fb07082f8d3e0e3d5@1",
+          "source_bytes": 12001006,
+          "projection_characters": 14918
+        },
+        {
+          "ref": "EvidenceCard-e643fc1b1e154c17a7553394f97281f1@1",
+          "source_bytes": 12341258,
+          "projection_characters": 12155
+        },
+        {
+          "ref": "EvidenceCard-cecf07bdab8c47d48027bd02a932160c@1",
+          "source_bytes": 5554066,
+          "projection_characters": 14767
+        },
+        {
+          "ref": "EvidenceCard-71a683a780904b70b1cbe91282a3378c@1",
+          "source_bytes": 7598059,
+          "projection_characters": 14090
+        }
+      ],
+      "views_sha256": "4540a704cf193c82576fc46f9fe677431da375992e311fd50347e78c384543b5"
+    },
+    "offline_projection": {
+      "kind": "read_only_real_recorder_cases_no_judge_call_no_new_score",
+      "cases": [
+        {
+          "case_id": "case-6d422ddafeeb2bba902e5286",
+          "role": "recorder",
+          "source_characters": 2639066,
+          "projected_characters": 182431,
+          "original_case_sha256": "540820ca608d84db5ab91c6db708298f191d10be94cf7033b30e504a53961c8a",
+          "original_case_unchanged": true
+        },
+        {
+          "case_id": "case-81d2cd7972a9ceaf999516d1",
+          "role": "recorder",
+          "source_characters": 2754473,
+          "projected_characters": 200817,
+          "original_case_sha256": "a81be69d72a1925f091fea682459c7755f904d1ed4e14fc052243d30048b2c6f",
+          "original_case_unchanged": true
+        }
+      ]
+    },
+    "generation_replays": [
+      {
+        "path": "generation_replay",
+        "requested": {
+          "model": "gpt-6-astra",
+          "reasoning_effort": "high"
+        },
+        "actual": {
+          "model": null,
+          "reasoning_effort": null,
+          "source": "not_reported_by_cli"
+        },
+        "usage": {
+          "cache_write_input_tokens": 0,
+          "cached_input_tokens": 0,
+          "input_tokens": 184777,
+          "output_tokens": 1564,
+          "reasoning_output_tokens": 204
+        },
+        "elapsed_seconds": 56.81937784515321,
+        "request_bytes": 590959,
+        "scope": "read-only Generation on real historical evidence"
+      },
+      {
+        "path": "generation_replay_compact",
+        "requested": {
+          "model": "gpt-6-astra",
+          "reasoning_effort": "high"
+        },
+        "actual": {
+          "model": null,
+          "reasoning_effort": null,
+          "source": "not_reported_by_cli"
+        },
+        "usage": {
+          "cache_write_input_tokens": 0,
+          "cached_input_tokens": 0,
+          "input_tokens": 94433,
+          "output_tokens": 1356,
+          "reasoning_output_tokens": 150
+        },
+        "elapsed_seconds": 50.19495567679405,
+        "request_bytes": 286015,
+        "scope": "read-only Generation on real historical evidence and this validation GPU receipts"
+      }
+    ],
+    "historical_gpu_loads": {
+      "gpu": "GPU-cc9e24d0-5522-0bac-446f-e6608c62a9e6",
+      "results": [
+        {
+          "elapsed_seconds": 45.179164646193385,
+          "historical_scores": {
+            "mIoU": 28.055647558635677,
+            "top1": 72.482
+          },
+          "loaded_without_prepare": true,
+          "measurement_origin": "historical",
+          "new_check": {
+            "fp_argmax": [
+              883
+            ],
+            "output_shape": [
+              1,
+              1000
+            ],
+            "quantized_argmax": [
+              883
+            ],
+            "sample_id": "train/n04522168/n04522168_9121.JPEG",
+            "samples": 1,
+            "split": "search"
+          },
+          "package_unchanged": true,
+          "solution_id": "3fa2102e9a6efeec9dba2b6606dc274f00c44252609e0e0c6f0a92c8fefd8cc6",
+          "source_version": "cb04d86178919244b9215ff4b2c9ef05100454f1e992c1315827c3d59aa220dd"
+        },
+        {
+          "elapsed_seconds": 29.174641529098153,
+          "historical_scores": {
+            "mIoU": 4.418857411135278,
+            "top1": 72.274
+          },
+          "loaded_without_prepare": true,
+          "measurement_origin": "historical",
+          "new_check": {
+            "fp_argmax": [
+              883
+            ],
+            "output_shape": [
+              1,
+              1000
+            ],
+            "quantized_argmax": [
+              883
+            ],
+            "sample_id": "train/n04522168/n04522168_9121.JPEG",
+            "samples": 1,
+            "split": "search"
+          },
+          "package_unchanged": true,
+          "solution_id": "4609369da995d8d81595821555611f0ae6c4a50c03756c1cd7019234a75f59fe",
+          "source_version": "8c76550850c9f3a29bb4898784b75c9048f0f4ea22abe304dfc72ad3885869da"
+        }
+      ],
+      "scope": "load and one-image forward; no task accuracy or calibration"
+    },
+    "real_dual_gpu": {
+      "scope": "engineering smoke only; uniform static W4A4 with calibration1; no new scientific evidence",
+      "gpu_bindings": [
+        {
+          "device_node": "/dev/nvidia0",
+          "index": 0,
+          "uuid": "GPU-7b3cc098-9544-bc3b-f922-2dda1d35619b"
+        },
+        {
+          "device_node": "/dev/nvidia1",
+          "index": 1,
+          "uuid": "GPU-1f053b21-cd6a-49f3-b124-eba7081372cf"
+        }
+      ],
+      "model_assets": {
+        "manifest.json": "4bac946bd141055841a94365e7360dfdb5925040b3f8d290165f37d6535d1921",
+        "weights.pt": "80211bb737c437fbd0f743f3ca0ee116639e6211722fb1b30d3b60d4a9a8b836"
+      },
+      "parallel": {
+        "baseline_digest": "a62575cb13ad6d419979a98641e8f758c52ff0464a28264643c98c3a989d6f28",
+        "budget": "one experiment wall interval; child time is not added to active/numeric wait",
+        "classification_interval": [
+          1794750821.1327853,
+          1794750833.7654116
+        ],
+        "deadline_unix": 1794751071.3140273,
+        "gpu_uuids": [
+          "GPU-7b3cc098-9544-bc3b-f922-2dda1d35619b",
+          "GPU-1f053b21-cd6a-49f3-b124-eba7081372cf"
+        ],
+        "model_assets": {
+          "manifest.json": "4bac946bd141055841a94365e7360dfdb5925040b3f8d290165f37d6535d1921",
+          "weights.pt": "80211bb737c437fbd0f743f3ca0ee116639e6211722fb1b30d3b60d4a9a8b836"
+        },
+        "model_digest": "d685691d3d739d951336a16f38224840ad7c887fae5902cc139ba5f1c267e028",
+        "overlap_seconds": 12.620172023773193,
+        "physical_gpus": [
+          0,
+          1
+        ],
+        "segmentation_interval": [
+          1794750821.1452396,
+          1794750843.9925475
+        ],
+        "status": "completed"
+      },
+      "equality": {
+        "classification": {
+          "exact_quality_metrics": true,
+          "integer_counts_or_confusion_matrices_equal": true,
+          "operational_metrics_by_mode": {
+            "dual": {
+              "baseline_latency_ms": 9.440090879797935,
+              "cuda_peak_memory_mib": 1014.0849609375,
+              "latency_ms": 48.131874203681946,
+              "measured_speedup": 0.1961297172815223
+            },
+            "serial": {
+              "baseline_latency_ms": 7.722606137394905,
+              "cuda_peak_memory_mib": 1671.0986328125,
+              "latency_ms": 40.08152075111866,
+              "measured_speedup": 0.1926724832959181
+            }
+          },
+          "same_sample_ids": true,
+          "sample_count": 64
+        },
+        "segmentation": {
+          "exact_quality_metrics": true,
+          "integer_counts_or_confusion_matrices_equal": true,
+          "operational_metrics_by_mode": {
+            "dual": {},
+            "serial": {}
+          },
+          "same_sample_ids": true,
+          "sample_count": 1
+        }
+      },
+      "failure": {
+        "child_alive": false,
+        "error": "ContractError: dual-task evaluation failed: ContractError: dual-task frozen identity mismatch: model_digest",
+        "package_unchanged": true
+      }
+    },
+    "cleanup": {
+      "checked_unix": 1794751131.535657,
+      "gpu_snapshot": "0, GPU-7b3cc098-9544-bc3b-f922-2dda1d35619b, 0 MiB, 0 %\n1, GPU-1f053b21-cd6a-49f3-b124-eba7081372cf, 0 MiB, 0 %\n2, GPU-df567935-d109-ae8c-1dec-9274a597bb77, 0 MiB, 0 %\n3, GPU-a9bcbfca-6d9e-46ec-55e0-595e8a2b658c, 0 MiB, 0 %\n4, GPU-cc9e24d0-5522-0bac-446f-e6608c62a9e6, 0 MiB, 0 %\n",
+      "lease_reacquisition": [
+        0,
+        1
+      ],
+      "leases_closed": true,
+      "processes_alive": {
+        "EXP/validation/gonly_readiness_20261115_r1/gpu/dual/processes/dual-segmentation.json": false,
+        "EXP/validation/gonly_readiness_20261115_r1/gpu/identity_failure/processes/dual-segmentation.json": false
+      }
+    }
+  },
+  "test_accounting": "Batches overlap; test counts are not added as distinct cases. Initial failures and script fixture errors retained.",
+  "limitations": [
+    "No next full research run or repeated full L3.",
+    "Engineering GPU smoke is not scientific Evidence or task performance validation.",
+    "No DDP/additional sharding; arbitrary custom executor dual-GPU combinations not measured.",
+    "Real Generation replay did not execute a scientific candidate revision; exact revision/reselection/binding is host integration tested.",
+    "New Eval-L0 criteria are repository authored, not human calibrated; historical cases were not rescored."
+  ],
+  "artifacts": {
+    "regression.log": {
+      "bytes": 8110,
+      "sha256": "dfa9b95b8ae89505d6eec9b18011905a7e2f8059920b673d08f51550b75c4f01"
+    },
+    "regression_final.log": {
+      "bytes": 744,
+      "sha256": "5d65c4a0f56f1b7be99191ad66d407da76e9d8b0e505efaaec228f87b7470c3a"
+    },
+    "candidate_revision.log": {
+      "bytes": 100,
+      "sha256": "fbb0eeb87eeaab55a538f92daa74576ae1a13212da478b570704537fe7c1cf66"
+    },
+    "version_execution.log": {
+      "bytes": 1675,
+      "sha256": "7b9a57331de22a379704da4c55e5502e5420cbeba98c44c4d73e374aedc6f76c"
+    },
+    "version_execution_retry.log": {
+      "bytes": 2301,
+      "sha256": "a596d6c6f722f39b029a98c8903342e7f80fecb4d9fea2f0d0e53ca87e4f15b9"
+    },
+    "version_execution_final.log": {
+      "bytes": 140,
+      "sha256": "6aeabfb86016623162e1d7326229da8fa6e38fe6679421772ee63e822818df2a"
+    },
+    "evidence_delivery_check.json": {
+      "bytes": 3034,
+      "sha256": "4be46ea841184b77bd5560a743a6bfc88857a6e06b38906c22031657150fed0d"
+    },
+    "offline_projection.json": {
+      "bytes": 688,
+      "sha256": "19188328937ac74bffe1e33c12440d85a1c9079e1c9cee69214b4bf42adff2f6"
+    },
+    "gpu/final_cpu.log": {
+      "bytes": 577,
+      "sha256": "8f50ef30ddc4d952767b124e6ff0b4b0a688f554272e014e281ae2cfd4d0d2f4"
+    },
+    "gpu/regression.log": {
+      "bytes": 1913,
+      "sha256": "b3be38d961c37b3d811a8e19e4713e32a3e4b74d6cf04cd4e7e6864710af6ed7"
+    },
+    "gpu/GPU_RESULTS.json": {
+      "bytes": 7902,
+      "sha256": "aab61f78ef46ebcfbd1f51858da60415b1760911b481d081af990e2d2388add1"
+    },
+    "gpu/cleanup.json": {
+      "bytes": 605,
+      "sha256": "5c88eedc0a8b9454511cc0a15fe100d3fc879af804c500bb83ddc1892dc9dd3e"
+    },
+    "solutions/guarded_job/history_gpu_leased.json": {
+      "bytes": 1162,
+      "sha256": "09fa3e917d399fe4adde48f6d37091edf234ae0a7be2d07091d2a25b9753b19b"
+    },
+    "solutions/backfill_regression.log": {
+      "bytes": 1209,
+      "sha256": "c971fc86b2c0c0c0014392f313a8cf3e504db8a3fde3a792b5150e954a1c30f6"
+    },
+    "solutions/recovery_retry.log": {
+      "bytes": 384,
+      "sha256": "7b32f4b046017e248419b66a0885a6dfccdb1aa18b70669fd79bcae64882f88f"
+    },
+    "generation_replay/response.json": {
+      "bytes": 4354,
+      "sha256": "e74edaef29b2ec0435bc7d5d60dbf949f07c1286ecd9b51e02a9445f08aa2572"
+    },
+    "generation_replay/call/llm_audit.json": {
+      "bytes": 606387,
+      "sha256": "2a940b3a847ca2b99d1781dd2d73806ce49da71427f0f49c724504b10b2e476c"
+    },
+    "generation_replay_compact/response.json": {
+      "bytes": 3966,
+      "sha256": "3f110ef171df6222c20db6d819834ecc10666b29e3f8fa5ba3f1574232d733f6"
+    },
+    "generation_replay_compact/call/llm_audit.json": {
+      "bytes": 299887,
+      "sha256": "b10e9038867dcb5cebf6967ad34c938a4fc52bdd34ed03f5561f47afed05fe28"
+    }
+  }
+}

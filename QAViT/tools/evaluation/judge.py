@@ -46,7 +46,35 @@ def supplied_sources(root, case):
         result.append({k: source[k] for k in ("source_id", "immutable_ref", "locator", "availability", "source_type")}
                       | {"content": redact(source_value(root, source), names, blind=True),
                          "boundary": {k: source[k] for k in ("execution_id", "visible_at_sequence", "delivery", "attribution") if k in source}})
-    return result
+    return project_sources(result) if case.get("evidence_projection") == "exact_lists_and_repeated_bodies/1" else result
+
+
+def project_sources(sources):
+    """Only exact identity lists and repeated bodies are elided; originals stay frozen.
+
+    Do not import later outcomes, summarize scientific prose, or combine arms.
+    Legacy frozen cases keep their original rendering and accepted score bindings.
+    """
+    seen = {}
+    def walk(value, source, loc, sample=False):
+        if isinstance(value, list) and sample and len(canonical(value)) > 1000:
+            return {'source_id': source, 'locator': loc, 'sha256': fingerprint(value),
+                    'items': len(value), 'ordered': True, 'projection': 'identity_list; original retained in frozen source'}
+        if isinstance(value, (dict, list, str)) and len(canonical(value)) > 2000:
+            key = fingerprint(value)
+            if key in seen:
+                return {'same_content_as': seen[key], 'sha256': key,
+                        'projection': 'exact repetition; cite the first displayed body'}
+            seen[key] = {'source_id': source, 'locator': loc}
+        if isinstance(value, dict):
+            return {k: walk(v, source, loc + '/' + k.replace('~', '~0').replace('/', '~1'),
+                            k.endswith('sample_ids') or loc.rsplit('/', 1)[-1] in ('sample_selection', 'split_ids'))
+                    for k, v in value.items()}
+        if isinstance(value, list):
+            return [walk(v, source, loc + '/' + str(i)) for i, v in enumerate(value)]
+        return value
+    return [{**source, 'content': walk(source['content'], source['source_id'], source['locator'])}
+            for source in sources]
 
 
 def render(root, case, rules):
@@ -77,6 +105,9 @@ def render(root, case, rules):
     template += ("\n\n来源 locator 使用 source_index 中的 #/ JSON pointer，可以继续向下定位已展示的 JSON 字段；"
                  "文本源码使用该 source 的根 locator，excerpt 必须是该位置的真实短摘录。每个 scored 项必须引用至少一个已展示来源；"
                  "不要引用未展开的卡片正文或事后材料。全量原始轨迹已冻结；缺失或未读材料使用 unknown。")
+    if case['purpose'] == 'plan_l3' and case['role'] == 'generation':
+        template += ("\nG-only 路由说明：本案例 plan_l3 由 Generation 承担；沿用原 JL1/JL2/JL3 的协议、执行、诚实性标准。"
+                     "原评分包中 Full 的父子身份规则只适用于实际存在的历史阶段；不得要求本案例生成 H4 或进行辩论。")
     return {"system_prompt": (rules.root / "prompts/judge_system.md").read_text(), "case_prompt": template,
             "supplied_sources": supplied}
 

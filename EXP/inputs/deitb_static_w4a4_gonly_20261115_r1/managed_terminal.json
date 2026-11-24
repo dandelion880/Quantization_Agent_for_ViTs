@@ -1,0 +1,65 @@
+{
+  "schema": "qavit.managed_terminal_observation/1",
+  "terminal": {
+    "status": "completed",
+    "workflow_completed": true,
+    "scope_target_reached": false,
+    "completed_rounds": [
+      1,
+      2
+    ],
+    "formal_validation_success": true,
+    "numerical_validation_status": "validated",
+    "scientific_review_complete": true,
+    "error": null,
+    "state_saved": true,
+    "finalization_errors": [],
+    "run_id": "deitb_static_w4a4_gonly_20261115_r1",
+    "monitor_cleanup_completed": true,
+    "supervisor_exit_code": 0
+  },
+  "launcher_receipts": [
+    {
+      "line": 3,
+      "line_sha256": "616b2d7dc92619d1b2f6e776bc36d555d1142611e78d9311315866d6e7ed2cc4",
+      "receipt": {
+        "status": "completed",
+        "workflow_completed": true,
+        "scope_target_reached": false,
+        "completed_rounds": [
+          1,
+          2
+        ],
+        "formal_validation_success": true,
+        "numerical_validation_status": "validated",
+        "scientific_review_complete": true,
+        "error": null,
+        "state_saved": true,
+        "finalization_errors": []
+      }
+    },
+    {
+      "line": 4,
+      "line_sha256": "616b2d7dc92619d1b2f6e776bc36d555d1142611e78d9311315866d6e7ed2cc4",
+      "receipt": {
+        "status": "completed",
+        "workflow_completed": true,
+        "scope_target_reached": false,
+        "completed_rounds": [
+          1,
+          2
+        ],
+        "formal_validation_success": true,
+        "numerical_validation_status": "validated",
+        "scientific_review_complete": true,
+        "error": null,
+        "state_saved": true,
+        "finalization_errors": []
+      }
+    }
+  ],
+  "run_binding": "resume_001_launch.json#/run",
+  "process_cleanup_proof": "Original Journal commit000007928.json budget_segment_stopped: processes_stopped=true; no active segment or owned processes remain.",
+  "cleanup_and_exit_fields_source": "Direct original managed summary.json read before official run.py report regenerated it; recorded in operator_state.json#/terminal. These two fields are external observations, not fields of the compact launcher stdout.",
+  "note": "Official run.py report regenerates derived summary without launcher-only fields; original immutable Journal, original launcher stdout and monitor observations remain intact."
+}

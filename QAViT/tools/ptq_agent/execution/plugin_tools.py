@@ -278,7 +278,7 @@ def register_plugin_tools(session):
                     for x, sample_id in data.batches("calibration"):
                         reference, candidate = errors.add(forward(backend, backend.model, x), forward(backend, model, x))
                         if data.labels:
-                            require(list(reference) == ["output"] and reference["output"].shape == (1, 1000),
+                            require(list(reference) == ["output"] and reference["output"].shape == (1, backend.model.head.out_features),
                                     "分类诊断需要真实分类 logits，不能把特征当作类别")
                             ref, value = reference["output"].double(), candidate["output"].double()
                             a, b = ref.argmax(-1).item(), value.argmax(-1).item()

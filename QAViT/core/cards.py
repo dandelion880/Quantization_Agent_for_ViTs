@@ -16,6 +16,7 @@ from jsonschema import Draft202012Validator
 KINDS = ("ResearchBrief", "HypothesisCard", "ReviewDecisionCard", "ExperimentCard",
          "EvidenceCard", "MetareviewCard", "TaskCard")
 ROLES = ("supervisor", "generation", "judger", "evolution", "recorder", "coding", "safeguard")
+ACTIVE_ROLES = tuple(role for role in ROLES if role not in ("judger", "evolution"))
 TEXT = {"type": "string", "minLength": 1, "pattern": r"\S"}
 STRINGS = {"type": "array", "items": TEXT}
 OBJECT = {"type": "object", "additionalProperties": True}
@@ -74,17 +75,22 @@ PAYLOAD_SCHEMAS = {
             "relation": TEXT, "target": TEXT, "explanation": TEXT,
         }, ["relation", "target", "explanation"])},
         "feedback_used": {"type": "array", "items": OBJECT}, "scope": OBJECT,
-        "evidence_refs": STRINGS,
+        "evidence_refs": STRINGS, "inspiration_id": TEXT, "topic_ref": TEXT, "method_id": TEXT,
+        "method_lineage": object_schema({'name': TEXT, 'parent_method_ids': STRINGS, 'change': TEXT}, ['name', 'change']),
+        "solution_derivation": object_schema({
+            "base_solution_id": TEXT, "changes": TEXT, "rollback": TEXT,
+        }, ["base_solution_id", "changes", "rollback"]),
     }, ["round", "slot", "hypothesis_type", "title", "research_question", "mechanism",
         "intervention", "predictions", "sources", "mechanism_relations", "feedback_used", "scope"]),
     "ReviewDecisionCard": object_schema({
         "phase": {"enum": ["screening", "position", "verdict", "ranking", "interpretation",
-                            "experiment_approval", "safeguard", "reference_design", "revision"]},
+                            "experiment_approval", "safeguard", "reference_design", "revision", "research_direction"]},
         "rationale": TEXT, "evidence_refs": STRINGS, "uncertainties": STRINGS,
     }, ["phase", "rationale", "evidence_refs", "uncertainties"]),
     "ExperimentCard": object_schema({
         "stage": {"enum": ["request", "execution"]},
         "request_ref": TEXT, "request_sha256": TEXT,
+        "evidence_refs": STRINGS, "solution_refs": STRINGS, "inspiration_id": TEXT, "topic_ref": TEXT, "method_id": TEXT,
         "level": {"enum": ["L1", "L2", "L3"]}, "question": TEXT,
         "prediction": TEXT, "measurements": {"type": "array", "minItems": 1},
         "controls": OBJECT, "decision_impact": TEXT, "execution": OBJECT,
@@ -111,12 +117,14 @@ PAYLOAD_SCHEMAS = {
         "judgment_audit": {"type": "array", "items": OBJECT},
         "predictive_metrics": {"type": "array", "items": OBJECT},
         "knowledge_updates": {"type": "array", "items": OBJECT},
+        "skill_updates": {"type": "array", "items": OBJECT},
         "pending_knowledge_updates": {"type": "array", "items": object_schema({
             "index": {"type": "integer", "minimum": 0}, "submission": {}, "issue": TEXT,
             "status": {"const": "pending_verification"}, "claim_id": TEXT,
         }, ["index", "submission", "issue", "status"])},
         "recurring_failures": STRINGS, "blind_spots": STRINGS,
         "next_questions": STRINGS, "resolved_questions": STRINGS, "abandoned_questions": STRINGS,
+        "resolved_question_refs": STRINGS, "abandoned_question_refs": STRINGS,
         "generation_guidance": {"type": "string"},
         "evidence_refs": STRINGS, "reviewed_refs": {**STRINGS, "uniqueItems": True},
     }, ["round", "scientific_analysis", "judgment_audit", "predictive_metrics", "knowledge_updates",
@@ -153,14 +161,17 @@ PAYLOAD_SCHEMAS["MetareviewCard"]["properties"]["judgment_audit"]["items"] = obj
     "judgment_ref": TEXT, "assessment": TEXT, "evidence_refs": STRINGS, "reasoning": TEXT,
 }, ["judgment_ref", "assessment", "evidence_refs", "reasoning"])
 
+NOTE_SCHEMA = object_schema({'topic_ref': TEXT, 'progress': TEXT, 'reconsideration': TEXT, 'source_refs': STRINGS}, ['topic_ref', 'progress'])
+PAYLOAD_SCHEMAS['MetareviewCard']['properties']['topic_notes'] = {'type':'array','items':NOTE_SCHEMA}
+
 OPTIONAL_ANALYSIS_FIELDS = {
     'HypothesisCard': ('predictions', 'sources', 'mechanism_relations', 'feedback_used', 'scope',
                        'implementation', 'validation_design'),
     'ReviewDecisionCard': ('uncertainties', 'similarity_analysis', 'evidence_gaps',
                            'arguments', 'objections', 'responses_to_prior', 'key_predictions', 'changed_judgments', 'next_questions', 'continuation_assessment',
                            'decisive_reason', 'selection_basis'),
-    'MetareviewCard': ('judgment_audit', 'predictive_metrics', 'recurring_failures', 'blind_spots',
-                       'next_questions', 'resolved_questions', 'abandoned_questions', 'generation_guidance'),
+    'MetareviewCard': ('topic_notes', 'judgment_audit', 'predictive_metrics', 'recurring_failures', 'blind_spots',
+                       'next_questions', 'resolved_questions', 'abandoned_questions', 'resolved_question_refs', 'abandoned_question_refs', 'generation_guidance'),
 }
 
 MEMORY_QUERY_SCHEMA = object_schema({"text": {"type": "string"}, "evidence_ids": {**STRINGS, "minItems": 1},

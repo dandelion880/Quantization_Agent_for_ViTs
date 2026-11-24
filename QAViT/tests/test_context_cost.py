@@ -129,7 +129,9 @@ class ContextCostRegression(TempCase):
                  'inputs': {'name': 'read_card', 'arguments': {'ref': cards[1]['id']}}}
         second = {'task_id': 'note', 'task_card': cards[0]['id'], 'kind': 'experiment_request', 'state': 'completed',
                   'inputs': {'draft': {'question': 'targeted repeat'}, 'research_note': 'retain contradictory tail result'}}
-        rows = [({'task': 'old'}, first, cards[1]),
+        body = deepcopy(cards[1])
+        body['payload']['observations']['unabridged'] = list(range(1200))
+        rows = [({'task': 'old'}, first, body),
                 ({'task': 'note'}, second, {'status': 'failed', 'reason': 'measurement unavailable'})]
         with patch.object(wf, 'result_values', side_effect=lambda task: iter(rows)):
             result = wf.compact_results({}, {}, complete_bodies=[])
@@ -158,20 +160,22 @@ class ContextCostRegression(TempCase):
         self.assertEqual(shown['recorded_context']['summary'], wide['summary'])
         self.assertLess(len(canonical(shown)), 3500)
 
-    def test_research_note_moves_previous_experiment_to_short_history(self):
+    def test_note_keeps_two_recent_experiments_and_older_evidence_can_be_pinned(self):
         wf = self.workflow(1)
-        old, new = self.science(wf, 'old'), self.science(wf, 'new')
+        old, middle, new = [self.science(wf, k) for k in ('old', 'middle', 'new')]
         task = self.task(wf, 'generate', round=1, slot='H1', hypothesis_type='existing_method')
         rows = [({}, {'kind': 'experiment_request', 'outputs': [old[0]['id'], old[1]['id']],
                      'inputs': {}}, {}),
+                ({}, {'kind': 'experiment_request', 'outputs': [middle[0]['id'], middle[1]['id']], 'inputs': {}}, {}),
                 ({}, {'kind': 'experiment_request', 'outputs': [new[0]['id'], new[1]['id']],
                      'inputs': {'research_note': 'test whether prior loss persists'}}, {})]
         with patch.object(wf, 'result_values', side_effect=lambda task: iter(rows)):
             refs = wf.required_refs(task)
             self.assertNotIn(old[1]['id'], refs)
             self.assertIn(new[1]['id'], refs)
+            self.assertIn(middle[1]['id'], refs)
             self.assertIn(old[1]['id'], wf.historical_experiment_refs(task))
-            task['inputs']['refs'].append(old[1]['id'])
+            rows[-1][1]['inputs']['active_materials'] = [old[1]['id']]
             self.assertIn(old[1]['id'], wf.required_refs(task))
 
     def test_projection_cache_is_immutable_across_presentations(self):

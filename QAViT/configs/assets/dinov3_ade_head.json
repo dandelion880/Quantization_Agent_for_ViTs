@@ -1,0 +1,11 @@
+{
+  "task": "ade",
+  "format": "mmseg_state_dict",
+  "checkpoint": "/root/data-fs/projects/ptq_training_free/checkpoints/best_mIoU_iter_160000.pth",
+  "checkpoint_sha256": "db894b760c37acbbfef84888b18b7554076b762664597c0f12d958f99c272927",
+  "backbone_sha256": "73cec8be7427c8655ceced13ce62f6e20a1fa90d1b4d4a550df17a1144081a7c",
+  "source_manifest": "/root/data-fs/projects/ptq_training_free/manifests/assets.json",
+  "iteration": 160000,
+  "experiment": "dinov3_vitb16_upernet_ade20k_frozen_fp32_6gpu_20260901_174952",
+  "task_definition_sha256": "f99f0e77d249870654a2bde52073ce2eba0c5c8c2e017b02524a0fa651c37807"
+}

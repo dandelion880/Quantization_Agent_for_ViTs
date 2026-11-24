@@ -21,6 +21,7 @@ from core.evidence_scope import canonical_scope
 SERVICE_VERSION = "qavit.experiments/2.1"
 SERVICES = {
     "profile": {"levels": ["L1"], "description": "已有15个真实 Profiling 接口；v2独立会话和全局预算，无measurement次数上限"},
+    "frozen_helper": {"levels": ["L1", "L2"], "description": "已绑定冻结来源的传播诊断/离散尺度搜索；直接调用原数值 helper，返回 Evidence，不需 Coding；同一冻结父包在许可视图上评分，接受后通过 quantize_evaluate 导出子包"},
     "tensor_probe": {"levels": ["L1", "L2"], "description": "真实ViT位点输入、局部输出及小样本整网回放；可挂载经批准的quantizer_v1实现"},
     "evaluate_artifact": {"levels": ["L2", "L3"], "description": "加载标准 plan v2/package v1 或 plan v3/package v2 冻结模型包，使用显式数据视图进行分类/分割；不继承历史指标。自定义包须由对应批准的 executor_v1 加载"},
     "quantize_evaluate": {"levels": ["L2", "L3"], "description": "已有数值算法直接提供 execution.plan；新增算法才经批准 executor_v1 生成计划/执行器。两路共用冻结合同、覆盖审计、导出重载及评测"},
@@ -37,9 +38,11 @@ EXPERIMENT_DRAFT_SCHEMA['properties']['execution']['required'] = []
 EXPERIMENT_DRAFT_SCHEMA['properties']['execution']['properties'] = {
     **{key: deepcopy(OBJECT) for key in ('backend', 'resolved_choices', 'parameters',
         'quantization_contract', 'method_options', 'arguments')},
+    'accept_trial': {'type': 'object', 'additionalProperties': False, 'required': ['evidence_ref', 'candidate_id'],
+                     'properties': {'evidence_ref': TEXT, 'candidate_id': TEXT}},
     'requires_code': {'type': 'boolean'}, 'training': {'type': 'boolean'},
     'seed': {'type': 'integer', 'minimum': 0, 'maximum': 2 ** 63 - 1},
-    **{key: TEXT for key in ('service', 'interface', 'site', 'method', 'model_dir')},
+    **{key: TEXT for key in ('service', 'interface', 'site', 'method', 'model_dir', 'parent_ref', 'source_ref', 'tool')},
     'calibration': {'type': 'object', 'additionalProperties': True, 'properties': {
         'split': TEXT, 'count': {'anyOf': [{'type': 'integer', 'minimum': 1}, {'type': 'null'}]},
         'offset': {'type': 'integer', 'minimum': 0}}},
@@ -92,10 +95,26 @@ def check_backend(adapter, brief):
         raise ContractError('execution.backend 与 ResearchBrief.model 的授权适配器冲突')
 
 
+def normalize_source_refs(payload):
+    """Known legacy structured citations are additive, never inferred from prose."""
+    value = deepcopy(payload)
+    controls = value.get('controls', {})
+    for key in ('evidence_refs', 'solution_refs'):
+        sources = []
+        for owner in (value, controls):
+            refs = owner.get(key, []) if isinstance(owner, dict) else []
+            if not isinstance(refs, list) or any(not isinstance(r, str) or not r.strip() for r in refs):
+                raise ContractError(key + ' must be a list of explicit source identifiers')
+            sources.extend(refs)
+        if sources or key in value:
+            value[key] = list(dict.fromkeys(sources))
+    return value
+
+
 def prepare_request(payload, brief, runtime=None):
     """Preserve scientific intent while filling only host defaults; no execution freeze."""
     validate_schema(payload, EXPERIMENT_DRAFT_SCHEMA, 'ExperimentCard draft')
-    value = deepcopy(payload)
+    value = normalize_source_refs(payload)
     value.setdefault('level', 'L1')
     value.setdefault('controls', {})
     value.setdefault('scope', {})
@@ -117,7 +136,7 @@ def prepare_request(payload, brief, runtime=None):
     if any(k.startswith('required_') for k in value):
         raise ContractError('ExperimentCard 必需执行约束须放入 execution.quantization_contract')
     execution.setdefault('requires_code', service == 'custom_experiment' or
-                         (service == 'quantize_evaluate' and 'plan' not in execution))
+                         (service == 'quantize_evaluate' and 'plan' not in execution and 'accept_trial' not in execution))
     if service == 'quantize_evaluate' and 'plan' in execution and (execution['requires_code'] or 'interface' in execution):
         raise ContractError('execution.plan 使用现有执行器，不能同时请求新增代码/interface；明确选择实现来源')
     if execution['requires_code']:
@@ -137,8 +156,9 @@ def prepare_request(payload, brief, runtime=None):
     if 'training' in execution:
         # Check the mirror without rewriting the original request.
         merge(deepcopy(choices), {'training': execution['training']}, 'resolved_choices')
+    validate_diagnostic_view(execution, value['level'])
     training = execution.get('training', choices.get('training'))
-    if training is True and (service in ('profile', 'tensor_probe', 'evaluate_artifact')
+    if training is True and (service in ('profile', 'frozen_helper', 'tensor_probe', 'evaluate_artifact')
                             or brief.get('hard_constraints', {}).get('training_allowed') is False
                             or brief.get('hard_constraints', {}).get('training') is False):
         raise ContractError('execution.training 与此次执行不训练的约束冲突')
@@ -268,6 +288,28 @@ def normalize_calibration(value, brief=None):
         raise ContractError("execution.calibration.offset 必须是非负整数")
 
 
+from tools.development import stage_protocol
+
+
+def validate_diagnostic_view(execution, level):
+    if execution.get('service') != 'custom_experiment':
+        return
+    parameters = execution.get('parameters', {})
+    if not isinstance(parameters, dict):
+        raise ContractError('execution.parameters 必须是对象')
+    view = parameters.get('diagnostic_view')
+    if view is None:
+        return
+    if level not in ('L1', 'L2'):
+        raise ContractError('diagnostic_view requires a local experiment')
+    validate_schema(view, {'type': 'object', 'additionalProperties': False, 'required': ['split', 'count'],
+        'properties': {'split': {'enum': ['calibration', 'search']}, 'offset': {'type': 'integer', 'minimum': 0},
+                       'count': {'type': ['integer', 'null'], 'minimum': 1}, 'ordering_seed': {'type': 'integer'}}},
+        'execution.parameters.diagnostic_view')
+    if execution.get('training', execution['resolved_choices'].get('training')) and view['split'] != 'calibration':
+        raise ContractError('reference optimization reads only calibration during fit')
+
+
 def normalize_execution(execution, brief, *, level=None):
     """纯参数检查和唯一值补全；不读取资产、不创建卡片、不执行实验。"""
     if not isinstance(execution, dict):
@@ -288,11 +330,17 @@ def normalize_execution(execution, brief, *, level=None):
     from core.execution_contract import merge
     if 'training' in value:
         merge(choices, {'training': value.pop('training')}, 'resolved_choices')
-    fixed_training = brief.get('hard_constraints', {}).get('training')
+    constraints = brief.get('hard_constraints', {})
+    fixed_training = constraints.get('training', False if constraints.get('training_allowed') is False else None)
     if 'training' not in choices and type(fixed_training) is bool:
         choices['training'] = fixed_training
-    if service in ('profile', 'tensor_probe', 'evaluate_artifact'):
+    if service in ('profile', 'frozen_helper', 'tensor_probe', 'evaluate_artifact'):
         merge(choices, {'training': False}, 'resolved_choices')
+    final_training = brief.get("evaluation_protocol", {}).get("final_training")
+    if level == "L3" and final_training is not None:
+        if type(final_training) is not bool:
+            raise ContractError("evaluation_protocol.final_training 必须是布尔值")
+        merge(choices, {"training": final_training}, "final protocol")
     if type(choices.get("training")) is not bool:
         raise ContractError("execution.resolved_choices.training 必须明确此次执行是否训练；Agent依据用户输入与搜索空间选择")
     value.setdefault("seed", brief.get("execution_guidance", {}).get("seed", 0))
@@ -300,12 +348,20 @@ def normalize_execution(execution, brief, *, level=None):
         raise ContractError("execution.seed 必须是明确的非负64位整数")
     if "requires_code" in value and type(value["requires_code"]) is not bool:
         raise ContractError("execution.requires_code 必须为 boolean")
-    builtin_plan = service == 'quantize_evaluate' and 'plan' in value
+    if 'parent_ref' in value and (service != 'quantize_evaluate' or not isinstance(value['parent_ref'], str)
+            or not value['parent_ref'].strip() or choices.get('training') is not False):
+        raise ContractError('parent_ref requires training-free quantize_evaluate and an exact parent identifier')
+    if 'accept_trial' in value and ('parent_ref' not in value or 'plan' in value):
+        raise ContractError('accept_trial inherits the named parent plan; use its measured candidate_id')
+    builtin_plan = service == 'quantize_evaluate' and ('plan' in value or ('accept_trial' in value and not value.get('requires_code')))
     value.setdefault('requires_code', service == 'custom_experiment' or (service == 'quantize_evaluate' and not builtin_plan))
     if service == 'custom_experiment' and not value['requires_code']:
         raise ContractError('custom_experiment.requires_code 必须为 true；新增实现先经 Coding 和 Safeguard')
     if service == 'quantize_evaluate':
-        if builtin_plan:
+        if 'accept_trial' in value:
+            if not value['requires_code'] and 'interface' in value:
+                raise ContractError('built-in accept_trial does not take an implementation interface')
+        elif builtin_plan:
             if value['requires_code'] or 'interface' in value:
                 raise ContractError('execution.plan 使用现有执行器，不能同时请求新增代码/interface；明确选择实现来源')
             value['plan'] = expand_plan(value['plan'])
@@ -323,12 +379,15 @@ def normalize_execution(execution, brief, *, level=None):
         value.setdefault('interface', interface[service])
     if value.get("requires_code") and value.get("interface") != interface.get(service):
         raise ContractError("execution.interface 与 execution.service 不匹配")
-    if service in ('profile', 'evaluate_artifact') and value['requires_code']:
+    if service in ('profile', 'frozen_helper', 'evaluate_artifact') and value['requires_code']:
         raise ContractError('已有服务不接收新插件；新增算法须明确使用 custom_experiment 或相应扩展接口')
     if service == 'profile':
         from tools.profiling import PROFILE_NAMES
         if value.get('tool') not in PROFILE_NAMES or not isinstance(value.get('arguments'), dict):
             raise ContractError('profile 需要已注册 tool 及 arguments 对象；可用工具: ' + ', '.join(PROFILE_NAMES))
+    if service == 'frozen_helper':
+        from tools.frozen_helpers import normalize_helper
+        normalize_helper(value)
     from ptq_agent.execution.pipeline import plan_uses_calibration
     consumes_calibration = (service == "tensor_probe" or "calibration" in value
         or service == "quantize_evaluate" and not value['requires_code']
@@ -357,6 +416,12 @@ def normalize_execution(execution, brief, *, level=None):
                 for key, default in (('count', 1), ('seed', value['seed']), ('offset', 0)):
                     value['arguments'].setdefault(key, default)
     normalize_calibration(value, brief if consumes_calibration else None)
+    validate_diagnostic_view(value, level)
+    if choices['training'] and (value.get('calibration', {}).get('split', 'calibration') != 'calibration'
+            or value.get('evaluation', {}).get('split', 'search') != 'search'
+            or any(row.get('kind') != 'classification' or row.get('split') != 'search'
+                   for row in value.get('evaluations', []))):
+        raise ContractError('研究参考优化只使用 calibration 拟合；已有宿主评测仅可使用独立 ImageNet search')
     if service == "tensor_probe":
         parameters = value.setdefault("parameters", {})
         if not isinstance(parameters, dict):
@@ -390,9 +455,10 @@ def normalize_execution(execution, brief, *, level=None):
     check_constraints({"hard_constraints": scalar_constraints}, choices)
     if brief.get("hard_constraints", {}).get("training_allowed") is False and choices["training"]:
         raise ContractError("execution.resolved_choices.training 与用户禁止训练的约束冲突")
-    if "protocol_hash" in value and value["protocol_hash"] != fingerprint(brief["evaluation_protocol"]):
+    protocol = stage_protocol(brief, value, level)
+    if "protocol_hash" in value and value["protocol_hash"] != fingerprint(protocol):
         raise ContractError("execution.protocol_hash 与 ResearchBrief.evaluation_protocol 不一致")
-    if "result_protocol" in value and value["result_protocol"] != brief["evaluation_protocol"]:
+    if "result_protocol" in value and value["result_protocol"] != protocol:
         raise ContractError("execution.result_protocol 与 ResearchBrief.evaluation_protocol 不一致")
     if value["backend"] == brief["model"].get("adapter"):
         value["model_scope"] = deepcopy(brief["model"].get("scope", {"model": brief["model"].get("name")}))
@@ -410,7 +476,7 @@ def normalize_execution(execution, brief, *, level=None):
 
 def check_l3_evaluations(payload, brief):
     """只检查 Brief 已结构化声明的 L3 评测项，不推断自然语言任务或补默认双任务。"""
-    required = brief["evaluation_protocol"].get("evaluations")
+    required = stage_protocol(brief, payload["execution"], payload["level"]).get("evaluations")
     if payload["level"] != "L3" or required is None:
         return
     if not isinstance(required, list) or any(not isinstance(r, dict) or not r.get("kind") for r in required):
@@ -446,44 +512,81 @@ def preflight_experiment(payload, brief, runtime=None, *, executable=False):
     check_l3_evaluations(value, brief)
     result_requirements(value, brief)
     if value["level"] == "L3":
-        value["execution"]["result_protocol"] = deepcopy(brief["evaluation_protocol"])
+        value["execution"]["result_protocol"] = deepcopy(stage_protocol(brief, value["execution"], "L3"))
     return value
+
+
+def bind_backend(adapter, *, segmentation=False):
+    """Bind the effective config and its assets once; use the same resolution for all consumers."""
+    from ptq_agent.configuration import resolve_backend_paths, load_config
+    adapter = deepcopy(adapter)
+    base = ROOT
+    if adapter.get("config_path"):
+        path = (ROOT / adapter["config_path"]).resolve()
+        adapter["config_asset"] = asset(path)
+        cfg = load_config(path)
+        base = path.parent
+    else:
+        cfg = deepcopy(adapter.get("config", {}))
+    backend = cfg.get("backend", cfg)
+    overrides = resolve_backend_paths(adapter.get("backend_overrides", {}), base)
+    backend.update(deepcopy(overrides))
+    if adapter.get("kind") != "fixture" and backend:
+        adapter["checkpoint_assets"] = [asset(backend[k]) for k in ("model_path", "data_path", "asset_manifest")
+                                        if backend.get(k)]
+        if backend.get("task_head"):
+            adapter["checkpoint_assets"].append(asset(backend["task_head"]["path"]))
+        if segmentation or backend.get("segmentation_config"):
+            from tools.vision_models import segmentation_assets
+            path, _, receipt_path, receipt = segmentation_assets(backend)
+            checkpoint = (receipt_path.parent / receipt["checkpoint"]).resolve()
+            files = [asset(p) for p in (path, receipt_path, checkpoint)]
+            if files[-1]["sha256"] != receipt["checkpoint_sha256"]:
+                raise ContractError("冻结分割 head 校验失败")
+            adapter["segmentation_assets"] = files
+    if adapter.get("factory"):
+        filename, _, function = adapter["factory"].partition(":")
+        adapter["factory_asset"] = asset(ROOT / filename)
+        adapter["factory_function"] = function
+    return adapter
+
+
+def model_task_identity(backend, config):
+    """Compare alternative execution providers on scientific inputs, independent of device."""
+    identity = backend.identity()
+    head = identity.get('task_head')
+    return {'model_id': identity.get('model_id'), 'checkpoint_sha256': identity.get('checkpoint_sha256'),
+            'head_sha256': head.get('sha256') if isinstance(head, dict) else None,
+            'manifest_sha256': identity.get('data', {}).get('manifest_sha256'),
+            'data_protocol': {k: config.get(k) for k in ('data_protocol', 'data_seeds',
+                'calibration_samples', 'search_samples', 'final_samples')}}
 
 
 def resolve_execution(execution, brief, *, level=None):
     value = normalize_execution(execution, brief, level=level)
-    adapter = value["backend"]
-    if adapter.get("config_path"):
-        path = Path(adapter["config_path"])
-        if not path.is_absolute():
-            path = ROOT / path
-        adapter["config_asset"] = asset(path)
-        from ptq_agent.configuration import load_config
-        cfg = load_config(path)
-        backend = cfg.get("backend", cfg)
-        overrides = adapter.get("backend_overrides", {})
-        for key in ("model_path", "data_path", "asset_manifest"):
-            if overrides.get(key):
-                selected = Path(overrides[key])
-                overrides[key] = str((selected if selected.is_absolute() else path.parent / selected).resolve())
-        backend.update(deepcopy(overrides))
-        adapter["checkpoint_assets"] = []
-        keys = () if adapter.get("kind") == "fixture" else ("model_path", "data_path", "asset_manifest")
-        for key in keys:
-            selected = backend.get(key)
-            if selected and Path(selected).is_file():
-                adapter["checkpoint_assets"].append(asset(selected))
-        if adapter.get("kind") != "fixture" and backend.get("task_head"):
-            adapter["checkpoint_assets"].append(asset(backend["task_head"]["path"]))
-    if adapter.get("factory"):
-        filename, _, function = adapter["factory"].partition(":")
-        path = Path(filename) if Path(filename).is_absolute() else ROOT / filename
-        adapter["factory_asset"] = asset(path)
-        adapter["factory_function"] = function
+    input_adapter = value["backend"]
+    selected = input_adapter == brief["model"].get("adapter")
+    args = value.get('arguments', {})
+    dense_helper = value['service'] == 'frozen_helper' and (args.get('view') == 'dense'
+        or any(o.get('view') == 'dense' for o in args.get('observations_spec', [])))
+    segmentation = dense_helper or any(e.get('kind') == 'ade_frozen' for e in value.get('evaluations', []))
+    bound = brief["model"].get("binding")
+    adapter = bind_backend(input_adapter, segmentation=segmentation or bool(selected and bound and bound['segmentation']))
+    value.pop('expected_model_identity', None)
+    if bound:
+        if selected and fingerprint(adapter) != bound["sha256"]:
+            raise ContractError("运行已绑定的模型、任务或数据资产发生变化")
+        if not selected and bound.get('alternate_source'):
+            value['expected_model_identity'] = deepcopy(bound['alternate_source'])
+            if segmentation and [a['sha256'] for a in adapter.get('segmentation_assets', [])] != bound['task_assets']:
+                raise ContractError('备选执行适配器的分割头或任务配置与研究协议不同')
+        from core.solutions import protocol_key
+        value["research_protocol_sha256"] = protocol_key(brief)
+    value["backend"] = adapter
     if value.get("model_dir"):
         model = Path(value["model_dir"]).resolve()
         value["model_assets"] = [asset(model / n) for n in ("manifest.json", "weights.pt")]
-    value["protocol_hash"] = fingerprint(brief["evaluation_protocol"])
+    value["protocol_hash"] = fingerprint(stage_protocol(brief, value, level))
     value["service_version"] = SERVICE_VERSION
     value["runtime"] = runtime_identity()
     value["measurement_implementation"] = measurement_implementation()
@@ -527,7 +630,15 @@ class ExperimentBroker:
         self.runtime = runtime
 
     def preflight(self, payload):
-        return preflight_experiment(payload, self.journal.card(self.brief_ref)["payload"], self.runtime)
+        value = preflight_experiment(payload, self.journal.card(self.brief_ref)["payload"], self.runtime)
+        self.card_references(value)
+        if value.get('solution_refs'):
+            from core.solutions import SolutionLibrary
+            known = {r['id'] for r in SolutionLibrary(self.journal, self.journal.card(self.brief_ref)['payload']).available()
+                     if r.get('status') in ('evaluated','development_evaluated')}
+            if any(ref not in known for ref in value['solution_refs']):
+                raise ContractError('solution_refs must select evaluated complete solutions visible in this protocol catalog')
+        return value
 
     def card_references(self, payload, refs=()):
         """Preserve explicitly cited evidence in every host-created envelope.
@@ -535,7 +646,7 @@ class ExperimentBroker:
         Role visibility and alias resolution remain at the authored handoff;
         this broker validates kind/identity and never grants visibility itself.
         """
-        cited = payload.get('evidence_refs', [])
+        cited = normalize_source_refs(payload).get('evidence_refs', [])
         if not isinstance(cited, list) or any(not isinstance(ref, str) for ref in cited):
             raise ContractError('ExperimentCard.evidence_refs 必须为 EvidenceCard 引用列表')
         for ref in cited:
@@ -576,21 +687,53 @@ class ExperimentBroker:
     def freeze(self, payload, *, requester, refs=()):
         payload = preflight_experiment(payload, self.journal.card(self.brief_ref)['payload'], self.runtime, executable=True)
         brief = self.journal.card(self.brief_ref)["payload"]
+        if (self.runtime or {}).get('development_only_research') and requester != 'program':
+            execution = payload['execution']
+            if payload['level'] == 'L3' and execution['result_protocol'].get('purpose') != 'development':
+                raise ContractError('科研阶段 L3 使用绑定的完整双任务开发视图；官方终评由宿主在候选冻结后执行')
+            if any(row.get('split') in ('final', 'ade_validation') or
+                   (row.get('kind') == 'ade_frozen' and row.get('split') != 'ade_dev')
+                   for row in [execution.get('evaluation', {}), *execution.get('evaluations', [])]):
+                raise ContractError('科研阶段不能派发官方验证视图的评测')
         payload["execution"] = resolve_execution(payload["execution"], brief, level=payload["level"])
         execution = payload["execution"]
-        # GPU 是宿主资源选择；CUDA 后端不能因草案省略编号而在隐藏全部 GPU 后启动。
-        if self.runtime is not None:
-            from tools.experiment_worker import backend_device
-            device = backend_device(execution)
-            if str(device).startswith('cuda') and not self.runtime.get('allowed_gpus', []):
-                raise ContractError('CUDA 后端没有已授权 GPU；在研究输入 runtime.allowed_gpus 集中配置')
-            # All adapters (including factories) use the same host placement.
-            # Physical ordinals never select a worker-local CUDA device.
+        # CUDA placement is operational: an empty/busy authorized pool leaves
+        # work queued in TaskRuntime, never starts a hidden-GPU worker or rejects
+        # an otherwise valid scientific request. Physical ordinals stay host-only.
         # 跨作业读取权限只由本次 Journal 派生，不能接受 Agent 自填的文件绑定。
-        from tools.frozen import bind_sources
+        from tools.frozen import bind_sources, bind_solutions
         execution.pop('frozen_sources', None)
-        if payload.get('evidence_refs'):
-            execution['frozen_sources'] = bind_sources(self.journal, payload['evidence_refs'])
+        execution.pop('ade_fp_reference', None)
+        if any(r.get('kind') == 'ade_frozen' and r.get('full_dataset') for r in execution.get('evaluations', [])):
+            from core.solutions import SolutionLibrary
+            for row in SolutionLibrary(self.journal, brief).snapshot():
+                ref = next((a for a in row.get('artifacts', []) if Path(a['path']).name == 'segmentation.json'), None)
+                if ref:
+                    execution['ade_fp_reference'] = deepcopy(ref)
+                    break
+        try:
+            if payload.get('evidence_refs'):
+                execution['frozen_sources'] = bind_sources(self.journal, payload['evidence_refs'],
+                    training_free_only=payload['level'] == 'L3' and brief['evaluation_protocol'].get('final_training') is False)
+            if payload.get('solution_refs'):
+                execution.setdefault('frozen_sources', []).extend(bind_solutions(self.journal, payload['solution_refs'], brief))
+        except (ContractError, OSError) as exc:
+            from runtime.failures import FrozenSourceError
+            raise FrozenSourceError(str(exc)) from exc
+        from tools.frozen import bind_parent_initialization
+        bind_parent_initialization(self.journal, payload)
+        execution.pop('evaluation_package', None)
+        if execution['service'] == 'evaluate_artifact' and execution.get('frozen_sources') and not execution.get('model_dir'):
+            from tools.runtime_interface import select_frozen_source
+            package = select_frozen_source(execution['frozen_sources'], execution.get('source_ref'))
+            if not package.get('verified_segmentation'):
+                raise ContractError('bound package lacks a complete frozen training-free measurement')
+            execution.update(evaluation_package=package, model_dir=package['model_dir'], model_assets=package['assets'])
+        if execution['service'] == 'evaluate_artifact' and not execution.get('model_dir'):
+            raise ContractError('references did not resolve to a complete frozen model package')
+        if execution['service'] == 'frozen_helper':
+            from tools.runtime_interface import select_frozen_source
+            select_frozen_source(execution.get('frozen_sources', []), execution.get('source_ref'))
         execution.pop("profile_evidence_bindings", None)
         profile_refs = []
         if execution["service"] == "profile" and execution.get("tool") == "read_profile_evidence":
