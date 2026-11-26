@@ -6,7 +6,7 @@ from runtime.paths import ROOT, LIBRARY
 GRADIENT_AUDIT = {"optimizer_steps": 0, "autograd_grad_calls": 0, "backward_calls": 0}
 
 
-def install_gradient_guard(training_free):
+def install_gradient_guard(training_free, *, max_steps=None):
     """梯度本身不是训练；禁止优化器更新，实际模型不变性由执行器核验。"""
     import torch
     from torch.optim.optimizer import register_optimizer_step_pre_hook
@@ -15,6 +15,8 @@ def install_gradient_guard(training_free):
     def step(optimizer, args, kwargs):
         if training_free:
             raise ValueError("training-free禁止优化器更新；只读梯度诊断允许")
+        if max_steps is not None and GRADIENT_AUDIT["optimizer_steps"] >= max_steps:
+            raise ValueError("finite calibration optimizer-step budget exhausted")
         GRADIENT_AUDIT["optimizer_steps"] += 1
     handle = register_optimizer_step_pre_hook(step)
     original_grad, original_backward = torch.autograd.grad, torch.autograd.backward

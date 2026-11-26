@@ -68,7 +68,7 @@ class FrozenHelper:
         elif spec['tool'] == 'score_frozen_candidates':
             from ptq_agent.execution.frozen_trials import score_frozen_candidates
             report = score_frozen_candidates(context['backend'], model, context['data'], split=split,
-                source_ref=source['model_ref'], input_shapes=source['manifest'].get('input_shapes'), **args)
+                source_ref=source['model_ref'], input_shapes=source['manifest'].get('input_shapes'), load_candidate=context['load_frozen'], **args)
             report['source'] = {k: v for k, v in source.items() if k != 'manifest'}
         else:
             from ptq_agent.execution.calibration_search import search_frozen_scales
@@ -90,5 +90,5 @@ def frozen_helper_service(experiment, backend, cfg, data, directory):
     result['execution_facts']['parameters'] = {'tool': spec['tool'], 'arguments': deepcopy(spec['arguments']),
                                               'source': deepcopy(report['source'])}
     result['execution_facts']['sites'] = (list(report['boundaries']) if spec['tool'] == HELPER_NAMES[0]
-        else sorted({site for row in report['candidates'] for site in row.get('receipt', row)['scales']}))
+        else sorted({site for row in report['candidates'] for site in row.get('receipt', row).get('scales', {})}))
     return result

@@ -6,6 +6,7 @@ from pathlib import Path
 import os
 
 from runtime.paths import ROOT, QAVIT
+from core.ptq_protocol import current, protocol_of, reusable_manifest, validate_construction
 from core.cards import ContractError, fingerprint
 from core.journal import atomic_json, file_sha256, read_json
 from tools.experiments import asset, verify_assets
@@ -340,6 +341,7 @@ def evaluate_task(backend, cfg, data, model, plan, requested, directory, native,
     if requested['kind'] == 'ade_frozen':
         from tools.segmentation import evaluate
         value = evaluate(model, backend, directory, requested.get('count'),
+                        **({'per_image_confusion': True} if requested.get('per_image_confusion') else {}),
                         **({'development': view['ade_frozen']} if dev else {}),
                         **({'fp_reference': cfg['_ade_fp_reference']} if cfg.get('_ade_fp_reference') else {}))
         if dev:
@@ -411,18 +413,58 @@ def evaluate_services(experiment, backend, cfg, data, directory, approval, gpus=
             parent_binding = select_frozen_source(spec.get('frozen_sources', []), spec['parent_ref'])
             # Trusted loader uses the immutable original assets before the dev
             # preparation thread loses access to evaluator-owned files.
-            parent_model, parent_manifest = load_refinement_parent(parent_binding, backend, cfg, data)
+            parent_model, parent_manifest = load_refinement_parent(parent_binding, backend, cfg, data, protocol=protocol_of(spec))
         def prepare(backend, cfg, data, visible_payload, preselected=False):
             from tools.runtime_interface import ObservedData
             refinement = None
             plugin = module_from_approval(approval, experiment) if spec.get('requires_code') else None
             plan = (plugin.build_plan(backend, deepcopy(cfg), deepcopy(visible_payload), deepcopy(spec.get("parameters", {})))
-                    if plugin else deepcopy(parent_manifest['plan'] if parent_binding else spec['plan']))
+                    if plugin else deepcopy(parent_manifest['plan'] if parent_binding else spec.get('plan')))
             selection = data
-            if not preselected and spec.get('calibration'):
+            if not preselected and spec.get('calibration') and not (spec.get('calibration_generator') or spec.get('calibration_tasks')):
                 selection = data_view(data, spec['calibration'], 'calibration')
+            generated=None
+            task_view=None
+            if spec.get("calibration_tasks"):
+                from ptq_agent.execution.task_views import TaskView
+                if not current(protocol_of(spec)) or spec.get("calibration_generator"):
+                    raise ContractError("task-specific calibration requires one declared task pool under v2")
+                task_view=TaskView(backend,data,spec["calibration_tasks"])
+                if choices.get("calibration_samples") not in (None,len(task_view.ids("calibration"))):
+                    raise ContractError("joint calibration budget differs from the number of classifier images and observed dense windows")
+                selection,backend=task_view,task_view.backend
+            if spec.get("calibration_generator"):
+                from ptq_agent.execution.calibration_sources import synthesize, CalibrationView
+                if not current(protocol_of(spec)) or not choices["training"]:
+                    raise ContractError("calibration synthesis requires declared finite optimization of image pixels")
+                generate=spec["calibration_generator"]
+                if choices.get("calibration_samples") not in (None,generate["images"]):
+                    raise ContractError("synthetic image count conflicts with the declared calibration budget")
+                generated=directory/"synthetic_calibration"
+                if generate["variant"]=="clamp_cyclic":
+                    from ptq_agent.execution.cyclic_calibration import run
+                    if spec.get("recipe",{}).get("source_id")!="clamp-vit":
+                        raise ContractError("cyclic calibration requires its bound CLAMP quantizer plan")
+                    run(backend,cfg,data,spec["recipe"],generate,generated)
+                else:synthesize(backend,generate,generated)
+                selection=CalibrationView(data,backend,generated)
             observed = ObservedData(selection, calibration_only=choices['training'] or experiment['payload']['level'] == 'L3',
                                    withhold_final=bool(spec.get('research_quantization_contract', {}).get('protocol')))
+            recipe_binding=None
+            if spec.get("recipe"):
+                from ptq_agent.execution.assembled_recipes import assemble
+                plan,recipe_binding=assemble(backend,spec["recipe"],observed)
+            allocation=None
+            precision_settings=spec.get("precision_search") or (spec.get("recipe") or {}).get("allocation")
+            if precision_settings:
+                from ptq_agent.execution.precision import select
+                dimensions=(spec.get("research_quantization_contract") or spec.get("quantization_contract") or {}).get("extension_dimensions",[])
+                group_only=all(not group.get("window_blocks") and all(set(targets)=={"group_count"} for targets in group.get("sites",{}).values()) for group in precision_settings.get("configuration_groups",[]))
+                needed="dynamic_quantization" if precision_settings.get("configuration_groups") and group_only or precision_settings.get("allocation_rule")=="group_count_schedule" else "mixed_precision"
+                fixed_scheme=bool(precision_settings.get("configuration_groups")) and all(group.get("sites") and not group.get("window_blocks") and all(set(v)=={"scheme"} for v in group["sites"].values()) for group in precision_settings.get("configuration_groups",[]))
+                if parent_binding or not current(protocol_of(spec)) or (not fixed_scheme and needed not in dimensions):
+                    raise ContractError("configuration search requires the deployment dimension "+needed)
+                plan,allocation=select(backend,cfg,observed,plan,precision_settings)
             factory = getattr(plugin, "make_executor", RTNExecutor)
             executor = factory(backend, deepcopy(cfg), observed)
             native = type(executor) in (RTNExecutor, QuantizationExecutor)
@@ -436,7 +478,7 @@ def evaluate_services(experiment, backend, cfg, data, directory, approval, gpus=
             coverage = plan_constraints(plan, choices, backend, cfg, spec.get("quantization_contract"), native=native)
             if native:
                 validate_plan(backend, plan, cfg, detect(backend), {}, allow_unknown_shapes=True)
-                if not parent_binding and plan_uses_calibration(plan) and not spec.get('calibration'):
+                if not parent_binding and plan_uses_calibration(plan) and not (spec.get('calibration') or spec.get('calibration_generator') or spec.get('calibration_tasks')):
                     raise ContractError("原生量化执行器需要明确 calibration 数据视图")
             from ptq_agent.execution.calibration_search import state_identity
             if parent_binding:
@@ -504,10 +546,23 @@ def evaluate_services(experiment, backend, cfg, data, directory, approval, gpus=
             if native:
                 exported_manifest = read_json(model_dir / 'manifest.json')
                 exported_manifest['calibration_ids'] = calibration_ids
+                if recipe_binding is not None:exported_manifest['recipe_binding']=recipe_binding
+                if allocation is not None:exported_manifest['precision_search']=allocation
+                if task_view is not None:exported_manifest["task_calibration"]=task_view.descriptor
+                if generated is not None:
+                    exported_manifest['calibration_source']={"kind":"generated_tensor_images","manifest_sha256":file_sha256(generated/"manifest.json"),
+                                                             "image_sha256":file_sha256(generated/"images.pt")}
                 if refinement is not None:
                     exported_manifest['refinement'] = refinement
-                if spec.get('research_protocol_sha256') or parent_binding:
-                    exported_manifest['preparation_training'] = choices['training']
+                if current(protocol_of(spec)) or spec.get('research_protocol_sha256') or parent_binding:
+                    parent_optimized=bool(parent_binding and parent_manifest.get("preparation_training"))
+                    exported_manifest['preparation_training'] = choices['training'] or parent_optimized
+                    if parent_optimized:
+                        exported_manifest['construction']=deepcopy(parent_manifest["construction"])
+                        exported_manifest['preparation_ancestry']=[*parent_manifest.get('preparation_ancestry',[]),
+                            {"model_ref":parent_binding['model_ref'],"construction":parent_manifest["construction"]}]
+                    if spec.get('construction'):
+                        exported_manifest['construction'] = spec['construction']
                 exported_manifest.pop('content_sha256', None)
                 exported_manifest['content_sha256'] = fingerprint(exported_manifest)
                 atomic_json(model_dir / 'manifest.json', exported_manifest)
@@ -522,8 +577,8 @@ def evaluate_services(experiment, backend, cfg, data, directory, approval, gpus=
             if origin and state_identity(loaded) != refinement['child_state_sha256']:
                 raise ContractError('cold child differs in its complete numerical/grid state')
             if parent_binding and not native and (manifest.get('calibration_ids') != calibration_ids
-                    or manifest.get('preparation_training') is not False):
-                raise ContractError('custom child exporter must preserve full calibration and independent training-free provenance')
+                    or not reusable_manifest(manifest, protocol_of(spec))):
+                raise ContractError('custom child exporter must preserve the calibrated source identities and protocol-compatible construction provenance')
             if loaded is model:
                 raise ContractError("执行器 load 必须返回实际重建实例，不能复用导出前模型")
             if frozen_files != {str(p.relative_to(model_dir)): file_sha256(p)
@@ -563,6 +618,8 @@ def evaluate_services(experiment, backend, cfg, data, directory, approval, gpus=
         from tools.frozen import reload_complete
         model_dir = Path(package['model_dir'])
         model, manifest = reload_complete(package, backend, cfg, data)
+        if not reusable_manifest(manifest,protocol_of(spec)):
+            raise ContractError('preparation provenance conflicts with the requested profile')
         native = False
         plan = manifest['plan']
         coverage = plan_constraints(plan, choices, backend, cfg, spec.get('quantization_contract'), native=False)
@@ -574,9 +631,9 @@ def evaluate_services(experiment, backend, cfg, data, directory, approval, gpus=
         verifier = executor
         model_dir = Path(spec["model_dir"])
         model, manifest = executor.load(model_dir)
-        if (experiment['payload']['level'] == 'L3' and spec.get('result_protocol', {}).get('final_training') is False
-                and manifest.get('preparation_training') is not False):
-            raise ContractError('当前终评要求独立 training-free 冻结包；来源未记录或使用了训练式参考')
+        if (experiment['payload']['level'] == 'L3' and (current(protocol_of(spec)) or spec.get('result_protocol', {}).get('final_training') is False)
+                and not reusable_manifest(manifest, protocol_of(spec))):
+            raise ContractError('冻结包的构造记录与本次协议不相容')
         plan = manifest["plan"]
         coverage = plan_constraints(plan, choices, backend, cfg, spec.get("quantization_contract"))
         calibration_ids = manifest["calibration_ids"]
@@ -584,12 +641,28 @@ def evaluate_services(experiment, backend, cfg, data, directory, approval, gpus=
     from core.execution_contract import check_fp_state
     check_fp_state(model, backend, spec.get("quantization_contract", {}))
     reload_check.update(host_verified=True, evaluated_instance="reloaded")
-    if spec.get("calibration"):
+    if spec.get("calibration") or spec.get("calibration_generator") or spec.get("calibration_tasks"):
         actual_selection = calibration_ids
         if refinement and refinement.get('initialization') == 'verified_parent':
             actual_selection = (spec['scored_calibration_ids'] if spec.get('accept_trial')
                                 else refinement['job_calibration_reads'].get('calibration', []))
-        if list(dict.fromkeys(actual_selection)) != data_view(data, spec["calibration"], "calibration").ids("calibration"):
+        if spec.get("calibration_generator"):
+            generated = directory / "synthetic_calibration"
+            source = read_json(generated / "manifest.json")
+            expected_ids = ["synthetic/" + value for value in source["ids"]]
+            frozen_source = read_json(model_dir / "manifest.json").get("calibration_source", {})
+            if (frozen_source.get("manifest_sha256") != file_sha256(generated / "manifest.json")
+                    or frozen_source.get("image_sha256") != file_sha256(generated / "images.pt")
+                    or source["image_sha256"] != frozen_source["image_sha256"]):
+                raise ContractError("合成校准池与冻结包的生成来源或图像哈希不一致")
+        elif spec.get("calibration_tasks"):
+            bound = read_json(model_dir/"manifest.json")["task_calibration"]
+            expected_ids = bound["sample_ids"]
+            if bound["mode"]!=spec["calibration_tasks"]["mode"]:
+                raise ContractError("task preparation mode differs from the exported package")
+        else:
+            expected_ids = data_view(data, spec["calibration"], "calibration").ids("calibration")
+        if list(dict.fromkeys(actual_selection)) != expected_ids:
             raise ContractError("导出包实际校准样本与冻结 calibration 视图不一致")
     static_receipt = {}
     if spec.get('quantization_contract', {}).get('protocol'):
@@ -661,7 +734,12 @@ def evaluate_services(experiment, backend, cfg, data, directory, approval, gpus=
                 reload_check['independent_serial_tasks'].append({'kind': requested['kind'], 'model_digest': before})
     if model_digest(model) != before:
         raise ContractError("评测改变了候选模型状态")
+    if current(protocol_of(spec)) and evaluations:
+        atomic_json(directory/"frozen_evaluation.json",{"backbone_hashes":[model_digest(backend.model),before],
+                    "protocol":protocol_of(spec),"tasks":sorted(evaluations),
+                    "package_manifest_sha256":file_sha256(model_dir/"manifest.json")})
     files = [asset(p) for p in sorted(directory.glob("*.json")) if p.name not in ("request.json", "started.json", "result.json")]
+    files.extend(asset(p) for p in sorted((directory/'synthetic_calibration').glob('*')) if p.is_file())
     files.extend(asset(p) for p in sorted((directory / 'shards').glob('*/result.json')))
     files.extend(asset(p) for p in sorted((directory / 'dual_tasks').glob('*/*.json')))
     if model_dir.parent == directory:
@@ -672,6 +750,9 @@ def evaluate_services(experiment, backend, cfg, data, directory, approval, gpus=
                                                           for p in model_dir.rglob('*') if p.is_file()}),
             "model_dir": str(model_dir), "sample_selection": {k: v["sample_ids"] for k, v in evaluations.items()},
             "execution_facts": {"measurement_kind": "full_model", "quantization": deepcopy(coverage["quantization"]),
+                **({"deployed_stages": {k: deepcopy(plan.get(k, [])) for k in ("postfit", "structure")},
+                    "calibration_source": read_json(model_dir / "manifest.json").get("calibration_source", {})}
+                   if current(protocol_of(spec)) else {}),
                 "data": {**preparation_reads, **({"calibration": {"split": "calibration", "sample_count": len(calibration_ids),
                                           "sample_ids": calibration_ids, "full_dataset": False,
                                           **({"origin": "parent plus incremental calibration identities",
@@ -700,7 +781,8 @@ def run_experiment(request, directory):
     if torch.cuda.is_available():
         torch.cuda.manual_seed_all(seed)
     torch.set_num_threads(payload["resources"]["cpu_threads"])
-    install_gradient_guard(not choices["training"])
+    validate_construction(spec, protocol_of(spec), choices["training"])
+    install_gradient_guard(not choices["training"], max_steps=spec.get("construction", {}).get("max_steps"))
     backend, cfg, data = backend_and_data(spec)
     # 模型构造器可能设置自身seed；算法随机流必须在加载后恢复为冻结实验的seed。
     import random
@@ -754,7 +836,8 @@ def run_experiment(request, directory):
                                  "runtime": {"torch": torch.__version__, "cuda": torch.version.cuda,
                                              "device": str(backend.device), "cpu_threads": torch.get_num_threads(),
                                              "gpu_name": torch.cuda.get_device_name() if str(backend.device).startswith("cuda") else None},
-                                 "training_declared": choices["training"], "gradient_audit": dict(GRADIENT_AUDIT),
+                                 "training_declared": choices["training"],
+                                 **({"construction": spec["construction"]} if spec.get("construction") else {}), "gradient_audit": dict(GRADIENT_AUDIT),
                                  "protocol_hash": spec.get("protocol_hash"), "model_ref": result.get("model_ref"),
                                  "quantizer_state_sha256": result.get("quantizer_state_sha256"),
                                  "execution_facts": result.pop("execution_facts", {})}

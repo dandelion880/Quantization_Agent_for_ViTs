@@ -1,0 +1,2883 @@
+{
+  "schema": "qavit.ptq.implementation/1",
+  "as_of": "2026-11-25",
+  "base_main": "de7310e",
+  "evidence_scope": "51 条主记录和 1 个版本均有绑定来源的有界软件调用及重载。每行按实际阶段标记。独立算子、原作者图、QAViT 适配、协议覆盖、原预算精度和原生设备实测分别登记。",
+  "methods": [
+    {
+      "literature_id": "adalog",
+      "survey_ref": 62,
+      "version_of": null,
+      "family": null,
+      "read_asset": {
+        "asset": "methods/adalog.md"
+      },
+      "implementation_status": "来源绑定的阶段组合；缩小预算，已执行、保存、加载并前向",
+      "entry_point": "baselines.build_baseline(adalog) + calibration.strategy=fpcs",
+      "plugins": {
+        "activation": [
+          "adalog"
+        ]
+      },
+      "source_scope": [
+        "原文 v1 §3.2–3.4、Algorithm 1、§4.1–4.3；官方 master 源码 logarithm.py、linear.py、4bit.py、test_quant.py；未执行复现"
+      ],
+      "primary_urls": [
+        "https://arxiv.org/html/2407.12951v1",
+        "https://github.com/GoatWu/AdaLog",
+        "https://github.com/GoatWu/AdaLog/blob/master/configs/4bit.py",
+        "https://github.com/GoatWu/AdaLog/blob/master/quantizers/logarithm.py"
+      ],
+      "recipe_dependencies": "补多区域保留的完整 FPCS、搜索轨迹、LUT 解码；补偿绑定最终解码 W，纯校准与重构配方分开。",
+      "current_conditions": "AdaLog 表、post-GELU bias 及多盆地 FPCS 已接。base/scale 的有界测量和作者阈值、全网 W/A 搜索预算分列。",
+      "deployment": "固定码本可主线；原代码首层 A8 和额外下溢零需保留作者配置或另建合规版本。",
+      "source_unresolved": "论文与代码细化次数、入口默认值不同；不能把现有 base×scale 搜索称 FPCS，LUT 与参考解码仍需对齐。",
+      "verification": [
+        "EXP/validation/ptq_foundation_20261125/numerical/recipe_adalog/source_request.json",
+        "EXP/validation/ptq_foundation_20261125/numerical/fpcs/request.json",
+        "EXP/validation/ptq_foundation_20261125/numerical/recipe_adalog/request.json"
+      ],
+      "tests": [
+        "fpcs",
+        "recipe_adalog"
+      ],
+      "author_accuracy_reproduction": false,
+      "native_device_measurement": false,
+      "public_entry": "execution.recipe.source_id = adalog",
+      "source_version": {
+        "origin": "AdaLog: Post-Training Quantization for Vision Transformers with Adaptive Logarithm Quantizer",
+        "author_code_status": "official_source_read",
+        "read_scope": [
+          "原文 v1 §3.2–3.4、Algorithm 1、§4.1–4.3；官方 master 源码 logarithm.py、linear.py、4bit.py、test_quant.py；未执行复现"
+        ],
+        "primary_urls": [
+          "https://arxiv.org/html/2407.12951v1",
+          "https://github.com/GoatWu/AdaLog",
+          "https://github.com/GoatWu/AdaLog/blob/master/configs/4bit.py",
+          "https://github.com/GoatWu/AdaLog/blob/master/quantizers/logarithm.py"
+        ]
+      },
+      "source_requests": [
+        {
+          "receipt": "EXP/validation/ptq_foundation_20261125/numerical/recipe_adalog/source_request.json",
+          "version": "paper; explicit reduced settings in this request",
+          "profile": "qavit_bounded_integration"
+        }
+      ],
+      "target_protocol": "由实际 W/A 边、码容、固定参数、动态路由、额外计算、结构和例外验证，来源 ID 不授予协议达标状态。"
+    },
+    {
+      "literature_id": "ptq4vit",
+      "survey_ref": 16,
+      "version_of": null,
+      "family": null,
+      "read_asset": {
+        "asset": "methods/recipes/ptq4vit.md"
+      },
+      "implementation_status": "宿主已有作者分类图；缩小预算，已执行、保存、加载并前向",
+      "entry_point": "recipes.build_recipe(ptq4vit)",
+      "plugins": {},
+      "source_scope": [
+        "本分卷核对QAViT实际已有twin/Hessian相关组件并查验官方论文和仓库入口；完整旧配方增补由existing_methods_delta.md承接",
+        "整合补核：arXiv:2111.12293v3 §3.1–3.4、§4.1、附录6.1–6.3；官方main configs/PTQ4ViT.py、utils/quant_calib.py；首层A32、teacher多batch缓存行为已记录。"
+      ],
+      "primary_urls": [
+        "https://arxiv.org/abs/2111.12293",
+        "https://www.ecva.net/papers/eccv_2022/papers_ECCV/papers/136720190.pdf",
+        "https://github.com/hahnyuan/PTQ4ViT"
+      ],
+      "recipe_dependencies": "补完整 FP-prefix 校准、双输入交替搜索、特殊网格及 teacher 按样本配对；把原法与 +BC 分开。",
+      "current_conditions": "作者分类方案；原 Conv 输入浮点、QKV 行块、两类 twin、Hessian 交替搜索。迁移需要另给 Conv A4。",
+      "deployment": "原代码 qconv 输入 A32 是覆盖例外；完整 A4 另建适配。LN/Softmax 内部 FP 与 A4 消费边分列。",
+      "source_unresolved": "论文/代码搜索下界不同；同分布 KL 的零梯度和多 batch teacher 对齐要解决。已有 twin 不等于完整原法。",
+      "verification": [
+        "EXP/validation/ptq_foundation_20261125/native_recipes.json#ptq4vit"
+      ],
+      "tests": [],
+      "author_accuracy_reproduction": false,
+      "native_device_measurement": false,
+      "public_entry": "execution.recipe.source_id = ptq4vit",
+      "source_version": {
+        "origin": "PTQ4ViT: Post-Training Quantization for Vision Transformers with Twin Uniform Quantization",
+        "author_code_status": "official_key_source_and_existing_qavit_source_read_not_executed",
+        "read_scope": [
+          "本分卷核对QAViT实际已有twin/Hessian相关组件并查验官方论文和仓库入口；完整旧配方增补由existing_methods_delta.md承接",
+          "整合补核：arXiv:2111.12293v3 §3.1–3.4、§4.1、附录6.1–6.3；官方main configs/PTQ4ViT.py、utils/quant_calib.py；首层A32、teacher多batch缓存行为已记录。"
+        ],
+        "primary_urls": [
+          "https://arxiv.org/abs/2111.12293",
+          "https://www.ecva.net/papers/eccv_2022/papers_ECCV/papers/136720190.pdf",
+          "https://github.com/hahnyuan/PTQ4ViT"
+        ]
+      },
+      "source_requests": [
+        {
+          "receipt": "EXP/validation/ptq_foundation_20261125/native_recipes.json#ptq4vit",
+          "version": "https://github.com/hahnyuan/PTQ4ViT/tree/b42c790c2811e7835d435a9f9a6c64a079a7483a",
+          "profile": "source graph, reduced calibration"
+        }
+      ],
+      "target_protocol": "由实际 W/A 边、码容、固定参数、动态路由、额外计算、结构和例外验证，来源 ID 不授予协议达标状态。"
+    },
+    {
+      "literature_id": "repq_vit",
+      "survey_ref": 19,
+      "version_of": null,
+      "family": null,
+      "read_asset": {
+        "asset": "methods/recipes/repq_vit.md"
+      },
+      "implementation_status": "宿主已有作者分类图；缩小预算，已执行、保存、加载并前向",
+      "entry_point": "recipes.build_recipe(repq)",
+      "plugins": {},
+      "source_scope": [
+        "本分卷核对QAViT实际RepQ-LN与log_sqrt2及参数接口，查验官方论文/仓库；完整旧配方增补由existing_methods_delta.md承接",
+        "整合补核：ICCV2023正式正文Algorithm1、§3.1–3.3、§4.1及消融；官方main classification/quant/quantizer.py与classification/test_quant.py；编码容量和重校准流程已记录。"
+      ],
+      "primary_urls": [
+        "https://arxiv.org/abs/2212.08254",
+        "https://openaccess.thecvf.com/content/ICCV2023/html/Li_RepQ-ViT_Scale_Reparameterization_for_Post-Training_Quantization_of_Vision_Transformers_ICCV_2023_paper.html",
+        "https://github.com/zkkli/RepQ-ViT"
+      ],
+      "recipe_dependencies": "通道网格→LN/所有消费者等价改写→重校准 W→冻结；补原版 percentile 配方和扇出图处理。",
+      "current_conditions": "作者分类方案分位数 preview、LN→Linear、log√2、Conv 输入 A8；平均零点、下溢的作者与 16 码适配分开。",
+      "deployment": "可做静态主线适配；原 log 额外零、非整数 mean-z 的码态须按完整编码审计。",
+      "source_unresolved": "16 个非零值加零及浮点零点可能超出四位容量；修订码本/零点必须保存适配身份。",
+      "verification": [
+        "EXP/validation/ptq_foundation_20261125/native_recipes.json#repq_vit",
+        "EXP/validation/ptq_foundation_20261125/numerical/median_reparam/request.json"
+      ],
+      "tests": [
+        "median_reparam"
+      ],
+      "author_accuracy_reproduction": false,
+      "native_device_measurement": false,
+      "public_entry": "execution.recipe.source_id = repq_vit",
+      "source_version": {
+        "origin": "RepQ-ViT: Scale Reparameterization for Post-Training Quantization of Vision Transformers",
+        "author_code_status": "official_key_source_and_existing_qavit_source_read_not_executed",
+        "read_scope": [
+          "本分卷核对QAViT实际RepQ-LN与log_sqrt2及参数接口，查验官方论文/仓库；完整旧配方增补由existing_methods_delta.md承接",
+          "整合补核：ICCV2023正式正文Algorithm1、§3.1–3.3、§4.1及消融；官方main classification/quant/quantizer.py与classification/test_quant.py；编码容量和重校准流程已记录。"
+        ],
+        "primary_urls": [
+          "https://arxiv.org/abs/2212.08254",
+          "https://openaccess.thecvf.com/content/ICCV2023/html/Li_RepQ-ViT_Scale_Reparameterization_for_Post-Training_Quantization_of_Vision_Transformers_ICCV_2023_paper.html",
+          "https://github.com/zkkli/RepQ-ViT"
+        ]
+      },
+      "source_requests": [
+        {
+          "receipt": "EXP/validation/ptq_foundation_20261125/native_recipes.json#repq_vit",
+          "version": "https://github.com/zkkli/RepQ-ViT/tree/a160561b9233945e6680132f129d13041b787318",
+          "profile": "source graph, reduced calibration"
+        }
+      ],
+      "target_protocol": "由实际 W/A 边、码容、固定参数、动态路由、额外计算、结构和例外验证，来源 ID 不授予协议达标状态。"
+    },
+    {
+      "literature_id": "adfq_vit",
+      "survey_ref": 71,
+      "version_of": null,
+      "family": null,
+      "read_asset": {
+        "asset": "methods/recipes/adfq_vit.md"
+      },
+      "implementation_status": "来源绑定的阶段组合；缩小预算，已执行、保存、加载并前向",
+      "entry_point": "assembled_recipes.assemble / encodings / block_objectives",
+      "plugins": {
+        "activation": [
+          "shift_log",
+          "adfq_outliers"
+        ]
+      },
+      "source_scope": [
+        "原文 v1 §3.2–3.5、§4.1；官方 main TokenQuantizer、QuantModule、QuantAttention、block_recon实际KL方向/归约轴/权重、参数入口；未执行复现"
+      ],
+      "primary_urls": [
+        "https://arxiv.org/html/2407.02763v1",
+        "https://www.sciencedirect.com/science/article/pii/S0893608025001686",
+        "https://github.com/llwx593/adfq-vit",
+        "https://github.com/llwx593/adfq-vit/blob/main/quant/quant_layer.py",
+        "https://github.com/llwx593/adfq-vit/blob/main/quant/quant_block.py",
+        "https://github.com/llwx593/adfq-vit/blob/main/quant/block_recon.py"
+      ],
+      "recipe_dependencies": "补异常值载荷/稀疏 FP 计算、ShiftLog2、位置尺度、模块重构；attention 目标保留 paper/code 两版。",
+      "current_conditions": "固定位置网格和阈值旁路，原代码运行时平移与校准固定平移单列。全精度异常元素沿 QDQ matmul；无稀疏 kernel。",
+      "deployment": "原法保留输入相关 FP 异常值，属额外计算/动态旁路；缓存位置尺度另需静态布局契约。",
+      "source_unresolved": "AS 观察点、KL 方向/轴/权重和有效异常阈值存在已记录差异；去旁路版本不叫原法。",
+      "verification": [
+        "EXP/validation/ptq_foundation_20261125/numerical/recipe_adfq_vit/source_request.json",
+        "EXP/validation/ptq_foundation_20261125/numerical/adfq_outliers/request.json",
+        "EXP/validation/ptq_foundation_20261125/numerical/recipe_adfq_vit/request.json",
+        "EXP/validation/ptq_foundation_20261125/numerical/shift_log/request.json"
+      ],
+      "tests": [
+        "adfq_outliers",
+        "recipe_adfq_vit",
+        "shift_log"
+      ],
+      "author_accuracy_reproduction": false,
+      "native_device_measurement": false,
+      "public_entry": "execution.recipe.source_id = adfq_vit",
+      "source_version": {
+        "origin": "ADFQ-ViT: Activation-Distribution-Friendly Post-Training Quantization for Vision Transformers",
+        "author_code_status": "official_source_read",
+        "read_scope": [
+          "原文 v1 §3.2–3.5、§4.1；官方 main TokenQuantizer、QuantModule、QuantAttention、block_recon实际KL方向/归约轴/权重、参数入口；未执行复现"
+        ],
+        "primary_urls": [
+          "https://arxiv.org/html/2407.02763v1",
+          "https://www.sciencedirect.com/science/article/pii/S0893608025001686",
+          "https://github.com/llwx593/adfq-vit",
+          "https://github.com/llwx593/adfq-vit/blob/main/quant/quant_layer.py",
+          "https://github.com/llwx593/adfq-vit/blob/main/quant/quant_block.py",
+          "https://github.com/llwx593/adfq-vit/blob/main/quant/block_recon.py"
+        ]
+      },
+      "source_requests": [
+        {
+          "receipt": "EXP/validation/ptq_foundation_20261125/numerical/recipe_adfq_vit/source_request.json",
+          "version": "paper; explicit reduced settings in this request",
+          "profile": "qavit_bounded_integration"
+        }
+      ],
+      "target_protocol": "由实际 W/A 边、码容、固定参数、动态路由、额外计算、结构和例外验证，来源 ID 不授予协议达标状态。"
+    },
+    {
+      "literature_id": "aiqvit",
+      "survey_ref": 63,
+      "version_of": null,
+      "family": null,
+      "read_asset": {
+        "asset": "methods/recipes/aiqvit.md"
+      },
+      "implementation_status": "来源绑定的阶段组合；缩小预算，已执行、保存、加载并前向",
+      "entry_point": "assembled_recipes.assemble / block_objectives.merged_fit",
+      "plugins": {
+        "activation": [
+          "focus_interval"
+        ]
+      },
+      "source_scope": [
+        "原文 v1 Method 全部与 Experiment setups、消融；AAAI 正式论文及作者主页；无已核实完整官方代码，未执行复现"
+      ],
+      "primary_urls": [
+        "https://arxiv.org/html/2502.04628v1",
+        "https://ojs.aaai.org/index.php/AAAI/article/download/33939/36094",
+        "https://longguangwang.github.io/"
+      ],
+      "recipe_dependencies": "补 Q(W0+BA) 的可合并低秩修正、均匀关注区间学习、rank 搜索、easy-to-hard 样本调度。",
+      "current_conditions": "W0+BA 在量化前合并，课程逐级扩大样本池。rank、边界与初始化依显式配置。",
+      "deployment": "区间冻结、BA 合入且重新量化 W 后可主线；保留 FP 低秩分支则是另一配置。",
+      "source_unresolved": "官方完整代码未核；初始化、NAS 数据分工、边界/零码处理须按原文补齐。不能写成 log quantizer。",
+      "verification": [
+        "EXP/validation/ptq_foundation_20261125/numerical/recipe_aiqvit/source_request.json",
+        "EXP/validation/ptq_foundation_20261125/numerical/focus_interval/request.json",
+        "EXP/validation/ptq_foundation_20261125/numerical/low_rank/request.json",
+        "EXP/validation/ptq_foundation_20261125/numerical/recipe_aiqvit/request.json"
+      ],
+      "tests": [
+        "focus_interval",
+        "low_rank",
+        "recipe_aiqvit"
+      ],
+      "author_accuracy_reproduction": false,
+      "native_device_measurement": false,
+      "public_entry": "execution.recipe.source_id = aiqvit",
+      "source_version": {
+        "origin": "AIQViT: Architecture-Informed Post-Training Quantization for Vision Transformers",
+        "author_code_status": "official_full_implementation_not_verified",
+        "read_scope": [
+          "原文 v1 Method 全部与 Experiment setups、消融；AAAI 正式论文及作者主页；无已核实完整官方代码，未执行复现"
+        ],
+        "primary_urls": [
+          "https://arxiv.org/html/2502.04628v1",
+          "https://ojs.aaai.org/index.php/AAAI/article/download/33939/36094",
+          "https://longguangwang.github.io/"
+        ]
+      },
+      "source_requests": [
+        {
+          "receipt": "EXP/validation/ptq_foundation_20261125/numerical/recipe_aiqvit/source_request.json",
+          "version": "paper; explicit reduced settings in this request",
+          "profile": "qavit_bounded_integration"
+        }
+      ],
+      "target_protocol": "由实际 W/A 边、码容、固定参数、动态路由、额外计算、结构和例外验证，来源 ID 不授予协议达标状态。"
+    },
+    {
+      "literature_id": "dopq_vit",
+      "survey_ref": 65,
+      "version_of": null,
+      "family": null,
+      "read_asset": {
+        "asset": "methods/recipes/dopq_vit.md"
+      },
+      "implementation_status": "来源绑定的阶段组合；缩小预算，已执行、保存、加载并前向",
+      "entry_point": "assembled_recipes.assemble / encodings.fit / repq_ln",
+      "plugins": {
+        "activation": [
+          "tanq"
+        ]
+      },
+      "source_scope": [
+        "最新原文 v4（2026-07-28）§3–5及参数附表；对照旧版本；未核实完整官方代码，未执行复现"
+      ],
+      "primary_urls": [
+        "https://arxiv.org/abs/2408.03291",
+        "https://arxiv.org/html/2408.03291v4"
+      ],
+      "recipe_dependencies": "补 TanQ 编解码与参数搜索、MOSF 中位尺度汇总；完整 v4 还依赖 I&S 类块重构顺序。",
+      "current_conditions": "TanQ v4 逆变换舍入与解析逆分开；MOSF 中位数，SOS 顺序另有 I&S 参考请求。",
+      "deployment": "固定参数可主线适配；原部分结果的 Softmax 更低位宽另列 mixed 配置。",
+      "source_unresolved": "v4 解码 round 的位置有歧义，完整网格与学习率需锁定；MOSF 无梯度不代表整法无优化。",
+      "verification": [
+        "EXP/validation/ptq_foundation_20261125/numerical/recipe_dopq_vit/source_request.json",
+        "EXP/validation/ptq_foundation_20261125/numerical/median_reparam/request.json",
+        "EXP/validation/ptq_foundation_20261125/numerical/recipe_dopq_vit/request.json",
+        "EXP/validation/ptq_foundation_20261125/numerical/recipe_is-vit/request.json",
+        "EXP/validation/ptq_foundation_20261125/numerical/tanq/request.json"
+      ],
+      "tests": [
+        "median_reparam",
+        "recipe_dopq_vit",
+        "recipe_is-vit",
+        "tanq"
+      ],
+      "author_accuracy_reproduction": false,
+      "native_device_measurement": false,
+      "public_entry": "execution.recipe.source_id = dopq_vit",
+      "source_version": {
+        "origin": "DopQ-ViT: Towards Distribution-Friendly and Outlier-Aware Post-Training Quantization for Vision Transformers",
+        "author_code_status": "official_full_implementation_not_verified",
+        "read_scope": [
+          "最新原文 v4（2026-07-28）§3–5及参数附表；对照旧版本；未核实完整官方代码，未执行复现"
+        ],
+        "primary_urls": [
+          "https://arxiv.org/abs/2408.03291",
+          "https://arxiv.org/html/2408.03291v4"
+        ]
+      },
+      "source_requests": [
+        {
+          "receipt": "EXP/validation/ptq_foundation_20261125/numerical/recipe_dopq_vit/source_request.json",
+          "version": "paper; explicit reduced settings in this request",
+          "profile": "qavit_bounded_integration"
+        }
+      ],
+      "target_protocol": "由实际 W/A 边、码容、固定参数、动态路由、额外计算、结构和例外验证，来源 ID 不授予协议达标状态。"
+    },
+    {
+      "literature_id": "fq_vit",
+      "survey_ref": 18,
+      "version_of": null,
+      "family": null,
+      "read_asset": {
+        "asset": "methods/recipes/fq_vit.md"
+      },
+      "implementation_status": "宿主已有作者分类图；缩小预算，已执行、保存、加载并前向",
+      "entry_point": "recipes.build_recipe(fq_vit)",
+      "plugins": {},
+      "source_scope": [
+        "原文 v3 §3.2–3.3、§4.1、附录A–B；官方 main PTF observer、log2 quantizer、量化层；未执行复现"
+      ],
+      "primary_urls": [
+        "https://arxiv.org/html/2111.13824v3",
+        "https://github.com/megvii-research/FQ-ViT",
+        "https://github.com/megvii-research/FQ-ViT/blob/main/models/ptq/quantizer/log2.py"
+      ],
+      "recipe_dependencies": "补 pre-LN PTF、LIS、观察器 finalize 与矩阵输入覆盖的完整连接；核对整数尺度传递。",
+      "current_conditions": "已核对的 FQ 图覆盖 embedding、残差、PTF、整数 LN/Softmax；需原图形与原生分类 head。",
+      "deployment": "原 W8A8/attention4 不能作全 A4；主线低位适配、integer-only 和原生内核分别验证。",
+      "source_unresolved": "log2 额外零的容量问题须处理；现有参考算子不构成完整原法或端到端加速证据。",
+      "verification": [
+        "EXP/validation/ptq_foundation_20261125/native_recipes.json#fq_vit"
+      ],
+      "tests": [],
+      "author_accuracy_reproduction": false,
+      "native_device_measurement": false,
+      "public_entry": "execution.recipe.source_id = fq_vit",
+      "source_version": {
+        "origin": "FQ-ViT: Post-Training Quantization for Fully Quantized Vision Transformer",
+        "author_code_status": "official_source_read",
+        "read_scope": [
+          "原文 v3 §3.2–3.3、§4.1、附录A–B；官方 main PTF observer、log2 quantizer、量化层；未执行复现"
+        ],
+        "primary_urls": [
+          "https://arxiv.org/html/2111.13824v3",
+          "https://github.com/megvii-research/FQ-ViT",
+          "https://github.com/megvii-research/FQ-ViT/blob/main/models/ptq/quantizer/log2.py"
+        ]
+      },
+      "source_requests": [
+        {
+          "receipt": "EXP/validation/ptq_foundation_20261125/native_recipes.json#fq_vit",
+          "version": "https://github.com/megvii-research/FQ-ViT/tree/5daf5915c715dc21d6afcd64e661652030e640ab",
+          "profile": "source graph, reduced calibration"
+        }
+      ],
+      "target_protocol": "由实际 W/A 边、码容、固定参数、动态路由、额外计算、结构和例外验证，来源 ID 不授予协议达标状态。"
+    },
+    {
+      "literature_id": "tsptq_vit",
+      "survey_ref": 20,
+      "version_of": null,
+      "family": null,
+      "read_asset": {
+        "asset": "methods/recipes/tsptq_vit.md"
+      },
+      "implementation_status": "来源绑定的阶段组合；缩小预算，已执行、保存、加载并前向",
+      "entry_point": "assembled_recipes.assemble / encodings.bit_window",
+      "plugins": {
+        "activation": [
+          "bit_window",
+          "two_channel_scales"
+        ]
+      },
+      "source_scope": [
+        "原论文全文，重点§3.1–3.2、§4；已渲染查看原始PDF图2–3，核实6/8bit字段和阈值；尺度符号方向需复现时核对，未核实官方代码、未执行复现"
+      ],
+      "primary_urls": [
+        "https://arxiv.org/abs/2305.12901",
+        "https://arxiv.org/pdf/2305.12901"
+      ],
+      "recipe_dependencies": "补 V-2SF 的区域/符号码字、O-2SF 的通道 K-means 与 PoT 尺度比；保持交替搜索原顺序。",
+      "current_conditions": "V-2SF 的 region/sign 在 payload 中。原 6/8 位、两类尺度关系与四位拓展分开。",
+      "deployment": "固定两组/两尺度可静态；原 6/8 bit 的字段常量不能直接搬到四位。",
+      "source_unresolved": "尺度符号方向存在局部歧义；官方代码未核。必须从总 bit 内分配 region/sign，不能加免费标签。",
+      "verification": [
+        "EXP/validation/ptq_foundation_20261125/numerical/recipe_tsptq_vit/source_request.json",
+        "EXP/validation/ptq_foundation_20261125/numerical/bit_window/request.json",
+        "EXP/validation/ptq_foundation_20261125/numerical/recipe_tsptq_vit/request.json",
+        "EXP/validation/ptq_foundation_20261125/numerical/two_channel_scales/request.json"
+      ],
+      "tests": [
+        "bit_window",
+        "recipe_tsptq_vit",
+        "two_channel_scales"
+      ],
+      "author_accuracy_reproduction": false,
+      "native_device_measurement": false,
+      "public_entry": "execution.recipe.source_id = tsptq_vit",
+      "source_version": {
+        "origin": "TSPTQ-ViT: Two-Scaled Post-Training Quantization for Vision Transformer",
+        "author_code_status": "official_full_implementation_not_verified",
+        "read_scope": [
+          "原论文全文，重点§3.1–3.2、§4；已渲染查看原始PDF图2–3，核实6/8bit字段和阈值；尺度符号方向需复现时核对，未核实官方代码、未执行复现"
+        ],
+        "primary_urls": [
+          "https://arxiv.org/abs/2305.12901",
+          "https://arxiv.org/pdf/2305.12901"
+        ]
+      },
+      "source_requests": [
+        {
+          "receipt": "EXP/validation/ptq_foundation_20261125/numerical/recipe_tsptq_vit/source_request.json",
+          "version": "paper; explicit reduced settings in this request",
+          "profile": "qavit_bounded_integration"
+        }
+      ],
+      "target_protocol": "由实际 W/A 边、码容、固定参数、动态路由、额外计算、结构和例外验证，来源 ID 不授予协议达标状态。"
+    },
+    {
+      "literature_id": "repquant",
+      "survey_ref": 23,
+      "version_of": null,
+      "family": null,
+      "read_asset": {
+        "asset": "methods/recipes/repquant.md"
+      },
+      "implementation_status": "来源绑定的阶段组合；缩小预算，已执行、保存、加载并前向",
+      "entry_point": "assembled_recipes.assemble / edge_transforms.bilateral_clip",
+      "plugins": {},
+      "source_scope": [
+        "原文 v1 §III-B–E、Algorithm1、§IV-A、TableIX–X；无已核实独立完整官方仓库，未执行复现"
+      ],
+      "primary_urls": [
+        "https://arxiv.org/html/2402.05628v1",
+        "https://arxiv.org/abs/2402.05628"
+      ],
+      "recipe_dependencies": "学习双边 clipping→A 网格→等价重参数化→重新收集 W 统计→GPTQ；显式限定优化变量。",
+      "current_conditions": "双 sigmoid 逐通道 clipping→共享仿射→新统计 GPTQ。显式初值及 STE 是适配；独立作者仓库仍待确认。",
+      "deployment": "有限校准后冻结可主线；继承的 zero/log 码态仍须检查，GPTAQ 替换 GPTQ 另记变体。",
+      "source_unresolved": "独立官方完整代码未核；clipping 初始化/STE 与零点语义需按所选来源闭合，不能只套现有 RepQ。",
+      "verification": [
+        "EXP/validation/ptq_foundation_20261125/numerical/recipe_repquant/source_request.json",
+        "EXP/validation/ptq_foundation_20261125/numerical/recipe_repquant/request.json"
+      ],
+      "tests": [
+        "recipe_repquant"
+      ],
+      "author_accuracy_reproduction": false,
+      "native_device_measurement": false,
+      "public_entry": "execution.recipe.source_id = repquant",
+      "source_version": {
+        "origin": "RepQuant: Towards Accurate Post-Training Quantization of Large Transformer Models via Scale Reparameterization",
+        "author_code_status": "separate_official_full_implementation_not_verified",
+        "read_scope": [
+          "原文 v1 §III-B–E、Algorithm1、§IV-A、TableIX–X；无已核实独立完整官方仓库，未执行复现"
+        ],
+        "primary_urls": [
+          "https://arxiv.org/html/2402.05628v1",
+          "https://arxiv.org/abs/2402.05628"
+        ]
+      },
+      "source_requests": [
+        {
+          "receipt": "EXP/validation/ptq_foundation_20261125/numerical/recipe_repquant/source_request.json",
+          "version": "paper; explicit reduced settings in this request",
+          "profile": "qavit_bounded_integration"
+        }
+      ],
+      "target_protocol": "由实际 W/A 边、码容、固定参数、动态路由、额外计算、结构和例外验证，来源 ID 不授予协议达标状态。"
+    },
+    {
+      "literature_id": "orq_vit",
+      "survey_ref": 29,
+      "version_of": null,
+      "family": null,
+      "read_asset": {
+        "asset": "methods/recipes/orq_vit.md"
+      },
+      "implementation_status": "来源绑定的阶段组合；缩小预算，已执行、保存、加载并前向",
+      "entry_point": "assembled_recipes.assemble / fixed_grids.first_batch_rows / reconstruction.fit_stage",
+      "plugins": {},
+      "source_scope": [
+        "出版社开放获取全文 §3.1–3.4、Algorithm1–2、§4.1–4.3；未核实官方代码，未执行复现"
+      ],
+      "primary_urls": [
+        "https://doi.org/10.1016/j.sysarc.2025.103530",
+        "https://www.sciencedirect.com/science/article/pii/S1383762125002024/pdfft?md5=955bdcf612c5b14cf27069d3f126746e&pid=1-s2.0-S1383762125002024-main.pdf"
+      ],
+      "recipe_dependencies": "补固定位置逐行尺度、first-batch 初始化、scale-only 重构及 V 的正确轴；扩展静态位置契约。",
+      "current_conditions": "首批逐行分位数择优，固定坐标尺度，后续仅 scale 优化。V 与 K 的维度由运行矩阵显式绑定。",
+      "deployment": "原尺度可静态；必须绑定分辨率/window/token 布局，检测原版只在适用 MatMul 用逐行机制。",
+      "source_unresolved": "现 contracts 禁止静态 per_token，不能直接加载原法；官方代码未核，跨布局共享是新实验。",
+      "verification": [
+        "EXP/validation/ptq_foundation_20261125/numerical/recipe_orq_vit/source_request.json",
+        "EXP/validation/ptq_foundation_20261125/numerical/first_batch_rows/request.json",
+        "EXP/validation/ptq_foundation_20261125/numerical/recipe_orq_vit/request.json",
+        "EXP/validation/ptq_foundation_20261125/numerical/scale_only/request.json"
+      ],
+      "tests": [
+        "first_batch_rows",
+        "recipe_orq_vit",
+        "scale_only"
+      ],
+      "author_accuracy_reproduction": false,
+      "native_device_measurement": false,
+      "public_entry": "execution.recipe.source_id = orq_vit",
+      "source_version": {
+        "origin": "ORQ-ViT: Outlier Resilient Post Training Quantization for Vision Transformers via Outlier Decomposition",
+        "author_code_status": "official_full_implementation_not_verified",
+        "read_scope": [
+          "出版社开放获取全文 §3.1–3.4、Algorithm1–2、§4.1–4.3；未核实官方代码，未执行复现"
+        ],
+        "primary_urls": [
+          "https://doi.org/10.1016/j.sysarc.2025.103530",
+          "https://www.sciencedirect.com/science/article/pii/S1383762125002024/pdfft?md5=955bdcf612c5b14cf27069d3f126746e&pid=1-s2.0-S1383762125002024-main.pdf"
+        ]
+      },
+      "source_requests": [
+        {
+          "receipt": "EXP/validation/ptq_foundation_20261125/numerical/recipe_orq_vit/source_request.json",
+          "version": "paper; explicit reduced settings in this request",
+          "profile": "qavit_bounded_integration"
+        }
+      ],
+      "target_protocol": "由实际 W/A 边、码容、固定参数、动态路由、额外计算、结构和例外验证，来源 ID 不授予协议达标状态。"
+    },
+    {
+      "literature_id": "noisyquant",
+      "survey_ref": 28,
+      "version_of": null,
+      "family": null,
+      "read_asset": {
+        "asset": "methods/recipes/noisyquant.md"
+      },
+      "implementation_status": "来源绑定的阶段组合；缩小预算，已执行、保存、加载并前向",
+      "entry_point": "assembled_recipes.assemble / preprocess.noisy_shift",
+      "plugins": {
+        "preprocess": [
+          "noisy_shift"
+        ]
+      },
+      "source_scope": [
+        "原文 v2 §3.2–3.3、§5.1、附录校准量；官方 main fast_quant.py、run.sh、README；记录论文/代码不同，未执行复现"
+      ],
+      "primary_urls": [
+        "https://arxiv.org/html/2211.16056v2",
+        "https://github.com/kriskrisliu/NoisyQuant",
+        "https://github.com/kriskrisliu/NoisyQuant/blob/main/fast_quant.py"
+      ],
+      "recipe_dependencies": "补一次采样的通道 N、均值/幅度搜索及种子；更新 W 后重算补偿，保留 paper/code 噪声与目标差异。",
+      "current_conditions": "论文均匀方向/激活误差、作者 Gaussian/Linear 输出误差分列。当前浮点保存常量，bias 随最终 W 计算。",
+      "deployment": "原主要 W6A6/W8A8；真四位适配可静态，INT16 N/bias 与输入加法须计成本。",
+      "source_unresolved": "论文 Uniform/激活误差与代码 Gaussian/Linear 输出误差不同；四位和目标模型尚无本地验证。",
+      "verification": [
+        "EXP/validation/ptq_foundation_20261125/numerical/recipe_noisyquant/source_request.json",
+        "EXP/validation/ptq_foundation_20261125/numerical/noisy_shift/request.json",
+        "EXP/validation/ptq_foundation_20261125/numerical/recipe_noisyquant/request.json"
+      ],
+      "tests": [
+        "noisy_shift",
+        "recipe_noisyquant"
+      ],
+      "author_accuracy_reproduction": false,
+      "native_device_measurement": false,
+      "public_entry": "execution.recipe.source_id = noisyquant",
+      "source_version": {
+        "origin": "NoisyQuant: Noisy Bias-Enhanced Post-Training Activation Quantization for Vision Transformers",
+        "author_code_status": "official_source_read_paper_code_difference_logged",
+        "read_scope": [
+          "原文 v2 §3.2–3.3、§5.1、附录校准量；官方 main fast_quant.py、run.sh、README；记录论文/代码不同，未执行复现"
+        ],
+        "primary_urls": [
+          "https://arxiv.org/html/2211.16056v2",
+          "https://github.com/kriskrisliu/NoisyQuant",
+          "https://github.com/kriskrisliu/NoisyQuant/blob/main/fast_quant.py"
+        ]
+      },
+      "source_requests": [
+        {
+          "receipt": "EXP/validation/ptq_foundation_20261125/numerical/recipe_noisyquant/source_request.json",
+          "version": "paper; explicit reduced settings in this request",
+          "profile": "qavit_bounded_integration"
+        }
+      ],
+      "target_protocol": "由实际 W/A 边、码容、固定参数、动态路由、额外计算、结构和例外验证，来源 ID 不授予协议达标状态。"
+    },
+    {
+      "literature_id": "igq_vit",
+      "survey_ref": 70,
+      "version_of": null,
+      "family": null,
+      "read_asset": {
+        "asset": "methods/recipes/igq_vit.md"
+      },
+      "implementation_status": "来源绑定的阶段组合 / 实际任务/候选分配；缩小预算，已执行、保存、加载并前向",
+      "entry_point": "encodings.fit_groups / source_allocation.group_schedule",
+      "plugins": {
+        "activation": [
+          "igq_ranges"
+        ]
+      },
+      "source_scope": [
+        "原文 v1 §3.2–3.3、Algorithm1、附录A.1–A.3与实现讨论；作者项目页；未核实独立完整代码，未执行复现"
+      ],
+      "primary_urls": [
+        "https://arxiv.org/html/2404.00928v1",
+        "https://cvlab.yonsei.ac.kr/projects/IGQ-ViT/"
+      ],
+      "recipe_dependencies": "补实例 min/max 分组、固定量化器交替拟合、组数 ILP、非连续 gather 与分组缩放求和。",
+      "current_conditions": "实例动态按范围选非连续组；每一周期按累计交替步数拟合中心，比较同一其余量化图上开关单个激活的任务 KL，在声明的 BOP 成本下精确选择。检测框和实例 mask 版本还依赖相应任务 head 与扰动定义。",
+      "deployment": "原法按输入重分组，属于动态；冻结组是新静态适配，不能用固定相邻 group_size 代替。",
+      "source_unresolved": "upper/lower 式号歧义及作者完整代码未闭合；检测扰动部分用标签索引，运行分组/求和成本不能省。",
+      "verification": [
+        "EXP/validation/ptq_foundation_20261125/numerical/recipe_igq_vit/source_request.json",
+        "EXP/validation/ptq_foundation_20261125/allocation_recipes.json#igq_vit",
+        "EXP/validation/ptq_foundation_20261125/numerical/igq_ranges/request.json",
+        "EXP/validation/ptq_foundation_20261125/numerical/recipe_igq_vit/request.json"
+      ],
+      "tests": [
+        "igq_ranges",
+        "recipe_igq_vit"
+      ],
+      "author_accuracy_reproduction": false,
+      "native_device_measurement": false,
+      "public_entry": "execution.recipe.source_id = igq_vit",
+      "source_version": {
+        "origin": "Instance-Aware Group Quantization for Vision Transformers",
+        "author_code_status": "official_full_implementation_not_verified",
+        "read_scope": [
+          "原文 v1 §3.2–3.3、Algorithm1、附录A.1–A.3与实现讨论；作者项目页；未核实独立完整代码，未执行复现"
+        ],
+        "primary_urls": [
+          "https://arxiv.org/html/2404.00928v1",
+          "https://cvlab.yonsei.ac.kr/projects/IGQ-ViT/"
+        ]
+      },
+      "source_requests": [
+        {
+          "receipt": "EXP/validation/ptq_foundation_20261125/numerical/recipe_igq_vit/source_request.json",
+          "version": "paper; explicit reduced settings in this request",
+          "profile": "qavit_bounded_integration"
+        },
+        {
+          "receipt": "EXP/validation/ptq_foundation_20261125/allocation_recipes.json#igq_vit",
+          "version": "paper; explicit reduced settings in this request",
+          "profile": "qavit_bounded_integration"
+        }
+      ],
+      "target_protocol": "由实际 W/A 边、码容、固定参数、动态路由、额外计算、结构和例外验证，来源 ID 不授予协议达标状态。"
+    },
+    {
+      "literature_id": "daquant",
+      "survey_ref": 30,
+      "version_of": null,
+      "family": null,
+      "read_asset": {
+        "asset": "methods/recipes/daquant.md"
+      },
+      "implementation_status": "来源绑定的阶段组合 / 额外冻结状态；缩小预算，已执行、保存、加载并前向",
+      "entry_point": "domain_fit.fit / domain_fit.activation",
+      "plugins": {},
+      "source_scope": [
+        "出版社摘要/元数据，未取得全文；官方 main 19个源码文件，重点DAQuant.py、quantizer.py、main.py、datautils.py、generate_act_scale_shift.py、int_vit_layer.py；未执行复现"
+      ],
+      "primary_urls": [
+        "https://doi.org/10.1016/j.patcog.2025.112182",
+        "https://www.sciencedirect.com/science/article/pii/S003132032500843X",
+        "https://github.com/iLearn-Lab/PR26-DAQuant",
+        "https://github.com/iLearn-Lab/PR26-DAQuant/blob/main/quantize/DAQuant.py",
+        "https://github.com/iLearn-Lab/PR26-DAQuant/blob/main/quantize/quantizer.py"
+      ],
+      "recipe_dependencies": "补分布 scale/shift 初始化、DGA/LWC/LAC/WRC 参数组、源/目标域特征对齐及 block 调度；WRC 合并。",
+      "current_conditions": "源域独立样本 DGA→SmoothL1，目标域显式配对样本 feature KL，WRC、W/A clipping 及静态或实例范围分别导出。首坐标统计和逐通道统计按作者代码/适配区分；不同域模型与原预算待运行。",
+      "deployment": "所核代码 forward 重估范围，属动态；冻结观察器的版本需独立验证。W4A16 部署不是 W4A4。",
+      "source_unresolved": "正文未取得、已有官方源码级配方；不冒称论文全文已核。随机 loader 不是选样算法，未见分割验证。",
+      "verification": [
+        "EXP/validation/ptq_foundation_20261125/numerical/recipe_daquant/source_request.json",
+        "EXP/validation/ptq_foundation_20261125/numerical/daquant_frozen/source_request.json",
+        "EXP/validation/ptq_foundation_20261125/numerical/full_correction/request.json",
+        "EXP/validation/ptq_foundation_20261125/numerical/recipe_daquant/request.json"
+      ],
+      "tests": [
+        "full_correction",
+        "recipe_daquant"
+      ],
+      "author_accuracy_reproduction": false,
+      "native_device_measurement": false,
+      "public_entry": "execution.recipe.source_id = daquant",
+      "source_version": {
+        "origin": "Domain Aware Post Training Quantization for Vision Transformers in Deployment",
+        "author_code_status": "official_source_read_full_paper_unavailable",
+        "read_scope": [
+          "出版社摘要/元数据，未取得全文；官方 main 19个源码文件，重点DAQuant.py、quantizer.py、main.py、datautils.py、generate_act_scale_shift.py、int_vit_layer.py；未执行复现"
+        ],
+        "primary_urls": [
+          "https://doi.org/10.1016/j.patcog.2025.112182",
+          "https://www.sciencedirect.com/science/article/pii/S003132032500843X",
+          "https://github.com/iLearn-Lab/PR26-DAQuant",
+          "https://github.com/iLearn-Lab/PR26-DAQuant/blob/main/quantize/DAQuant.py",
+          "https://github.com/iLearn-Lab/PR26-DAQuant/blob/main/quantize/quantizer.py"
+        ]
+      },
+      "source_requests": [
+        {
+          "receipt": "EXP/validation/ptq_foundation_20261125/numerical/recipe_daquant/source_request.json",
+          "version": "paper; explicit reduced settings in this request",
+          "profile": "qavit_bounded_integration"
+        },
+        {
+          "receipt": "EXP/validation/ptq_foundation_20261125/numerical/daquant_frozen/source_request.json",
+          "version": "paper; explicit reduced settings in this request",
+          "profile": "qavit_bounded_integration"
+        }
+      ],
+      "target_protocol": "由实际 W/A 边、码容、固定参数、动态路由、额外计算、结构和例外验证，来源 ID 不授予协议达标状态。"
+    },
+    {
+      "literature_id": "regcache",
+      "survey_ref": 32,
+      "version_of": null,
+      "family": null,
+      "read_asset": {
+        "asset": "methods/recipes/regcache.md"
+      },
+      "implementation_status": "来源绑定的阶段组合；缩小预算，已执行、保存、加载并前向",
+      "entry_point": "assembled_recipes.assemble / structure.token_bank",
+      "plugins": {},
+      "source_scope": [
+        "原文 v5（2026-07-08）§3–5、附录E/H/L/N；官方 main 候选搜集、搜索脚本、模型入口和README；未执行复现"
+      ],
+      "primary_urls": [
+        "https://arxiv.org/html/2510.04547v5",
+        "https://github.com/spbob0418/RegCache"
+      ],
+      "recipe_dependencies": "补候选 token/KV bank、缓存前缀插入、当前输入 token 删除与 dense 恢复；结构定后重校准底座。",
+      "current_conditions": "基于样本位置的 top-K 缓存 KV，将它接入两个 GEMM；在线删除/邻居恢复作为有显式边界的结构干预。前缀和删除搜索各计费。",
+      "deployment": "原动态 PTQ 加在线删除，属动态/结构扩展；只前缀或固定删除是独立变体。",
+      "source_unresolved": "候选来自 5 万图、top-100 是 token；DINOv3 自带 register 且无原文实证，先验不能替代适用性验证。",
+      "verification": [
+        "EXP/validation/ptq_foundation_20261125/numerical/recipe_regcache/source_request.json",
+        "EXP/validation/ptq_foundation_20261125/numerical/cached_kv/request.json",
+        "EXP/validation/ptq_foundation_20261125/numerical/recipe_regcache/request.json",
+        "EXP/validation/ptq_foundation_20261125/numerical/token_route/request.json"
+      ],
+      "tests": [
+        "cached_kv",
+        "recipe_regcache",
+        "token_route"
+      ],
+      "author_accuracy_reproduction": false,
+      "native_device_measurement": false,
+      "public_entry": "execution.recipe.source_id = regcache",
+      "source_version": {
+        "origin": "Activation Quantization of Vision Encoders Needs Prefixing Registers",
+        "author_code_status": "official_source_read",
+        "read_scope": [
+          "原文 v5（2026-07-08）§3–5、附录E/H/L/N；官方 main 候选搜集、搜索脚本、模型入口和README；未执行复现"
+        ],
+        "primary_urls": [
+          "https://arxiv.org/html/2510.04547v5",
+          "https://github.com/spbob0418/RegCache"
+        ]
+      },
+      "source_requests": [
+        {
+          "receipt": "EXP/validation/ptq_foundation_20261125/numerical/recipe_regcache/source_request.json",
+          "version": "paper; explicit reduced settings in this request",
+          "profile": "qavit_bounded_integration"
+        }
+      ],
+      "target_protocol": "由实际 W/A 边、码容、固定参数、动态路由、额外计算、结构和例外验证，来源 ID 不授予协议达标状态。"
+    },
+    {
+      "literature_id": "ptq-vit-2021",
+      "survey_ref": 22,
+      "version_of": null,
+      "family": null,
+      "read_asset": {
+        "asset": "methods/recipes/ptq-vit-2021.md"
+      },
+      "implementation_status": "来源绑定的阶段组合 / 实际任务/候选分配；缩小预算，已执行、保存、加载并前向",
+      "entry_point": "rank_search / block_search.search / configuration_search.configuration_grid",
+      "plugins": {},
+      "source_scope": [
+        "原论文§3.2–3.3、§4.1；未确认作者可运行代码"
+      ],
+      "primary_urls": [
+        "https://proceedings.neurips.cc/paper_files/paper/2021/file/ec8956637a99787bd197eacd77acce5e-Paper.pdf"
+      ],
+      "recipe_dependencies": "补 Pearson、pre-Softmax pairwise ranking、均值 bias、交替 scale 搜索；完整法另含核范数混精分配。",
+      "current_conditions": "真实 pre-Softmax 成对排序和 Pearson 交替搜索，每轮 fold bias；混精分支采用完整图测量核范数加权误差与重量位预算。gamma/theta、对照温度及候选范围需显式给定。",
+      "deployment": "完整 mixed 6/8 bit 原法归混精；排序/相关性等可用于固定四位适配。",
+      "source_unresolved": "γ、θ、候选数等最终设置及官方代码未核；核范数不是 Hessian，不能与 PTQ4ViT 混名。",
+      "verification": [
+        "EXP/validation/ptq_foundation_20261125/numerical/recipe_ptq-vit-2021/source_request.json",
+        "EXP/validation/ptq_foundation_20261125/allocation_recipes.json#ptq-vit-2021",
+        "EXP/validation/ptq_foundation_20261125/numerical/recipe_ptq-vit-2021/request.json"
+      ],
+      "tests": [
+        "recipe_ptq-vit-2021"
+      ],
+      "author_accuracy_reproduction": false,
+      "native_device_measurement": false,
+      "public_entry": "execution.recipe.source_id = ptq-vit-2021",
+      "source_version": {
+        "origin": "PTQ-ViT / Ranking-ViT",
+        "author_code_status": null,
+        "read_scope": [
+          "原论文§3.2–3.3、§4.1；未确认作者可运行代码"
+        ],
+        "primary_urls": [
+          "https://proceedings.neurips.cc/paper_files/paper/2021/file/ec8956637a99787bd197eacd77acce5e-Paper.pdf"
+        ]
+      },
+      "source_requests": [
+        {
+          "receipt": "EXP/validation/ptq_foundation_20261125/numerical/recipe_ptq-vit-2021/source_request.json",
+          "version": "paper; explicit reduced settings in this request",
+          "profile": "qavit_bounded_integration"
+        },
+        {
+          "receipt": "EXP/validation/ptq_foundation_20261125/allocation_recipes.json#ptq-vit-2021",
+          "version": "paper; explicit reduced settings in this request",
+          "profile": "qavit_bounded_integration"
+        }
+      ],
+      "target_protocol": "由实际 W/A 边、码容、固定参数、动态路由、额外计算、结构和例外验证，来源 ID 不授予协议达标状态。"
+    },
+    {
+      "literature_id": "apq-vit",
+      "survey_ref": 17,
+      "version_of": null,
+      "family": null,
+      "read_asset": {
+        "asset": "methods/recipes/apq-vit.md"
+      },
+      "implementation_status": "来源绑定的阶段组合；缩小预算，已执行、保存、加载并前向",
+      "entry_point": "assembled_recipes.assemble / block_search.search",
+      "plugins": {},
+      "source_scope": [
+        "原论文§3.2–3.4、Algorithm1、§4.1；Eq8与文字歧义未闭合；官方代码未确认"
+      ],
+      "primary_urls": [
+        "https://arxiv.org/pdf/2303.14341",
+        "https://doi.org/10.1145/3503161.3547826"
+      ],
+      "recipe_dependencies": "补 BBC 块级响应、逆层序交替搜索、候选相关 bottom mask、MPQ 的均匀 Softmax 网格。",
+      "current_conditions": "按块 FP 任务梯度准备、候选独立误差 mask、交替 operand 搜索与非负均匀 MPQ。文字和式8的阈值方向分列。",
+      "deployment": "静态四位可接入；MPQ 的 max 归约轴及参数冻结行为要明确。",
+      "source_unresolved": "Eq.(8) 与文字的 mask 方向不一致，max 轴/零 scale 候选处理待闭合；不得静默修正成唯一原法。",
+      "verification": [
+        "EXP/validation/ptq_foundation_20261125/numerical/recipe_apq-vit/source_request.json",
+        "EXP/validation/ptq_foundation_20261125/numerical/recipe_apq-vit/request.json"
+      ],
+      "tests": [
+        "recipe_apq-vit"
+      ],
+      "author_accuracy_reproduction": false,
+      "native_device_measurement": false,
+      "public_entry": "execution.recipe.source_id = apq-vit",
+      "source_version": {
+        "origin": "APQ-ViT",
+        "author_code_status": null,
+        "read_scope": [
+          "原论文§3.2–3.4、Algorithm1、§4.1；Eq8与文字歧义未闭合；官方代码未确认"
+        ],
+        "primary_urls": [
+          "https://arxiv.org/pdf/2303.14341",
+          "https://doi.org/10.1145/3503161.3547826"
+        ]
+      },
+      "source_requests": [
+        {
+          "receipt": "EXP/validation/ptq_foundation_20261125/numerical/recipe_apq-vit/source_request.json",
+          "version": "paper; explicit reduced settings in this request",
+          "profile": "qavit_bounded_integration"
+        }
+      ],
+      "target_protocol": "由实际 W/A 边、码容、固定参数、动态路由、额外计算、结构和例外验证，来源 ID 不授予协议达标状态。"
+    },
+    {
+      "literature_id": "aphq-vit",
+      "survey_ref": 35,
+      "version_of": null,
+      "family": null,
+      "read_asset": {
+        "asset": "methods/recipes/aphq-vit.md"
+      },
+      "implementation_status": "来源绑定的阶段组合；缩小预算，已执行、保存、加载并前向",
+      "entry_point": "assembled_recipes.assemble / curvature_fit.mlp_replacement",
+      "plugins": {},
+      "source_scope": [
+        "原论文§3/§4；官方configs/4bit/best.py、block_recon.py、mlp_recon.py；纸面/代码差异已记录"
+      ],
+      "primary_urls": [
+        "https://arxiv.org/html/2504.02508v1",
+        "https://github.com/GoatWu/APHQ-ViT"
+      ],
+      "recipe_dependencies": "补 APH 双扰动准备、加权损失、GELU→ReLU MLP 恢复、QDrop 块重构；MR 后刷新量化与敏感度。",
+      "current_conditions": "GELU teacher，ReLU 直接与 clamp 两支共用 FC2；变更后重建统计和 APH，QDrop 硬化。官方 abs 和有符号版本各自命名。",
+      "deployment": "离线恢复后可静态；原代码 patch 输入 A8 单列。结构变化另记成本，不自动排除主线。",
+      "source_unresolved": "全方向差分一般是 H1 非精确对角；paper 与 abs-code、p 值不同。只加 APH metric 不等于整法。",
+      "verification": [
+        "EXP/validation/ptq_foundation_20261125/numerical/recipe_aphq-vit/source_request.json",
+        "EXP/validation/ptq_foundation_20261125/numerical/recipe_aphq-vit/request.json"
+      ],
+      "tests": [
+        "recipe_aphq-vit"
+      ],
+      "author_accuracy_reproduction": false,
+      "native_device_measurement": false,
+      "public_entry": "execution.recipe.source_id = aphq-vit",
+      "source_version": {
+        "origin": "APHQ-ViT",
+        "author_code_status": null,
+        "read_scope": [
+          "原论文§3/§4；官方configs/4bit/best.py、block_recon.py、mlp_recon.py；纸面/代码差异已记录"
+        ],
+        "primary_urls": [
+          "https://arxiv.org/html/2504.02508v1",
+          "https://github.com/GoatWu/APHQ-ViT"
+        ]
+      },
+      "source_requests": [
+        {
+          "receipt": "EXP/validation/ptq_foundation_20261125/numerical/recipe_aphq-vit/source_request.json",
+          "version": "paper; explicit reduced settings in this request",
+          "profile": "qavit_bounded_integration"
+        }
+      ],
+      "target_protocol": "由实际 W/A 边、码容、固定参数、动态路由、额外计算、结构和例外验证，来源 ID 不授予协议达标状态。"
+    },
+    {
+      "literature_id": "fima-q",
+      "survey_ref": 34,
+      "version_of": null,
+      "family": null,
+      "read_asset": {
+        "asset": "methods/recipes/fima-q.md"
+      },
+      "implementation_status": "来源绑定的阶段组合；缩小预算，已执行、保存、加载并前向",
+      "entry_point": "assembled_recipes.assemble / curvature_fit.BlockObjective",
+      "plugins": {},
+      "source_scope": [
+        "原论文§3、Algorithm1、§4；官方4bit配置与block_recon核心损失/刷新；paper与code独立定义"
+      ],
+      "primary_urls": [
+        "https://arxiv.org/html/2506.11543v1",
+        "https://github.com/ShiheWang/FIMA-Q"
+      ],
+      "recipe_dependencies": "补渐进扰动/梯度缓存、DPLR 小矩阵求解、QDrop 重构；论文 secant 与官方 abs-normalized 分开。",
+      "current_conditions": "按迭代产生真实 Q 扰动，FP 后缀求导，刷新 D/G、秩和归一化，再硬化。原文 r15、官方 W4 r5；验证使用更小预算。",
+      "deployment": "有限校准可主线；作者 A8 例外和 token/head 分组另存实际配置。",
+      "source_unresolved": "rank、归一化及损失公式 paper/code 不同；直接 inv 的退化回退若修改需标变体，不能称精确 PSD Fisher。",
+      "verification": [
+        "EXP/validation/ptq_foundation_20261125/numerical/recipe_fima-q/source_request.json",
+        "EXP/validation/ptq_foundation_20261125/numerical/recipe_fima-q/request.json"
+      ],
+      "tests": [
+        "recipe_fima-q"
+      ],
+      "author_accuracy_reproduction": false,
+      "native_device_measurement": false,
+      "public_entry": "execution.recipe.source_id = fima-q",
+      "source_version": {
+        "origin": "FIMA-Q",
+        "author_code_status": null,
+        "read_scope": [
+          "原论文§3、Algorithm1、§4；官方4bit配置与block_recon核心损失/刷新；paper与code独立定义"
+        ],
+        "primary_urls": [
+          "https://arxiv.org/html/2506.11543v1",
+          "https://github.com/ShiheWang/FIMA-Q"
+        ]
+      },
+      "source_requests": [
+        {
+          "receipt": "EXP/validation/ptq_foundation_20261125/numerical/recipe_fima-q/source_request.json",
+          "version": "paper; explicit reduced settings in this request",
+          "profile": "qavit_bounded_integration"
+        }
+      ],
+      "target_protocol": "由实际 W/A 边、码容、固定参数、动态路由、额外计算、结构和例外验证，来源 ID 不授予协议达标状态。"
+    },
+    {
+      "literature_id": "erq-icml2024",
+      "survey_ref": 37,
+      "version_of": null,
+      "family": null,
+      "read_asset": {
+        "asset": "methods/recipes/erq-icml2024.md"
+      },
+      "implementation_status": "来源绑定的阶段组合；缩小预算，已执行、保存、加载并前向",
+      "entry_point": "assembled_recipes.assemble / paired_weights.erq",
+      "plugins": {
+        "weight": [
+          "erq"
+        ]
+      },
+      "source_scope": [
+        "ICML2024正式PDF§4、Algorithm1、§5.1及附录；现有QAViT2024研究卡"
+      ],
+      "primary_urls": [
+        "https://proceedings.mlr.press/v235/zhong24a.html",
+        "https://arxiv.org/html/2407.06794v1"
+      ],
+      "recipe_dependencies": "补 Aqer ridge→二分 Wqer→舍入翻转→剩余 W ridge；统一误差符号、矩阵轴与统计归一化。",
+      "current_conditions": "Aqer 与 Wqer 顺序、按行翻转及剩余列求解，归一化约定显式。全量预算未跑。",
+      "deployment": "临时 FP 待量化列不留到推理，最终可主线；保持 2024 配方身份。",
+      "source_unresolved": "没有原生 ERQ 执行注册；2024 的 T=100、λ 和符号不能混入 2025。闭式下降不证明任务提升。",
+      "verification": [
+        "EXP/validation/ptq_foundation_20261125/numerical/recipe_erq-icml2024/source_request.json",
+        "EXP/validation/ptq_foundation_20261125/numerical/recipe_erq-icml2024/request.json"
+      ],
+      "tests": [
+        "recipe_erq-icml2024"
+      ],
+      "author_accuracy_reproduction": false,
+      "native_device_measurement": false,
+      "public_entry": "execution.recipe.source_id = erq-icml2024",
+      "source_version": {
+        "origin": "ERQ: Error Reduction for Post-Training Quantization of Vision Transformers",
+        "author_code_status": null,
+        "read_scope": [
+          "ICML2024正式PDF§4、Algorithm1、§5.1及附录；现有QAViT2024研究卡"
+        ],
+        "primary_urls": [
+          "https://proceedings.mlr.press/v235/zhong24a.html",
+          "https://arxiv.org/html/2407.06794v1"
+        ]
+      },
+      "source_requests": [
+        {
+          "receipt": "EXP/validation/ptq_foundation_20261125/numerical/recipe_erq-icml2024/source_request.json",
+          "version": "paper; explicit reduced settings in this request",
+          "profile": "qavit_bounded_integration"
+        }
+      ],
+      "target_protocol": "由实际 W/A 边、码容、固定参数、动态路由、额外计算、结构和例外验证，来源 ID 不授予协议达标状态。"
+    },
+    {
+      "literature_id": "erq-tpami2025-duq",
+      "survey_ref": 37,
+      "version_of": "erq-icml2024",
+      "family": null,
+      "read_asset": {
+        "asset": "methods/recipes/erq-tpami2025-duq.md"
+      },
+      "implementation_status": "来源绑定的阶段组合；缩小预算，已执行、保存、加载并前向",
+      "entry_point": "paired_weights.erq / paired_weights.tail_partition",
+      "plugins": {},
+      "source_scope": "2025v2§4.2、Algorithm1–2、§5.1；官方test_quant_expand.py、quant/quantizer.py；DUQ分区和T=20等已核",
+      "primary_urls": [
+        "https://arxiv.org/html/2407.06794v2",
+        "https://doi.org/10.1109/TPAMI.2025.3528042",
+        "https://github.com/zysxmu/ERQ"
+      ],
+      "recipe_dependencies": "先完成重参数化与 Aqer，再在该 W 状态上确定 DUQ 尾部列分区，接 Wqer 舍入与剩余权重修正；独立记录 T=20 和代码求解尺度。",
+      "current_conditions": "Aqer 读取变换后配对输入和常数列。作者分正负尾、按 d_out//20 选列；Wqer 不舍入 bias，剩余列和 bias 联合修正。小模型与独立增广 ridge 对照。论文整行尾规则可单列。",
+      "deployment": "两个分区均真四位且成员固定时可主线；另计索引、scale 与分组算子。",
+      "source_unresolved": "选列数原按 d_out 计算；空/单符号行边界、sum/mean λ、log√2 容量要核。是 [37] 变体，不是第 84 条文献。",
+      "verification": [
+        "EXP/validation/ptq_foundation_20261125/numerical/recipe_erq-tpami2025-duq/source_request.json",
+        "EXP/validation/ptq_foundation_20261125/numerical/recipe_erq-tpami2025-duq/request.json"
+      ],
+      "tests": [
+        "recipe_erq-tpami2025-duq"
+      ],
+      "author_accuracy_reproduction": false,
+      "native_device_measurement": false,
+      "public_entry": "execution.recipe.source_id = erq-tpami2025-duq",
+      "source_version": {
+        "origin": "Towards Accurate Post-Training Quantization of Vision Transformers via Error Reduction / DUQ",
+        "author_code_status": null,
+        "read_scope": "2025v2§4.2、Algorithm1–2、§5.1；官方test_quant_expand.py、quant/quantizer.py；DUQ分区和T=20等已核",
+        "primary_urls": [
+          "https://arxiv.org/html/2407.06794v2",
+          "https://doi.org/10.1109/TPAMI.2025.3528042",
+          "https://github.com/zysxmu/ERQ"
+        ]
+      },
+      "source_requests": [
+        {
+          "receipt": "EXP/validation/ptq_foundation_20261125/numerical/recipe_erq-tpami2025-duq/source_request.json",
+          "version": "paper; explicit reduced settings in this request",
+          "profile": "qavit_bounded_integration"
+        }
+      ],
+      "target_protocol": "由实际 W/A 边、码容、固定参数、动态路由、额外计算、结构和例外验证，来源 ID 不授予协议达标状态。"
+    },
+    {
+      "literature_id": "is-vit",
+      "survey_ref": 24,
+      "version_of": null,
+      "family": null,
+      "read_asset": {
+        "asset": "methods/recipes/is-vit.md"
+      },
+      "implementation_status": "来源绑定的阶段组合；缩小预算，已执行、保存、加载并前向",
+      "entry_point": "assembled_recipes.assemble / graph_fit.activation_phase",
+      "plugins": {
+        "activation": [
+          "sulq"
+        ]
+      },
+      "source_scope": [
+        "v3全文§4–5；官方README及重构/量化关键入口；量化参数固定与两阶段更新已核"
+      ],
+      "primary_urls": [
+        "https://arxiv.org/html/2311.10126v3",
+        "https://doi.org/10.1109/TPAMI.2025.3610466",
+        "https://github.com/zysxmu/IaS-ViT"
+      ],
+      "recipe_dependencies": "补 SULQ 与 η 搜索；SOS 的 A-first 权重重构→尺度融合→W/A 重构，分阶段冻结 quantizer。",
+      "current_conditions": "FP W、逐通道 post-LN A→块权重优化→等价重参数化→低位 W+A 重构。原量化器固定，SULQ 选择 eta。",
+      "deployment": "最终静态可主线；不能把 SOS 写成推理动态或联合学习全部尺度。",
+      "source_unresolved": "SULQ 的整数指数、减 η、边界码表须实作；公开代码可核，但未执行，完整链不能仅用 RepQ 代替。",
+      "verification": [
+        "EXP/validation/ptq_foundation_20261125/numerical/recipe_is-vit/source_request.json",
+        "EXP/validation/ptq_foundation_20261125/numerical/recipe_is-vit/request.json"
+      ],
+      "tests": [
+        "recipe_is-vit"
+      ],
+      "author_accuracy_reproduction": false,
+      "native_device_measurement": false,
+      "public_entry": "execution.recipe.source_id = is-vit",
+      "source_version": {
+        "origin": "I&S-ViT: An Inclusive and Stable Method for Post-Training ViTs Quantization",
+        "author_code_status": null,
+        "read_scope": [
+          "v3全文§4–5；官方README及重构/量化关键入口；量化参数固定与两阶段更新已核"
+        ],
+        "primary_urls": [
+          "https://arxiv.org/html/2311.10126v3",
+          "https://doi.org/10.1109/TPAMI.2025.3610466",
+          "https://github.com/zysxmu/IaS-ViT"
+        ]
+      },
+      "source_requests": [
+        {
+          "receipt": "EXP/validation/ptq_foundation_20261125/numerical/recipe_is-vit/source_request.json",
+          "version": "paper; explicit reduced settings in this request",
+          "profile": "qavit_bounded_integration"
+        }
+      ],
+      "target_protocol": "由实际 W/A 边、码容、固定参数、动态路由、额外计算、结构和例外验证，来源 ID 不授予协议达标状态。"
+    },
+    {
+      "literature_id": "pfcr-vit",
+      "survey_ref": 76,
+      "version_of": null,
+      "family": null,
+      "read_asset": {
+        "asset": "methods/recipes/pfcr-vit.md"
+      },
+      "implementation_status": "来源绑定的阶段组合；缩小预算，已执行、保存、加载并前向",
+      "entry_point": "assembled_recipes.assemble / graph_fit.tree",
+      "plugins": {},
+      "source_scope": [
+        "原论文§3.2–3.3、Algorithm1、§4.1.2；优化变量全集待源码；未确认官方实现"
+      ],
+      "primary_urls": [
+        "https://arxiv.org/html/2412.14633v1",
+        "https://www.sciencedirect.com/science/article/pii/S089360802500437X"
+      ],
+      "recipe_dependencies": "补重构二叉分区树、先细后粗继承、POS A-first/W+A 两阶段、层级预算调度。",
+      "current_conditions": "按真实 shortcut 观测两种半块、block 及成对多块；POS A-first、继承 W 和层级预算；实际核对过的残差适配器适用。",
+      "deployment": "终态可静态；非 2 幂 block 数按原规则截层，不能擅自扩大到整网。",
+      "source_unresolved": "作者代码及精确 optimizer 参数集合未核；log 零码和首尾覆盖待审计，不擅自加入可学习 scale/zp。",
+      "verification": [
+        "EXP/validation/ptq_foundation_20261125/numerical/recipe_pfcr-vit/source_request.json",
+        "EXP/validation/ptq_foundation_20261125/numerical/recipe_pfcr-vit/request.json"
+      ],
+      "tests": [
+        "recipe_pfcr-vit"
+      ],
+      "author_accuracy_reproduction": false,
+      "native_device_measurement": false,
+      "public_entry": "execution.recipe.source_id = pfcr-vit",
+      "source_version": {
+        "origin": "Progressive Fine-to-Coarse Reconstruction for Accurate Low-Bit Post-Training Quantization in Vision Transformers",
+        "author_code_status": null,
+        "read_scope": [
+          "原论文§3.2–3.3、Algorithm1、§4.1.2；优化变量全集待源码；未确认官方实现"
+        ],
+        "primary_urls": [
+          "https://arxiv.org/html/2412.14633v1",
+          "https://www.sciencedirect.com/science/article/pii/S089360802500437X"
+        ]
+      },
+      "source_requests": [
+        {
+          "receipt": "EXP/validation/ptq_foundation_20261125/numerical/recipe_pfcr-vit/source_request.json",
+          "version": "paper; explicit reduced settings in this request",
+          "profile": "qavit_bounded_integration"
+        }
+      ],
+      "target_protocol": "由实际 W/A 边、码容、固定参数、动态路由、额外计算、结构和例外验证，来源 ID 不授予协议达标状态。"
+    },
+    {
+      "literature_id": "mgrq",
+      "survey_ref": 74,
+      "version_of": null,
+      "family": null,
+      "read_asset": {
+        "asset": "methods/recipes/mgrq.md"
+      },
+      "implementation_status": "来源绑定的阶段组合；缩小预算，已执行、保存、加载并前向",
+      "entry_point": "assembled_recipes.assemble / block_objectives.objective",
+      "plugins": {},
+      "source_scope": [
+        "原论文§3、Algorithm1、Table1、§4.1；alpha/beta具体表与官方代码待核"
+      ],
+      "primary_urls": [
+        "https://arxiv.org/html/2406.09229v1",
+        "https://cmsworkshops.com/ICIP2024/view_paper.php?PaperNum=1680"
+      ],
+      "recipe_dependencies": "补当前块优化器、FP-input 块损失、块内特征损失、完整 Q-suffix 全局损失的精确图。",
+      "current_conditions": "FP 输入局部块、层内特征和完整 Q 后缀三项；示例 alpha/beta 是验证值，原首尾 W8A8。",
+      "deployment": "原 patch/head W8A8 保留；无例外 W4A4 另为迁移。全局后缀不能换成 FP。",
+      "source_unresolved": "逐块 α/β 规则和更新参数明细未闭合；现有多 tap 打分不等于可微块重构。",
+      "verification": [
+        "EXP/validation/ptq_foundation_20261125/numerical/recipe_mgrq/source_request.json",
+        "EXP/validation/ptq_foundation_20261125/numerical/recipe_mgrq/request.json"
+      ],
+      "tests": [
+        "recipe_mgrq"
+      ],
+      "author_accuracy_reproduction": false,
+      "native_device_measurement": false,
+      "public_entry": "execution.recipe.source_id = mgrq",
+      "source_version": {
+        "origin": "MGRQ: Post-Training Quantization for Vision Transformer with Mixed Granularity Reconstruction",
+        "author_code_status": null,
+        "read_scope": [
+          "原论文§3、Algorithm1、Table1、§4.1；alpha/beta具体表与官方代码待核"
+        ],
+        "primary_urls": [
+          "https://arxiv.org/html/2406.09229v1",
+          "https://cmsworkshops.com/ICIP2024/view_paper.php?PaperNum=1680"
+        ]
+      },
+      "source_requests": [
+        {
+          "receipt": "EXP/validation/ptq_foundation_20261125/numerical/recipe_mgrq/source_request.json",
+          "version": "paper; explicit reduced settings in this request",
+          "profile": "qavit_bounded_integration"
+        }
+      ],
+      "target_protocol": "由实际 W/A 边、码容、固定参数、动态路由、额外计算、结构和例外验证，来源 ID 不授予协议达标状态。"
+    },
+    {
+      "literature_id": "qdrop",
+      "survey_ref": 54,
+      "version_of": null,
+      "family": null,
+      "read_asset": {
+        "asset": "methods/recipes/qdrop.md"
+      },
+      "implementation_status": "来源绑定的阶段组合；缩小预算，已执行、保存、加载并前向",
+      "entry_point": "assembled_recipes.assemble / reconstruction.fit_stage",
+      "plugins": {},
+      "source_scope": [
+        "原论文§3.3、Algorithm1、§4；官方main_imagenet.py、block_recon.py、README命令；CNN/NLP原实验与ViT迁移区分"
+      ],
+      "primary_urls": [
+        "https://arxiv.org/pdf/2203.05740",
+        "https://github.com/wimh966/QDrop"
+      ],
+      "recipe_dependencies": "补块输入和块内激活的随机 FP/Q 混合、A scale 优化、块调度；终态关闭随机 drop。",
+      "current_conditions": "块输入与内部 A 的随机混合、W 舍入/A scale 的独立 Adam、硬化及无 drop 冷加载。",
+      "deployment": "优化中混合合法，推理全量化后可静态；作者首尾 8bit 配置另存。",
+      "source_unresolved": "mask 概率含义、README 覆盖默认值和首尾例外须锁定；原证据主为 CNN/NLP，ViT 采用后续明确 recipe。",
+      "verification": [
+        "EXP/validation/ptq_foundation_20261125/numerical/recipe_qdrop/source_request.json",
+        "EXP/validation/ptq_foundation_20261125/numerical/recipe_qdrop/request.json"
+      ],
+      "tests": [
+        "recipe_qdrop"
+      ],
+      "author_accuracy_reproduction": false,
+      "native_device_measurement": false,
+      "public_entry": "execution.recipe.source_id = qdrop",
+      "source_version": {
+        "origin": "QDrop: Randomly Dropping Quantization for Extremely Low-Bit Post-Training Quantization",
+        "author_code_status": null,
+        "read_scope": [
+          "原论文§3.3、Algorithm1、§4；官方main_imagenet.py、block_recon.py、README命令；CNN/NLP原实验与ViT迁移区分"
+        ],
+        "primary_urls": [
+          "https://arxiv.org/pdf/2203.05740",
+          "https://github.com/wimh966/QDrop"
+        ]
+      },
+      "source_requests": [
+        {
+          "receipt": "EXP/validation/ptq_foundation_20261125/numerical/recipe_qdrop/source_request.json",
+          "version": "paper; explicit reduced settings in this request",
+          "profile": "qavit_bounded_integration"
+        }
+      ],
+      "target_protocol": "由实际 W/A 边、码容、固定参数、动态路由、额外计算、结构和例外验证，来源 ID 不授予协议达标状态。"
+    },
+    {
+      "literature_id": "bit-shrinking",
+      "survey_ref": 33,
+      "version_of": null,
+      "family": null,
+      "read_asset": {
+        "asset": "methods/recipes/bit-shrinking.md"
+      },
+      "implementation_status": "来源绑定的阶段组合；缩小预算，已执行、保存、加载并前向",
+      "entry_point": "assembled_recipes.assemble / progressive_bits.fit",
+      "plugins": {},
+      "source_scope": [
+        "CVPR2023原论文§3、Algorithm1–2、§4；完整总校准数据/精度例外与代码待核"
+      ],
+      "primary_urls": [
+        "https://openaccess.thecvf.com/content/CVPR2023/papers/Lin_Bit-Shrinking_Limiting_Instantaneous_Sharpness_for_Improving_Post-Training_Quantization_CVPR_2023_paper.pdf"
+      ],
+      "recipe_dependencies": "补量化 sharpness、连续分辨率、二分选下一 bit、逐阶段局部权重重构及最终目标 bit 重构。",
+      "current_conditions": "连续分辨率仅用于校准，固定 W 的 sharpness 与目标首尾位宽分开，最终在整数目标下再优化。",
+      "deployment": "仅构造阶段变 bit，终态固定可主线；不是运行时动态位宽。",
+      "source_unresolved": "整套数据量、首尾例外和官方代码未闭合；ViT 原主要 6/8 bit，A4 是适配而非已验证结论。",
+      "verification": [
+        "EXP/validation/ptq_foundation_20261125/numerical/recipe_bit-shrinking/source_request.json",
+        "EXP/validation/ptq_foundation_20261125/numerical/recipe_bit-shrinking/request.json"
+      ],
+      "tests": [
+        "recipe_bit-shrinking"
+      ],
+      "author_accuracy_reproduction": false,
+      "native_device_measurement": false,
+      "public_entry": "execution.recipe.source_id = bit-shrinking",
+      "source_version": {
+        "origin": "Bit-Shrinking: Limiting Instantaneous Sharpness for Improving Post-Training Quantization",
+        "author_code_status": null,
+        "read_scope": [
+          "CVPR2023原论文§3、Algorithm1–2、§4；完整总校准数据/精度例外与代码待核"
+        ],
+        "primary_urls": [
+          "https://openaccess.thecvf.com/content/CVPR2023/papers/Lin_Bit-Shrinking_Limiting_Instantaneous_Sharpness_for_Improving_Post-Training_Quantization_CVPR_2023_paper.pdf"
+        ]
+      },
+      "source_requests": [
+        {
+          "receipt": "EXP/validation/ptq_foundation_20261125/numerical/recipe_bit-shrinking/source_request.json",
+          "version": "paper; explicit reduced settings in this request",
+          "profile": "qavit_bounded_integration"
+        }
+      ],
+      "target_protocol": "由实际 W/A 边、码容、固定参数、动态路由、额外计算、结构和例外验证，来源 ID 不授予协议达标状态。"
+    },
+    {
+      "literature_id": "outlier-aware-slicing",
+      "survey_ref": 27,
+      "version_of": null,
+      "family": null,
+      "read_asset": {
+        "asset": "methods/recipes/outlier-aware-slicing.md"
+      },
+      "implementation_status": "来源绑定的阶段组合；缩小预算，已执行、保存、加载并前向",
+      "entry_point": "assembled_recipes.assemble / reconstruction.fit_stage",
+      "plugins": {},
+      "source_scope": [
+        "PMLR原论文§3、AppendixD/F、Algorithm1；supp源码本次未取得"
+      ],
+      "primary_urls": [
+        "https://proceedings.mlr.press/v235/ma24f.html",
+        "https://raw.githubusercontent.com/mlresearch/v235/main/assets/ma24f/ma24f.pdf"
+      ],
+      "recipe_dependencies": "补 stage/downsample 子图解析、细单元/连续多 block 分区、QDrop 式子图重构。",
+      "current_conditions": "按照样本实际经过的起点与终点观测多块 FP 输出。联合 W 软舍入、A scale、输入及内部 QDrop，指数 beta、最终硬化；单个已知 downsample 架构需配置实际子图边界。",
+      "deployment": "分的是重构子图，最终静态；不是高精度离群通道旁路。",
+      "source_unresolved": "supplementary 代码具体实现/全部覆盖例外未核；不能用模型名字代替真实边界或声称越粗必越好。",
+      "verification": [
+        "EXP/validation/ptq_foundation_20261125/numerical/recipe_outlier-aware-slicing/source_request.json",
+        "EXP/validation/ptq_foundation_20261125/numerical/recipe_outlier-aware-slicing/request.json",
+        "EXP/validation/ptq_foundation_20261125/numerical/recipe_pfcr-vit/request.json"
+      ],
+      "tests": [
+        "recipe_outlier-aware-slicing",
+        "recipe_pfcr-vit"
+      ],
+      "author_accuracy_reproduction": false,
+      "native_device_measurement": false,
+      "public_entry": "execution.recipe.source_id = outlier-aware-slicing",
+      "source_version": {
+        "origin": "Outlier-Aware Slicing for Post-Training Quantization in Vision Transformer",
+        "author_code_status": null,
+        "read_scope": [
+          "PMLR原论文§3、AppendixD/F、Algorithm1；supp源码本次未取得"
+        ],
+        "primary_urls": [
+          "https://proceedings.mlr.press/v235/ma24f.html",
+          "https://raw.githubusercontent.com/mlresearch/v235/main/assets/ma24f/ma24f.pdf"
+        ]
+      },
+      "source_requests": [
+        {
+          "receipt": "EXP/validation/ptq_foundation_20261125/numerical/recipe_outlier-aware-slicing/source_request.json",
+          "version": "paper; explicit reduced settings in this request",
+          "profile": "qavit_bounded_integration"
+        }
+      ],
+      "target_protocol": "由实际 W/A 边、码容、固定参数、动态路由、额外计算、结构和例外验证，来源 ID 不授予协议达标状态。"
+    },
+    {
+      "literature_id": "q-hyvit",
+      "survey_ref": 120,
+      "version_of": null,
+      "family": null,
+      "read_asset": {
+        "asset": "methods/recipes/q-hyvit.md"
+      },
+      "implementation_status": "来源绑定的阶段组合 / 实际任务/候选分配 / 真实 MobileViT 桥接图；缩小预算，已执行、保存、加载并前向",
+      "entry_point": "block_search.search / configuration_search.configuration_grid",
+      "plugins": {},
+      "source_scope": [
+        "2024v3§III–V、Algorithm1、TableI；作者GitLab链接但可运行release未核"
+      ],
+      "primary_urls": [
+        "https://arxiv.org/pdf/2303.12557v3",
+        "https://doi.org/10.1109/JIOT.2024.3403844",
+        "https://gitlab.com/ones-ai/q-hyvit"
+      ],
+      "recipe_dependencies": "补 hybrid bridge 边界、scheme/granularity 联合候选、整桥输出评分、zero-point 溢出审计。",
+      "current_conditions": "由真实观察边界的后缀梯度对整个候选的误差逐坐标加权；scale 轮次及对称性/粒度候选在请求中。真实 timm MobileViT 复核 patch 展开/折回、局部与全局融合和整桥评分；其余 hybrid 架构须绑定自己的转换块。",
+      "deployment": "分组固定可静态；原 W6A6/W8A8 与整数/FP 非线性两套配置分开，W4A4 需迁移。",
+      "source_unresolved": "完整 scheme 超参、整数实现和作者 release 未核；普通 DINO block 无原 bridge，不能硬套。",
+      "verification": [
+        "EXP/validation/ptq_foundation_20261125/numerical/recipe_q-hyvit/source_request.json",
+        "EXP/validation/ptq_foundation_20261125/allocation_recipes.json#q-hyvit",
+        "EXP/validation/ptq_foundation_20261125/hybrid_bridge.json",
+        "EXP/validation/ptq_foundation_20261125/numerical/recipe_q-hyvit/request.json"
+      ],
+      "tests": [
+        "recipe_q-hyvit"
+      ],
+      "author_accuracy_reproduction": false,
+      "native_device_measurement": false,
+      "public_entry": "execution.recipe.source_id = q-hyvit",
+      "source_version": {
+        "origin": "Q-HyViT: Post-Training Quantization for Hybrid Vision Transformer with Bridge Block Reconstruction",
+        "author_code_status": null,
+        "read_scope": [
+          "2024v3§III–V、Algorithm1、TableI；作者GitLab链接但可运行release未核"
+        ],
+        "primary_urls": [
+          "https://arxiv.org/pdf/2303.12557v3",
+          "https://doi.org/10.1109/JIOT.2024.3403844",
+          "https://gitlab.com/ones-ai/q-hyvit"
+        ]
+      },
+      "source_requests": [
+        {
+          "receipt": "EXP/validation/ptq_foundation_20261125/numerical/recipe_q-hyvit/source_request.json",
+          "version": "paper; explicit reduced settings in this request",
+          "profile": "qavit_bounded_integration"
+        },
+        {
+          "receipt": "EXP/validation/ptq_foundation_20261125/allocation_recipes.json#q-hyvit",
+          "version": "paper; explicit reduced settings in this request",
+          "profile": "qavit_bounded_integration"
+        },
+        {
+          "receipt": "EXP/validation/ptq_foundation_20261125/hybrid_bridge.json",
+          "version": "paper; explicit reduced settings in this request",
+          "profile": "upstream timm MobileViT hybrid block; bounded W4A4; one projection"
+        }
+      ],
+      "target_protocol": "由实际 W/A 边、码容、固定参数、动态路由、额外计算、结构和例外验证，来源 ID 不授予协议达标状态。"
+    },
+    {
+      "literature_id": "qep",
+      "survey_ref": 99,
+      "version_of": null,
+      "family": null,
+      "read_asset": {
+        "asset": "methods/recipes/qep.md"
+      },
+      "implementation_status": "来源绑定的阶段组合；缩小预算，已执行、保存、加载并前向",
+      "entry_point": "assembled_recipes.assemble / paired_weights.correct_weight",
+      "plugins": {},
+      "source_scope": [
+        "NeurIPS2025正式PDF§5–6、AppendixB/C；官方src/gptq.py、src/llama.py；主要LLM weight-only证据"
+      ],
+      "primary_urls": [
+        "https://proceedings.neurips.cc/paper_files/paper/2025/file/df2034a516cbd617a96492cc476276c9-Paper-Conference.pdf",
+        "https://github.com/FujitsuResearch/qep"
+      ],
+      "recipe_dependencies": "补全矩阵连续 W 修正、独立 α/damping、然后调用选定 W 量化器；逐层刷新 Q-prefix。",
+      "current_conditions": "实际 Xf/Xq ridge 修正后调用选定 RTN/GPTQ；逐层刷新输入，alpha 与阻尼独立。",
+      "deployment": "原为 LLM weight-only；把输入含 A4 误差用于 ViT 后重新量化 W4，是主线迁移变体。",
+      "source_unresolved": "不能声称已验证 ViT W4A4；与 GPTAQ 三角逐列补偿不等价，QEP 原 damping 不能用 GPTQ 默认替代。",
+      "verification": [
+        "EXP/validation/ptq_foundation_20261125/numerical/recipe_qep/source_request.json",
+        "EXP/validation/ptq_foundation_20261125/numerical/recipe_qep/request.json"
+      ],
+      "tests": [
+        "recipe_qep"
+      ],
+      "author_accuracy_reproduction": false,
+      "native_device_measurement": false,
+      "public_entry": "execution.recipe.source_id = qep",
+      "source_version": {
+        "origin": "Quantization Error Propagation: Revisiting Layer-Wise Post-Training Quantization",
+        "author_code_status": null,
+        "read_scope": [
+          "NeurIPS2025正式PDF§5–6、AppendixB/C；官方src/gptq.py、src/llama.py；主要LLM weight-only证据"
+        ],
+        "primary_urls": [
+          "https://proceedings.neurips.cc/paper_files/paper/2025/file/df2034a516cbd617a96492cc476276c9-Paper-Conference.pdf",
+          "https://github.com/FujitsuResearch/qep"
+        ]
+      },
+      "source_requests": [
+        {
+          "receipt": "EXP/validation/ptq_foundation_20261125/numerical/recipe_qep/source_request.json",
+          "version": "paper; explicit reduced settings in this request",
+          "profile": "qavit_bounded_integration"
+        }
+      ],
+      "target_protocol": "由实际 W/A 边、码容、固定参数、动态路由、额外计算、结构和例外验证，来源 ID 不授予协议达标状态。"
+    },
+    {
+      "literature_id": "pd-quant",
+      "survey_ref": 36,
+      "version_of": null,
+      "family": null,
+      "read_asset": {
+        "asset": "methods/recipes/pd-quant.md"
+      },
+      "implementation_status": "来源绑定的阶段组合；缩小预算，已执行、保存、加载并前向",
+      "entry_point": "assembled_recipes.assemble / block_objectives.objective",
+      "plugins": {},
+      "source_scope": [
+        "CVPR原论文§3–4；官方main_imagenet.py、block_recon.py、quant_layer.py；CNN配方、BN依赖及内部drop行为已核"
+      ],
+      "primary_urls": [
+        "https://openaccess.thecvf.com/content/CVPR2023/papers/Liu_PD-Quant_Post-Training_Quantization_Based_on_Prediction_Difference_Metric_CVPR_2023_paper.pdf",
+        "https://github.com/hustvl/PD-Quant"
+      ],
+      "recipe_dependencies": "补可微 FP-suffix 预测目标、BN 分布修正、两份输入及 QDrop 重构；明确局部/全局 loss 路径。",
+      "current_conditions": "完整 FP 后缀教师 KL 与局部 MSE 的论文/代码系数分开。DC 仅连接有真实 BN running stats 的块。",
+      "deployment": "作者 CNN/BN 原配方与首尾 8bit 单列；无 BN 的 ViT 只用 PD 部分须标迁移。",
+      "source_unresolved": "DINO LN 不能伪造 BN 训练统计；官方 PD 支路仍有 activation-drop，不应记为全确定量化前向。",
+      "verification": [
+        "EXP/validation/ptq_foundation_20261125/numerical/recipe_pd-quant/source_request.json",
+        "EXP/validation/ptq_foundation_20261125/numerical/pd_paper/request.json",
+        "EXP/validation/ptq_foundation_20261125/numerical/recipe_pd-quant/request.json"
+      ],
+      "tests": [
+        "pd_paper",
+        "recipe_pd-quant"
+      ],
+      "author_accuracy_reproduction": false,
+      "native_device_measurement": false,
+      "public_entry": "execution.recipe.source_id = pd-quant",
+      "source_version": {
+        "origin": "PD-Quant: Post-Training Quantization Based on Prediction Difference Metric",
+        "author_code_status": null,
+        "read_scope": [
+          "CVPR原论文§3–4；官方main_imagenet.py、block_recon.py、quant_layer.py；CNN配方、BN依赖及内部drop行为已核"
+        ],
+        "primary_urls": [
+          "https://openaccess.thecvf.com/content/CVPR2023/papers/Liu_PD-Quant_Post-Training_Quantization_Based_on_Prediction_Difference_Metric_CVPR_2023_paper.pdf",
+          "https://github.com/hustvl/PD-Quant"
+        ]
+      },
+      "source_requests": [
+        {
+          "receipt": "EXP/validation/ptq_foundation_20261125/numerical/recipe_pd-quant/source_request.json",
+          "version": "paper; explicit reduced settings in this request",
+          "profile": "qavit_bounded_integration"
+        }
+      ],
+      "target_protocol": "由实际 W/A 边、码容、固定参数、动态路由、额外计算、结构和例外验证，来源 ID 不授予协议达标状态。"
+    },
+    {
+      "literature_id": "cpt-v",
+      "survey_ref": 113,
+      "version_of": null,
+      "family": "cpt-evol",
+      "read_asset": {
+        "asset": "methods/recipes/cpt-v.md"
+      },
+      "implementation_status": "来源绑定的阶段组合；缩小预算，已执行、保存、加载并前向",
+      "entry_point": "assembled_recipes.assemble / research_search.search_stage",
+      "plugins": {},
+      "source_scope": [
+        "原论文§3–4、Algorithm1；独立历史code commit未确认，与Evol-Q家族关系标注"
+      ],
+      "primary_urls": [
+        "https://arxiv.org/pdf/2211.09643",
+        "https://github.com/enyac-group/evol-q"
+      ],
+      "recipe_dependencies": "补固定负样本 batch 的对比 fitness、block scale 向量变异、种群/tournament 状态。",
+      "current_conditions": "冻结负样本和教师 logits，按模块/轮次进化。实际受扰动的 W/A、规模、顺序由配置限定。",
+      "deployment": "最终 scale 固定；ViT 原 A8，A4 为新适配，完整模型候选 forward 计预算。",
+      "source_unresolved": "历史 CPT-V 官方 commit 未闭合，优先共享 Evol-Q 实现；保留独立版本，不能算两份独立算法证据。",
+      "verification": [
+        "EXP/validation/ptq_foundation_20261125/numerical/recipe_cpt-v/source_request.json",
+        "EXP/validation/ptq_foundation_20261125/numerical/recipe_cpt-v/request.json"
+      ],
+      "tests": [
+        "recipe_cpt-v"
+      ],
+      "author_accuracy_reproduction": false,
+      "native_device_measurement": false,
+      "public_entry": "execution.recipe.source_id = cpt-v",
+      "source_version": {
+        "origin": "CPT-V: A Contrastive Approach to Post-Training Quantization of Vision Transformers",
+        "author_code_status": null,
+        "read_scope": [
+          "原论文§3–4、Algorithm1；独立历史code commit未确认，与Evol-Q家族关系标注"
+        ],
+        "primary_urls": [
+          "https://arxiv.org/pdf/2211.09643",
+          "https://github.com/enyac-group/evol-q"
+        ]
+      },
+      "source_requests": [
+        {
+          "receipt": "EXP/validation/ptq_foundation_20261125/numerical/recipe_cpt-v/source_request.json",
+          "version": "paper; explicit reduced settings in this request",
+          "profile": "qavit_bounded_integration"
+        }
+      ],
+      "target_protocol": "由实际 W/A 边、码容、固定参数、动态路由、额外计算、结构和例外验证，来源 ID 不授予协议达标状态。"
+    },
+    {
+      "literature_id": "evol-q",
+      "survey_ref": 114,
+      "version_of": null,
+      "family": "cpt-evol",
+      "read_asset": {
+        "asset": "methods/recipes/evol-q.md"
+      },
+      "implementation_status": "来源绑定的阶段组合；缩小预算，已执行、保存、加载并前向",
+      "entry_point": "assembled_recipes.assemble / research_search.search_stage",
+      "plugins": {},
+      "source_scope": [
+        "ICCV论文/作者v3修订稿；官方joint_evol_opt.py、utils.py、main.py；mutation、scope、validation选模差异已核"
+      ],
+      "primary_urls": [
+        "https://openaccess.thecvf.com/content/ICCV2023/html/Frumkin_Jumping_Through_Local_Minima_Quantization_in_the_Loss_Landscape_of_ICCV_2023_paper.html",
+        "https://arxiv.org/pdf/2308.10814",
+        "https://github.com/enyac-group/evol-q"
+      ],
+      "recipe_dependencies": "补有版本的进化 scale 配方、真实搜索覆盖/顺序/种群；选择集选模与最终评测分离。",
+      "current_conditions": "论文种群与开始时复制同一向量的代码分支分开；本轮固定最终轮，无原作者 validation 挑模型标签预算。",
+      "deployment": "最终静态；原 ViT 主要 A8，A4 适配需独立验证。",
+      "source_unresolved": "当前代码只改子 QLinear scale；扰动半径、种群初始化、验证集选模与论文不同，不能统一写全 W/A 搜索。",
+      "verification": [
+        "EXP/validation/ptq_foundation_20261125/numerical/recipe_evol-q/source_request.json",
+        "EXP/validation/ptq_foundation_20261125/numerical/recipe_evol-q/request.json"
+      ],
+      "tests": [
+        "recipe_evol-q"
+      ],
+      "author_accuracy_reproduction": false,
+      "native_device_measurement": false,
+      "public_entry": "execution.recipe.source_id = evol-q",
+      "source_version": {
+        "origin": "Jumping Through Local Minima: Quantization in the Loss Landscape of Vision Transformers / Evol-Q",
+        "author_code_status": null,
+        "read_scope": [
+          "ICCV论文/作者v3修订稿；官方joint_evol_opt.py、utils.py、main.py；mutation、scope、validation选模差异已核"
+        ],
+        "primary_urls": [
+          "https://openaccess.thecvf.com/content/ICCV2023/html/Frumkin_Jumping_Through_Local_Minima_Quantization_in_the_Loss_Landscape_of_ICCV_2023_paper.html",
+          "https://arxiv.org/pdf/2308.10814",
+          "https://github.com/enyac-group/evol-q"
+        ]
+      },
+      "source_requests": [
+        {
+          "receipt": "EXP/validation/ptq_foundation_20261125/numerical/recipe_evol-q/source_request.json",
+          "version": "paper; explicit reduced settings in this request",
+          "profile": "qavit_bounded_integration"
+        }
+      ],
+      "target_protocol": "由实际 W/A 边、码容、固定参数、动态路由、额外计算、结构和例外验证，来源 ID 不授予协议达标状态。"
+    },
+    {
+      "literature_id": "biascomp",
+      "survey_ref": 110,
+      "version_of": null,
+      "family": null,
+      "read_asset": {
+        "asset": "methods/recipes/biascomp.md"
+      },
+      "implementation_status": "来源绑定的阶段组合；缩小预算，已执行、保存、加载并前向",
+      "entry_point": "assembled_recipes.assemble / output_correction.fit",
+      "plugins": {},
+      "source_scope": [
+        "原论文§3、§5.1.3、正式DOI、作者代码入口；ViT保留token轴已核"
+      ],
+      "primary_urls": [
+        "https://arxiv.org/pdf/2404.01892",
+        "https://doi.org/10.26599/AIR.2024.9150036",
+        "https://github.com/GongCheng1919/bias-compensation"
+      ],
+      "recipe_dependencies": "补显式 reduce/preserve axes 的均值残差拟合及 shape-bound 修正；原 ViT 保留 token 坐标。",
+      "current_conditions": "实测 FC 与两个实际 matmul 输出；仅约简 batch 保存 T×D 或 H×Q×K。共享通道和保留位置分别验证。",
+      "deployment": "通道 bias 可融合主线；位置/BMM 常量需声明额外状态、形状与算子，按终图判断配置。",
+      "source_unresolved": "不能把 batch-only 平均换成全 token 平均冒充原法；逐模块顺序与 BMM 轴按有效配方核定。",
+      "verification": [
+        "EXP/validation/ptq_foundation_20261125/numerical/recipe_biascomp/source_request.json",
+        "EXP/validation/ptq_foundation_20261125/focus_measurement.json",
+        "EXP/validation/ptq_foundation_20261125/focus_cold.json",
+        "EXP/validation/ptq_foundation_20261125/memory_restore.json",
+        "EXP/validation/ptq_foundation_20261125/numerical/recipe_biascomp/request.json"
+      ],
+      "tests": [
+        "recipe_biascomp"
+      ],
+      "author_accuracy_reproduction": false,
+      "native_device_measurement": false,
+      "public_entry": "execution.recipe.source_id = biascomp",
+      "source_version": {
+        "origin": "Minimize Quantization Output Error with Bias Compensation",
+        "author_code_status": null,
+        "read_scope": [
+          "原论文§3、§5.1.3、正式DOI、作者代码入口；ViT保留token轴已核"
+        ],
+        "primary_urls": [
+          "https://arxiv.org/pdf/2404.01892",
+          "https://doi.org/10.26599/AIR.2024.9150036",
+          "https://github.com/GongCheng1919/bias-compensation"
+        ]
+      },
+      "source_requests": [
+        {
+          "receipt": "EXP/validation/ptq_foundation_20261125/numerical/recipe_biascomp/source_request.json",
+          "version": "paper; explicit reduced settings in this request",
+          "profile": "qavit_bounded_integration"
+        }
+      ],
+      "target_protocol": "由实际 W/A 边、码容、固定参数、动态路由、额外计算、结构和例外验证，来源 ID 不授予协议达标状态。"
+    },
+    {
+      "literature_id": "qwt",
+      "survey_ref": 15,
+      "version_of": null,
+      "family": null,
+      "read_asset": {
+        "asset": "methods/recipes/qwt.md"
+      },
+      "implementation_status": "来源绑定的阶段组合；缩小预算，已执行、保存、加载并前向",
+      "entry_point": "assembled_recipes.assemble / output_correction.fit",
+      "plugins": {},
+      "source_scope": [
+        "CVPR原文、作者Corrected.pdf§3；官方qwt_vit_and_deit.py的拟合与generate；local_fp参考已核"
+      ],
+      "primary_urls": [
+        "https://openaccess.thecvf.com/content/CVPR2025/papers/Fu_Quantization_without_Tears_CVPR_2025_paper.pdf",
+        "https://cs.nju.edu.cn/_upload/tpl/00/ed/237/template237/paper/CVPR2025_QwT_Corrected.pdf",
+        "https://github.com/wujx2001/QwT"
+      ],
+      "recipe_dependencies": "补同一当前 Q-prefix 输入上的 local FP/Q 残差矩阵最小二乘、R² 接受规则、逐块补偿与刷新。",
+      "current_conditions": "真实量化前缀输入同时送入 FP/Q，按块最小二乘、R² 门限、FP16 矩阵。需附加计算 profile。",
+      "deployment": "原保留 FP16 矩阵补偿分支，属于额外计算；计矩阵/输入存活/带宽，非纯 W4A4 同成本。",
+      "source_unresolved": "现 local_fp_parent 在改上游候选时不是所需 local_fp_candidate；ridge/低秩/full-FP target 都是另名变体。",
+      "verification": [
+        "EXP/validation/ptq_foundation_20261125/numerical/recipe_qwt/source_request.json",
+        "EXP/validation/ptq_foundation_20261125/numerical/recipe_qwt/request.json"
+      ],
+      "tests": [
+        "recipe_qwt"
+      ],
+      "author_accuracy_reproduction": false,
+      "native_device_measurement": false,
+      "public_entry": "execution.recipe.source_id = qwt",
+      "source_version": {
+        "origin": "Quantization without Tears",
+        "author_code_status": null,
+        "read_scope": [
+          "CVPR原文、作者Corrected.pdf§3；官方qwt_vit_and_deit.py的拟合与generate；local_fp参考已核"
+        ],
+        "primary_urls": [
+          "https://openaccess.thecvf.com/content/CVPR2025/papers/Fu_Quantization_without_Tears_CVPR_2025_paper.pdf",
+          "https://cs.nju.edu.cn/_upload/tpl/00/ed/237/template237/paper/CVPR2025_QwT_Corrected.pdf",
+          "https://github.com/wujx2001/QwT"
+        ]
+      },
+      "source_requests": [
+        {
+          "receipt": "EXP/validation/ptq_foundation_20261125/numerical/recipe_qwt/source_request.json",
+          "version": "paper; explicit reduced settings in this request",
+          "profile": "qavit_bounded_integration"
+        }
+      ],
+      "target_protocol": "由实际 W/A 边、码容、固定参数、动态路由、额外计算、结构和例外验证，来源 ID 不授予协议达标状态。"
+    },
+    {
+      "literature_id": "qwt-v2",
+      "survey_ref": 44,
+      "version_of": null,
+      "family": null,
+      "read_asset": {
+        "asset": "methods/recipes/qwt-v2.md"
+      },
+      "implementation_status": "来源绑定的阶段组合 / 额外冻结状态；缩小预算，已执行、保存、加载并前向",
+      "entry_point": "output_correction.fit / integer_affine.compile_state",
+      "plugins": {},
+      "source_scope": [
+        "v1原论文§3.3–3.4、§4；独立v2代码与真实backend融合尚未确认"
+      ],
+      "primary_urls": [
+        "https://arxiv.org/html/2505.20932v1"
+      ],
+      "recipe_dependencies": "补每个 Linear/Conv 输出的 affine 拟合；再实现 multiplier 与 accumulator bias 的真实整数融合。",
+      "current_conditions": "浮点逐通道仿射与显式含零点的整数折叠两种请求。负斜率、零斜率、舍入和饱和有独立整数对照。需给输出 scale/zp、乘数精度、累加器宽度；原生硬件未计时。",
+      "deployment": "浮点 affine 路径先作补偿配置；确认融合、四位覆盖及终图后才可主线。",
+      "source_unresolved": "独立 v2 代码/后端融合未核；零方差、零/负 α、整数舍入须定义，不能引用“零开销”作实测结论。",
+      "verification": [
+        "EXP/validation/ptq_foundation_20261125/numerical/recipe_qwt-v2/source_request.json",
+        "EXP/validation/ptq_foundation_20261125/numerical/qwt_v2_integer_fold/source_request.json",
+        "EXP/validation/ptq_foundation_20261125/numerical/recipe_qwt-v2/request.json"
+      ],
+      "tests": [
+        "recipe_qwt-v2"
+      ],
+      "author_accuracy_reproduction": false,
+      "native_device_measurement": false,
+      "public_entry": "execution.recipe.source_id = qwt-v2",
+      "source_version": {
+        "origin": "QwT-v2: Practical, Effective and Efficient Post-Training Quantization",
+        "author_code_status": null,
+        "read_scope": [
+          "v1原论文§3.3–3.4、§4；独立v2代码与真实backend融合尚未确认"
+        ],
+        "primary_urls": [
+          "https://arxiv.org/html/2505.20932v1"
+        ]
+      },
+      "source_requests": [
+        {
+          "receipt": "EXP/validation/ptq_foundation_20261125/numerical/recipe_qwt-v2/source_request.json",
+          "version": "paper; explicit reduced settings in this request",
+          "profile": "qavit_bounded_integration"
+        },
+        {
+          "receipt": "EXP/validation/ptq_foundation_20261125/numerical/qwt_v2_integer_fold/source_request.json",
+          "version": "paper; explicit reduced settings in this request",
+          "profile": "qavit_bounded_integration"
+        }
+      ],
+      "target_protocol": "由实际 W/A 边、码容、固定参数、动态路由、额外计算、结构和例外验证，来源 ID 不授予协议达标状态。"
+    },
+    {
+      "literature_id": "psaq-vit",
+      "survey_ref": 79,
+      "version_of": null,
+      "family": "psaq-vit",
+      "read_asset": {
+        "asset": "methods/recipes/psaq-vit.md"
+      },
+      "implementation_status": "结构或合成与量化；缩小预算，已执行、保存、加载并前向",
+      "entry_point": "execution.calibration_generator / calibration_sources.synthesize",
+      "plugins": {},
+      "source_scope": [
+        "原文 §3.3–3.4、Algorithm 1、§4.1；作者仓库 README、量化入口及 generate_data.py 全文（Adam/两段各500次/TV目标/KDE积分）"
+      ],
+      "primary_urls": [
+        "https://arxiv.org/abs/2203.02250",
+        "https://github.com/zkkli/PSAQ-ViT",
+        "https://github.com/zkkli/PSAQ-ViT/blob/main/generate_data.py"
+      ],
+      "recipe_dependencies": "补只优化图片的 patch-similarity KDE 熵、类别/TV 目标、增强与生成状态；生成后再校准。",
+      "current_conditions": "校准像素目标与 ViT attention KDE 熵独立计费。真实预训练模型上有界合成、准备、独立 worker 复用。对校准图的更新与推理时网格冻结分别审计。",
+      "deployment": "data-free 是来源属性；原 W4A8/W8A8，合成图可用于主线但 A4 效果另验。",
+      "source_unresolved": "代码 TV 是目标差且依赖 batch；教师分类头、模型/分辨率/seed 必须绑定，不继承 v2。",
+      "verification": [
+        "EXP/validation/ptq_foundation_20261125/component_checks.json#psaq_kde"
+      ],
+      "tests": [],
+      "author_accuracy_reproduction": false,
+      "native_device_measurement": false,
+      "public_entry": "execution.recipe.source_id = psaq-vit",
+      "source_version": {
+        "origin": "PSAQ-ViT",
+        "author_code_status": null,
+        "read_scope": [
+          "原文 §3.3–3.4、Algorithm 1、§4.1；作者仓库 README、量化入口及 generate_data.py 全文（Adam/两段各500次/TV目标/KDE积分）"
+        ],
+        "primary_urls": [
+          "https://arxiv.org/abs/2203.02250",
+          "https://github.com/zkkli/PSAQ-ViT",
+          "https://github.com/zkkli/PSAQ-ViT/blob/main/generate_data.py"
+        ]
+      },
+      "source_requests": [
+        {
+          "receipt": "EXP/validation/ptq_foundation_20261125/component_checks.json#psaq_kde",
+          "version": "paper, explicit reduced adapter",
+          "profile": "integration"
+        }
+      ],
+      "target_protocol": "由实际 W/A 边、码容、固定参数、动态路由、额外计算、结构和例外验证，来源 ID 不授予协议达标状态。"
+    },
+    {
+      "literature_id": "clamp-vit",
+      "survey_ref": 38,
+      "version_of": null,
+      "family": "clamp-vit",
+      "read_asset": {
+        "asset": "methods/recipes/clamp-vit.md"
+      },
+      "implementation_status": "结构或合成与量化 / 多阶段图像更新；缩小预算，已执行、保存、加载并前向",
+      "entry_point": "cyclic_calibration.run / calibration_sources.synthesize",
+      "plugins": {},
+      "source_scope": [
+        "原文 §3.2–3.5、Table 3、§4；README"
+      ],
+      "primary_urls": [
+        "https://arxiv.org/abs/2407.05266",
+        "https://github.com/gt-synergy-lab/CLAMP-ViT"
+      ],
+      "recipe_dependencies": "补局部 patch 对比合成、周期刷新、进化 scale/bit 搜索和 fitness 缓存失效规则。",
+      "current_conditions": "同一个像素池刷新、同 patch 正例/异 patch 负例、量化群体的交替选择，保存随机种子/图像/轨迹。局部邻域正例实验是另一个适配。原搜索全集和文中评测预算待运行。",
+      "deployment": "固定 bit 的 scale 搜索可主线适配；完整 2–8 bit 分配归 mixed。",
+      "source_unresolved": "公开入口主要是评估，完整生成/搜索代码未核；scale 扰动排版疑点未闭合，A4 不承接原 A8 结论。",
+      "verification": [
+        "EXP/validation/ptq_foundation_20261125/component_checks.json#clamp_local_adapter",
+        "EXP/validation/ptq_foundation_20261125/cyclic_images.json"
+      ],
+      "tests": [],
+      "author_accuracy_reproduction": false,
+      "native_device_measurement": false,
+      "public_entry": "execution.recipe.source_id = clamp-vit",
+      "source_version": {
+        "origin": "CLAMP-ViT",
+        "author_code_status": null,
+        "read_scope": [
+          "原文 §3.2–3.5、Table 3、§4；README"
+        ],
+        "primary_urls": [
+          "https://arxiv.org/abs/2407.05266",
+          "https://github.com/gt-synergy-lab/CLAMP-ViT"
+        ]
+      },
+      "source_requests": [
+        {
+          "receipt": "EXP/validation/ptq_foundation_20261125/component_checks.json#clamp_local_adapter",
+          "version": "paper, explicit reduced adapter",
+          "profile": "integration"
+        },
+        {
+          "receipt": "EXP/validation/ptq_foundation_20261125/cyclic_images.json",
+          "version": "ECCV paper, explicit perturbation bounds",
+          "profile": "bounded fixed-width cyclic"
+        }
+      ],
+      "target_protocol": "由实际 W/A 边、码容、固定参数、动态路由、额外计算、结构和例外验证，来源 ID 不授予协议达标状态。"
+    },
+    {
+      "literature_id": "dfq-vit",
+      "survey_ref": 78,
+      "version_of": null,
+      "family": "quasc-dfq-vit",
+      "read_asset": {
+        "asset": "methods/recipes/dfq-vit.md"
+      },
+      "implementation_status": "结构或合成与量化；缩小预算，已执行、保存、加载并前向",
+      "entry_point": "execution.calibration_generator.variant=e2h_crop / output_correction.fit",
+      "plugins": {},
+      "source_scope": [
+        "预印本 §3.2–3.4、§4.1、组件消融"
+      ],
+      "primary_urls": [
+        "https://arxiv.org/abs/2507.14481"
+      ],
+      "recipe_dependencies": "补 E2H 裁剪课程、图片生成及激活差均值矩阵校正；与 e2h-activation-correction 共一家族。",
+      "current_conditions": "逐步缩小 crop 与同一合成池的激活差均值 ACM 组合；必须保留输出坐标/常驻开销。",
+      "deployment": "原 W3/4/6/8A8；E2H 可作主线来源，ACM 的位置状态/加法/表示按实际终图归属。",
+      "source_unresolved": "ACM 不能直接简化为通道 bias；ACM 出版社最终版全文/官方代码未全核，A4 与变形状支持为新验证。",
+      "verification": [
+        "EXP/validation/ptq_foundation_20261125/component_checks.json#e2h_crop",
+        "EXP/validation/ptq_foundation_20261125/numerical/bias_compensation/request.json"
+      ],
+      "tests": [
+        "bias_compensation"
+      ],
+      "author_accuracy_reproduction": false,
+      "native_device_measurement": false,
+      "public_entry": "execution.recipe.source_id = dfq-vit",
+      "source_version": {
+        "origin": "DFQ-ViT",
+        "author_code_status": null,
+        "read_scope": [
+          "预印本 §3.2–3.4、§4.1、组件消融"
+        ],
+        "primary_urls": [
+          "https://arxiv.org/abs/2507.14481"
+        ]
+      },
+      "source_requests": [
+        {
+          "receipt": "EXP/validation/ptq_foundation_20261125/component_checks.json#e2h_crop",
+          "version": "paper, explicit reduced adapter",
+          "profile": "integration"
+        }
+      ],
+      "target_protocol": "由实际 W/A 边、码容、固定参数、动态路由、额外计算、结构和例外验证，来源 ID 不授予协议达标状态。"
+    },
+    {
+      "literature_id": "sardfq",
+      "survey_ref": 85,
+      "version_of": null,
+      "family": "sardfq-spdfq",
+      "read_asset": {
+        "asset": "methods/recipes/sardfq.md"
+      },
+      "implementation_status": "结构或合成与量化；缩小预算，已执行、保存、加载并前向",
+      "entry_point": "calibration_sources.synthesize / graph_fit.optimize",
+      "plugins": {},
+      "source_scope": [
+        "ICCV正式正文 §3.4–4.1；预印本方法全文与消融；官方仓库README及入口"
+      ],
+      "primary_urls": [
+        "https://openaccess.thecvf.com/content/ICCV2025/html/Zhong_Semantic_Alignment_and_Reinforcement_for_Data-Free_Quantization_of_Vision_Transformers_ICCV_2025_paper.html",
+        "https://arxiv.org/abs/2412.16553",
+        "https://github.com/zysxmu/SARDFQ"
+      ],
+      "recipe_dependencies": "补 attention prior、局部语义图像更新、软目标；以生成数据驱动独立有限块重构器。",
+      "current_conditions": "合成和块优化两阶段分开，目标域与 real 数据使用另记。正式 ICCV 与 SPDFQ 初版相连。",
+      "deployment": "原含 W4A4，可按实际覆盖进入主线；有限校准更新当前块量化模型参数（含权重），不等于无参数更新。",
+      "source_unresolved": "按正式 SARDFQ 锁版本、模型 prior 系数和有效命令；不能将早期 SPDFQ 或库中同名入口混用。",
+      "verification": [
+        "EXP/validation/ptq_foundation_20261125/component_checks.json#sardfq_gmm"
+      ],
+      "tests": [],
+      "author_accuracy_reproduction": false,
+      "native_device_measurement": false,
+      "public_entry": "execution.recipe.source_id = sardfq",
+      "source_version": {
+        "origin": "SARDFQ",
+        "author_code_status": null,
+        "read_scope": [
+          "ICCV正式正文 §3.4–4.1；预印本方法全文与消融；官方仓库README及入口"
+        ],
+        "primary_urls": [
+          "https://openaccess.thecvf.com/content/ICCV2025/html/Zhong_Semantic_Alignment_and_Reinforcement_for_Data-Free_Quantization_of_Vision_Transformers_ICCV_2025_paper.html",
+          "https://arxiv.org/abs/2412.16553",
+          "https://github.com/zysxmu/SARDFQ"
+        ]
+      },
+      "source_requests": [
+        {
+          "receipt": "EXP/validation/ptq_foundation_20261125/component_checks.json#sardfq_gmm",
+          "version": "paper, explicit reduced adapter",
+          "profile": "integration"
+        }
+      ],
+      "target_protocol": "由实际 W/A 边、码容、固定参数、动态路由、额外计算、结构和例外验证，来源 ID 不授予协议达标状态。"
+    },
+    {
+      "literature_id": "hc-ptq",
+      "survey_ref": 39,
+      "version_of": null,
+      "family": "hc-ptq",
+      "read_asset": {
+        "asset": "methods/recipes/hc-ptq.md"
+      },
+      "implementation_status": "来源绑定的阶段组合；缩小预算，已执行、保存、加载并前向",
+      "entry_point": "assembled_recipes.assemble / weight_codebook.fit",
+      "plugins": {
+        "weight": [
+          "hc_rows"
+        ]
+      },
+      "source_scope": [
+        "原文 §3.1–3.5、§4、Tables 1–5"
+      ],
+      "primary_urls": [
+        "https://openaccess.thecvf.com/content/ICCV2025W/BiVision/papers/Mineo_HC-PTQ_Poincare-Based_Hyperbolic_Clustering_for_Data-Free_Quantization_of_Vision_Transformers_ICCVW_2025_paper.pdf"
+      ],
+      "recipe_dependencies": "补向量码本、双曲/切空间映射与聚类、索引序列化和真实存储计算。",
+      "current_conditions": "整行索引、双曲原点映射/切空间聚类、按双曲距离择中心、浮点码本。weight-only 范围、索引字节及表开销另计。",
+      "deployment": "b 位是权重行向量索引，另存 FP32 码本；归独立 weight-codebook 比较，不是 WbAb。",
+      "source_unresolved": "原未量化 A、低位联合覆盖明显退化、官方代码未核；不能称成熟全 W4A4 或用索引位数代替标量位宽。",
+      "verification": [
+        "EXP/validation/ptq_foundation_20261125/numerical/recipe_hc-ptq/source_request.json",
+        "EXP/validation/ptq_foundation_20261125/numerical/hc_rows/request.json",
+        "EXP/validation/ptq_foundation_20261125/numerical/recipe_hc-ptq/request.json"
+      ],
+      "tests": [
+        "hc_rows",
+        "recipe_hc-ptq"
+      ],
+      "author_accuracy_reproduction": false,
+      "native_device_measurement": false,
+      "public_entry": "execution.recipe.source_id = hc-ptq",
+      "source_version": {
+        "origin": "HC-PTQ",
+        "author_code_status": null,
+        "read_scope": [
+          "原文 §3.1–3.5、§4、Tables 1–5"
+        ],
+        "primary_urls": [
+          "https://openaccess.thecvf.com/content/ICCV2025W/BiVision/papers/Mineo_HC-PTQ_Poincare-Based_Hyperbolic_Clustering_for_Data-Free_Quantization_of_Vision_Transformers_ICCVW_2025_paper.pdf"
+        ]
+      },
+      "source_requests": [
+        {
+          "receipt": "EXP/validation/ptq_foundation_20261125/numerical/recipe_hc-ptq/source_request.json",
+          "version": "paper; explicit reduced settings in this request",
+          "profile": "qavit_bounded_integration"
+        }
+      ],
+      "target_protocol": "由实际 W/A 边、码容、固定参数、动态路由、额外计算、结构和例外验证，来源 ID 不授予协议达标状态。"
+    },
+    {
+      "literature_id": "amp-vit",
+      "survey_ref": 68,
+      "version_of": null,
+      "family": "mptq-amp",
+      "read_asset": {
+        "asset": "methods/recipes/amp-vit.md"
+      },
+      "implementation_status": "来源绑定的阶段组合 / 实际任务/候选分配；缩小预算，已执行、保存、加载并前向",
+      "entry_point": "region_grids / allocation_feedback.greedy_operands",
+      "plugins": {
+        "preprocess": [
+          "centered_smoothing"
+        ],
+        "activation": [
+          "three_region"
+        ]
+      },
+      "source_scope": [
+        "正文 §3、Algorithm 1、Tables 1–4；未完整核查补充材料全部搜索网格"
+      ],
+      "primary_urls": [
+        "https://openaccess.thecvf.com/content/WACV2025/html/Tai_AMP-ViT_Optimizing_Vision_Transformer_Efficiency_with_Adaptive_Mixed-Precision_Post-Training_Quantization_WACV_2025_paper.html"
+      ],
+      "recipe_dependencies": "补 SymAlign 精确折叠、三区域 AutoScale/尺度比搜索、SQNR×log(numel) 贪心分配。",
+      "current_conditions": "W→A 顺序依 SQNR(b−1)×ln(numel) 实际降位，重新拟合 A、SymAlign 和 post-GELU 三区域。GELU 用真实后缀梯度加权的 FC 输出误差选择三区域，MSE 为独立消融。原任务和标签许可按配置。",
+      "deployment": "固定组件可 W4A4；完整分配属 mixed，默认 LN/Softmax FP 与 fully-integer 分开。",
+      "source_unresolved": "作者代码/完整搜索网格未核；区域与符号必须在总 bit 内，与 MPTQ 共家族而非两个独立算法。",
+      "verification": [
+        "EXP/validation/ptq_foundation_20261125/numerical/recipe_amp-vit/source_request.json",
+        "EXP/validation/ptq_foundation_20261125/allocation_recipes.json#amp-vit",
+        "EXP/validation/ptq_foundation_20261125/numerical/centered_smoothing/request.json",
+        "EXP/validation/ptq_foundation_20261125/numerical/recipe_amp-vit/request.json",
+        "EXP/validation/ptq_foundation_20261125/numerical/three_region/request.json"
+      ],
+      "tests": [
+        "centered_smoothing",
+        "recipe_amp-vit",
+        "three_region"
+      ],
+      "author_accuracy_reproduction": false,
+      "native_device_measurement": false,
+      "public_entry": "execution.recipe.source_id = amp-vit",
+      "source_version": {
+        "origin": "AMP-ViT",
+        "author_code_status": null,
+        "read_scope": [
+          "正文 §3、Algorithm 1、Tables 1–4；未完整核查补充材料全部搜索网格"
+        ],
+        "primary_urls": [
+          "https://openaccess.thecvf.com/content/WACV2025/html/Tai_AMP-ViT_Optimizing_Vision_Transformer_Efficiency_with_Adaptive_Mixed-Precision_Post-Training_Quantization_WACV_2025_paper.html"
+        ]
+      },
+      "source_requests": [
+        {
+          "receipt": "EXP/validation/ptq_foundation_20261125/numerical/recipe_amp-vit/source_request.json",
+          "version": "paper; explicit reduced settings in this request",
+          "profile": "qavit_bounded_integration"
+        },
+        {
+          "receipt": "EXP/validation/ptq_foundation_20261125/allocation_recipes.json#amp-vit",
+          "version": "paper; explicit reduced settings",
+          "profile": "bounded allocation and packed software QDQ"
+        }
+      ],
+      "target_protocol": "由实际 W/A 边、码容、固定参数、动态路由、额外计算、结构和例外验证，来源 ID 不授予协议达标状态。"
+    },
+    {
+      "literature_id": "mptq-vit",
+      "survey_ref": 40,
+      "version_of": null,
+      "family": "mptq-amp",
+      "read_asset": {
+        "asset": "methods/recipes/mptq-vit.md"
+      },
+      "implementation_status": "来源绑定的阶段组合 / 实际任务/候选分配；缩小预算，已执行、保存、加载并前向",
+      "entry_point": "region_grids / allocation_feedback.greedy_operands",
+      "plugins": {},
+      "source_scope": [
+        "SQ-b、OPT-m、Greedy MP方法与主实验"
+      ],
+      "primary_urls": [
+        "https://arxiv.org/abs/2401.14895"
+      ],
+      "recipe_dependencies": "保留 SQ-b/OPT-m/Greedy MP 的原版本绑定，逐码字比对与 AMP 的对应关系。",
+      "current_conditions": "早期版 SQ-b/OPT-m 和 W→A 贪心预算，按真实边的元素数/位域处理。与后续 AMP 共用组件；每次降 GELU 位宽重新捕获后缀梯度并搜索三区域。原任务预算及候选依版本区分。",
+      "deployment": "固定 W4A4 组件与 mixed 分配分别记录；6bit 示例的移位常量不能直接移植四位。",
+      "source_unresolved": "官方代码未核；核心高度重合，不另建近似同义求解器或重复统计独立有效方法。",
+      "verification": [
+        "EXP/validation/ptq_foundation_20261125/numerical/recipe_mptq-vit/source_request.json",
+        "EXP/validation/ptq_foundation_20261125/allocation_recipes.json#mptq-vit",
+        "EXP/validation/ptq_foundation_20261125/numerical/centered_smoothing/request.json",
+        "EXP/validation/ptq_foundation_20261125/numerical/recipe_mptq-vit/request.json",
+        "EXP/validation/ptq_foundation_20261125/numerical/three_region/request.json"
+      ],
+      "tests": [
+        "centered_smoothing",
+        "recipe_mptq-vit",
+        "three_region"
+      ],
+      "author_accuracy_reproduction": false,
+      "native_device_measurement": false,
+      "public_entry": "execution.recipe.source_id = mptq-vit",
+      "source_version": {
+        "origin": "MPTQ-ViT",
+        "author_code_status": null,
+        "read_scope": [
+          "SQ-b、OPT-m、Greedy MP方法与主实验"
+        ],
+        "primary_urls": [
+          "https://arxiv.org/abs/2401.14895"
+        ]
+      },
+      "source_requests": [
+        {
+          "receipt": "EXP/validation/ptq_foundation_20261125/numerical/recipe_mptq-vit/source_request.json",
+          "version": "paper; explicit reduced settings in this request",
+          "profile": "qavit_bounded_integration"
+        },
+        {
+          "receipt": "EXP/validation/ptq_foundation_20261125/allocation_recipes.json#mptq-vit",
+          "version": "paper; explicit reduced settings",
+          "profile": "bounded allocation and packed software QDQ"
+        }
+      ],
+      "target_protocol": "由实际 W/A 边、码容、固定参数、动态路由、额外计算、结构和例外验证，来源 ID 不授予协议达标状态。"
+    },
+    {
+      "literature_id": "lrp-qvit",
+      "survey_ref": 67,
+      "version_of": null,
+      "family": "lrp-qvit",
+      "read_asset": {
+        "asset": "methods/recipes/lrp-qvit.md"
+      },
+      "implementation_status": "实际任务/候选分配；缩小预算，已执行、保存、加载并前向",
+      "entry_point": "relevance.prepare / precision.select",
+      "plugins": {},
+      "source_scope": [
+        "原文 §3.2–3.3、§4.1及主要结果"
+      ],
+      "primary_urls": [
+        "https://arxiv.org/abs/2401.11243"
+      ],
+      "recipe_dependencies": "补 relevance 传播、正贡献聚合、层重要度/保护规则和预算位宽分配。",
+      "current_conditions": "分类目标、残差与注意力的正贡献传播，真实张量/Jacobian 传播并记录未分配贡献，按预算分配。原始算子的手工传播和此自动分解分别识别。",
+      "deployment": "完整法属于 layer-mixed；clipping/评分可单独用于固定四位研究。",
+      "source_unresolved": "重要度原用 5 万训练图，量化校准才是 32 图；dense relevance 为新适配，作者代码未核。",
+      "verification": [
+        "EXP/validation/ptq_foundation_20261125/allocation_recipes.json#lrp-qvit"
+      ],
+      "tests": [],
+      "author_accuracy_reproduction": false,
+      "native_device_measurement": false,
+      "public_entry": "execution.recipe.source_id = lrp-qvit",
+      "source_version": {
+        "origin": "LRP-QViT",
+        "author_code_status": null,
+        "read_scope": [
+          "原文 §3.2–3.3、§4.1及主要结果"
+        ],
+        "primary_urls": [
+          "https://arxiv.org/abs/2401.11243"
+        ]
+      },
+      "source_requests": [
+        {
+          "receipt": "EXP/validation/ptq_foundation_20261125/allocation_recipes.json#lrp-qvit",
+          "version": "paper; explicit reduced settings",
+          "profile": "bounded allocation and packed software QDQ"
+        }
+      ],
+      "target_protocol": "由实际 W/A 边、码容、固定参数、动态路由、额外计算、结构和例外验证，来源 ID 不授予协议达标状态。"
+    },
+    {
+      "literature_id": "mix-qvit",
+      "survey_ref": 41,
+      "version_of": null,
+      "family": "mix-qvit",
+      "read_asset": {
+        "asset": "methods/recipes/mix-qvit.md"
+      },
+      "implementation_status": "实际任务/候选分配；缩小预算，已执行、保存、加载并前向",
+      "entry_point": "relevance.prepare / precision.select",
+      "plugins": {},
+      "source_scope": [
+        "§II-B–II-F、§III-A、PTQ实验；QAT分支筛出"
+      ],
+      "primary_urls": [
+        "https://arxiv.org/abs/2501.06357"
+      ],
+      "recipe_dependencies": "仅接独立 PTQ：单层 bit 扰动损失矩阵、relevance 评分、IQP 大小/BitOps 约束。",
+      "current_conditions": "仅独立 PTQ；真实单层扰动的归一化相对损失与相关度分别记录，组合参数 bit 与 MAC/W×A BitOps。原文的 validation 数据许可必须显式给出。",
+      "deployment": "完整 layer-mixed；固定 clipping 可主线，全部比较按实际资源与覆盖。",
+      "source_unresolved": "256 张 validation 敏感度集须按 search 用途记录并独立最终评价；仅保留已核 PTQ 分支。",
+      "verification": [
+        "EXP/validation/ptq_foundation_20261125/allocation_recipes.json#mix-qvit"
+      ],
+      "tests": [],
+      "author_accuracy_reproduction": false,
+      "native_device_measurement": false,
+      "public_entry": "execution.recipe.source_id = mix-qvit",
+      "source_version": {
+        "origin": "Mix-QViT",
+        "author_code_status": null,
+        "read_scope": [
+          "§II-B–II-F、§III-A、PTQ实验；QAT分支筛出"
+        ],
+        "primary_urls": [
+          "https://arxiv.org/abs/2501.06357"
+        ]
+      },
+      "source_requests": [
+        {
+          "receipt": "EXP/validation/ptq_foundation_20261125/allocation_recipes.json#mix-qvit",
+          "version": "paper; explicit reduced settings",
+          "profile": "bounded allocation and packed software QDQ"
+        }
+      ],
+      "target_protocol": "由实际 W/A 边、码容、固定参数、动态路由、额外计算、结构和例外验证，来源 ID 不授予协议达标状态。"
+    },
+    {
+      "literature_id": "lampq",
+      "survey_ref": 115,
+      "version_of": null,
+      "family": "lampq",
+      "read_asset": {
+        "asset": "methods/recipes/lampq.md"
+      },
+      "implementation_status": "实际任务/候选分配；缩小预算，已执行、保存、加载并前向",
+      "entry_point": "layer_importance.fisher / allocation_feedback",
+      "plugins": {},
+      "source_scope": [
+        "方法主节、Appendix C/E、作者README及目录"
+      ],
+      "primary_urls": [
+        "https://arxiv.org/abs/2511.10004",
+        "https://github.com/snudatalab/LampQ"
+      ],
+      "recipe_dependencies": "补 type-aware 系数、加权位宽 ILP、量化后误差反馈与成对重分配。",
+      "current_conditions": "Fisher、类型校准、初始位宽与相邻增减实际评分均已执行。公式的邻域差与论文解释按配置说明；预算约束和真实参数量随更新记录。",
+      "deployment": "完整法属 layer-mixed；固定四位只能借用评分，不能声称执行原分配。",
+      "source_unresolved": "±1 bit 两层参数量不同会改变加权预算，需每步重算；官方入口存在，但约束实现是否修复未核。",
+      "verification": [
+        "EXP/validation/ptq_foundation_20261125/allocation_recipes.json#lampq"
+      ],
+      "tests": [],
+      "author_accuracy_reproduction": false,
+      "native_device_measurement": false,
+      "public_entry": "execution.recipe.source_id = lampq",
+      "source_version": {
+        "origin": "LampQ",
+        "author_code_status": null,
+        "read_scope": [
+          "方法主节、Appendix C/E、作者README及目录"
+        ],
+        "primary_urls": [
+          "https://arxiv.org/abs/2511.10004",
+          "https://github.com/snudatalab/LampQ"
+        ]
+      },
+      "source_requests": [
+        {
+          "receipt": "EXP/validation/ptq_foundation_20261125/allocation_recipes.json#lampq",
+          "version": "paper; explicit reduced settings",
+          "profile": "bounded allocation and packed software QDQ"
+        }
+      ],
+      "target_protocol": "由实际 W/A 边、码容、固定参数、动态路由、额外计算、结构和例外验证，来源 ID 不授予协议达标状态。"
+    },
+    {
+      "literature_id": "pomq-vit",
+      "survey_ref": 69,
+      "version_of": null,
+      "family": "pomq-vit",
+      "read_asset": {
+        "asset": "methods/recipes/pomq-vit.md"
+      },
+      "implementation_status": "实际任务/候选分配；缩小预算，已执行、保存、加载并前向",
+      "entry_point": "configuration_search.configuration_grid",
+      "plugins": {},
+      "source_scope": [
+        "出版社全文方法、优化约束、实验与作者信息"
+      ],
+      "primary_urls": [
+        "https://www.mdpi.com/2076-3417/15/18/9856"
+      ],
+      "recipe_dependencies": "补 encoder 4/8bit 网格、三误差向量、设备延迟与 Pareto 排序/配置导出。",
+      "current_conditions": "公开全文 E1–E3 写 L1；上传资料的 L2 描述作为单独归约保留。Q/K/V 实际操作数、概率及 encoder 输出均可观测。平台查表须提供设备/原始测量；当前延迟是软件 QDQ。",
+      "deployment": "离线选择的 layer-mixed；不是按输入动态，也不是平均四位等于全四位。",
+      "source_unresolved": "作者代码、总校准预算、实际打包和计时细节未闭合；代理 latency 不能代替目标设备测量。",
+      "verification": [
+        "EXP/validation/ptq_foundation_20261125/allocation_recipes.json#pomq-vit"
+      ],
+      "tests": [],
+      "author_accuracy_reproduction": false,
+      "native_device_measurement": false,
+      "public_entry": "execution.recipe.source_id = pomq-vit",
+      "source_version": {
+        "origin": "PoMQ-ViT",
+        "author_code_status": null,
+        "read_scope": [
+          "出版社全文方法、优化约束、实验与作者信息"
+        ],
+        "primary_urls": [
+          "https://www.mdpi.com/2076-3417/15/18/9856"
+        ]
+      },
+      "source_requests": [
+        {
+          "receipt": "EXP/validation/ptq_foundation_20261125/allocation_recipes.json#pomq-vit",
+          "version": "paper; explicit reduced settings",
+          "profile": "bounded allocation and packed software QDQ"
+        }
+      ],
+      "target_protocol": "由实际 W/A 边、码容、固定参数、动态路由、额外计算、结构和例外验证，来源 ID 不授予协议达标状态。"
+    },
+    {
+      "literature_id": "mixa-q",
+      "survey_ref": 116,
+      "version_of": null,
+      "family": "mixa-q",
+      "read_asset": {
+        "asset": "methods/recipes/mixa-q.md"
+      },
+      "implementation_status": "真实 Swin 窗口图；缩小预算，已执行、保存、加载并前向",
+      "entry_point": "window_routes.bind / configuration_search.configuration_grid",
+      "plugins": {},
+      "source_scope": [
+        "§3.1–3.3的独立PTQ结构；§4.3 PTQ Result on COCO"
+      ],
+      "primary_urls": [
+        "https://openaccess.thecvf.com/content/ICCV2025/papers/Wang_MixA-Q_Revisiting_Activation_Sparsity_for_Vision_Transformers_from_a_Mixed-Precision_ICCV_2025_paper.pdf"
+      ],
+      "recipe_dependencies": "仅接 §4.3 PTQ：window L2 路由、双精度 gather/scatter、共享 W 与分支 LN/bias、比例进化搜索。",
+      "current_conditions": "独立 LN、共享 W、按输入窗口排序/分发/恢复；同一套完整分辨率网格在三个比例间复用。原 Swin detection block 实测两个方向及 shifted mask；仅独立 COCO PTQ 分支，无 COCO 成绩。",
+      "deployment": "原 W4A8，低重要窗 A4，属 window-dynamic/mixed；不是静态全 A4。",
+      "source_unresolved": "全局 attention 的 DINO 无原 window 条件；1.35× 是 BOP 比率，官方完整代码未核。",
+      "verification": [
+        "EXP/validation/ptq_foundation_20261125/window_graph.json"
+      ],
+      "tests": [],
+      "author_accuracy_reproduction": false,
+      "native_device_measurement": false,
+      "public_entry": "execution.recipe.source_id = mixa-q",
+      "source_version": {
+        "origin": "MixA-Q",
+        "author_code_status": null,
+        "read_scope": [
+          "§3.1–3.3的独立PTQ结构；§4.3 PTQ Result on COCO"
+        ],
+        "primary_urls": [
+          "https://openaccess.thecvf.com/content/ICCV2025/papers/Wang_MixA-Q_Revisiting_Activation_Sparsity_for_Vision_Transformers_from_a_Mixed-Precision_ICCV_2025_paper.pdf"
+        ]
+      },
+      "source_requests": [
+        {
+          "receipt": "EXP/validation/ptq_foundation_20261125/window_graph.json",
+          "version": "ICCV 2025 COCO PTQ",
+          "profile": "bounded shared W4 / A8,4"
+        }
+      ],
+      "target_protocol": "由实际 W/A 边、码容、固定参数、动态路由、额外计算、结构和例外验证，来源 ID 不授予协议达标状态。"
+    },
+    {
+      "literature_id": "patchwise-mpq-vit",
+      "survey_ref": 119,
+      "version_of": null,
+      "family": "patchwise-mpq-vit",
+      "read_asset": {
+        "asset": "methods/recipes/patchwise-mpq-vit.md"
+      },
+      "implementation_status": "来源绑定的阶段组合 / 实际任务/候选分配；缩小预算，已执行、保存、加载并前向",
+      "entry_point": "precision.select / research_search.pareto",
+      "plugins": {
+        "activation": [
+          "patch_precision"
+        ]
+      },
+      "source_scope": [
+        "§III-B–D、Algorithm 1、§IV-A与消融"
+      ],
+      "primary_urls": [
+        "https://arxiv.org/abs/2305.06559"
+      ],
+      "recipe_dependencies": "补 GSM 层分配/Pareto、attention 驱动 patch 位宽路由及路由打包元数据。",
+      "current_conditions": "离线层灵敏度和动态 patch 位宽分开计费。attention 行/列均值、prefix 与几何要能重放。",
+      "deployment": "输入相关 token-dynamic/mixed，不能借固定部署算法名称归 static。",
+      "source_unresolved": "原文 PTQ 身份已核；官方代码、实际 packing 和运行路由成本待闭合。",
+      "verification": [
+        "EXP/validation/ptq_foundation_20261125/numerical/recipe_patchwise-mpq-vit/source_request.json",
+        "EXP/validation/ptq_foundation_20261125/allocation_recipes.json#patchwise-mpq-vit",
+        "EXP/validation/ptq_foundation_20261125/numerical/patch_precision/request.json",
+        "EXP/validation/ptq_foundation_20261125/numerical/recipe_patchwise-mpq-vit/request.json"
+      ],
+      "tests": [
+        "patch_precision",
+        "recipe_patchwise-mpq-vit"
+      ],
+      "author_accuracy_reproduction": false,
+      "native_device_measurement": false,
+      "public_entry": "execution.recipe.source_id = patchwise-mpq-vit",
+      "source_version": {
+        "origin": "Patch-wise MPQ-ViT",
+        "author_code_status": null,
+        "read_scope": [
+          "§III-B–D、Algorithm 1、§IV-A与消融"
+        ],
+        "primary_urls": [
+          "https://arxiv.org/abs/2305.06559"
+        ]
+      },
+      "source_requests": [
+        {
+          "receipt": "EXP/validation/ptq_foundation_20261125/numerical/recipe_patchwise-mpq-vit/source_request.json",
+          "version": "paper; explicit reduced settings in this request",
+          "profile": "qavit_bounded_integration"
+        },
+        {
+          "receipt": "EXP/validation/ptq_foundation_20261125/allocation_recipes.json#patchwise-mpq-vit",
+          "version": "paper; explicit reduced settings",
+          "profile": "bounded allocation and packed software QDQ"
+        }
+      ],
+      "target_protocol": "由实际 W/A 边、码容、固定参数、动态路由、额外计算、结构和例外验证，来源 ID 不授予协议达标状态。"
+    },
+    {
+      "literature_id": "practicaledge",
+      "survey_ref": 26,
+      "version_of": null,
+      "family": "practicaledge",
+      "read_asset": {
+        "asset": "methods/recipes/practicaledge.md"
+      },
+      "implementation_status": "来源绑定的阶段组合；缩小预算，已执行、保存、加载并前向",
+      "entry_point": "integer_functions.IntegerFunction / nonlinear_calibration.compute",
+      "plugins": {},
+      "source_scope": [
+        "MLSys标题/作者；§3、§4.1–4.4"
+      ],
+      "primary_urls": [
+        "https://proceedings.mlsys.org/paper_files/paper/2023/hash/12f429641e5c63a9ca7fd1c5c4804d32-Abstract-mlsys2023.html",
+        "https://proceedings.mlsys.org/paper_files/paper/2023/file/12f429641e5c63a9ca7fd1c5c4804d32-Paper-mlsys2023.pdf"
+      ],
+      "recipe_dependencies": "补范围受控整数 Softmax/LN/GELU、shift/dtype/溢出语义及真实 ARM 内核适配。",
+      "current_conditions": "Softmax 指数近似与分子位宽约束、LN uint16 输入和 M=15 左移、GELU 二次 erf 与 int32 乘积范围。软件舍入/范围配置与真实 NEON 时延分列；原表依赖设备和输入分布。",
+      "deployment": "原 Softmax/GELU uint8、LN uint16、内部 int32；它是整数算子证据，非全 A4。",
+      "source_unresolved": "公开 kernel release 未核；ARM NEON 算子收益不能写成任意平台端到端加速。",
+      "verification": [
+        "EXP/validation/ptq_foundation_20261125/numerical/recipe_practicaledge/source_request.json",
+        "EXP/validation/ptq_foundation_20261125/numerical/recipe_practicaledge/request.json"
+      ],
+      "tests": [
+        "recipe_practicaledge"
+      ],
+      "author_accuracy_reproduction": false,
+      "native_device_measurement": false,
+      "public_entry": "execution.recipe.source_id = practicaledge",
+      "source_version": {
+        "origin": "PracticalEdge",
+        "author_code_status": null,
+        "read_scope": [
+          "MLSys标题/作者；§3、§4.1–4.4"
+        ],
+        "primary_urls": [
+          "https://proceedings.mlsys.org/paper_files/paper/2023/hash/12f429641e5c63a9ca7fd1c5c4804d32-Abstract-mlsys2023.html",
+          "https://proceedings.mlsys.org/paper_files/paper/2023/file/12f429641e5c63a9ca7fd1c5c4804d32-Paper-mlsys2023.pdf"
+        ]
+      },
+      "source_requests": [
+        {
+          "receipt": "EXP/validation/ptq_foundation_20261125/numerical/recipe_practicaledge/source_request.json",
+          "version": "paper; explicit reduced settings in this request",
+          "profile": "qavit_bounded_integration"
+        }
+      ],
+      "target_protocol": "由实际 W/A 边、码容、固定参数、动态路由、额外计算、结构和例外验证，来源 ID 不授予协议达标状态。"
+    },
+    {
+      "literature_id": "iptq-vit",
+      "survey_ref": 21,
+      "version_of": null,
+      "family": "iptq-vit",
+      "read_asset": {
+        "asset": "methods/recipes/iptq-vit.md"
+      },
+      "implementation_status": "来源绑定的阶段组合；缩小预算，已执行、保存、加载并前向",
+      "entry_point": "assembled_recipes.assemble / integer_functions",
+      "plugins": {},
+      "source_scope": [
+        "原文 §4.1–4.5、§5.1与消融；当前作者README/目录；附录完整预算待锁定"
+      ],
+      "primary_urls": [
+        "https://arxiv.org/abs/2511.15369",
+        "https://github.com/gihwan-kim/IPTQ-ViT"
+      ],
+      "recipe_dependencies": "补视觉范围 Poly-GELU、Bit-Softmax、按层近似选择与统一成本代理。",
+      "current_conditions": "逐层候选、四次 erf 拟合、0.1011 移位指数、整数除法与 Eq.16–20 的 20log 功率版本。预印本与 f8895516 分开。",
+      "deployment": "原主 W8A8/W4A8；integer-only 与主线四位覆盖分别判定。",
+      "source_unresolved": "锁原版本与后续 IPTQ++ 差别；预算附录/实际 kernels 未全闭合，功率比 20log 需保留原指标身份。",
+      "verification": [
+        "EXP/validation/ptq_foundation_20261125/numerical/recipe_iptq-vit/source_request.json",
+        "EXP/validation/ptq_foundation_20261125/numerical/recipe_iptq-vit/request.json"
+      ],
+      "tests": [
+        "recipe_iptq-vit"
+      ],
+      "author_accuracy_reproduction": false,
+      "native_device_measurement": false,
+      "public_entry": "execution.recipe.source_id = iptq-vit",
+      "source_version": {
+        "origin": "IPTQ-ViT",
+        "author_code_status": null,
+        "read_scope": [
+          "原文 §4.1–4.5、§5.1与消融；当前作者README/目录；附录完整预算待锁定"
+        ],
+        "primary_urls": [
+          "https://arxiv.org/abs/2511.15369",
+          "https://github.com/gihwan-kim/IPTQ-ViT"
+        ]
+      },
+      "source_requests": [
+        {
+          "receipt": "EXP/validation/ptq_foundation_20261125/numerical/recipe_iptq-vit/source_request.json",
+          "version": "paper; explicit reduced settings in this request",
+          "profile": "qavit_bounded_integration"
+        }
+      ],
+      "target_protocol": "由实际 W/A 边、码容、固定参数、动态路由、额外计算、结构和例外验证，来源 ID 不授予协议达标状态。"
+    },
+    {
+      "literature_id": "p2-vit",
+      "survey_ref": 43,
+      "version_of": null,
+      "family": "p2-vit",
+      "read_asset": {
+        "asset": "methods/recipes/p2-vit.md"
+      },
+      "implementation_status": "来源绑定的阶段组合 / 实际任务/候选分配；缩小预算，已执行、保存、加载并前向",
+      "entry_point": "grids.nearest_power_grid / source_allocation.genetic_weights",
+      "plugins": {
+        "activation": [
+          "pot_error"
+        ]
+      },
+      "source_scope": [
+        "§III-C/D、Algorithm 1、§V-A/B；官方README"
+      ],
+      "primary_urls": [
+        "https://arxiv.org/abs/2405.19915",
+        "https://github.com/shihuihong214/P2-ViT"
+      ],
+      "recipe_dependencies": "补误差驱动 PoT 候选、PoT smoothing/requantization；完整法还需 Hessian/Pareto 与遗传 4/8 W 分配。",
+      "current_conditions": "W/A 相邻 PoT 候选与真实输入误差相连；W4/8 分支另用 Hessian/Hutchinson + trace×W 扰动、加权预算初始 Pareto、真实输出突变/交叉筛选。小模型使用教师类别，FPGA 排程与部署未测。",
+      "deployment": "固定 PoT 组件可主线适配；完整 mixed 与 FPGA 配置单列，W4 不等于 A4。",
+      "source_unresolved": "官方量化入口可核，完整搜索/RTL 是否公开未闭合；专用硬件收益不能继承到参考 QDQ。",
+      "verification": [
+        "EXP/validation/ptq_foundation_20261125/numerical/recipe_p2-vit/source_request.json",
+        "EXP/validation/ptq_foundation_20261125/allocation_recipes.json#p2-vit",
+        "EXP/validation/ptq_foundation_20261125/numerical/centered_smoothing/request.json",
+        "EXP/validation/ptq_foundation_20261125/numerical/pot_error/request.json",
+        "EXP/validation/ptq_foundation_20261125/numerical/recipe_p2-vit/request.json"
+      ],
+      "tests": [
+        "centered_smoothing",
+        "pot_error",
+        "recipe_p2-vit"
+      ],
+      "author_accuracy_reproduction": false,
+      "native_device_measurement": false,
+      "public_entry": "execution.recipe.source_id = p2-vit",
+      "source_version": {
+        "origin": "P2-ViT",
+        "author_code_status": null,
+        "read_scope": [
+          "§III-C/D、Algorithm 1、§V-A/B；官方README"
+        ],
+        "primary_urls": [
+          "https://arxiv.org/abs/2405.19915",
+          "https://github.com/shihuihong214/P2-ViT"
+        ]
+      },
+      "source_requests": [
+        {
+          "receipt": "EXP/validation/ptq_foundation_20261125/numerical/recipe_p2-vit/source_request.json",
+          "version": "paper; explicit reduced settings in this request",
+          "profile": "qavit_bounded_integration"
+        },
+        {
+          "receipt": "EXP/validation/ptq_foundation_20261125/allocation_recipes.json#p2-vit",
+          "version": "paper; explicit reduced settings in this request",
+          "profile": "qavit_bounded_integration"
+        }
+      ],
+      "target_protocol": "由实际 W/A 边、码容、固定参数、动态路由、额外计算、结构和例外验证，来源 ID 不授予协议达标状态。"
+    },
+    {
+      "literature_id": "h-vit",
+      "survey_ref": 45,
+      "version_of": null,
+      "family": "h-vit",
+      "read_asset": {
+        "asset": "methods/recipes/h-vit.md"
+      },
+      "implementation_status": "来源绑定的阶段组合；缩小预算，已执行、保存、加载并前向",
+      "entry_point": "encodings.fit / grids.nearest_power_grid / nonlinear_calibration.compute",
+      "plugins": {
+        "activation": [
+          "pot_error"
+        ]
+      },
+      "source_scope": [
+        "正式全文 §3.2、Algorithm 1、§4.1–4.6"
+      ],
+      "primary_urls": [
+        "https://link.springer.com/article/10.1007/s43684-025-00121-0"
+      ],
+      "recipe_dependencies": "补相邻 PoT 误差比较、裁剪搜索、LN 通道尺度统一与 token 输出参数。",
+      "current_conditions": "W/A 采用相邻 floor/ceil PoT；LN 输入通道尺度按共同最小指数移位，整型一阶、二阶和后归一化，输出按 token 量化。固定位置或实例输出模式须单列；原 Eq.18 码容歧义见正文。",
+      "deployment": "原 W8A8/Attn4；输出尺度是否输入相关须据实际实现判断，固定 A4 是适配。",
+      "source_unresolved": "Eq.(18) 印刷上下界有 2^b+1 码态；作者代码/勘误未核，禁止照抄成“真四位”。",
+      "verification": [
+        "EXP/validation/ptq_foundation_20261125/numerical/recipe_h-vit/source_request.json",
+        "EXP/validation/ptq_foundation_20261125/numerical/pot_error/request.json",
+        "EXP/validation/ptq_foundation_20261125/numerical/recipe_h-vit/request.json"
+      ],
+      "tests": [
+        "pot_error",
+        "recipe_h-vit"
+      ],
+      "author_accuracy_reproduction": false,
+      "native_device_measurement": false,
+      "public_entry": "execution.recipe.source_id = h-vit",
+      "source_version": {
+        "origin": "H-ViT",
+        "author_code_status": null,
+        "read_scope": [
+          "正式全文 §3.2、Algorithm 1、§4.1–4.6"
+        ],
+        "primary_urls": [
+          "https://link.springer.com/article/10.1007/s43684-025-00121-0"
+        ]
+      },
+      "source_requests": [
+        {
+          "receipt": "EXP/validation/ptq_foundation_20261125/numerical/recipe_h-vit/source_request.json",
+          "version": "paper; explicit reduced settings in this request",
+          "profile": "qavit_bounded_integration"
+        }
+      ],
+      "target_protocol": "由实际 W/A 边、码容、固定参数、动态路由、额外计算、结构和例外验证，来源 ID 不授予协议达标状态。"
+    },
+    {
+      "literature_id": "trio-vit",
+      "survey_ref": 46,
+      "version_of": null,
+      "family": "trio-vit",
+      "read_asset": {
+        "asset": "methods/recipes/trio-vit.md"
+      },
+      "implementation_status": "结构或合成与量化；缩小预算，已执行、保存、加载并前向",
+      "entry_point": "efficient_topology.channel_migration / efficient_topology.bind_lite",
+      "plugins": {},
+      "source_scope": [
+        "§IV、§VI-A/B；官方README及运行入口"
+      ],
+      "primary_urls": [
+        "https://arxiv.org/abs/2405.03882",
+        "https://github.com/shihuihong214/Trio-ViT"
+      ],
+      "recipe_dependencies": "补 MBConv 迁移、filter-bias 修正、线性 attention 分母 log 编码及有限块重构。",
+      "current_conditions": "跨真实 DW→PW 的尺度/平移迁移，接线性注意力 KᵀV 分母及缩小的重构。原分母指数 −15…8 含 24 档；固定 16 档是适配。验证覆盖相应结构，部署设备另测。",
+      "deployment": "EfficientViT 专用结构；原 W8A8 加四位分母，不是普通 DINO Softmax 全 W4A4。",
+      "source_unresolved": "完整块迭代配置和专用 backend 尚需锁定；不能把 FP 拓扑差异或 FPGA 数字当通用 PTQ 收益。",
+      "verification": [
+        "EXP/validation/ptq_foundation_20261125/component_checks.json#trio_topology"
+      ],
+      "tests": [],
+      "author_accuracy_reproduction": false,
+      "native_device_measurement": false,
+      "public_entry": "execution.recipe.source_id = trio-vit",
+      "source_version": {
+        "origin": "Trio-ViT",
+        "author_code_status": null,
+        "read_scope": [
+          "§IV、§VI-A/B；官方README及运行入口"
+        ],
+        "primary_urls": [
+          "https://arxiv.org/abs/2405.03882",
+          "https://github.com/shihuihong214/Trio-ViT"
+        ]
+      },
+      "source_requests": [
+        {
+          "receipt": "EXP/validation/ptq_foundation_20261125/component_checks.json#trio_topology",
+          "version": "5628eb21; bounded exponent grid adapts capacity",
+          "profile": "architecture bounded verification"
+        }
+      ],
+      "target_protocol": "由实际 W/A 边、码容、固定参数、动态路由、额外计算、结构和例外验证，来源 ID 不授予协议达标状态。"
+    }
+  ]
+}

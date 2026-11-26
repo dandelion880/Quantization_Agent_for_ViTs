@@ -9,3 +9,5 @@
 推理前用alpha>=0离散冻结，只导出packed整数码和固定scale/zero，不导出软权重或优化器。原始W、网格、FP teacher、受保护head都不求导或更新。网格/输入仿射改变后旧舍入失效，必须重拟合；与同一W的RTN/GPTQ/GPTAQ互斥，不默认串接优化。可先W后A，或先A后W；报告实际输入来自FP还是量化路径。与AdaLog bias组合时使用实时W补偿参与目标。
 
 项目适配：从AIMET的Conv/分类框架抽离Linear token-row目标，不自动加邻接激活函数、不进行整块/整网训练，也不承诺相同预算下论文精度。成本：逐位点成对CPU缓存、alpha/梯度/Adam状态以及iterations×batch_images局部前后向；显存不足即失败，不能缩减配置预算。
+
+完整配方与版本条件见 [qdrop](recipes/qdrop.md)、[aphq-vit](recipes/aphq-vit.md)、[fima-q](recipes/fima-q.md)。

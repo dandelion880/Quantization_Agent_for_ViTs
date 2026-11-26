@@ -6,6 +6,7 @@ and locked; source configurations remain available even after replacement.
 from copy import deepcopy
 from pathlib import Path
 import math
+from core.ptq_protocol import current, protocol_of, reusable_execution, reusable_manifest
 from core.cards import ContractError, fingerprint, strict_loads
 from core.journal import atomic_json, read_json, file_lock, file_sha256
 from runtime.paths import ROOT
@@ -37,7 +38,7 @@ def prepared_compatibility(source, target, old_backend, new_backend):
         model['fixed_assets'] = [a for a in bound['checkpoint_assets'] if a['path'] != backend['data_path']]
         model['segmentation_assets'] = bound.get('segmentation_assets')
         evaluation = deepcopy(brief['evaluation_protocol'])
-        if evaluation.pop('calibration_samples') != backend['calibration_samples'] or evaluation.get('final_training') is not False:
+        if evaluation.pop('calibration_samples') != backend['calibration_samples'] or (not current(protocol_of(brief)) and evaluation.get('final_training') is not False):
             raise ContractError('prepared baseline requires declared calibration counts and training-free final evaluation')
         hard = deepcopy(brief['hard_constraints'])
         hard.pop('training_allowed', None)
@@ -63,11 +64,10 @@ def prepared_compatibility(source, target, old_backend, new_backend):
             'source_data_sha256': old_backend['data_sha256'], 'target_data_sha256': new_backend['data_sha256']}
 
 
-def rank(rows):
+def rank(rows, priority=("mIoU", "top1")):
     def key(row):
         m = row['metrics']
-        return (row.get('status') == 'evaluated', m.get('mIoU') if m.get('mIoU') is not None else -math.inf,
-                m.get('top1') if m.get('top1') is not None else -math.inf)
+        return (row.get('status') == 'evaluated', *(m[k] if m.get(k) is not None else -math.inf for k in priority))
     # Stable ties preserve the incumbent; provisional seeds have no fabricated scores.
     return sorted(rows, key=key, reverse=True)[:3]
 
@@ -232,7 +232,7 @@ class SolutionLibrary:
 
     def catalog(self, sequence=None):
         active = {r['id'] for r in self.snapshot(sequence)}
-        return [{**{k: v for k, v in row.items() if k in ('id', 'title', 'status', 'metrics', 'reference_metrics', 'development', 'evidence_ref', 'hypothesis_ref')},
+        return [{**{k: v for k, v in row.items() if k in ('id', 'title', 'status', 'metrics', 'reference_metrics', 'development', 'evidence_ref', 'hypothesis_ref','comparison_key')},
                  'retention': 'top3' if row['id'] in active else ('archive' if row.get('status') in ('evaluated','development_evaluated') else 'seed'),
                  'configuration_asset': str(self.journal.root / 'solution_library' / (fingerprint(row['id']) + '.json')),
                  'measurement_origin': (row.get('baseline_origin') or ('current_run' if row.get('run_dir') == str(self.journal.root) else 'historical')) if row.get('status') in ('evaluated','development_evaluated') else 'unmeasured_seed',
@@ -242,7 +242,15 @@ class SolutionLibrary:
     def _complete_metrics(self, p):
         ev = p['observations'].get('evaluations', {})
         metrics = {}
-        for task, metric in (('classification', 'top1'), ('segmentation', 'mIoU')):
+        tasks=(('classification','top1'),('segmentation','mIoU'))
+        evaluation=self.brief.get("evaluation_protocol",{})
+        if current(protocol_of(self.brief)):
+            priority=evaluation.get("metric_priority",["mIoU","top1"])
+            declared=evaluation.get("task_metrics",dict(tasks))
+            if not isinstance(priority,(list,tuple)) or not priority or len(set(priority))!=len(priority) or not set(priority)<=set(declared.values()):
+                raise ContractError("metric priority must name declared task measurements")
+            tasks=tuple(declared.items())
+        for task, metric in tasks:
             row = ev.get(task, {})
             value = row.get('metrics', {}).get(metric)
             if row.get('full_dataset') is not True or type(value) not in (int, float) or not math.isfinite(value):
@@ -255,12 +263,44 @@ class SolutionLibrary:
                 raise ContractError('final static W4A4 receipt pending')
         return metrics
 
+    def comparison_conditions(self, payload, execution):
+        """Use observed coverage and immutable task views for each scientific comparison."""
+        if not current(protocol_of(self.brief)):
+            return {}
+        observations=payload["observations"]
+        receipt=observations.get("static_w4a4", {})
+        protocol=self.brief["evaluation_protocol"]
+        tasks={}
+        for name,value in observations.get("evaluations",{}).items():
+            tasks[name]={k:value[k] for k in ("split","sample_count","full_dataset","development_sha256","head_sha256","view_sha256","evaluation_mode") if k in value}
+        scope={k:receipt.get(k) for k in ("protocol","extension_dimensions","required_bits","unquantized_edges","task_modules","activation_calibration")}
+        scope["additional_states"]={k:{field:v[field] for field in ("bits","high_precision_path","unit") if field in v}
+                                    for k,v in receipt.get("boundaries",{}).items() if v.get("high_precision_path") or v.get("unit")}
+        deployed=payload.get("provenance",{}).get("execution_facts",{}).get("deployed_stages",execution.get("plan",{}))
+        scope["postfit"]=[{k:s[k] for k in ("kind","module","reduce_axes") if k in s} for s in deployed.get("postfit",())
+                          if s["kind"] in ("channel_affine","qwt","bias_compensation")]
+        scope["structure"]=deployed.get("structure",[])
+        conditions={"objective":protocol.get("comparison_intent","matched_quantization_conditions"),"tasks":tasks,
+                    "model_and_heads":self.brief["model"].get("binding",{}),"precision":scope,
+                    "calibration_view":execution.get("calibration"),"calibration_tasks":execution.get("calibration_tasks"),"calibration_source":execution.get("calibration_generator",{}).get("variant","bound_data"),
+                    "data_permissions":protocol.get("data_permissions"),"resource_budget":protocol.get("resource_budget"),
+                    "precision_budget":(execution.get("precision_search") or execution.get("recipe",{}).get("allocation",{})).get("budgets")}
+        return {"comparison_conditions":conditions,"comparison_key":fingerprint(conditions)}
+
     def _retain(self, candidate):
         with file_lock(self.root / 'library.lock', timeout=10):
             path = self.root / 'top3.json'
             current = self._bound_entries(path) if path.exists() else self.snapshot()
-            if candidate['id'] not in {r['id'] for r in current}:
-                current = rank([*current, candidate])
+            group=candidate.get("comparison_key")
+            if group:
+                group_path=self.root / 'comparisons' / (group+'.json')
+                peers=self._bound_entries(group_path) if group_path.exists() else []
+                peers=[entry for entry in peers if entry["id"]!=candidate["id"]]
+                priority=self.brief["evaluation_protocol"].get("metric_priority",("mIoU","top1"))
+                atomic_json(group_path,{"protocol_hash":self.key,"entries":rank([*peers,candidate],priority)})
+            compatible=all(r.get("comparison_key")==group for r in current if r.get("status")=="evaluated")
+            if compatible and candidate['id'] not in {r['id'] for r in current}:
+                current = rank([*current, candidate], self.brief.get("evaluation_protocol", {}).get("metric_priority", ("mIoU", "top1")))
             atomic_json(self.root / 'archive' / (fingerprint(candidate['evidence_ref']) + '.json'), candidate)
             atomic_json(path, {'protocol_hash': self.key, 'entries': current})
         return current
@@ -286,8 +326,8 @@ class SolutionLibrary:
         execution = experiment['payload']['execution']
         if (experiment['payload']['level'] != 'L3' or experiment['author'] != 'program'
                 or experiment['payload'].get('candidate_binding') or p['measurement_source'] != 'real'
-                or execution['service'] != 'quantize_evaluate' or execution.get('requires_code') or not execution.get('plan')
-                or execution['resolved_choices']['training'] is not False
+                or execution['service'] != 'quantize_evaluate' or execution.get('requires_code') or not (execution.get('plan') or execution.get('recipe'))
+                or not reusable_execution(execution)
                 or execution.get('research_protocol_sha256') != origin.solutions.key):
             raise ContractError('prepared baseline needs a complete independently rebuildable native measurement')
         origin.broker.validate_evidence_for(experiment, evidence)
@@ -299,7 +339,9 @@ class SolutionLibrary:
             raise ContractError('prepared baseline evidence does not bind a complete native package')
         manifest = read_json(next(a['path'] for a in p['artifacts'] if Path(a['path']).name == 'manifest.json'
                                   and Path(a['path']).parent.name == 'model'))
-        if manifest.get('preparation_training') is not False or p['provenance'].get('training_declared') is not False:
+        if (not reusable_manifest(manifest, protocol_of(execution))
+                or p['provenance'].get('training_declared') != manifest.get('preparation_training')
+                or p['provenance'].get('construction') != manifest.get('construction')):
             raise ContractError('prepared baseline has no verified training-free reconstruction')
         compatibility = None
         if origin.solutions.key != self.key:
@@ -319,6 +361,7 @@ class SolutionLibrary:
             'evidence_ref': evidence['id'], 'experiment_ref': experiment['id'], 'run_dir': str(origin.run_dir),
             **({'protocol_compatibility': compatibility} if compatibility else {}),
             **origin.solutions.source_record(origin.journal.cards[experiment['id']]['sequence'])}
+        entry.update(self.comparison_conditions(p,execution))
         current = self._retain(entry)
         self.journal.commit(key, events=[{'type': 'prepared_baseline_imported', 'reference': reference},
             {'type': 'solution_archive', 'entries': [entry], 'protocol_hash': self.key},
@@ -367,7 +410,7 @@ class SolutionLibrary:
                 **{k:v for k,v in (self.journal.card(hypothesis_ref)['payload'] if hypothesis_ref in self.journal.cards else {}).items()
                    if k in ('topic_ref','method_id','inspiration_id')},
                 **self.source_record(self.journal.cards.get(experiment['id'], {}).get('sequence')),
-                'artifacts': p['artifacts']}
+                'artifacts': p['artifacts'], **self.comparison_conditions(p,experiment['payload']['execution'])}
             # Preserve exact approved code as part of the complete reusable configuration.
             for task in self.journal.events:
                 if task['type'] == 'task_snapshot' and evidence['id'] in task['task'].get('outputs', []):

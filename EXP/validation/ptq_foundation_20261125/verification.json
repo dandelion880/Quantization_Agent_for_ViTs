@@ -1,0 +1,74 @@
+{
+  "scope": "实现及有限输入的集成验证",
+  "base_commit": "de7310e2c42ae60d36283a949f82dfae681cca45",
+  "suite": {
+    "tests": 187,
+    "seconds": 231.693,
+    "result": "OK",
+    "log": "verification_logs/regression.log.gz"
+  },
+  "source": {
+    "material_members": 25,
+    "source_records": 83,
+    "source_revisions_measured": 52,
+    "catalog_ids": 72,
+    "named_component_entries": 79
+  },
+  "execution": {
+    "numerical_cases": 77,
+    "separate_process_matches": 77,
+    "distinct_source_bound_packages_verified": 63,
+    "author_graphs": [
+      "fq_vit",
+      "ptq4vit",
+      "repq_vit"
+    ],
+    "allocation_versions": [
+      "amp-vit",
+      "igq_vit",
+      "lampq",
+      "lrp-qvit",
+      "mix-qvit",
+      "mptq-vit",
+      "p2-vit",
+      "patchwise-mpq-vit",
+      "pomq-vit",
+      "ptq-vit-2021",
+      "q-hyvit"
+    ],
+    "strict_static_covered_boundaries": 26,
+    "strict_static_optimizer_steps": 12,
+    "service_steps": [
+      "prepare",
+      "reuse",
+      "child"
+    ]
+  },
+  "independent_checks": {
+    "wide_bit_pack_and_signed_requant": "edge_oracles.json",
+    "real_deployed_nonlinear_reductions": "nonlinear_oracles.json",
+    "paired_ridge_and_allocation": "component_checks.json",
+    "dense_original": "per_original_dense.json"
+  },
+  "frozen_selector": {
+    "proxy": "classification.mse",
+    "independent_task": "classification.task_nll",
+    "calibration_images": 3,
+    "heldout_images": 3,
+    "results": "selection_quality.json"
+  },
+  "research": {
+    "role_receipt": "role_evidence.json",
+    "evidence_ref": "EvidenceCard-8a79bcdfa7734eddbd2369537bed29a7@1",
+    "restored": "140e04d7402b8328781552b7244aef6cc9d8a964fa1df7d8c3e1b79dc5df9d4a"
+  },
+  "logs": {
+    "bridge.log.gz": "515ac2f73f42d3dddf550da81d54330e58ed4c7949ac23ceb1fa63d514890c4a",
+    "nonlinear.log.gz": "94a32ebcd149061b8db5ae152ba6585e7881be93675bea9555d72c5d74f34c21",
+    "numerical_cold.log.gz": "94a32ebcd149061b8db5ae152ba6585e7881be93675bea9555d72c5d74f34c21",
+    "numerical_warm.log.gz": "26be119fad4af47d811c734c50befd220141c35b330f148b94d31816691e0726",
+    "regression.log.gz": "e6af1ce6515c93239c211dfaba5e2ca1e87a2d6844d64ee6e6f88ef94aa001af",
+    "service.log.gz": "0b68c3317a1cdbd10f84628a8fcd8814da4a11deddbcd96d5753bf12a24fdc34",
+    "task_selection.log.gz": "aedba8eb85bb7819e1395580672a77b009b217d712864d64f544ab64abf78311"
+  }
+}

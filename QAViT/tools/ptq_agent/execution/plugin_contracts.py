@@ -2,19 +2,24 @@
 
 from copy import deepcopy
 
+from .encodings import NAMES as RESEARCH_ENCODINGS
 from ..schemas import NULL, STR, PTQError, arr, obj, require, validate
 
-WEIGHT_METHODS = ("rtn", "gptq", "uniform_full", "uniform_affine", "uniform_minmax", "adaround", "gptaq")
-ACTIVATION_METHODS = ("rtn", "uniform_full", "uniform_affine", "uniform_minmax", "twin_softmax", "log2", "log_sqrt2", "twin_gelu", "asymmetric_gelu", "ptf", "adalog")
-PREPROCESS_METHODS = ("smoothquant", "repq_ln", "adalog_bias")
+WEIGHT_METHODS = ("hc_rows","erq", "rtn", "gptq", "uniform_full", "uniform_affine", "uniform_minmax", "adaround", "gptaq")
+ACTIVATION_METHODS = (*RESEARCH_ENCODINGS, "rtn", "uniform_full", "uniform_affine", "uniform_minmax", "twin_softmax", "log2", "log_sqrt2", "twin_gelu", "asymmetric_gelu", "ptf", "adalog")
+PREPROCESS_METHODS = ("domain_affine","trio_dw_scale","trio_pw_shift","noisy_shift","centered_smoothing","smoothquant", "repq_ln", "adalog_bias")
 WEIGHT_KINDS = ("linear", "conv2d")
 ATTENTION_KINDS = ("attention_query", "attention_key", "attention_value", "post_softmax")
 KINDS = (*WEIGHT_KINDS, *ATTENTION_KINDS, "post_gelu", "pre_layernorm", "post_layernorm", "module_output",
          "attention_logits", "attention_residual", "block_output", "embedding_tokens", "position_embedding", "embedding_sum")
 METRICS = ("mse", "cosine", "hessian")
 CALIBRATION = obj({
-    "strategy": {"enum": ["minmax", "search", "manual", "percentile", "coordinate"]},
+    "strategy": {"enum": ["minmax","weight_pot","first_batch_rows","fpcs", "search", "manual", "percentile", "coordinate"]},
     "metric": {"enum": list(METRICS)},
+    "error_domain":{"enum":["weight","linear_output"]},"neighbors":{"type":"integer","minimum":0,"maximum":1},
+    "beam":{"type":"integer","minimum":1},"refinements":{"type":"integer","minimum":0},
+    "subdivisions":{"type":"integer","minimum":2},"base_values":arr({"type":"integer","minimum":1},minItems=2),
+    "first_batch_images":{"type":"integer","minimum":1},
     "factors": arr({"type": "number", "minimum": 0}, minItems=1, maxItems=128),
     "factor_grid": obj({"start": {"type": "number", "minimum": 0}, "stop": {"type": "number", "minimum": 0},
                         "count": {"type": "integer", "minimum": 1, "maximum": 128}}),
@@ -26,6 +31,13 @@ CALIBRATION = obj({
     "peer_precision": {"enum": ["quantized", "float"]},
 }, ["strategy"])
 OPTIONS = obj({
+    "row_codebook": obj({"curvature":{"type":"number","exclusiveMinimum":0},"iterations":{"type":"integer","minimum":1},"seed":{"type":"integer","minimum":0}},["curvature","iterations","seed"]),
+    "encoding": {"type":"object","additionalProperties":True},
+    "erq": obj({"lambda_a": {"type":"number","exclusiveMinimum":0}, "lambda_w":{"type":"number","exclusiveMinimum":0},
+                "moments":{"enum":["sum","mean"]},"flip_steps":{"type":"integer","minimum":0},
+                "flip_k":{"type":"integer","minimum":1},"tail_rule":{"enum":["paper","author_code"]},"augment_bias":{"type":"boolean"},"partition_reference":{"enum":["transformed_source","post_aqer"]}},
+               ["lambda_a","lambda_w","moments","flip_steps","flip_k"]),
+    "qep": obj({"alpha":{"type":"number"}, "relative_damping":{"type":"number","minimum":0}}),
     "reserve_zero": {"type": "boolean"},
     "token_partition": obj({"axis": {"type": "integer", "minimum": 1},
                            "prefix_ends": arr({"type": "integer", "minimum": 1}, minItems=1)}, ["axis", "prefix_ends"]),
@@ -80,6 +92,7 @@ def plan_schema(spec):
             "method": {"enum": list(PREPROCESS_METHODS)},
             "module": STR,
             "norm": {"anyOf": [STR, NULL]},
+            "settings":{"type":"object","additionalProperties":True},
             "alpha": {"type": "number", "minimum": 0, "maximum": 1},
             "calibration": CALIBRATION,
             "observation": {"enum": ["float", "quantized_prefix"]},
@@ -94,6 +107,14 @@ def plan_schema(spec):
             "options": OPTIONS,
             "reason": {"type": "string"}, "evidence": arr(STR),
         }, ["module", "kind", "weight", "activation", "weight_method", "activation_method"]), minItems=0, maxItems=512),
+        "activation_first":{"type":"object","additionalProperties":True},
+        "structure": arr(obj({"kind":{"enum":["gelu_to_relu","cached_kv","outlier_tokens","integer_function","lite_denominator","window_branches","calibrated_operator"]},"module":STR,
+                              "end_module":STR,"prefix_tokens":{"type":"integer","minimum":0},"grid_hw":arr({"type":"integer","minimum":1},minItems=2,maxItems=2),"delete_count":{"type":"integer","minimum":1},
+                              "settings":{"type":"object","additionalProperties":True},"fit":{"type":"object","additionalProperties":True},"operator":{"enum":["gelu","softmax"]},"candidates":{"anyOf":[{"type":"integer","minimum":1},arr({"type":"object","additionalProperties":True},minItems=1)]},"copies":{"type":"integer","minimum":1}},["kind","module"]),minItems=1),
+        "postfit": arr(obj({"kind":{"enum":["bias_compensation","qwt","channel_affine","block_reconstruction","scale_search","merged_weight_fit","graph_reconstruction","bit_shrinking","block_coordinate_search","domain_affine_fit"]},
+                            "module": STR, "reference":{"enum":["local_fp_candidate","fp_model"]},
+                            "reduce_axes":arr({"type":"integer","minimum":0},minItems=1,uniqueItems=True),
+                            "settings":{"type":"object","additionalProperties":True}},["kind","module","reference"]),minItems=1),
         "evaluation": OBJECTIVE,
         "operators": arr(obj({"method": {"enum": ["integer_layernorm", "integer_softmax"]}, "module": STR,
                               "input_site": STR, "output_site": STR}), maxItems=128),
@@ -141,6 +162,38 @@ def validate_composition(plan, known, config, *, classification_available=False,
     from .contracts import SPEC, RAW_FLOATS, validate_spec
     require(plan["execution"]["mode"] in config["loop"]["execution_modes"], "执行方式不在用户允许范围")
     execution = plan["execution"]
+    structures=plan.get("structure",[])
+    require(len({s["module"] for s in structures})==len(structures),"duplicate structural stage")
+    for s in structures:
+        if "fit" in s:
+            require(s["kind"]=="gelu_to_relu" and set(s["fit"]["weight_modules"])<={r["module"] for r in plan["layers"] if r.get("weight")},"MR scope must be in final packed W")
+        if s["kind"]=="outlier_tokens":
+            require({"end_module","grid_hw","prefix_tokens","delete_count"}<=set(s),"missing token layout")
+            require(not any(s["end_module"]==n or s["end_module"].startswith(n+".") for n in config["constraints"]["protected_modules"]+config["constraints"]["excluded_modules"]),"protected token recovery")
+        require(not any(s["module"]==n or s["module"].startswith(n+".") for n in config["constraints"]["protected_modules"]+config["constraints"]["excluded_modules"]),"protected structural target")
+        require((s["kind"]=="cached_kv")==("candidates" in s and "copies" in s),"KV stage needs explicit candidate count and copies")
+    weight_scope={r["module"] for r in plan["layers"] if r.get("weight")}
+    schedule=[plan["activation_first"]] if "activation_first" in plan else []
+    schedule.extend(s["settings"] for s in plan.get("postfit",[]) if s["kind"]=="graph_reconstruction")
+    for fit in schedule:
+        require(fit.get("groups") and fit["batch_images"]>0, "empty finite graph optimization")
+        for g in fit["groups"]:
+            require(g["weight_modules"] and set(g["weight_modules"])<=weight_scope and g["steps"]>0 and g["lr"]>0,"graph fitting W/scope/budget mismatch")
+    fitted = set()
+    for stage in plan.get("postfit", []):
+        name, kind = stage["module"],stage["kind"]
+        owner=name.rsplit(".",1)[0] if name.endswith(("._ptq_qk","._ptq_probability")) else name
+        require(owner and any(r["name"] == owner or r["name"].startswith(owner+".") for r in known.values()),"postfit module is absent from this model")
+        require(not any(name == n or name.startswith(n+".") or n.startswith(name+".") for n in
+                        config["constraints"]["protected_modules"]+config["constraints"]["excluded_modules"]), "postfit touches protected scope")
+        if kind in ("bias_compensation","channel_affine","qwt"):
+            require(name not in fitted,"duplicate output correction")
+            require((kind == "qwt") != ("reduce_axes" in stage), "declare the exact correction reduction axes")
+            require(kind != "qwt" or stage["reference"] == "local_fp_candidate","QwT requires the same current input")
+            fitted.add(name)
+        else:
+            require(not fitted and isinstance(stage.get("settings"),dict), "fit grids/weights before output compensation")
+
     unit = execution.get("calibration_unit", "operator")
     blocks = execution.get("block_modules", [])
     require(bool(blocks) == (unit == "block"), "block 调度须显式 block_modules；operator 不消费该字段")
@@ -215,6 +268,44 @@ def validate_composition(plan, known, config, *, classification_available=False,
                 require(method == "uniform_minmax" or spec["format"].startswith("INT" if method == "uniform_full" else "UINT"), "uniform 网格有符号性不符")
                 require(spec["symmetric"] == spec["format"].startswith("INT"), "uniform 网格 symmetric 不符")
                 require(plan["execution"]["activation_calibration"] == "static", "论文参考 uniform 网格必须冻结尺度")
+            elif method in RESEARCH_ENCODINGS:
+                cfg = layer.get("options",{}).get("encoding",{})
+                require(target=="activation" and cfg and execution["activation_calibration"]=="static",
+                        "nonlinear encodings calibrate and persist their constants")
+                require(spec["format"]==("INT" if method in ("pot_error","two_channel_scales") else "UINT")+str(spec["bits"])
+                        and spec["symmetric"]==(method in ("pot_error","two_channel_scales")), "codec storage format mismatch")
+                require(calibration(layer,target)["strategy"]=="minmax","declare the codec-specific search inside encoding")
+                expected="per_token" if method=="adfq_outliers" else "per_channel" if method=="domain_clip" else "per_tensor"
+                require(spec["granularity"]==expected and spec["group_size"] is None and
+                        (spec["axis"]==2 if expected in ("per_channel","per_token") else spec["axis"] is None),"codec granularity mismatch")
+                if method in ("tanq","sulq","patch_precision","focus_interval") or method=="bit_window" and cfg.get("domain")=="probability":
+                    require(layer["kind"]=="post_softmax","probability codebook needs post-Softmax")
+                if method in ("shift_log","three_region") or method=="bit_window" and cfg.get("domain")=="gelu":
+                    require(info["semantic"]=="post_gelu" or layer["kind"]=="post_gelu","shifted/GELU codebook needs post-GELU")
+                if method=="igq_ranges":
+                    require((cfg.get("mode")=="attention_row" and layer["kind"]=="post_softmax") or
+                            (cfg.get("mode")=="channel" and layer["kind"]=="linear"),"unknown IGQ axes")
+                if method=="adfq_outliers":
+                    require(layer["kind"]=="linear" and info["semantic"]=="post_layernorm","ADFQ needs a post-LN Linear")
+            elif method=="hc_rows":
+                require(target=="weight" and layer["kind"]=="linear" and spec["granularity"]=="per_channel"
+                        and spec["axis"]==0 and spec["format"].startswith("UINT") and not spec["symmetric"]
+                        and "row_codebook" in layer.get("options",{}) and calibration(layer,target)["strategy"]=="minmax",
+                        "HC needs one row index and a separate full-vector codebook")
+            elif method == "erq":
+                require(target == "weight" and layer["kind"] == "linear" and spec["format"].startswith("UINT")
+                        and spec["granularity"] == "per_channel" and spec["axis"] == 0 and not spec["symmetric"]
+                        and "erq" in layer.get("options", {}), "ERQ needs linear unsigned per-output initial grids")
+                require(execution["order"] == "a_then_w" and execution.get("within_stage") == "sequential",
+                        "ERQ requires calibrated activations and sequential weight installation")
+            elif (target == "activation" and method == "rtn" and execution["activation_calibration"] == "static"
+                  and spec["granularity"] in ("per_token", "per_group")):
+                require(spec["format"].startswith(("INT","UINT")) and spec["symmetric"] == spec["format"].startswith("INT")
+                        and spec["axis"] > 0 and spec["scale"] == "minmax", "fixed activation grid requires a non-batch feature axis and integer format")
+                require((spec["group_size"] is None) == (spec["granularity"] == "per_token"), "invalid static group size")
+                if info.get("activation_shape"):
+                    from .fixed_grids import shape_for
+                    shape_for(info["activation_shape"],spec)
             elif method == "rtn":
                 shape = info.get("weight_shape") if target == "weight" else info.get("activation_shape")
                 _validate_site_spec(validate_spec, spec, target, shape, sid, path,
@@ -267,7 +358,8 @@ def validate_composition(plan, known, config, *, classification_available=False,
                 require(spec["axis"] is None if method != "ptf" else type(spec["axis"]) is int, "特殊激活 axis 不符")
             c = calibration(layer, target)
             provided = layer.get(target + "_calibration", {})
-            fields = {"minmax": {"strategy"}, "manual": {"strategy", "scale_values", "zero_values"},
+            fields = {"weight_pot":{"strategy","error_domain","neighbors"},"fpcs":{"strategy","beam","refinements","subdivisions","base_values","factors","metric","loss"},
+                      "first_batch_rows":{"strategy","first_batch_images","percentiles"},"minmax": {"strategy"}, "manual": {"strategy", "scale_values", "zero_values"},
                       "search": {"strategy", "metric", "factors", "factor_grid", "loss"},
                       "percentile": {"strategy", "percentiles"},
                       "coordinate": {"strategy", "metric", "factors", "factor_grid", "loss", "rounds", "peer_precision"}}[c["strategy"]]
@@ -280,6 +372,14 @@ def validate_composition(plan, known, config, *, classification_available=False,
             require("loss" not in provided or c["metric"] == "hessian", "只有 Hessian metric 使用 loss")
             require(all(v > 0 for v in c.get("factors", [1])), "scale 因子须为正")
             require(all(v > 0 for v in c.get("scale_values", [1])), "scale 须为正")
+            if c["strategy"]=="weight_pot":
+                require(target=="weight" and method in ("uniform_full","uniform_minmax") and spec["symmetric"] and spec["granularity"] in ("per_channel","per_tensor") and (c["error_domain"]=="weight" or layer["kind"]=="linear"),"PoT W search requires signed per-layer/output-channel grid")
+            if c["strategy"]=="fpcs":
+                require(method=="adalog" and target=="activation" and all(k in c for k in ("beam","refinements","subdivisions","base_values","factors"))
+                        and len(set(c["factors"]))>1,"FPCS requires explicit AdaLog q and scale axes and search budget")
+            if c["strategy"]=="first_batch_rows":
+                require(method=="rtn" and target=="activation" and spec["granularity"]=="per_token"
+                        and "first_batch_images" in c and "percentiles" in c,"ORQ requires a finite first batch and per-position clipping candidates")
             if c["strategy"] == "manual":
                 require("scale_values" in c, "manual 必须给出真实 scale_values")
             if c["strategy"] == "percentile":
@@ -294,11 +394,19 @@ def validate_composition(plan, known, config, *, classification_available=False,
                 require(spec["format"] not in RAW_FLOATS, "浮点直转没有可搜索 scale")
                 require(spec["format"] not in ("NVFP4", "MXFP4"), "块浮点尺度遵循既有格式约束，当前不开放任意 scale 修改")
             if c["metric"] == "hessian":
-                require(c["strategy"] in ("search", "coordinate") and classification_available, "Hessian-guided 需要已接入的分类输出；不得以特征 MSE 或伪梯度替代")
+                require(c["strategy"] in ("search", "coordinate","fpcs") and classification_available, "Hessian-guided 需要已接入的分类输出；不得以特征 MSE 或伪梯度替代")
             if target == "activation" and plan["execution"]["activation_calibration"] == "dynamic":
                 require(c["strategy"] == "minmax" and method == "rtn", "动态激活仅支持运行时 RTN minmax")
         options = layer.get("options", {})
-        legal_options = set()
+        legal_options = {"encoding"} if layer.get("activation_method") in RESEARCH_ENCODINGS else set()
+        if layer["weight_method"]=="hc_rows":legal_options.add("row_codebook")
+        if layer["weight_method"] == "erq":
+            legal_options.add("erq")
+        if "qep" in options:
+            require(layer["kind"] == "linear" and layer["weight_method"] in ("gptq","rtn")
+                    and execution["order"] == "a_then_w" and execution.get("within_stage") == "sequential"
+                    and execution.get("calibration_context","current") == "current", "QEP requires sequential actual quantized linear inputs")
+            legal_options.add("qep")
         if layer["weight_method"] in ("gptq", "gptaq"):
             legal_options.update(("blocksize", "damping", "actorder"))
         if layer["weight_method"] == "gptaq":
@@ -333,11 +441,24 @@ def validate_composition(plan, known, config, *, classification_available=False,
         require(prep["method"] in config["loop"].get("allowed_preprocess", PREPROCESS_METHODS), "预处理不在用户允许范围")
         name = prep["module"]
         require(name in linear and name not in transformed, "预处理目标须在 Linear 计划中，且同一边仅一种重参数化")
+        if prep["method"] in ("trio_dw_scale","trio_pw_shift"):
+            require(linear[name]["kind"]=="conv2d" and prep["norm"] is None and prep.get("settings"),"Trio MBConv transform requires a bound Conv2d")
+            transformed.add(name)
+            continue
         require(linear[name]["kind"] == "linear", "预处理当前只支持 Linear 输入边")
         transformed.add(name)
         layer = linear[name]
         require(layer["activation_method"] not in ("ptf", "twin_gelu", "asymmetric_gelu"), "重参数化改变输入语义，与该特殊网格互斥")
-        if prep["method"] == "repq_ln":
+        if prep["method"]=="domain_affine":
+            require(layer["activation_method"]=="domain_clip" and prep.get("settings"),"domain initialization requires a bound channel clip")
+        elif prep["method"] in ("centered_smoothing","noisy_shift"):
+            require("settings" in prep and execution["activation_calibration"]=="static" and layer["activation"] and
+                    prep.get("observation","float")=="float","transform requires bound settings and static activations")
+            if prep["method"]=="noisy_shift":
+                require(layer["activation_method"] in ("uniform_affine","uniform_full") and prep["norm"] is None
+                        and calibration(layer,"activation")["strategy"]=="minmax","NoisyQuant freezes its initial base grid")
+        elif prep["method"] == "repq_ln":
+            require(set(prep.get("settings",{})) <= {"aggregate","round_shared_zero","learned_clip"} and prep.get("settings",{}).get("aggregate","mean") in ("median","mean"),"invalid shared scale policy")
             require("alpha" not in prep, "RepQ-LN 不使用 SmoothQuant 的 alpha")
             require(prep["norm"] is not None and layer["activation"] is not None, "RepQ-LN 需指定 LayerNorm 和激活量化")
             require(layer["activation_method"] in ("rtn", "uniform_affine") and layer["activation"]["format"].startswith("UINT"), "RepQ-LN 转为无符号 affine 网格")

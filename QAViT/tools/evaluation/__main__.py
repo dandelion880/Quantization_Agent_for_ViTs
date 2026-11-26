@@ -1,4 +1,4 @@
-"""python -B QAViT/tools/evaluation {rules,prepare,judge,report,verify}"""
+"""python -B QAViT/tools/evaluation {rules,prepare,judge,report,verify,selection}"""
 import argparse
 from pathlib import Path
 import sys
@@ -37,7 +37,31 @@ def main(argv=None):
     for command in ("report", "verify"):
         p = commands.add_parser(command)
         p.add_argument("evaluation")
+    p = commands.add_parser("selection", help="evaluate a frozen candidate pool on disjoint measured task images")
+    p.add_argument("calibration")
+    p.add_argument("heldout")
+    p.add_argument("--proxy", required=True)
+    p.add_argument("--task", required=True)
+    p.add_argument("--direction", choices=("min", "max", "confusion_miou"), required=True)
+    p.add_argument("--baseline", required=True)
+    p.add_argument("--top-k", type=int, default=1)
+    p.add_argument("--resamples", type=int, default=0)
+    p.add_argument("--seed", type=int, default=0)
+    p.add_argument("--output", required=True)
     args = parser.parse_args(argv)
+    if args.command == "selection":
+        tools_path = str(Path(__file__).resolve().parents[1])
+        if tools_path not in sys.path:
+            sys.path.insert(0, tools_path)
+        from .selection import compare
+
+        result = compare(
+            read_json(Path(args.calibration)), read_json(Path(args.heldout)),
+            proxy=args.proxy, task=args.task, direction=args.direction,
+            baseline=args.baseline, k=args.top_k, resamples=args.resamples, seed=args.seed,
+        )
+        write_json(Path(args.output), result)
+        return
     from .common import QAVIT
     version = args.rules_version
     if version is None:

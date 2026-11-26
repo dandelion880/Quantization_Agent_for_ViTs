@@ -28,3 +28,5 @@
 图适配：timm norm1 输出还参与 shape/getattr，不代表有第二条需要数值补偿的消费边。pipeline 以真实张量 LN→Linear 输入相等核验，避免 FX Proxy 控制流或 users==1 误判。默认完整种子使用 float 观察的显式边仿射；这与官方 prefix 校准不同。W 方法独立，GPTAQ 另需 a_then_w/sequential；不能强迫其与 quantized_prefix 联用。
 
 原始 mean(z) 可能非整数，round(x/s)+z 后夹取两端可形成17个值。严格W4A4须核验冻结网格；可在变换后显式使用 affine percentile 重新拟合整数零点，或自主适配舍入/码本并说明差异。原始规则仍可用于局部诊断，不静默改写旧实现。
+
+完整配方与版本条件见 [repq_vit](recipes/repq_vit.md)、[repquant](recipes/repquant.md)。

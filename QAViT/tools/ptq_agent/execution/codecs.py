@@ -126,6 +126,10 @@ def scale_for(params, spec, device):
     return params["scale"].to(device)
 
 
+def code_dtype(bits):
+    return torch.uint8 if bits <= 8 else torch.int16
+
+
 def encode(x, spec, params=None):
     """params 非空表示静态校准；不会用推理输入重新拟合静态尺度。"""
     require(bool(torch.isfinite(x).all()), "量化输入非有限", code="numerical_error")
@@ -147,7 +151,7 @@ def encode(x, spec, params=None):
         if spec["symmetric"]:
             qmin = -qmax
         q = (torch.round(z) + params["zero"].to(data.device)).clamp(qmin, qmax).to(torch.int32)
-        codes = (q & (2**bits - 1)).to(torch.uint8)  # INT 为二补码；不伪装成 UINT。
+        codes = (q & (2**bits - 1)).to(code_dtype(bits))  # INT 为二补码；不伪装成 UINT。
     elif fmt == "NF4":
         codes = nearest(z, torch.tensor(NF4, device=data.device, dtype=torch.float64), ties_even=False).to(
             torch.uint8
@@ -185,7 +189,7 @@ def qdq(x, spec, params=None):
 
 def pack(codes, bits):
     """低位优先紧密存储，INT6 不用 INT8 的大小冒称 6-bit 存储。"""
-    data = codes.detach().cpu().numpy().astype(np.uint8, copy=False).reshape(-1)
+    data = codes.detach().cpu().numpy().astype(np.uint8 if bits <= 8 else np.uint16, copy=False).reshape(-1)
     binary = ((data[:, None] >> np.arange(bits, dtype=np.uint8)) & 1).reshape(-1)
     return torch.from_numpy(np.packbits(binary, bitorder="little").copy())
 
@@ -193,7 +197,7 @@ def pack(codes, bits):
 def unpack(packed, bits, shape, device):
     count = int(np.prod(shape))
     binary = np.unpackbits(packed.cpu().numpy(), bitorder="little")[: count * bits].reshape(count, bits)
-    data = (binary * (1 << np.arange(bits))).sum(1).astype(np.uint8).reshape(shape)
+    data = (binary * (1 << np.arange(bits))).sum(1).astype(np.uint8 if bits <= 8 else np.int16).reshape(shape)
     return torch.from_numpy(data).to(device)
 
 

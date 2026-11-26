@@ -52,3 +52,25 @@ description: >-
 在现有请求中说明实际采用的观察位置、参考状态、背景、聚合与选择规则，以及为什么这些足以支持当前决策。不要只写“用 Hessian”或“使用 block metric”。与 `design-scale-calibration` 配合时，本 Skill 决定评价什么，后者决定候选从哪里来、哪些参数一起选、按什么顺序更新。
 
 需要原论文启发时按问题读取：[PTQ4ViT 的敏感性与编码选择](../../../knowledge/research-skills/research-routes/ptq4vit.md)、[GPTAQ 的非对称校准](../../../knowledge/research-skills/research-routes/gptaq.md)。论文方法和当前 API 同名不保证数学对象相同；当前实现边界见 [源码兼容说明](../../SCIENTIFIC_SKILLS_COMPATIBILITY.md)。
+
+## 检验目标是否能选中好方案
+
+**触发。** 要选择或修订校准目标、参考输入、token 聚合或 lookahead；代理分数变好，实际所选候选却无收益或跨任务冲突。
+
+**前提与范围。** 明确正在排序的决策：单 scale、组、联合编码器、block 或整网候选。候选无有效自由度时先回到构造设计，复杂 loss 不能补足不存在的候选。
+
+**步骤。**
+
+1. 定义目标的完整语义：观察对象、输入/参考状态、实际后缀精度、前瞻单位、误差形式、按样本/token/任务的归一化。不能只写“用 Hessian”。
+2. 依据失配选择少量目标：输入编码与实际投影不同，就看运算输出；attention 路由与 V 误差分开时，区分 `ÂV` 和 `ÂV̂`；局部与后缀冲突时，使用已支持的真实量化 lookahead 或任务相关 tap。
+3. 敏感度目标绑定父状态、损失、梯度位置、扰动与数据。教师/学生完全相同时 KL 一阶梯度可能为零，应保留数学事实；改损失或扰动属于不同定义，不能用静默 fallback 伪装原指标。
+4. 有排序疑问时，冻结同一候选池和选择样本，比较目标选出的状态，再在独立确认数据上评价选择 regret、明显误选与稳定性；同时记录准备和评分成本。
+5. 简单目标已经足够时采用它。复杂目标只对某种候选族有效，就保留具体触发条件，不推广成全局默认。
+
+**结果解释与下一步。** 相关性提高但选中方案更差，先看真实误选；所有目标分不开候选，检查信号与候选差异；分类选择改善但 ADE 受损，检查空间 readout、聚合与任务协议，不事后改权重宣布胜出。
+
+**案例草案。** 固定一个 block 的少量合法候选，用局部 MSE、现有 AV/多 tap 目标及已实现的敏感度目标各选一次。确认集只支持前两者，就保留后者未奏效的范围；不据此声称所有 Fisher 方法无效，也不为“新 metric”重复造已有 AV 算子。
+
+**复用边界。** Fisher、Hessian、普通协方差/PCA 不能只因都出现矩阵而互换；pool 最佳值只是该池该视图的参照；小样本任务同分不证明等价。目标更新与候选搜索分工，不要求逐轮跑全部指标。
+
+**来源。** 现有 `select-calibration-objective`；`metrics_registry.md` §4–7；[APQ](../../methods/recipes/apq-vit.md#apq-vit)、[APHQ](../../methods/recipes/aphq-vit.md#aphq-vit)、[FIMA-Q](../../methods/recipes/fima-q.md#fima-q)；既有 `knowledge/research-skills/research-routes/ptq4dino.md` 中候选覆盖与排序反例属于人工历史，数值须沿其原件范围解释。

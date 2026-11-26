@@ -1,0 +1,71 @@
+{
+  "scope": "上传账本的五个 PTQ 原配方来源缺口及本轮影响实现的原始版本复核；不按检索结果另增 baseline。",
+  "date": "2026-11-25",
+  "source_gaps": [
+    {
+      "id": "fgptq_vit",
+      "source": "https://link.springer.com/chapter/10.1007/978-981-99-8546-3_7",
+      "checked": "出版社章节为订阅预览。摘要可确认细分激活量化与搜索，无法从该页确定分段端点、码字和逐阶段预算。"
+    },
+    {
+      "id": "mrospu",
+      "source": "https://link.springer.com/chapter/10.1007/978-981-95-5693-9_9",
+      "checked": "出版社预览可确认章节与 PTQ 身份；仍缺优化变量、更新顺序、实际目标和预算。"
+    },
+    {
+      "id": "uniq-vit",
+      "source": "https://github.com/Dexter-Yu/UniQ-ViT",
+      "related": "https://research.birmingham.ac.uk/en/publications/uniq-vit-optimization-driven-uniform-quantization-for-vision-tran/",
+      "checked": "作者仓库文件表仅见 README。机构摘要给出 AQO/SRO，缺可核对的优化器配置、区间更新和两阶段执行细节。"
+    },
+    {
+      "id": "token-dynamic-bit-width",
+      "source": "https://cvlab.yonsei.ac.kr/publications/",
+      "related": "https://doi.org/10.1016/j.patcog.2025.112269",
+      "checked": "课题组发表目录核实正式卷期与作者；此条未提供含每 token 分配规则、预算及路由代价的可执行材料。"
+    },
+    {
+      "id": "optimal-numerical-format",
+      "source": "https://superdocker.github.io/publications/",
+      "related": "https://doi.org/10.1109/ICASSP49357.2023.10096798",
+      "checked": "作者发表目录将 PDF 指向 IEEE，提供摘要。格式的各自码值/误差分布、搜索参数与专用后端尚不能据此核准。"
+    }
+  ],
+  "implementation_checks": [
+    {
+      "id": "erq-tpami2025-duq",
+      "source": "https://github.com/zysxmu/ERQ/blob/main/test_quant_expand.py",
+      "verified": "增广常数列参与 ridge，之后 bias 舍入误差置零。QAViT 单独保存 bias 的浮点修正。"
+    },
+    {
+      "id": "igq_vit",
+      "source": "https://arxiv.org/html/2404.00928v1",
+      "verified": "§3.3 在其他层已量化的状态测单层 KL；按周期进行组数预算分配。"
+    },
+    {
+      "id": "p2-vit",
+      "source": "https://arxiv.org/html/2405.19915v1",
+      "verified": "Eq.14–16 用 HVP 的 Hutchinson trace 加权 W 的 L2 距离，随后突变/交叉。"
+    },
+    {
+      "id": "pomq-vit",
+      "source": "https://www.mdpi.com/2076-3417/15/18/9856",
+      "verified": "保留正式版 E1–E3 与上传版本归约差异，测量三类真实图边。"
+    },
+    {
+      "id": "lampq",
+      "source": "https://arxiv.org/html/2511.10004",
+      "verified": "Fisher、类型校准、相邻增减与模型预算单列；每个实测候选记录参数量变化。"
+    },
+    {
+      "id": "h-vit",
+      "source": "https://link.springer.com/article/10.1007/s43684-025-00121-0",
+      "verified": "LN 共用最小二次幂、通道移位及 token 输出。Eq.18 码界、token 尺度固定/动态均记录配置。"
+    },
+    {
+      "id": "practicaledge",
+      "source": "https://proceedings.mlsys.org/paper_files/paper/2023/file/12f429641e5c63a9ca7fd1c5c4804d32-Paper-mlsys2023.pdf",
+      "verified": "§3.2–3.3 核实 uint16 LN、M=15、uint8 GELU 与整数范围；有界 PyTorch 软件图及原生 NEON 分开。"
+    }
+  ]
+}

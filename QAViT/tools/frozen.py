@@ -6,6 +6,7 @@ import importlib
 import ast
 import hashlib
 import sys
+from core.ptq_protocol import current, protocol_of, reusable, reusable_execution, reusable_manifest
 from core.cards import ContractError, fingerprint, validate_card
 from core.journal import file_sha256, read_json, Journal
 
@@ -28,9 +29,16 @@ def completed_package(payload, experiment):
     """A diagnostic export alone cannot confer full-model W4A4 status."""
     obs = payload['observations']
     if (experiment['payload']['level'] != 'L3' or payload['measurement_source'] != 'real'
-            or experiment['payload']['execution']['resolved_choices'].get('training') is not False
+            or not reusable_execution(experiment['payload']['execution'])
             or not obs.get('static_w4a4', {}).get('frozen') or not obs.get('reload', {}).get('host_verified')):
         return {}
+    if current(protocol_of(experiment['payload']['execution'])):
+        ref=next((a for a in payload["artifacts"] if Path(a["path"]).name=="frozen_evaluation.json"),None)
+        ev=obs.get("evaluations",{})
+        if not ref or not ev or file_sha256(ref["path"])!=ref["sha256"]:return {}
+        facts=read_json(ref["path"])
+        if set(facts["tasks"])!=set(ev) or facts["protocol"]!=protocol_of(experiment["payload"]["execution"]):return {}
+        return {"verified_evaluation":ref,"frozen_audit":obs["static_w4a4"]}
     reference = next((a for a in payload['artifacts'] if Path(a['path']).name == 'segmentation.json'), None)
     if not reference:
         return {}
@@ -39,10 +47,13 @@ def completed_package(payload, experiment):
 
 def reload_complete(binding, backend, cfg, data):
     from ptq_agent.execution.evaluation import model_digest
-    ref = binding.get('verified_segmentation')
+    ref = binding.get('verified_evaluation') or binding.get('verified_segmentation')
     if not ref or file_sha256(ref['path']) != ref['sha256']:
         raise ContractError('missing verified complete candidate measurement')
-    expected = read_json(ref['path'])['backbone_hashes']
+    measured=read_json(ref["path"])
+    if binding.get('verified_evaluation') and measured["package_manifest_sha256"]!=file_sha256(Path(binding["model_dir"])/"manifest.json"):
+        raise ContractError("frozen task receipt and package bytes differ")
+    expected = measured['backbone_hashes']
     model, receipt = load_frozen(binding, backend, cfg, data)
     if [model_digest(backend.model), model_digest(model)] != expected:
         raise ContractError('reloaded package differs from the original evaluated state')
@@ -54,7 +65,7 @@ def original_package(payload, execution, journal):
     binding = execution.get('evaluation_package')
     if execution.get('service') != 'evaluate_artifact' or not binding:
         return None
-    if payload['provenance'].get('model_ref') != binding.get('model_ref') or not binding.get('verified_segmentation'):
+    if payload['provenance'].get('model_ref') != binding.get('model_ref') or not (binding.get('verified_segmentation') or binding.get('verified_evaluation')):
         raise ContractError('evaluation evidence differs from its bound complete frozen package')
     result = deepcopy(binding)
     if not result.get('model_identity') and result.get('candidate'):
@@ -64,14 +75,14 @@ def original_package(payload, execution, journal):
     return result
 
 
-def bind_sources(journal, refs, *, training_free_only=False):
+def bind_sources(journal, refs, *, training_free_only=False, protocol=None):
     bindings = []
     for ref in refs:
         evidence = journal.card(ref)
         p = evidence['payload']
         if evidence['kind'] != 'EvidenceCard' or evidence['author'] != 'program' or p['status'] != 'completed':
             continue
-        if training_free_only and p['provenance'].get('training_declared') is True:
+        if training_free_only and not reusable(p['provenance'].get('training_declared'), p['provenance'].get('construction'), protocol):
             continue  # The metrics remain citable; the trained state cannot supply final parameters.
         verified = p['observations'].get('reload', {}).get('host_verified')
         experiment = journal.card(p['experiment_ref'])
@@ -107,7 +118,7 @@ def bind_sources(journal, refs, *, training_free_only=False):
             **completed_package(p, experiment),
             **({'verified_increment': p['observations']['refinement']['child_state_sha256']}
                if verified and p['measurement_source'] == 'real' and experiment['payload']['execution'].get('parent_ref')
-               and p['provenance'].get('training_declared') is False and
+               and reusable_execution(experiment['payload']['execution']) and
                p['observations'].get('refinement', {}).get('initialization') == 'verified_parent' else {}),
             **deepcopy(source),
             'source_cache': str(journal.root / 'solution_library' / 'source' / source['source_version'])}
@@ -120,7 +131,7 @@ def native_diagnostic_package(evidence, experiment, approval, origin_core, direc
     payload = experiment['payload']
     provenance = evidence['provenance']
     if (payload['level'] not in ('L1', 'L2') or payload['execution']['service'] != 'custom_experiment'
-            or evidence['measurement_source'] != 'real' or provenance.get('training_declared') is not False
+            or evidence['measurement_source'] != 'real' or not reusable_execution(payload['execution'])
             or not approval or approval.get('status') != 'approved'):
         return False
     from tools.safeguards import verify_artifact
@@ -139,7 +150,8 @@ def native_diagnostic_package(evidence, experiment, approval, origin_core, direc
     manifest = read_json(directory / 'manifest.json')
     return (manifest.get('schema_version') == 2 and manifest.get('plan', {}).get('schema_version') == 3
             and manifest.get('identity') == provenance.get('model_identity')
-            and manifest.get('preparation_training') is not True
+            and (manifest.get('preparation_training') is None and provenance.get('training_declared') is False
+                 or reusable_manifest(manifest, protocol_of(payload['execution'])))
             and manifest.get('weights_sha256') == files['weights.pt']
             and manifest.get('content_sha256') == fingerprint({k: v for k, v in manifest.items() if k != 'content_sha256'}))
 
@@ -433,7 +445,7 @@ def bind_parent_initialization(journal, payload):
             raise ContractError('accept_trial requires an explicit parent_ref')
         return
     parent = select_frozen_source(execution.get('frozen_sources', []), execution['parent_ref'])
-    if not (parent.get('verified_segmentation') or parent.get('verified_increment')):
+    if not (parent.get('verified_segmentation') or parent.get('verified_evaluation') or parent.get('verified_increment')):
         raise ContractError('parent initialization requires an evaluated complete or verified incremental package')
     if 'accept_trial' not in execution:
         return
@@ -454,21 +466,23 @@ def bind_parent_initialization(journal, payload):
     row = next((r for r in report['candidates'] if r['id'] == choice['candidate_id']), None)
     if not row:
         raise ContractError('candidate_id was not measured in the cited pool')
+    if row['receipt'].get('origin') == 'complete_frozen_package':
+        raise ContractError('inherit the scored complete candidate using its source_ref as parent_ref')
     execution['accepted_receipt'] = deepcopy(row['receipt'])
     execution['scored_calibration_ids'] = list(report['sample_ids'])
 
 
-def load_refinement_parent(binding, backend, cfg, data):
+def load_refinement_parent(binding, backend, cfg, data, *, protocol=None):
     from ptq_agent.execution.frozen_trials import state_identity
-    if binding.get('verified_segmentation'):
+    if binding.get('verified_segmentation') or binding.get('verified_evaluation'):
         model, manifest = reload_complete(binding, backend, cfg, data)
     else:
         model, receipt = load_frozen(binding, backend, cfg, data)
         manifest = receipt['manifest']
         if not binding.get('verified_increment') or state_identity(model) != binding['verified_increment']:
             raise ContractError('cold incremental parent differs from its host-verified receipt')
-    if manifest.get('preparation_training') is not False:
-        raise ContractError('exact parent refinement needs independent training-free preparation provenance')
+    if not reusable_manifest(manifest, protocol):
+        raise ContractError('parent refinement requires verified preparation compatible with the target protocol')
     return model, manifest
 
 
@@ -488,12 +502,28 @@ def native_parent(backend, cfg, data, model, manifest):
              for p in plan['preprocess']},
             {q.layer['module']: q.weight_record for q in old.values() if q.layer['weight']},
             {k:q.params() for k,q in old.items() if q.layer['activation']})
+        if plan.get("structure"):
+            from ptq_agent.execution.structure import configure
+            from ptq_agent.execution.window_routes import activate
+            # Verify the historical hooks with their original module identities.
+            prefix=type(next(iter(old.values()))).__module__.rsplit(".execution.",1)[0]
+            historical_structure=importlib.import_module(prefix+".execution.structure")
+            configure(native,plan["structure"],historical_structure.fitted_state(model,plan["structure"]))
+            activate(native,plan["structure"])
         qmap = quantizers(native)
         for sid, q in qmap.items():
             q.enabled = old[sid].enabled
+            if getattr(old[sid],'grid_edit_from_packed_state',False):q.grid_edit_from_packed_state=True
+            if hasattr(old[sid],"fitted_input_bias"):
+                q.register_buffer("fitted_input_bias",old[sid].fitted_input_bias.detach().clone())
             if hasattr(q, 'weight_enabled'):
                 q.weight_enabled = old[sid].weight_enabled
         bind_operators(native, plan, qmap)
+        from ptq_agent.execution.output_correction import install
+        for name, module in model.named_modules():
+            correction = getattr(module, "ptq_output_correction", None)
+            if correction is not None:
+                install(native,name,correction.kind,dict(correction.named_buffers()))
         if state_identity(native) != state_identity(model):
             raise ContractError('native exporter cannot represent this exact parent state')
         model = native

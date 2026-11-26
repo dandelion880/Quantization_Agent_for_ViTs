@@ -1300,7 +1300,13 @@ class RoleInteraction:
                         'meaning': 'Retain the complete parent and trace incremental changes; no per-round score guarantee.'}
             context["solution_policy"] = "Verified fallback B is retained independently of exploration. Complete bases and pending seeds are distinct; H1/H2 explain their chosen base and scientific changes. Select the next research investment without an H1 preference or maturity gate."
         from core.static_w4a4 import DESCRIPTION
-        context["static_w4a4_protocol"] = DESCRIPTION
+        from core.ptq_protocol import LEGACY, PRIMARY, EXTENDED
+        binding = self.brief['payload'].get('quantization_contract', {})
+        profile = binding.get('protocol')
+        descriptions = {LEGACY: DESCRIPTION, PRIMARY: DESCRIPTION + ' 有限校准 PTQ 重构须声明对象、目标和预算。额外 FP 乘法归扩展配置。',
+                        EXTENDED: '按绑定的扩展维度记录实际精度、动态归属、覆盖与附加开销。'}
+        context["static_w4a4_protocol"] = {'protocol': profile, 'definition': descriptions.get(profile, '以当前 Brief 绑定为准'),
+            'extensions': binding.get('extension_dimensions', []), 'read_asset': {'asset': 'docs/STATIC_W4A4.md'}}
         context.update(available_seconds=budget['remaining_seconds'], budget_receipt=budget)
         if purpose in ('focus', 'generate'):
             previous = self.previous_candidate_results(task, sequence, delivered)
@@ -1357,7 +1363,7 @@ class RoleInteraction:
                 memory.setdefault('asset_locations', {})[str(document)] = {'sha256': file_sha256(document),
                     'location': 'context.experiment_interface'}
             try:
-                context['method_catalog'] = [{**{k: row[k] for k in ('id', 'title', 'targets', 'document')},
+                context['method_catalog'] = [{**{k: row[k] for k in ('id', 'title', 'targets', 'document', 'implementation_status') if k in row},
                     'applicable_questions': row.get('tags', []),
                     'read_asset': {'asset': 'methods/' + row['document']}}
                     for row in read_json(ROOT / 'QAViT/docs/methods/index.json')['methods']]
@@ -2144,6 +2150,9 @@ class RoleInteraction:
                                     '请使用目录的精确 read_asset；宿主源码/配置可从已绑定 source_snapshot 用相对成员名读取。')
             expected = allowed[str(path)]
             requested = args.get('sha256', expected)
+            if 'sha256' not in args and expected and str(path) in self.asset_references(self.brief['payload'].get('research_handoff', {})):
+                if not path.is_file() or file_sha256(path) != expected:
+                    raise ContractError('交接资产内容已变化，恢复已读取版本须指定其 SHA256')
             if requested is not None and (not isinstance(requested, str) or not re.fullmatch(r'[0-9a-f]{64}', requested)):
                 raise ContractError('资产的冻结可见版本必须由有效的 SHA256 指定')
             if requested and requested != expected and not any(isinstance(result, dict)

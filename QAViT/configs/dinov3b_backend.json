@@ -85,7 +85,9 @@
       "uniform_affine",
       "uniform_minmax",
       "adaround",
-      "gptaq"
+      "gptaq",
+      "erq",
+      "hc_rows"
     ],
     "allowed_activation_methods": [
       "rtn",
@@ -98,12 +100,29 @@
       "asymmetric_gelu",
       "ptf",
       "uniform_minmax",
-      "adalog"
+      "adalog",
+      "tanq",
+      "sulq",
+      "shift_log",
+      "bit_window",
+      "domain_clip",
+      "pot_error",
+      "igq_ranges",
+      "adfq_outliers",
+      "three_region",
+      "two_channel_scales",
+      "patch_precision",
+      "focus_interval"
     ],
     "allowed_preprocess": [
+      "domain_affine",
       "smoothquant",
       "repq_ln",
-      "adalog_bias"
+      "adalog_bias",
+      "noisy_shift",
+      "centered_smoothing",
+      "trio_dw_scale",
+      "trio_pw_shift"
     ],
     "selection": "best_accuracy",
     "quantize_classifier": false,

@@ -2,7 +2,7 @@
 
 from copy import deepcopy
 from ..schemas import NULL, STR, arr, obj, require, validate
-from .plugin_contracts import WEIGHT_METHODS, ACTIVATION_METHODS
+from .plugin_contracts import WEIGHT_METHODS, ACTIVATION_METHODS, PREPROCESS_METHODS
 
 FORMATS = {
     "FP32": 32,
@@ -10,12 +10,7 @@ FORMATS = {
     "BF16": 16,
     "FP8_E4M3FN": 8,
     "FP8_E5M2": 8,
-    "INT4": 4,
-    "UINT4": 4,
-    "INT6": 6,
-    "UINT6": 6,
-    "INT8": 8,
-    "UINT8": 8,
+    **{prefix + str(width): width for width in range(2, 11) for prefix in ("INT", "UINT")},
     "NF4": 4,
     "FP4_E2M1": 4,
     "NVFP4": 4,
@@ -26,7 +21,7 @@ BLOCKS = {"NVFP4": 16, "MXFP4": 32}
 SPEC = obj(
     {
         "format": {"enum": list(FORMATS)},
-        "bits": {"enum": [4, 6, 8, 16, 32]},
+        "bits": {"enum": sorted(set(FORMATS.values()))},
         "granularity": {"enum": ["per_tensor", "per_channel", "per_group", "per_token"]},
         "axis": {"anyOf": [{"type": "integer", "minimum": 0}, NULL]},
         "group_size": {"anyOf": [{"type": "integer", "minimum": 1}, NULL]},
@@ -270,12 +265,12 @@ LOOP_SCHEMA["properties"].update({
     "stop_on_goal": {"type": "boolean"},
     "min_top1": {"type": "number", "minimum": 0, "maximum": 100},
     "require_method_documents": {"type": "boolean"},
-    "required_bits": obj({t: {"enum": [4, 6, 8, 16, 32]} for t in ("weight", "activation")}, []),
+    "required_bits": obj({t: {"enum": sorted(set(FORMATS.values()))} for t in ("weight", "activation")}, []),
     "required_granularity": obj({t: {"enum": [
         "per_tensor", "per_channel", "per_group", "per_token", "per_block"]}
         for t in ("weight", "activation")}, []),
     "site_bit_overrides": obj({}, [], additional=obj(
-        {t: {"enum": [4, 6, 8, 16, 32]} for t in ("weight", "activation")}, [])),
+        {t: {"enum": sorted(set(FORMATS.values()))} for t in ("weight", "activation")}, [])),
     "quantize_classifier": {"type": "boolean"},
     "max_output_relative_mse": obj({}, [], additional={"type": "number", "minimum": 0}),
     "required_execution": obj({
@@ -287,7 +282,7 @@ LOOP_SCHEMA["properties"].update({
     "calibration_cache_mib": {"type": "integer", "minimum": 16, "maximum": 4096},
     "allowed_weight_methods": arr({"enum": list(WEIGHT_METHODS)}, minItems=1, uniqueItems=True),
     "allowed_activation_methods": arr({"enum": list(ACTIVATION_METHODS)}, minItems=1, uniqueItems=True),
-    "allowed_preprocess": arr({"enum": ["smoothquant", "repq_ln", "adalog_bias"]}, uniqueItems=True),
+    "allowed_preprocess": arr({"enum": list(PREPROCESS_METHODS)}, uniqueItems=True),
 })
 
 

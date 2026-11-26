@@ -1,0 +1,1792 @@
+{
+  "schema": "qavit.research_materials.source_coverage/1",
+  "status": "documentation_and_source_audit_not_executable_registry",
+  "date": "2026-11-25",
+  "survey": {
+    "title": "A survey on post-training quantization for Vision Transformers: Failure modes and deployment constraints",
+    "doi": "10.1016/j.sysarc.2026.104001",
+    "source_records": 83
+  },
+  "scope": {
+    "qat_allowed": false,
+    "uncertain_training_boundary": "no_method_content",
+    "mixed_paper_policy": "independently_verified_ptq_branch_only"
+  },
+  "counting_note": "Counts refer to survey records, not independent algorithms or completed reproductions; ERQ has a separately documented version in variants.",
+  "counts": {
+    "ptq_material": 51,
+    "ptq_source_gap": 5,
+    "excluded_qat": 14,
+    "family_version": 1,
+    "unresolved_boundary": 5,
+    "excluded_non_ptq": 6,
+    "operator_context": 1
+  },
+  "records": [
+    {
+      "id": "adalog",
+      "title": "AdaLog: Post-Training Quantization for Vision Transformers with Adaptive Logarithm Quantizer",
+      "survey_ref": 62,
+      "doc_anchor": "../../docs/methods/adalog.md#adalog",
+      "read_scope": [
+        "原文 v1 §3.2–3.4、Algorithm 1、§4.1–4.3；官方 master 源码 logarithm.py、linear.py、4bit.py、test_quant.py；未执行复现"
+      ],
+      "primary_urls": [
+        "https://arxiv.org/html/2407.12951v1",
+        "https://github.com/GoatWu/AdaLog",
+        "https://github.com/GoatWu/AdaLog/blob/master/configs/4bit.py",
+        "https://github.com/GoatWu/AdaLog/blob/master/quantizers/logarithm.py"
+      ],
+      "role": "existing_primitive_recipe_enrichment",
+      "code_status": "official_source_read",
+      "implementation_state": "planned_full_fpcs_and_profiles",
+      "survey_short_title": "AdaLog",
+      "survey_family": "representation",
+      "coverage_category": "ptq_material",
+      "qat_allowed": false,
+      "full_recipe_implementation_claimed": false,
+      "review_date": "2026-11-25"
+    },
+    {
+      "id": "adfq_vit",
+      "title": "ADFQ-ViT: Activation-Distribution-Friendly Post-Training Quantization for Vision Transformers",
+      "survey_ref": 71,
+      "doc_anchor": "../../docs/methods/recipes/adfq_vit.md#adfq_vit",
+      "read_scope": [
+        "原文 v1 §3.2–3.5、§4.1；官方 main TokenQuantizer、QuantModule、QuantAttention、block_recon实际KL方向/归约轴/权重、参数入口；未执行复现"
+      ],
+      "primary_urls": [
+        "https://arxiv.org/html/2407.02763v1",
+        "https://www.sciencedirect.com/science/article/pii/S0893608025001686",
+        "https://github.com/llwx593/adfq-vit",
+        "https://github.com/llwx593/adfq-vit/blob/main/quant/quant_layer.py",
+        "https://github.com/llwx593/adfq-vit/blob/main/quant/quant_block.py",
+        "https://github.com/llwx593/adfq-vit/blob/main/quant/block_recon.py"
+      ],
+      "role": "ptq_recipe_and_primitives",
+      "code_status": "official_source_read",
+      "implementation_state": "planned_outlier_bypass_profile",
+      "survey_short_title": "ADFQ-ViT",
+      "survey_family": "representation",
+      "coverage_category": "ptq_material",
+      "qat_allowed": false,
+      "full_recipe_implementation_claimed": false,
+      "review_date": "2026-11-25"
+    },
+    {
+      "id": "aiqvit",
+      "title": "AIQViT: Architecture-Informed Post-Training Quantization for Vision Transformers",
+      "survey_ref": 63,
+      "doc_anchor": "../../docs/methods/recipes/aiqvit.md#aiqvit",
+      "read_scope": [
+        "原文 v1 Method 全部与 Experiment setups、消融；AAAI 正式论文及作者主页；无已核实完整官方代码，未执行复现"
+      ],
+      "primary_urls": [
+        "https://arxiv.org/html/2502.04628v1",
+        "https://ojs.aaai.org/index.php/AAAI/article/download/33939/36094",
+        "https://longguangwang.github.io/"
+      ],
+      "role": "ptq_recipe_and_primitives",
+      "code_status": "official_full_implementation_not_verified",
+      "implementation_state": "planned_merged_correction_and_frozen_interval",
+      "survey_short_title": "AIQViT",
+      "survey_family": "representation",
+      "coverage_category": "ptq_material",
+      "qat_allowed": false,
+      "full_recipe_implementation_claimed": false,
+      "review_date": "2026-11-25"
+    },
+    {
+      "id": "apq-vit",
+      "title": "APQ-ViT",
+      "survey_ref": 17,
+      "doc_anchor": "../../docs/methods/recipes/apq-vit.md#apq-vit",
+      "read_scope": [
+        "原论文§3.2–3.4、Algorithm1、§4.1；Eq8与文字歧义未闭合；官方代码未确认"
+      ],
+      "primary_urls": [
+        "https://arxiv.org/pdf/2303.14341",
+        "https://doi.org/10.1145/3503161.3547826"
+      ],
+      "role": "ptq_recipe_with_open_formula_issue",
+      "boundary": "PTQ_author_declared",
+      "status": "source_verified_not_reproduced",
+      "qavit_executable": false,
+      "qavit_reproduced": false,
+      "survey_short_title": "APQ-ViT",
+      "survey_family": "representation",
+      "coverage_category": "ptq_material",
+      "qat_allowed": false,
+      "full_recipe_implementation_claimed": false,
+      "review_date": "2026-11-25"
+    },
+    {
+      "id": "dopq_vit",
+      "title": "DopQ-ViT: Towards Distribution-Friendly and Outlier-Aware Post-Training Quantization for Vision Transformers",
+      "survey_ref": 65,
+      "doc_anchor": "../../docs/methods/recipes/dopq_vit.md#dopq_vit",
+      "read_scope": [
+        "最新原文 v4（2026-07-28）§3–5及参数附表；对照旧版本；未核实完整官方代码，未执行复现"
+      ],
+      "primary_urls": [
+        "https://arxiv.org/abs/2408.03291",
+        "https://arxiv.org/html/2408.03291v4"
+      ],
+      "role": "ptq_recipe_and_primitives",
+      "code_status": "official_full_implementation_not_verified",
+      "implementation_state": "planned_tanq_mosf_with_formula_check",
+      "survey_short_title": "DopQ-ViT",
+      "survey_family": "representation",
+      "coverage_category": "ptq_material",
+      "qat_allowed": false,
+      "full_recipe_implementation_claimed": false,
+      "review_date": "2026-11-25"
+    },
+    {
+      "id": "fgptq_vit",
+      "title": "FGPTQ-ViT: Fine-Grained Post-training Quantization for Vision Transformers",
+      "survey_ref": 98,
+      "doc_anchor": "sources/fgptq_vit.md#fgptq_vit",
+      "read_scope": [
+        "出版社正式摘要、书目信息、Crossmark；未取得全文和官方代码，不签发完整执行配方"
+      ],
+      "primary_urls": [
+        "https://link.springer.com/chapter/10.1007/978-981-99-8546-3_7",
+        "https://crossmark.crossref.org/dialog/?doi=10.1007%2F978-981-99-8546-3_7"
+      ],
+      "role": "ptq_recipe_pending_fulltext",
+      "code_status": "official_full_implementation_not_verified",
+      "implementation_state": "mechanism_registered_recipe_pending",
+      "survey_short_title": "FGPTQ-ViT",
+      "survey_family": "representation",
+      "coverage_category": "ptq_source_gap",
+      "qat_allowed": false,
+      "full_recipe_implementation_claimed": false,
+      "review_date": "2026-11-25"
+    },
+    {
+      "id": "fq_vit",
+      "title": "FQ-ViT: Post-Training Quantization for Fully Quantized Vision Transformer",
+      "survey_ref": 18,
+      "doc_anchor": "../../docs/methods/recipes/fq_vit.md#fq_vit",
+      "read_scope": [
+        "原文 v3 §3.2–3.3、§4.1、附录A–B；官方 main PTF observer、log2 quantizer、量化层；未执行复现"
+      ],
+      "primary_urls": [
+        "https://arxiv.org/html/2111.13824v3",
+        "https://github.com/megvii-research/FQ-ViT",
+        "https://github.com/megvii-research/FQ-ViT/blob/main/models/ptq/quantizer/log2.py"
+      ],
+      "role": "existing_primitive_recipe_enrichment",
+      "code_status": "official_source_read",
+      "implementation_state": "planned_ptf_lis_pipeline_and_profiles",
+      "survey_short_title": "FQ-ViT",
+      "survey_family": "representation",
+      "coverage_category": "ptq_material",
+      "qat_allowed": false,
+      "full_recipe_implementation_claimed": false,
+      "review_date": "2026-11-25"
+    },
+    {
+      "id": "mnq_vit",
+      "survey_ref": 117,
+      "coverage_category": "excluded_qat",
+      "primary_urls": [
+        "https://arxiv.org/html/2407.18437v2"
+      ],
+      "title": "Mixed Non-linear Quantization for Vision Transformers",
+      "reason": "原文 v2 §4.1 为量化感知训练。"
+    },
+    {
+      "id": "tsptq_vit",
+      "title": "TSPTQ-ViT: Two-Scaled Post-Training Quantization for Vision Transformer",
+      "survey_ref": 20,
+      "doc_anchor": "../../docs/methods/recipes/tsptq_vit.md#tsptq_vit",
+      "read_scope": [
+        "原论文全文，重点§3.1–3.2、§4；已渲染查看原始PDF图2–3，核实6/8bit字段和阈值；尺度符号方向需复现时核对，未核实官方代码、未执行复现"
+      ],
+      "primary_urls": [
+        "https://arxiv.org/abs/2305.12901",
+        "https://arxiv.org/pdf/2305.12901"
+      ],
+      "role": "ptq_recipe_and_primitives",
+      "code_status": "official_full_implementation_not_verified",
+      "implementation_state": "planned_two_scale_encoding_and_channel_grouping",
+      "survey_short_title": "TSPTQ-ViT",
+      "survey_family": "representation",
+      "coverage_category": "ptq_material",
+      "qat_allowed": false,
+      "full_recipe_implementation_claimed": false,
+      "review_date": "2026-11-25"
+    },
+    {
+      "id": "noisyquant",
+      "title": "NoisyQuant: Noisy Bias-Enhanced Post-Training Activation Quantization for Vision Transformers",
+      "survey_ref": 28,
+      "doc_anchor": "../../docs/methods/recipes/noisyquant.md#noisyquant",
+      "read_scope": [
+        "原文 v2 §3.2–3.3、§5.1、附录校准量；官方 main fast_quant.py、run.sh、README；记录论文/代码不同，未执行复现"
+      ],
+      "primary_urls": [
+        "https://arxiv.org/html/2211.16056v2",
+        "https://github.com/kriskrisliu/NoisyQuant",
+        "https://github.com/kriskrisliu/NoisyQuant/blob/main/fast_quant.py"
+      ],
+      "role": "ptq_recipe_and_primitives",
+      "code_status": "official_source_read_paper_code_difference_logged",
+      "implementation_state": "planned_fixed_shift_and_decoded_weight_compensation",
+      "survey_short_title": "NoisyQuant",
+      "survey_family": "distribution",
+      "coverage_category": "ptq_material",
+      "qat_allowed": false,
+      "full_recipe_implementation_claimed": false,
+      "review_date": "2026-11-25"
+    },
+    {
+      "id": "orq_vit",
+      "title": "ORQ-ViT: Outlier Resilient Post Training Quantization for Vision Transformers via Outlier Decomposition",
+      "survey_ref": 29,
+      "doc_anchor": "../../docs/methods/recipes/orq_vit.md#orq_vit",
+      "read_scope": [
+        "出版社开放获取全文 §3.1–3.4、Algorithm1–2、§4.1–4.3；未核实官方代码，未执行复现"
+      ],
+      "primary_urls": [
+        "https://doi.org/10.1016/j.sysarc.2025.103530",
+        "https://www.sciencedirect.com/science/article/pii/S1383762125002024/pdfft?md5=955bdcf612c5b14cf27069d3f126746e&pid=1-s2.0-S1383762125002024-main.pdf"
+      ],
+      "role": "ptq_recipe_and_primitives",
+      "code_status": "official_full_implementation_not_verified",
+      "implementation_state": "planned_fixed_position_scale_and_scale_only_reconstruction",
+      "survey_short_title": "ORQ-ViT",
+      "survey_family": "distribution",
+      "coverage_category": "ptq_material",
+      "qat_allowed": false,
+      "full_recipe_implementation_claimed": false,
+      "review_date": "2026-11-25"
+    },
+    {
+      "id": "repq_vit",
+      "title": "RepQ-ViT: Scale Reparameterization for Post-Training Quantization of Vision Transformers",
+      "survey_ref": 19,
+      "doc_anchor": "../../docs/methods/recipes/repq_vit.md#repq_vit",
+      "read_scope": [
+        "本分卷核对QAViT实际RepQ-LN与log_sqrt2及参数接口，查验官方论文/仓库；完整旧配方增补由existing_methods_delta.md承接",
+        "整合补核：ICCV2023正式正文Algorithm1、§3.1–3.3、§4.1及消融；官方main classification/quant/quantizer.py与classification/test_quant.py；编码容量和重校准流程已记录。"
+      ],
+      "primary_urls": [
+        "https://arxiv.org/abs/2212.08254",
+        "https://openaccess.thecvf.com/content/ICCV2023/html/Li_RepQ-ViT_Scale_Reparameterization_for_Post-Training_Quantization_of_Vision_Transformers_ICCV_2023_paper.html",
+        "https://github.com/zkkli/RepQ-ViT"
+      ],
+      "role": "existing_recipe_enrichment",
+      "code_status": "official_key_source_and_existing_qavit_source_read_not_executed",
+      "implementation_state": "existing_components_full_recipe_to_enrich",
+      "survey_short_title": "RepQ-ViT",
+      "survey_family": "distribution",
+      "coverage_category": "ptq_material",
+      "qat_allowed": false,
+      "full_recipe_implementation_claimed": false,
+      "review_date": "2026-11-25"
+    },
+    {
+      "id": "repquant",
+      "title": "RepQuant: Towards Accurate Post-Training Quantization of Large Transformer Models via Scale Reparameterization",
+      "survey_ref": 23,
+      "doc_anchor": "../../docs/methods/recipes/repquant.md#repquant",
+      "read_scope": [
+        "原文 v1 §III-B–E、Algorithm1、§IV-A、TableIX–X；无已核实独立完整官方仓库，未执行复现"
+      ],
+      "primary_urls": [
+        "https://arxiv.org/html/2402.05628v1",
+        "https://arxiv.org/abs/2402.05628"
+      ],
+      "role": "ptq_recipe_and_primitives",
+      "code_status": "separate_official_full_implementation_not_verified",
+      "implementation_state": "planned_learned_dual_clip_and_a_then_w",
+      "survey_short_title": "RepQuant",
+      "survey_family": "distribution",
+      "coverage_category": "ptq_material",
+      "qat_allowed": false,
+      "full_recipe_implementation_claimed": false,
+      "review_date": "2026-11-25"
+    },
+    {
+      "id": "igq_vit",
+      "title": "Instance-Aware Group Quantization for Vision Transformers",
+      "survey_ref": 70,
+      "doc_anchor": "../../docs/methods/recipes/igq_vit.md#igq_vit",
+      "read_scope": [
+        "原文 v1 §3.2–3.3、Algorithm1、附录A.1–A.3与实现讨论；作者项目页；未核实独立完整代码，未执行复现"
+      ],
+      "primary_urls": [
+        "https://arxiv.org/html/2404.00928v1",
+        "https://cvlab.yonsei.ac.kr/projects/IGQ-ViT/"
+      ],
+      "role": "ptq_recipe_and_primitives",
+      "code_status": "official_full_implementation_not_verified",
+      "implementation_state": "planned_dynamic_assignment_and_group_budget",
+      "survey_short_title": "IGQ-ViT",
+      "survey_family": "grouping",
+      "coverage_category": "ptq_material",
+      "qat_allowed": false,
+      "full_recipe_implementation_claimed": false,
+      "review_date": "2026-11-25"
+    },
+    {
+      "id": "erq-icml2024",
+      "title": "ERQ: Error Reduction for Post-Training Quantization of Vision Transformers",
+      "survey_ref": 37,
+      "doc_anchor": "../../docs/methods/recipes/erq-icml2024.md#erq-icml2024",
+      "read_scope": [
+        "ICML2024正式PDF§4、Algorithm1、§5.1及附录；现有QAViT2024研究卡"
+      ],
+      "primary_urls": [
+        "https://proceedings.mlr.press/v235/zhong24a.html",
+        "https://arxiv.org/html/2407.06794v1"
+      ],
+      "role": "ptq_recipe_and_primitives",
+      "boundary": "PTQ_author_declared",
+      "status": "source_verified_not_reproduced",
+      "qavit_executable": false,
+      "qavit_reproduced": false,
+      "variants": [
+        {
+          "id": "erq-tpami2025-duq",
+          "title": "Towards Accurate Post-Training Quantization of Vision Transformers via Error Reduction / DUQ",
+          "survey_ref": 37,
+          "variant_of": "erq-icml2024",
+          "doc_anchor": "../../docs/methods/recipes/erq-tpami2025-duq.md",
+          "read_scope": "2025v2§4.2、Algorithm1–2、§5.1；官方test_quant_expand.py、quant/quantizer.py；DUQ分区和T=20等已核",
+          "primary_urls": [
+            "https://arxiv.org/html/2407.06794v2",
+            "https://doi.org/10.1109/TPAMI.2025.3528042",
+            "https://github.com/zysxmu/ERQ"
+          ],
+          "role": "ptq_recipe_extension",
+          "status": "source_verified_not_reproduced",
+          "qavit_executable": false,
+          "qavit_reproduced": false
+        }
+      ],
+      "survey_short_title": "ERQ",
+      "survey_family": "coupled_reconstruction",
+      "coverage_category": "ptq_material",
+      "qat_allowed": false,
+      "full_recipe_implementation_claimed": false,
+      "review_date": "2026-11-25"
+    },
+    {
+      "id": "uniq-vit",
+      "title": "UniQ-ViT: Optimization-Driven Uniform Quantization for Vision Transformer Acceleration",
+      "survey_ref": 25,
+      "doc_anchor": "sources/uniq-vit.md#uniq-vit",
+      "read_scope": [
+        "出版社/作者机构摘要元数据；作者仓库仅README；全文403；原配方未获取"
+      ],
+      "primary_urls": [
+        "https://doi.org/10.1016/j.neucom.2025.132072",
+        "https://research.birmingham.ac.uk/en/publications/uniq-vit-optimization-driven-uniform-quantization-for-vision-tran/",
+        "https://github.com/Dexter-Yu/UniQ-ViT"
+      ],
+      "role": "ptq_bibliographic_pending_recipe",
+      "boundary": "PTQ_author_declared",
+      "status": "ptq_identity_confirmed_recipe_unresolved",
+      "qavit_executable": false,
+      "qavit_reproduced": false,
+      "reason": "作者摘要明确PTQ；未读到完整算法、优化数据范围及参数，故仅来源卡、不生成可执行preset。",
+      "survey_short_title": "UniQ-ViT",
+      "survey_family": "coupled_reconstruction",
+      "coverage_category": "ptq_source_gap",
+      "qat_allowed": false,
+      "full_recipe_implementation_claimed": false,
+      "review_date": "2026-11-25"
+    },
+    {
+      "id": "bit-shrinking",
+      "title": "Bit-Shrinking: Limiting Instantaneous Sharpness for Improving Post-Training Quantization",
+      "survey_ref": 33,
+      "doc_anchor": "../../docs/methods/recipes/bit-shrinking.md#bit-shrinking",
+      "read_scope": [
+        "CVPR2023原论文§3、Algorithm1–2、§4；完整总校准数据/精度例外与代码待核"
+      ],
+      "primary_urls": [
+        "https://openaccess.thecvf.com/content/CVPR2023/papers/Lin_Bit-Shrinking_Limiting_Instantaneous_Sharpness_for_Improving_Post-Training_Quantization_CVPR_2023_paper.pdf"
+      ],
+      "role": "ptq_recipe_and_schedule",
+      "boundary": "PTQ_author_declared",
+      "status": "source_verified_not_reproduced",
+      "qavit_executable": false,
+      "qavit_reproduced": false,
+      "survey_short_title": "Bit-Shrinking",
+      "survey_family": "reconstruction_schedule",
+      "coverage_category": "ptq_material",
+      "qat_allowed": false,
+      "full_recipe_implementation_claimed": false,
+      "review_date": "2026-11-25"
+    },
+    {
+      "id": "is-vit",
+      "title": "I&S-ViT: An Inclusive and Stable Method for Post-Training ViTs Quantization",
+      "survey_ref": 24,
+      "doc_anchor": "../../docs/methods/recipes/is-vit.md#is-vit",
+      "read_scope": [
+        "v3全文§4–5；官方README及重构/量化关键入口；量化参数固定与两阶段更新已核"
+      ],
+      "primary_urls": [
+        "https://arxiv.org/html/2311.10126v3",
+        "https://doi.org/10.1109/TPAMI.2025.3610466",
+        "https://github.com/zysxmu/IaS-ViT"
+      ],
+      "role": "ptq_recipe_and_primitives",
+      "boundary": "PTQ_author_declared",
+      "status": "source_verified_not_reproduced",
+      "qavit_executable": false,
+      "qavit_reproduced": false,
+      "survey_short_title": "I&S-ViT",
+      "survey_family": "reconstruction_schedule",
+      "coverage_category": "ptq_material",
+      "qat_allowed": false,
+      "full_recipe_implementation_claimed": false,
+      "review_date": "2026-11-25"
+    },
+    {
+      "id": "outlier-aware-slicing",
+      "title": "Outlier-Aware Slicing for Post-Training Quantization in Vision Transformer",
+      "survey_ref": 27,
+      "doc_anchor": "../../docs/methods/recipes/outlier-aware-slicing.md#outlier-aware-slicing",
+      "read_scope": [
+        "PMLR原论文§3、AppendixD/F、Algorithm1；supp源码本次未取得"
+      ],
+      "primary_urls": [
+        "https://proceedings.mlr.press/v235/ma24f.html",
+        "https://raw.githubusercontent.com/mlresearch/v235/main/assets/ma24f/ma24f.pdf"
+      ],
+      "role": "ptq_recipe_and_partitioning",
+      "boundary": "PTQ_author_declared",
+      "status": "source_verified_not_reproduced",
+      "qavit_executable": false,
+      "qavit_reproduced": false,
+      "survey_short_title": "Outlier-aware Slicing",
+      "survey_family": "reconstruction_schedule",
+      "coverage_category": "ptq_material",
+      "qat_allowed": false,
+      "full_recipe_implementation_claimed": false,
+      "review_date": "2026-11-25"
+    },
+    {
+      "id": "pfcr-vit",
+      "title": "Progressive Fine-to-Coarse Reconstruction for Accurate Low-Bit Post-Training Quantization in Vision Transformers",
+      "survey_ref": 76,
+      "doc_anchor": "../../docs/methods/recipes/pfcr-vit.md#pfcr-vit",
+      "read_scope": [
+        "原论文§3.2–3.3、Algorithm1、§4.1.2；优化变量全集待源码；未确认官方实现"
+      ],
+      "primary_urls": [
+        "https://arxiv.org/html/2412.14633v1",
+        "https://www.sciencedirect.com/science/article/pii/S089360802500437X"
+      ],
+      "role": "ptq_recipe_with_open_parameters",
+      "boundary": "PTQ_author_declared",
+      "status": "source_verified_not_reproduced",
+      "qavit_executable": false,
+      "qavit_reproduced": false,
+      "survey_short_title": "PFCR-ViT",
+      "survey_family": "reconstruction_schedule",
+      "coverage_category": "ptq_material",
+      "qat_allowed": false,
+      "full_recipe_implementation_claimed": false,
+      "review_date": "2026-11-25"
+    },
+    {
+      "id": "mrospu",
+      "title": "Model Reconstruction Optimization and Scale Perturbation Update for ViTs Low-Bit Post-Training Quantization",
+      "survey_ref": 75,
+      "doc_anchor": "sources/mrospu.md#mrospu",
+      "read_scope": [
+        "出版社摘要/元数据；原文全文需订阅，官方代码未确认；作者明确PTQ但配方未闭合"
+      ],
+      "primary_urls": [
+        "https://link.springer.com/chapter/10.1007/978-981-95-5693-9_9"
+      ],
+      "role": "ptq_bibliographic_pending_recipe",
+      "boundary": "PTQ_author_declared",
+      "status": "ptq_identity_confirmed_recipe_unresolved",
+      "qavit_executable": false,
+      "qavit_reproduced": false,
+      "reason": "作者摘要明确PTQ；未读到完整算法、优化数据范围及参数，故仅来源卡、不生成可执行preset。",
+      "survey_short_title": "MROSPU",
+      "survey_family": "reconstruction_schedule",
+      "coverage_category": "ptq_source_gap",
+      "qat_allowed": false,
+      "full_recipe_implementation_claimed": false,
+      "review_date": "2026-11-25"
+    },
+    {
+      "id": "mgrq",
+      "title": "MGRQ: Post-Training Quantization for Vision Transformer with Mixed Granularity Reconstruction",
+      "survey_ref": 74,
+      "doc_anchor": "../../docs/methods/recipes/mgrq.md#mgrq",
+      "read_scope": [
+        "原论文§3、Algorithm1、Table1、§4.1；alpha/beta具体表与官方代码待核"
+      ],
+      "primary_urls": [
+        "https://arxiv.org/html/2406.09229v1",
+        "https://cmsworkshops.com/ICIP2024/view_paper.php?PaperNum=1680"
+      ],
+      "role": "ptq_recipe_and_workflow",
+      "boundary": "PTQ_author_declared",
+      "status": "source_verified_not_reproduced",
+      "qavit_executable": false,
+      "qavit_reproduced": false,
+      "survey_short_title": "MGRQ",
+      "survey_family": "reconstruction_schedule",
+      "coverage_category": "ptq_material",
+      "qat_allowed": false,
+      "full_recipe_implementation_claimed": false,
+      "review_date": "2026-11-25"
+    },
+    {
+      "id": "q-hyvit",
+      "title": "Q-HyViT: Post-Training Quantization for Hybrid Vision Transformer with Bridge Block Reconstruction",
+      "survey_ref": 120,
+      "doc_anchor": "../../docs/methods/recipes/q-hyvit.md#q-hyvit",
+      "read_scope": [
+        "2024v3§III–V、Algorithm1、TableI；作者GitLab链接但可运行release未核"
+      ],
+      "primary_urls": [
+        "https://arxiv.org/pdf/2303.12557v3",
+        "https://doi.org/10.1109/JIOT.2024.3403844",
+        "https://gitlab.com/ones-ai/q-hyvit"
+      ],
+      "role": "ptq_recipe_and_scope",
+      "boundary": "PTQ_author_declared",
+      "status": "source_verified_not_reproduced",
+      "qavit_executable": false,
+      "qavit_reproduced": false,
+      "survey_short_title": "Q-HyViT",
+      "survey_family": "reconstruction_schedule",
+      "coverage_category": "ptq_material",
+      "qat_allowed": false,
+      "full_recipe_implementation_claimed": false,
+      "review_date": "2026-11-25"
+    },
+    {
+      "id": "qdrop",
+      "title": "QDrop: Randomly Dropping Quantization for Extremely Low-Bit Post-Training Quantization",
+      "survey_ref": 54,
+      "doc_anchor": "../../docs/methods/recipes/qdrop.md#qdrop",
+      "read_scope": [
+        "原论文§3.3、Algorithm1、§4；官方main_imagenet.py、block_recon.py、README命令；CNN/NLP原实验与ViT迁移区分"
+      ],
+      "primary_urls": [
+        "https://arxiv.org/pdf/2203.05740",
+        "https://github.com/wimh966/QDrop"
+      ],
+      "role": "ptq_optimization_primitive",
+      "boundary": "PTQ_author_declared",
+      "status": "source_verified_not_reproduced",
+      "qavit_executable": false,
+      "qavit_reproduced": false,
+      "survey_short_title": "QDrop",
+      "survey_family": "reconstruction_schedule",
+      "coverage_category": "ptq_material",
+      "qat_allowed": false,
+      "full_recipe_implementation_claimed": false,
+      "review_date": "2026-11-25"
+    },
+    {
+      "id": "qep",
+      "title": "Quantization Error Propagation: Revisiting Layer-Wise Post-Training Quantization",
+      "survey_ref": 99,
+      "doc_anchor": "../../docs/methods/recipes/qep.md#qep",
+      "read_scope": [
+        "NeurIPS2025正式PDF§5–6、AppendixB/C；官方src/gptq.py、src/llama.py；主要LLM weight-only证据"
+      ],
+      "primary_urls": [
+        "https://proceedings.neurips.cc/paper_files/paper/2025/file/df2034a516cbd617a96492cc476276c9-Paper-Conference.pdf",
+        "https://github.com/FujitsuResearch/qep"
+      ],
+      "role": "ptq_llm_recipe_and_vit_transfer",
+      "boundary": "PTQ_author_declared",
+      "status": "source_verified_not_reproduced",
+      "qavit_executable": false,
+      "qavit_reproduced": false,
+      "survey_short_title": "QEP",
+      "survey_family": "reconstruction_schedule",
+      "coverage_category": "ptq_material",
+      "qat_allowed": false,
+      "full_recipe_implementation_claimed": false,
+      "review_date": "2026-11-25"
+    },
+    {
+      "id": "ptq4vit",
+      "title": "PTQ4ViT: Post-Training Quantization for Vision Transformers with Twin Uniform Quantization",
+      "survey_ref": 16,
+      "doc_anchor": "../../docs/methods/recipes/ptq4vit.md#ptq4vit",
+      "read_scope": [
+        "本分卷核对QAViT实际已有twin/Hessian相关组件并查验官方论文和仓库入口；完整旧配方增补由existing_methods_delta.md承接",
+        "整合补核：arXiv:2111.12293v3 §3.1–3.4、§4.1、附录6.1–6.3；官方main configs/PTQ4ViT.py、utils/quant_calib.py；首层A32、teacher多batch缓存行为已记录。"
+      ],
+      "primary_urls": [
+        "https://arxiv.org/abs/2111.12293",
+        "https://www.ecva.net/papers/eccv_2022/papers_ECCV/papers/136720190.pdf",
+        "https://github.com/hahnyuan/PTQ4ViT"
+      ],
+      "role": "existing_recipe_enrichment",
+      "code_status": "official_key_source_and_existing_qavit_source_read_not_executed",
+      "implementation_state": "existing_components_full_recipe_to_enrich",
+      "survey_short_title": "PTQ4ViT",
+      "survey_family": "objectives_search",
+      "coverage_category": "ptq_material",
+      "qat_allowed": false,
+      "full_recipe_implementation_claimed": false,
+      "review_date": "2026-11-25"
+    },
+    {
+      "id": "ptq-vit-2021",
+      "title": "PTQ-ViT / Ranking-ViT",
+      "survey_ref": 22,
+      "doc_anchor": "../../docs/methods/recipes/ptq-vit-2021.md#ptq-vit-2021",
+      "read_scope": [
+        "原论文§3.2–3.3、§4.1；未确认作者可运行代码"
+      ],
+      "primary_urls": [
+        "https://proceedings.neurips.cc/paper_files/paper/2021/file/ec8956637a99787bd197eacd77acce5e-Paper.pdf"
+      ],
+      "role": "ptq_recipe_and_metrics",
+      "boundary": "PTQ_author_declared",
+      "status": "source_verified_not_reproduced",
+      "qavit_executable": false,
+      "qavit_reproduced": false,
+      "survey_short_title": "PTQ-ViT",
+      "survey_family": "objectives_search",
+      "coverage_category": "ptq_material",
+      "qat_allowed": false,
+      "full_recipe_implementation_claimed": false,
+      "review_date": "2026-11-25"
+    },
+    {
+      "id": "fima-q",
+      "title": "FIMA-Q",
+      "survey_ref": 34,
+      "doc_anchor": "../../docs/methods/recipes/fima-q.md#fima-q",
+      "read_scope": [
+        "原论文§3、Algorithm1、§4；官方4bit配置与block_recon核心损失/刷新；paper与code独立定义"
+      ],
+      "primary_urls": [
+        "https://arxiv.org/html/2506.11543v1",
+        "https://github.com/ShiheWang/FIMA-Q"
+      ],
+      "role": "ptq_recipe_and_metrics",
+      "boundary": "PTQ_author_declared",
+      "status": "source_verified_not_reproduced",
+      "qavit_executable": false,
+      "qavit_reproduced": false,
+      "survey_short_title": "FIMA-Q",
+      "survey_family": "objectives_search",
+      "coverage_category": "ptq_material",
+      "qat_allowed": false,
+      "full_recipe_implementation_claimed": false,
+      "review_date": "2026-11-25"
+    },
+    {
+      "id": "aphq-vit",
+      "title": "APHQ-ViT",
+      "survey_ref": 35,
+      "doc_anchor": "../../docs/methods/recipes/aphq-vit.md#aphq-vit",
+      "read_scope": [
+        "原论文§3/§4；官方configs/4bit/best.py、block_recon.py、mlp_recon.py；纸面/代码差异已记录"
+      ],
+      "primary_urls": [
+        "https://arxiv.org/html/2504.02508v1",
+        "https://github.com/GoatWu/APHQ-ViT"
+      ],
+      "role": "ptq_recipe_and_primitives",
+      "boundary": "PTQ_author_declared",
+      "status": "source_verified_not_reproduced",
+      "qavit_executable": false,
+      "qavit_reproduced": false,
+      "survey_short_title": "APHQ-ViT",
+      "survey_family": "objectives_search",
+      "coverage_category": "ptq_material",
+      "qat_allowed": false,
+      "full_recipe_implementation_claimed": false,
+      "review_date": "2026-11-25"
+    },
+    {
+      "id": "cpt-v",
+      "title": "CPT-V: A Contrastive Approach to Post-Training Quantization of Vision Transformers",
+      "survey_ref": 113,
+      "doc_anchor": "../../docs/methods/recipes/cpt-v.md#cpt-v",
+      "read_scope": [
+        "原论文§3–4、Algorithm1；独立历史code commit未确认，与Evol-Q家族关系标注"
+      ],
+      "primary_urls": [
+        "https://arxiv.org/pdf/2211.09643",
+        "https://github.com/enyac-group/evol-q"
+      ],
+      "role": "ptq_search_predecessor",
+      "boundary": "PTQ_author_declared",
+      "status": "source_verified_not_reproduced",
+      "qavit_executable": false,
+      "qavit_reproduced": false,
+      "family": "cpt_v_evol_q",
+      "related_ids": [
+        "evol-q"
+      ],
+      "survey_short_title": "CPT-V",
+      "survey_family": "objectives_search",
+      "coverage_category": "ptq_material",
+      "qat_allowed": false,
+      "full_recipe_implementation_claimed": false,
+      "review_date": "2026-11-25"
+    },
+    {
+      "id": "evol-q",
+      "title": "Jumping Through Local Minima: Quantization in the Loss Landscape of Vision Transformers / Evol-Q",
+      "survey_ref": 114,
+      "doc_anchor": "../../docs/methods/recipes/evol-q.md#evol-q",
+      "read_scope": [
+        "ICCV论文/作者v3修订稿；官方joint_evol_opt.py、utils.py、main.py；mutation、scope、validation选模差异已核"
+      ],
+      "primary_urls": [
+        "https://openaccess.thecvf.com/content/ICCV2023/html/Frumkin_Jumping_Through_Local_Minima_Quantization_in_the_Loss_Landscape_of_ICCV_2023_paper.html",
+        "https://arxiv.org/pdf/2308.10814",
+        "https://github.com/enyac-group/evol-q"
+      ],
+      "role": "ptq_search_recipe_and_metrics",
+      "boundary": "PTQ_author_declared",
+      "status": "source_verified_not_reproduced",
+      "qavit_executable": false,
+      "qavit_reproduced": false,
+      "family": "cpt_v_evol_q",
+      "related_ids": [
+        "cpt-v"
+      ],
+      "survey_short_title": "Evol-Q / Jumping through Local Minima",
+      "survey_family": "objectives_search",
+      "coverage_category": "ptq_material",
+      "qat_allowed": false,
+      "full_recipe_implementation_claimed": false,
+      "review_date": "2026-11-25"
+    },
+    {
+      "id": "pd-quant",
+      "title": "PD-Quant: Post-Training Quantization Based on Prediction Difference Metric",
+      "survey_ref": 36,
+      "doc_anchor": "../../docs/methods/recipes/pd-quant.md#pd-quant",
+      "read_scope": [
+        "CVPR原论文§3–4；官方main_imagenet.py、block_recon.py、quant_layer.py；CNN配方、BN依赖及内部drop行为已核"
+      ],
+      "primary_urls": [
+        "https://openaccess.thecvf.com/content/CVPR2023/papers/Liu_PD-Quant_Post-Training_Quantization_Based_on_Prediction_Difference_Metric_CVPR_2023_paper.pdf",
+        "https://github.com/hustvl/PD-Quant"
+      ],
+      "role": "ptq_recipe_and_task_objective",
+      "boundary": "PTQ_author_declared",
+      "status": "source_verified_not_reproduced",
+      "qavit_executable": false,
+      "qavit_reproduced": false,
+      "survey_short_title": "PD-Quant",
+      "survey_family": "objectives_search",
+      "coverage_category": "ptq_material",
+      "qat_allowed": false,
+      "full_recipe_implementation_claimed": false,
+      "review_date": "2026-11-25"
+    },
+    {
+      "id": "biascomp",
+      "title": "Minimize Quantization Output Error with Bias Compensation",
+      "survey_ref": 110,
+      "doc_anchor": "../../docs/methods/recipes/biascomp.md#biascomp",
+      "read_scope": [
+        "原论文§3、§5.1.3、正式DOI、作者代码入口；ViT保留token轴已核"
+      ],
+      "primary_urls": [
+        "https://arxiv.org/pdf/2404.01892",
+        "https://doi.org/10.26599/AIR.2024.9150036",
+        "https://github.com/GongCheng1919/bias-compensation"
+      ],
+      "role": "ptq_compensation_primitive",
+      "boundary": "PTQ_author_declared",
+      "status": "source_verified_not_reproduced",
+      "qavit_executable": false,
+      "qavit_reproduced": false,
+      "survey_short_title": "Bias Compensation",
+      "survey_family": "compensation",
+      "coverage_category": "ptq_material",
+      "qat_allowed": false,
+      "full_recipe_implementation_claimed": false,
+      "review_date": "2026-11-25"
+    },
+    {
+      "id": "qwt",
+      "title": "Quantization without Tears",
+      "survey_ref": 15,
+      "doc_anchor": "../../docs/methods/recipes/qwt.md#qwt",
+      "read_scope": [
+        "CVPR原文、作者Corrected.pdf§3；官方qwt_vit_and_deit.py的拟合与generate；local_fp参考已核"
+      ],
+      "primary_urls": [
+        "https://openaccess.thecvf.com/content/CVPR2025/papers/Fu_Quantization_without_Tears_CVPR_2025_paper.pdf",
+        "https://cs.nju.edu.cn/_upload/tpl/00/ed/237/template237/paper/CVPR2025_QwT_Corrected.pdf",
+        "https://github.com/wujx2001/QwT"
+      ],
+      "role": "ptq_compensation_recipe",
+      "boundary": "PTQ_author_declared",
+      "status": "source_verified_not_reproduced",
+      "qavit_executable": false,
+      "qavit_reproduced": false,
+      "survey_short_title": "QwT",
+      "survey_family": "compensation",
+      "coverage_category": "ptq_material",
+      "qat_allowed": false,
+      "full_recipe_implementation_claimed": false,
+      "review_date": "2026-11-25"
+    },
+    {
+      "id": "qwt-v2",
+      "title": "QwT-v2: Practical, Effective and Efficient Post-Training Quantization",
+      "survey_ref": 44,
+      "doc_anchor": "../../docs/methods/recipes/qwt-v2.md#qwt-v2",
+      "read_scope": [
+        "v1原论文§3.3–3.4、§4；独立v2代码与真实backend融合尚未确认"
+      ],
+      "primary_urls": [
+        "https://arxiv.org/html/2505.20932v1"
+      ],
+      "role": "ptq_compensation_recipe_and_deployment_proposal",
+      "boundary": "PTQ_author_declared",
+      "status": "source_verified_not_reproduced",
+      "qavit_executable": false,
+      "qavit_reproduced": false,
+      "survey_short_title": "QwT-v2",
+      "survey_family": "compensation",
+      "coverage_category": "ptq_material",
+      "qat_allowed": false,
+      "full_recipe_implementation_claimed": false,
+      "review_date": "2026-11-25"
+    },
+    {
+      "id": "daquant",
+      "title": "Domain Aware Post Training Quantization for Vision Transformers in Deployment",
+      "survey_ref": 30,
+      "doc_anchor": "../../docs/methods/recipes/daquant.md#daquant",
+      "read_scope": [
+        "出版社摘要/元数据，未取得全文；官方 main 19个源码文件，重点DAQuant.py、quantizer.py、main.py、datautils.py、generate_act_scale_shift.py、int_vit_layer.py；未执行复现"
+      ],
+      "primary_urls": [
+        "https://doi.org/10.1016/j.patcog.2025.112182",
+        "https://www.sciencedirect.com/science/article/pii/S003132032500843X",
+        "https://github.com/iLearn-Lab/PR26-DAQuant",
+        "https://github.com/iLearn-Lab/PR26-DAQuant/blob/main/quantize/DAQuant.py",
+        "https://github.com/iLearn-Lab/PR26-DAQuant/blob/main/quantize/quantizer.py"
+      ],
+      "role": "ptq_recipe_and_primitives",
+      "code_status": "official_source_read_full_paper_unavailable",
+      "implementation_state": "planned_source_code_recipe_and_domain_alignment",
+      "survey_short_title": "DAQuant / Domain-Aware PTQ-ViT",
+      "survey_family": "calibration_domain",
+      "coverage_category": "ptq_material",
+      "qat_allowed": false,
+      "full_recipe_implementation_claimed": false,
+      "review_date": "2026-11-25"
+    },
+    {
+      "id": "dfq-vit",
+      "title": "DFQ-ViT",
+      "alias": "DFQ-ViT",
+      "survey_ref": 78,
+      "correct_title": "Data-Free Quantization for Vision Transformers without Fine-tuning",
+      "paper_identity_verified": true,
+      "primary_urls": [
+        "https://arxiv.org/abs/2507.14481"
+      ],
+      "read_scope": [
+        "预印本 §3.2–3.4、§4.1、组件消融"
+      ],
+      "role": "data_free_ptq",
+      "admission_status": "included_ptq",
+      "doc_anchor": "../../docs/methods/recipes/dfq-vit.md#dfq-vit",
+      "original_recipe_status": "core_recipe_verified",
+      "status_note": "与[80] QuaSC同作者同机制家族，不重复计独立baseline。",
+      "author_code_evidence": "未核实作者公开实现",
+      "version_family": "quasc-dfq-vit",
+      "review_date": "2026-11-25",
+      "survey_short_title": "DFQ-ViT",
+      "survey_family": "data_free",
+      "coverage_category": "ptq_material",
+      "qat_allowed": false,
+      "full_recipe_implementation_claimed": false
+    },
+    {
+      "id": "e2h-activation-correction",
+      "title": "E2H + Activation Correction",
+      "alias": "E2H + Activation Correction",
+      "survey_ref": 80,
+      "correct_title": "Data-Free Quantization of Vision Transformers via Easy-to-Hard Synthesis and Activation Correction",
+      "paper_identity_verified": true,
+      "primary_urls": [
+        "https://doi.org/10.1145/3771936",
+        "https://api.crossref.org/works/10.1145/3771936",
+        "https://arxiv.org/abs/2507.14481"
+      ],
+      "read_scope": [
+        "ACM出版社提交的元数据/摘要；对应预印本完整方法和预算；最终版全文未取得"
+      ],
+      "role": "same_family_publication_record",
+      "admission_status": "alias_same_family",
+      "doc_anchor": "../../docs/methods/recipes/dfq-vit.md#e2h-activation-correction",
+      "original_recipe_status": "version_linked_final_recipe_unverified",
+      "status_note": "出版社摘要称QuaSC；最终版设置不能由预印本直接代填。",
+      "author_code_evidence": "未核实作者公开实现",
+      "version_family": "quasc-dfq-vit",
+      "review_date": "2026-11-25",
+      "survey_short_title": "E2H + Activation Correction / QuaSC",
+      "survey_family": "data_free",
+      "coverage_category": "family_version",
+      "qat_allowed": false,
+      "full_recipe_implementation_claimed": false
+    },
+    {
+      "id": "eff-dfqt",
+      "survey_ref": 86,
+      "coverage_category": "unresolved_boundary",
+      "primary_urls": [
+        "https://doi.org/10.1109/ICME59968.2025.11209107",
+        "https://api.crossref.org/works/10.1109/ICME59968.2025.11209107"
+      ],
+      "title": "Eff-DFQT: Efficient Model Inversion for Data-free Quantization of Vision Transformers",
+      "reason": "未核实优化对象、数据预算、量化器、位宽及是否含量化学生训练；不录入recipe/primitive/workflow。"
+    },
+    {
+      "id": "hc-ptq",
+      "title": "HC-PTQ",
+      "alias": "HC-PTQ",
+      "survey_ref": 39,
+      "correct_title": "HC-PTQ: Poincaré-Based Hyperbolic Clustering for Data-Free Quantization of Vision Transformers",
+      "paper_identity_verified": true,
+      "primary_urls": [
+        "https://openaccess.thecvf.com/content/ICCV2025W/BiVision/papers/Mineo_HC-PTQ_Poincare-Based_Hyperbolic_Clustering_for_Data-Free_Quantization_of_Vision_Transformers_ICCVW_2025_paper.pdf"
+      ],
+      "read_scope": [
+        "原文 §3.1–3.5、§4、Tables 1–5"
+      ],
+      "role": "weight_codebook_ptq",
+      "admission_status": "included_ptq",
+      "doc_anchor": "../../docs/methods/recipes/hc-ptq.md#hc-ptq",
+      "original_recipe_status": "core_recipe_verified",
+      "status_note": "权重行向量码本，非标量W4A4；单架构验证，代码未核实，作为探索性扩展。",
+      "author_code_evidence": "未核实作者公开实现",
+      "version_family": "hc-ptq",
+      "review_date": "2026-11-25",
+      "survey_short_title": "HC-PTQ",
+      "survey_family": "data_free",
+      "coverage_category": "ptq_material",
+      "qat_allowed": false,
+      "full_recipe_implementation_claimed": false
+    },
+    {
+      "id": "mimiq",
+      "survey_ref": 84,
+      "coverage_category": "excluded_qat",
+      "primary_urls": [
+        "https://arxiv.org/abs/2407.20021",
+        "https://ojs.aaai.org/index.php/AAAI/article/view/33761",
+        "https://github.com/iamkanghyunchoi/mimiq"
+      ],
+      "title": "MimiQ: Low-Bit Data-Free Quantization of Vision Transformers with Encouraging Inter-Head Attention Similarity",
+      "reason": "原配方含量化学生全网训练200 epochs，明确QAT/LSQ训练路线；全部方法内容排除。"
+    },
+    {
+      "id": "psaq-vit",
+      "title": "PSAQ-ViT",
+      "alias": "PSAQ-ViT",
+      "survey_ref": 79,
+      "correct_title": "Patch Similarity Aware Data-Free Quantization for Vision Transformers",
+      "paper_identity_verified": true,
+      "primary_urls": [
+        "https://arxiv.org/abs/2203.02250",
+        "https://github.com/zkkli/PSAQ-ViT",
+        "https://github.com/zkkli/PSAQ-ViT/blob/main/generate_data.py"
+      ],
+      "read_scope": [
+        "原文 §3.3–3.4、Algorithm 1、§4.1；作者仓库 README、量化入口及 generate_data.py 全文（Adam/两段各500次/TV目标/KDE积分）"
+      ],
+      "role": "data_free_ptq",
+      "admission_status": "included_ptq",
+      "doc_anchor": "../../docs/methods/recipes/psaq-vit.md#psaq-vit",
+      "original_recipe_status": "core_recipe_verified",
+      "status_note": "ECCV2022；32合成图；原证据主要W4A8/W8A8，A4为待验证适配。",
+      "author_code_evidence": "官方生成脚本全文及量化入口已核对；未本地运行",
+      "version_family": "psaq-vit",
+      "review_date": "2026-11-25",
+      "survey_short_title": "PSAQ-ViT",
+      "survey_family": "data_free",
+      "coverage_category": "ptq_material",
+      "qat_allowed": false,
+      "full_recipe_implementation_claimed": false
+    },
+    {
+      "id": "psaq-vit-v2",
+      "survey_ref": 57,
+      "coverage_category": "excluded_qat",
+      "primary_urls": [
+        "https://arxiv.org/abs/2209.05687"
+      ],
+      "title": "PSAQ-ViT V2: Towards Accurate and General Data-Free Quantization for Vision Transformers",
+      "reason": "全网量化学生与教师交替蒸馏学习；其学习预算按完整训练集大小配足，超出本包纯PTQ边界。排除配方、组件和workflow。"
+    },
+    {
+      "id": "sardfq",
+      "title": "SARDFQ",
+      "alias": "SARDFQ",
+      "survey_ref": 85,
+      "correct_title": "Semantic Alignment and Reinforcement for Data-Free Quantization of Vision Transformers",
+      "paper_identity_verified": true,
+      "primary_urls": [
+        "https://openaccess.thecvf.com/content/ICCV2025/html/Zhong_Semantic_Alignment_and_Reinforcement_for_Data-Free_Quantization_of_Vision_Transformers_ICCV_2025_paper.html",
+        "https://arxiv.org/abs/2412.16553",
+        "https://github.com/zysxmu/SARDFQ"
+      ],
+      "read_scope": [
+        "ICCV正式正文 §3.4–4.1；预印本方法全文与消融；官方仓库README及入口"
+      ],
+      "role": "data_free_ptq_reconstruction",
+      "admission_status": "included_ptq",
+      "doc_anchor": "../../docs/methods/recipes/sardfq.md#sardfq",
+      "original_recipe_status": "core_recipe_verified",
+      "status_note": "32图、1000生成iter、逐块100重构iter；有限校准重构符合PTQ，不因梯度误删。",
+      "author_code_evidence": "生成、量化入口已核对；未运行",
+      "version_family": "sardfq-spdfq",
+      "review_date": "2026-11-25",
+      "survey_short_title": "SARDFQ",
+      "survey_family": "data_free",
+      "coverage_category": "ptq_material",
+      "qat_allowed": false,
+      "full_recipe_implementation_claimed": false
+    },
+    {
+      "id": "clamp-vit",
+      "title": "CLAMP-ViT",
+      "alias": "CLAMP-ViT",
+      "survey_ref": 38,
+      "correct_title": "CLAMP-ViT: Contrastive Data-Free Learning for Adaptive Post-Training Quantization of ViTs",
+      "paper_identity_verified": true,
+      "primary_urls": [
+        "https://arxiv.org/abs/2407.05266",
+        "https://github.com/gt-synergy-lab/CLAMP-ViT"
+      ],
+      "read_scope": [
+        "原文 §3.2–3.5、Table 3、§4；README"
+      ],
+      "role": "data_free_ptq_and_mixed_precision",
+      "admission_status": "included_ptq",
+      "doc_anchor": "../../docs/methods/recipes/clamp-vit.md#clamp-vit",
+      "original_recipe_status": "core_recipe_verified",
+      "status_note": "图片生成与量化参数进化搜索；固定W4A8和mixed结果分开。",
+      "author_code_evidence": "官方仓库README评估入口已核对；完整生成/搜索实现待逐文件核查",
+      "version_family": "clamp-vit",
+      "review_date": "2026-11-25",
+      "survey_short_title": "CLAMP-ViT",
+      "survey_family": "data_free",
+      "coverage_category": "ptq_material",
+      "qat_allowed": false,
+      "full_recipe_implementation_claimed": false
+    },
+    {
+      "id": "amp-vit",
+      "title": "AMP-ViT",
+      "alias": "AMP-ViT",
+      "survey_ref": 68,
+      "correct_title": "AMP-ViT: Optimizing Vision Transformer Efficiency with Adaptive Mixed-Precision Post-Training Quantization",
+      "paper_identity_verified": true,
+      "primary_urls": [
+        "https://openaccess.thecvf.com/content/WACV2025/html/Tai_AMP-ViT_Optimizing_Vision_Transformer_Efficiency_with_Adaptive_Mixed-Precision_Post-Training_Quantization_WACV_2025_paper.html"
+      ],
+      "read_scope": [
+        "正文 §3、Algorithm 1、Tables 1–4；未完整核查补充材料全部搜索网格"
+      ],
+      "role": "ptq_and_layer_mixed_precision",
+      "admission_status": "included_ptq",
+      "doc_anchor": "../../docs/methods/recipes/amp-vit.md#amp-vit",
+      "original_recipe_status": "core_recipe_verified",
+      "status_note": "固定W4A4/W6A6组件与完整mixed分开；与MPTQ同研究家族。",
+      "author_code_evidence": "未核实作者公开实现",
+      "version_family": "amp-mptq-vit",
+      "review_date": "2026-11-25",
+      "survey_short_title": "AMP-ViT",
+      "survey_family": "precision_allocation",
+      "coverage_category": "ptq_material",
+      "qat_allowed": false,
+      "full_recipe_implementation_claimed": false
+    },
+    {
+      "id": "lampq",
+      "title": "LampQ",
+      "alias": "LampQ",
+      "survey_ref": 115,
+      "correct_title": "LampQ: Towards Accurate Layer-wise Mixed Precision Quantization for Vision Transformers",
+      "paper_identity_verified": true,
+      "primary_urls": [
+        "https://arxiv.org/abs/2511.10004",
+        "https://github.com/snudatalab/LampQ"
+      ],
+      "read_scope": [
+        "方法主节、Appendix C/E、作者README及目录"
+      ],
+      "role": "layer_mixed_precision_ptq",
+      "admission_status": "included_ptq",
+      "doc_anchor": "../../docs/methods/recipes/lampq.md#lampq",
+      "original_recipe_status": "core_recipe_verified",
+      "status_note": "1024图；type-aware Fisher+ILP+反馈；当前仓库标AAAI2026。",
+      "author_code_evidence": "有src/test_quant.py与configs；未执行",
+      "version_family": "lampq",
+      "review_date": "2026-11-25",
+      "survey_short_title": "LampQ",
+      "survey_family": "precision_allocation",
+      "coverage_category": "ptq_material",
+      "qat_allowed": false,
+      "full_recipe_implementation_claimed": false
+    },
+    {
+      "id": "lrp-qvit",
+      "title": "LRP-QViT",
+      "alias": "LRP-QViT",
+      "survey_ref": 67,
+      "correct_title": "LRP-QViT: Mixed-Precision Vision Transformer Quantization via Layer-wise Relevance Propagation",
+      "paper_identity_verified": true,
+      "primary_urls": [
+        "https://arxiv.org/abs/2401.11243"
+      ],
+      "read_scope": [
+        "原文 §3.2–3.3、§4.1及主要结果"
+      ],
+      "role": "layer_mixed_precision_ptq",
+      "admission_status": "included_ptq",
+      "doc_anchor": "../../docs/methods/recipes/lrp-qvit.md#lrp-qvit",
+      "original_recipe_status": "core_recipe_verified",
+      "status_note": "32图是校准预算，relevance另用50000训练图；不能漏计。",
+      "author_code_evidence": "未核实作者公开实现",
+      "version_family": "lrp-qvit",
+      "review_date": "2026-11-25",
+      "survey_short_title": "LRP-QViT",
+      "survey_family": "precision_allocation",
+      "coverage_category": "ptq_material",
+      "qat_allowed": false,
+      "full_recipe_implementation_claimed": false
+    },
+    {
+      "id": "mix-qvit",
+      "title": "Mix-QViT",
+      "alias": "Mix-QViT",
+      "survey_ref": 41,
+      "correct_title": "Mix-QViT: Mixed-Precision Vision Transformer Quantization Driven by Layer Importance and Quantization Sensitivity",
+      "paper_identity_verified": true,
+      "primary_urls": [
+        "https://arxiv.org/abs/2501.06357"
+      ],
+      "read_scope": [
+        "§II-B–II-F、§III-A、PTQ实验；QAT分支筛出"
+      ],
+      "role": "layer_mixed_precision_ptq",
+      "admission_status": "included_ptq_branch_only",
+      "doc_anchor": "../../docs/methods/recipes/mix-qvit.md#mix-qvit",
+      "original_recipe_status": "core_recipe_verified",
+      "status_note": "只纳PTQ；32图校准+256 validation图敏感度。QAT分支与2bit QAT结果排除。",
+      "author_code_evidence": "未核实作者公开实现",
+      "version_family": "mix-qvit",
+      "review_date": "2026-11-25",
+      "survey_short_title": "Mix-QViT",
+      "survey_family": "precision_allocation",
+      "coverage_category": "ptq_material",
+      "qat_allowed": false,
+      "full_recipe_implementation_claimed": false
+    },
+    {
+      "id": "mixa-q",
+      "title": "MixA-Q",
+      "alias": "MixA-Q",
+      "survey_ref": 116,
+      "correct_title": "MixA-Q: Revisiting Activation Sparsity for Vision Transformers from a Mixed-Precision Quantization Perspective",
+      "paper_identity_verified": true,
+      "primary_urls": [
+        "https://openaccess.thecvf.com/content/ICCV2025/papers/Wang_MixA-Q_Revisiting_Activation_Sparsity_for_Vision_Transformers_from_a_Mixed-Precision_ICCV_2025_paper.pdf"
+      ],
+      "read_scope": [
+        "§3.1–3.3的独立PTQ结构；§4.3 PTQ Result on COCO"
+      ],
+      "role": "window_dynamic_mixed_precision_ptq",
+      "admission_status": "included_ptq_branch_only",
+      "doc_anchor": "../../docs/methods/recipes/mixa-q.md#mixa-q",
+      "original_recipe_status": "core_recipe_verified",
+      "status_note": "只纳RepQ W4A8+低窗口A4的PTQ；1图校准；QAT/SAQA/训练蒸馏全部排除。",
+      "author_code_evidence": "未核实作者公开实现",
+      "version_family": "mixa-q",
+      "review_date": "2026-11-25",
+      "survey_short_title": "MixA-Q",
+      "survey_family": "precision_allocation",
+      "coverage_category": "ptq_material",
+      "qat_allowed": false,
+      "full_recipe_implementation_claimed": false
+    },
+    {
+      "id": "mptq-vit",
+      "title": "MPTQ-ViT",
+      "alias": "MPTQ-ViT",
+      "survey_ref": 40,
+      "correct_title": "MPTQ-ViT: Mixed-Precision Post-Training Quantization for Vision Transformer",
+      "paper_identity_verified": true,
+      "primary_urls": [
+        "https://arxiv.org/abs/2401.14895"
+      ],
+      "read_scope": [
+        "SQ-b、OPT-m、Greedy MP方法与主实验"
+      ],
+      "role": "ptq_version_record",
+      "admission_status": "included_ptq",
+      "doc_anchor": "../../docs/methods/recipes/mptq-vit.md#mptq-vit",
+      "original_recipe_status": "core_recipe_verified",
+      "status_note": "与同作者AMP流程和结果高度重合；版本绑定，不当独立重复验证。",
+      "author_code_evidence": "未核实作者公开实现",
+      "version_family": "amp-mptq-vit",
+      "review_date": "2026-11-25",
+      "survey_short_title": "MPTQ-ViT",
+      "survey_family": "precision_allocation",
+      "coverage_category": "ptq_material",
+      "qat_allowed": false,
+      "full_recipe_implementation_claimed": false
+    },
+    {
+      "id": "pomq-vit",
+      "title": "PoMQ-ViT",
+      "alias": "PoMQ-ViT",
+      "survey_ref": 69,
+      "correct_title": "PoMQ-ViT: Mixed-Precision Quantization Vision Transformer with Pareto Optimization",
+      "paper_identity_verified": true,
+      "primary_urls": [
+        "https://www.mdpi.com/2076-3417/15/18/9856"
+      ],
+      "read_scope": [
+        "出版社全文方法、优化约束、实验与作者信息"
+      ],
+      "role": "layer_mixed_precision_ptq",
+      "admission_status": "included_ptq",
+      "doc_anchor": "../../docs/methods/recipes/pomq-vit.md#pomq-vit",
+      "original_recipe_status": "core_recipe_verified_budget_partial",
+      "status_note": "作者纠正为Zhiqiang Wu、Zhong Zhao；无作者配置，校准总量和部署口径待补。",
+      "author_code_evidence": "未核实作者公开实现",
+      "version_family": "pomq-vit",
+      "review_date": "2026-11-25",
+      "survey_short_title": "PoMQ-ViT",
+      "survey_family": "precision_allocation",
+      "coverage_category": "ptq_material",
+      "qat_allowed": false,
+      "full_recipe_implementation_claimed": false
+    },
+    {
+      "id": "patchwise-mpq-vit",
+      "title": "Patch-wise MPQ-ViT",
+      "alias": "Patch-wise MPQ-ViT",
+      "survey_ref": 119,
+      "correct_title": "Patch-wise Mixed-Precision Quantization of Vision Transformer",
+      "paper_identity_verified": true,
+      "primary_urls": [
+        "https://arxiv.org/abs/2305.06559"
+      ],
+      "read_scope": [
+        "§III-B–D、Algorithm 1、§IV-A与消融"
+      ],
+      "role": "token_dynamic_mixed_precision_ptq",
+      "admission_status": "included_ptq",
+      "doc_anchor": "../../docs/methods/recipes/patchwise-mpq-vit.md#patchwise-mpq-vit",
+      "original_recipe_status": "core_recipe_verified",
+      "status_note": "原文当前采用PTQ；32图、2–8bit；QAT只为future work。",
+      "author_code_evidence": "未核实作者公开实现",
+      "version_family": "patchwise-mpq-vit",
+      "review_date": "2026-11-25",
+      "survey_short_title": "Patch-wise MPQ-ViT",
+      "survey_family": "precision_allocation",
+      "coverage_category": "ptq_material",
+      "qat_allowed": false,
+      "full_recipe_implementation_claimed": false
+    },
+    {
+      "id": "token-dynamic-bit-width",
+      "title": "Token-Dynamic Bit-Width",
+      "alias": "Token-Dynamic Bit-Width",
+      "survey_ref": 42,
+      "correct_title": "Token-based Dynamic Bit-width Assignment for ViT Quantization",
+      "paper_identity_verified": true,
+      "primary_urls": [
+        "https://www.sciencedirect.com/science/article/pii/S0031320325009306",
+        "https://doi.org/10.1016/j.patcog.2025.112269",
+        "https://cvlab.yonsei.ac.kr/publications/"
+      ],
+      "read_scope": [
+        "出版社摘要/引言与章节说明；作者目录；方法公式和§4.1全文未取得"
+      ],
+      "role": "ptq_source_reference",
+      "admission_status": "source_incomplete",
+      "doc_anchor": "sources/token-dynamic-bit-width.md#token-dynamic-bit-width",
+      "original_recipe_status": "source_incomplete",
+      "status_note": "确认PTQ身份及interval proxy机制，但位宽集、阈值、校准预算未核实；非可执行baseline。",
+      "author_code_evidence": "未核实作者公开实现",
+      "version_family": "token-dynamic-bit-width",
+      "review_date": "2026-11-25",
+      "survey_short_title": "Token-Dynamic Bit-Width",
+      "survey_family": "precision_allocation",
+      "coverage_category": "ptq_source_gap",
+      "qat_allowed": false,
+      "full_recipe_implementation_claimed": false
+    },
+    {
+      "id": "optimal-numerical-format",
+      "title": "Optimal Numerical Format",
+      "alias": "Optimal Numerical Format",
+      "survey_ref": 87,
+      "correct_title": "Finding Optimal Numerical Format for Sub-8-Bit Post-Training Quantization of Vision Transformers",
+      "paper_identity_verified": true,
+      "primary_urls": [
+        "https://doi.org/10.1109/ICASSP49357.2023.10096798",
+        "https://superdocker.github.io/publications/",
+        "https://rc.signalprocessingsociety.org/conferences/icassp-2023/spsicassp23vid1432"
+      ],
+      "read_scope": [
+        "作者页与IEEE SPS摘要；正文及实现未取得"
+      ],
+      "role": "ptq_source_reference",
+      "admission_status": "source_incomplete",
+      "doc_anchor": "sources/optimal-numerical-format.md#optimal-numerical-format",
+      "original_recipe_status": "source_incomplete",
+      "status_note": "确认逐MatMul fixed/floating格式选择；不编候选格式、校准数或W4A4结果。",
+      "author_code_evidence": "未核实作者公开实现",
+      "version_family": "optimal-numerical-format",
+      "review_date": "2026-11-25",
+      "survey_short_title": "Optimal Numerical Format",
+      "survey_family": "precision_allocation",
+      "coverage_category": "ptq_source_gap",
+      "qat_allowed": false,
+      "full_recipe_implementation_claimed": false
+    },
+    {
+      "id": "regcache",
+      "title": "Activation Quantization of Vision Encoders Needs Prefixing Registers",
+      "survey_ref": 32,
+      "doc_anchor": "../../docs/methods/recipes/regcache.md#regcache",
+      "read_scope": [
+        "原文 v5（2026-07-08）§3–5、附录E/H/L/N；官方 main 候选搜集、搜索脚本、模型入口和README；未执行复现"
+      ],
+      "primary_urls": [
+        "https://arxiv.org/html/2510.04547v5",
+        "https://github.com/spbob0418/RegCache"
+      ],
+      "role": "ptq_structural_recipe_and_primitives",
+      "code_status": "official_source_read",
+      "implementation_state": "planned_dynamic_structure_profile",
+      "survey_short_title": "RegCache",
+      "survey_family": "structure_training",
+      "coverage_category": "ptq_material",
+      "qat_allowed": false,
+      "full_recipe_implementation_claimed": false,
+      "review_date": "2026-11-25"
+    },
+    {
+      "id": "lra-qvit",
+      "survey_ref": 90,
+      "coverage_category": "excluded_non_ptq",
+      "primary_urls": [
+        "https://proceedings.mlr.press/v267/kang25d.html",
+        "https://proceedings.mlr.press/v267/kang25d/kang25d.pdf"
+      ],
+      "title": "LRA-QViT: Integrating Low-Rank Approximation and Quantization for Robust and Efficient Vision Transformers",
+      "reason": "原整套包含低秩结构和全数据KD微调，再独立量化；不等于有限PTQ校准，也不一律误称QAT。本包不录整套方法。"
+    },
+    {
+      "id": "binaryformer",
+      "survey_ref": 111,
+      "coverage_category": "unresolved_boundary",
+      "primary_urls": [
+        "https://doi.org/10.1109/TII.2024.3396520",
+        "https://api.crossref.org/works/10.1109/TII.2024.3396520"
+      ],
+      "title": "BinaryFormer: A Hierarchical-Adaptive Binary Vision Transformer (ViT) for Efficient Computing",
+      "reason": "原文训练边界未完成primary核验；暂不录入，不能以同名MIDL2025仓库代替本篇。"
+    },
+    {
+      "id": "binaryvit",
+      "survey_ref": 112,
+      "coverage_category": "excluded_qat",
+      "primary_urls": [
+        "https://arxiv.org/abs/2306.16678",
+        "https://github.com/Phuoc-Hoan-Le/BinaryViT"
+      ],
+      "title": "BinaryViT: Pushing Binary Vision Transformers Towards Convolutional Models",
+      "reason": "二值网络训练/蒸馏路线，非PTQ；按QAT排除。"
+    },
+    {
+      "id": "bivit",
+      "survey_ref": 89,
+      "coverage_category": "excluded_qat",
+      "primary_urls": [
+        "https://openaccess.thecvf.com/content/ICCV2023/papers/He_BiViT_Extremely_Compressed_Binary_Vision_Transformers_ICCV_2023_paper.pdf",
+        "https://github.com/ThisisBillhe/BiViT"
+      ],
+      "title": "BiViT: Extremely Compressed Binary Vision Transformers",
+      "reason": "原文明示二值量化需QAT恢复，并给出300epochs训练；排除。"
+    },
+    {
+      "id": "ofq",
+      "survey_ref": 118,
+      "coverage_category": "excluded_qat",
+      "primary_urls": [
+        "https://proceedings.mlr.press/v202/liu23w.html",
+        "https://github.com/nbasyl/OFQ"
+      ],
+      "title": "Oscillation-free Quantization for Low-bit Vision Transformers",
+      "reason": "研究量化感知训练中的权重振荡，明确QAT；排除。"
+    },
+    {
+      "id": "q-vit",
+      "survey_ref": 121,
+      "coverage_category": "excluded_qat",
+      "primary_urls": [
+        "https://proceedings.neurips.cc/paper_files/paper/2022/hash/deb921bff461a7b0a5c344a4871e7101-Abstract.html",
+        "https://github.com/YanjingLi0202/Q-ViT"
+      ],
+      "title": "Q-ViT: Accurate and Fully Quantized Low-bit Vision Transformer",
+      "reason": "全网量化感知训练与蒸馏路线；排除。不要与同缩写另一论文混淆。"
+    },
+    {
+      "id": "quantformer",
+      "survey_ref": 122,
+      "coverage_category": "excluded_qat",
+      "primary_urls": [
+        "https://doi.org/10.1109/TPAMI.2022.3229313",
+        "https://xuxw98.github.io/files/Quantformer.pdf",
+        "https://github.com/ZiweiWangTHU/Quantformer"
+      ],
+      "title": "Quantformer: Learning Extremely Low-precision Vision Transformers",
+      "reason": "学习量化网络并蒸馏/微调，属于QAT；排除。"
+    },
+    {
+      "id": "quanttune",
+      "survey_ref": 31,
+      "coverage_category": "excluded_non_ptq",
+      "primary_urls": [
+        "https://arxiv.org/abs/2403.06497",
+        "https://doi.org/10.1109/MIPR67560.2025.00029"
+      ],
+      "title": "QuantTune: Optimizing Model Quantization with Adaptive Outlier-Driven Fine Tuning",
+      "reason": "先以任务损失和outlier loss微调浮点网络，再量化；非有限PTQ校准，不强行称为量化前向QAT。本包不录。"
+    },
+    {
+      "id": "tervit",
+      "survey_ref": 123,
+      "coverage_category": "excluded_qat",
+      "primary_urls": [
+        "https://arxiv.org/abs/2201.08050"
+      ],
+      "title": "TerViT: An Efficient Ternary Vision Transformer",
+      "reason": "三值量化网络训练路线，明确QAT；排除。"
+    },
+    {
+      "id": "variation-aware-vit",
+      "survey_ref": 124,
+      "coverage_category": "excluded_qat",
+      "primary_urls": [
+        "https://arxiv.org/abs/2307.00331",
+        "https://openreview.net/forum?id=MHfoA0Qf6g"
+      ],
+      "title": "Quantization Variation: A New Perspective on Training Transformers with Low-Bit Precision",
+      "reason": "正式后续版本明确研究低bit QAT；排除。综述使用旧题名/旧作者版本。"
+    },
+    {
+      "id": "approx-softmax-layernorm-accelerator",
+      "title": "Approx. Softmax/LayerNorm Accelerator",
+      "alias": "Approx. Softmax/LayerNorm Accelerator",
+      "survey_ref": 95,
+      "correct_title": "Hardware Accelerator for Approximation-Based Softmax and Layer Normalization in Transformers",
+      "paper_identity_verified": true,
+      "primary_urls": [
+        "https://www.mdpi.com/2079-9292/14/12/2337"
+      ],
+      "read_scope": [
+        "出版社全文 §4–§6与实验范围"
+      ],
+      "role": "hardware_operator_evidence",
+      "admission_status": "hardware_operator_evidence",
+      "doc_anchor": "sources/approx-softmax-layernorm-accelerator.md#approx-softmax-layernorm-accelerator",
+      "original_recipe_status": "operator_recipe_verified",
+      "status_note": "无训练算子近似；原文BERT/GPT2，不能当ViT PTQ baseline。",
+      "author_code_evidence": "未核实作者公开实现",
+      "version_family": "approx-softmax-layernorm-accelerator",
+      "review_date": "2026-11-25",
+      "survey_short_title": "Approx. Softmax/LayerNorm Accelerator",
+      "survey_family": "deployment",
+      "coverage_category": "operator_context",
+      "qat_allowed": false,
+      "full_recipe_implementation_claimed": false
+    },
+    {
+      "id": "auto-vit-acc",
+      "survey_ref": 91,
+      "coverage_category": "excluded_qat",
+      "primary_urls": [
+        "https://arxiv.org/abs/2208.05163"
+      ],
+      "title": "Auto-ViT-Acc: An FPGA-Aware Automatic Acceleration Framework for Vision Transformer with Mixed-Scheme Quantization",
+      "reason": "原流程有100epochs量化训练；硬件recipe亦依赖该模型，全部排除。"
+    },
+    {
+      "id": "elsa",
+      "survey_ref": 97,
+      "coverage_category": "excluded_non_ptq",
+      "primary_urls": [
+        "https://openaccess.thecvf.com/content/CVPR2024W/ECV24/papers/Huang_ELSA_Exploiting_Layer-wise_NM_Sparsity_for_Vision_Transformer_Acceleration_CVPRW_2024_paper.pdf",
+        "https://github.com/ningchihuang/ELSA"
+      ],
+      "title": "ELSA: Exploiting Layer-wise N:M Sparsity for Vision Transformer Acceleration",
+      "reason": "稀疏模型训练/搜索，不存在可确认的独立PTQ原配方；只保留筛查记录，不误称QAT。"
+    },
+    {
+      "id": "h-vit",
+      "title": "H-ViT",
+      "alias": "H-ViT",
+      "survey_ref": 45,
+      "correct_title": "H-ViT: Hardware-friendly Post-training Quantization for Efficient Vision Transformer Inference",
+      "paper_identity_verified": true,
+      "primary_urls": [
+        "https://link.springer.com/article/10.1007/s43684-025-00121-0"
+      ],
+      "read_scope": [
+        "正式全文 §3.2、Algorithm 1、§4.1–4.6"
+      ],
+      "role": "integer_ptq",
+      "admission_status": "included_ptq",
+      "doc_anchor": "../../docs/methods/recipes/h-vit.md#h-vit",
+      "original_recipe_status": "core_recipe_verified",
+      "status_note": "32分类图/1COCO图；W8A8Attn4；token-wise LN输出等原法行为保留。",
+      "author_code_evidence": "未核实作者公开实现",
+      "version_family": "h-vit",
+      "review_date": "2026-11-25",
+      "survey_short_title": "H-ViT",
+      "survey_family": "deployment",
+      "coverage_category": "ptq_material",
+      "qat_allowed": false,
+      "full_recipe_implementation_claimed": false
+    },
+    {
+      "id": "heat",
+      "survey_ref": 83,
+      "coverage_category": "unresolved_boundary",
+      "primary_urls": [
+        "https://doi.org/10.1109/TCSII.2025.3547340",
+        "https://api.crossref.org/works/10.1109/TCSII.2025.3547340",
+        "https://panzhao08.github.io/publications/"
+      ],
+      "title": "HEAT: Efficient Vision Transformer Accelerator With Hybrid-Precision Quantization",
+      "reason": "题名/DOI真实；综述作者错误。未用第三方摘要替代primary全文确认训练边界，暂不纳recipe。"
+    },
+    {
+      "id": "i-vit",
+      "survey_ref": 58,
+      "coverage_category": "excluded_qat",
+      "primary_urls": [
+        "https://openaccess.thecvf.com/content/ICCV2023/papers/Li_I-ViT_Integer-only_Quantization_for_Efficient_Vision_Transformer_Inference_ICCV_2023_paper.pdf",
+        "https://github.com/zkkli/I-ViT"
+      ],
+      "title": "I-ViT: Integer-only Quantization for Efficient Vision Transformer Inference",
+      "reason": "原文明确量化初始化后用STE做QAT；不因integer-only或综述归类而纳入。"
+    },
+    {
+      "id": "iptq-vit",
+      "title": "IPTQ-ViT",
+      "alias": "IPTQ-ViT",
+      "survey_ref": 21,
+      "correct_title": "IPTQ-ViT: Post-Training Quantization of Non-linear Functions for Integer-only Vision Transformers",
+      "paper_identity_verified": true,
+      "primary_urls": [
+        "https://arxiv.org/abs/2511.15369",
+        "https://github.com/gihwan-kim/IPTQ-ViT"
+      ],
+      "read_scope": [
+        "原文 §4.1–4.5、§5.1与消融；当前作者README/目录；附录完整预算待锁定"
+      ],
+      "role": "integer_ptq",
+      "admission_status": "included_ptq",
+      "doc_anchor": "../../docs/methods/recipes/iptq-vit.md#iptq-vit",
+      "original_recipe_status": "core_recipe_verified_budget_partial",
+      "status_note": "当前repo标WACV2026并含IPTQ++扩展；整数算子覆盖及验证/部署kernel差异需分项。",
+      "author_code_evidence": "公开ImageNet入口、模拟与CUDA kernel存在；未运行，不宣称全部组合纯整数",
+      "version_family": "iptq-vit",
+      "review_date": "2026-11-25",
+      "survey_short_title": "IPTQ-ViT",
+      "survey_family": "deployment",
+      "coverage_category": "ptq_material",
+      "qat_allowed": false,
+      "full_recipe_implementation_claimed": false
+    },
+    {
+      "id": "iqgvsaa",
+      "survey_ref": 82,
+      "coverage_category": "unresolved_boundary",
+      "primary_urls": [
+        "https://ieeexplore.ieee.org/abstract/document/10288182/",
+        "https://doi.org/10.1109/TCSI.2023.3312775"
+      ],
+      "title": "An Integer-Only and Group-Vector Systolic Accelerator for Efficiently Mapping Vision Transformer on Edge",
+      "reason": "确认整数算子/阵列硬件论文身份；独立PTQ配方与训练依赖未核实，暂不纳方法卡。"
+    },
+    {
+      "id": "n-m-sparse-transformer-accelerator",
+      "survey_ref": 96,
+      "coverage_category": "excluded_non_ptq",
+      "primary_urls": [
+        "https://arxiv.org/abs/2208.06118",
+        "https://doi.org/10.1109/TVLSI.2022.3197282"
+      ],
+      "title": "An Algorithm–Hardware Co-Optimized Framework for Accelerating N:M Sparse Transformers",
+      "reason": "原路线为继承式动态剪枝训练+专用硬件，无独立ViT低bit PTQ原配方；只留筛查，不一律称QAT。"
+    },
+    {
+      "id": "p2-vit",
+      "title": "P2-ViT",
+      "alias": "P2-ViT",
+      "survey_ref": 43,
+      "correct_title": "P2-ViT: Power-of-Two Post-Training Quantization and Acceleration for Fully Quantized Vision Transformer",
+      "paper_identity_verified": true,
+      "primary_urls": [
+        "https://arxiv.org/abs/2405.19915",
+        "https://github.com/shihuihong214/P2-ViT"
+      ],
+      "read_scope": [
+        "§III-C/D、Algorithm 1、§V-A/B；官方README"
+      ],
+      "role": "pot_scale_and_mixed_precision_ptq",
+      "admission_status": "included_ptq",
+      "doc_anchor": "../../docs/methods/recipes/p2-vit.md#p2-vit",
+      "original_recipe_status": "core_recipe_verified",
+      "status_note": "100图；PoT scale搜索与完整4/8权重mixed分支分开。",
+      "author_code_evidence": "官方量化入口已核对；完整搜索和RTL公开范围未确认",
+      "version_family": "p2-vit",
+      "review_date": "2026-11-25",
+      "survey_short_title": "P2-ViT",
+      "survey_family": "deployment",
+      "coverage_category": "ptq_material",
+      "qat_allowed": false,
+      "full_recipe_implementation_claimed": false
+    },
+    {
+      "id": "packqvit",
+      "survey_ref": 88,
+      "coverage_category": "excluded_qat",
+      "primary_urls": [
+        "https://proceedings.neurips.cc/paper_files/paper/2023/hash/1c92edb990a05f2269f0cc3afbb4c952-Abstract-Conference.html",
+        "https://github.com/PeiyanFlying/PackQViT"
+      ],
+      "title": "PackQViT: Faster Sub-8-bit Vision Transformers via Full and Packed Quantization on the Mobile",
+      "reason": "正文明确activation-aware full sub8bit QAT；移动端收益依赖该路线，全部排除。"
+    },
+    {
+      "id": "pf2a-vit",
+      "survey_ref": 93,
+      "coverage_category": "unresolved_boundary",
+      "primary_urls": [
+        "https://ieeexplore.ieee.org/abstract/document/10979990/authors",
+        "https://doi.org/10.1109/TCAD.2025.3565468",
+        "https://api.crossref.org/works/10.1109/TCAD.2025.3565468"
+      ],
+      "title": "PF²A-ViT: Parameter-Free and Feature-Aware Dynamic Token Pruning Accelerator With Complementary Quantization–Encoding for Vision Transformer",
+      "reason": "parameter-free pruning不等于整个quantization pipeline无需QAT；需查全文，不纳执行卡。综述作者名单也需纠正。"
+    },
+    {
+      "id": "practicaledge",
+      "title": "PracticalEdge",
+      "alias": "PracticalEdge",
+      "survey_ref": 26,
+      "correct_title": "Practical Edge Kernels for Integer-Only Vision Transformers Under Post-training Quantization",
+      "paper_identity_verified": true,
+      "primary_urls": [
+        "https://proceedings.mlsys.org/paper_files/paper/2023/hash/12f429641e5c63a9ca7fd1c5c4804d32-Abstract-mlsys2023.html",
+        "https://proceedings.mlsys.org/paper_files/paper/2023/file/12f429641e5c63a9ca7fd1c5c4804d32-Paper-mlsys2023.pdf"
+      ],
+      "read_scope": [
+        "MLSys标题/作者；§3、§4.1–4.4"
+      ],
+      "role": "integer_ptq_operator",
+      "admission_status": "included_ptq",
+      "doc_anchor": "../../docs/methods/recipes/practicaledge.md#practicaledge",
+      "original_recipe_status": "core_recipe_verified",
+      "status_note": "100图；LN uint16，Softmax/GELU uint8，int32内部；不是W4A4原结果。",
+      "author_code_evidence": "未核实作者公开实现",
+      "version_family": "practicaledge",
+      "review_date": "2026-11-25",
+      "survey_short_title": "PracticalEdge",
+      "survey_family": "deployment",
+      "coverage_category": "ptq_material",
+      "qat_allowed": false,
+      "full_recipe_implementation_claimed": false
+    },
+    {
+      "id": "trio-vit",
+      "title": "Trio-ViT",
+      "alias": "Trio-ViT",
+      "survey_ref": 46,
+      "correct_title": "Trio-ViT: Post-Training Quantization and Acceleration for Softmax-Free Efficient Vision Transformer",
+      "paper_identity_verified": true,
+      "primary_urls": [
+        "https://arxiv.org/abs/2405.03882",
+        "https://github.com/shihuihong214/Trio-ViT"
+      ],
+      "read_scope": [
+        "§IV、§VI-A/B；官方README及运行入口"
+      ],
+      "role": "architecture_specific_ptq",
+      "admission_status": "included_ptq",
+      "doc_anchor": "../../docs/methods/recipes/trio-vit.md#trio-vit",
+      "original_recipe_status": "core_recipe_verified_budget_partial",
+      "status_note": "1024图局部PTQ重构，主要W8A8/分母4bit log；EfficientViT拓扑，不适用于任意Softmax ViT。",
+      "author_code_evidence": "作者量化入口已核对；全部重构超参数与硬件范围待逐文件核",
+      "version_family": "trio-vit",
+      "review_date": "2026-11-25",
+      "survey_short_title": "Trio-ViT",
+      "survey_family": "deployment",
+      "coverage_category": "ptq_material",
+      "qat_allowed": false,
+      "full_recipe_implementation_claimed": false
+    },
+    {
+      "id": "vaqf",
+      "survey_ref": 81,
+      "coverage_category": "excluded_qat",
+      "primary_urls": [
+        "https://arxiv.org/abs/2201.06618"
+      ],
+      "title": "VAQF: Fully Automatic Software-Hardware Co-Design Framework for Low-Bit Vision Transformer",
+      "reason": "三阶段量化网络训练，原文300epochs训练；QAT及依赖它的硬件recipe排除。"
+    },
+    {
+      "id": "vitality",
+      "survey_ref": 94,
+      "coverage_category": "excluded_non_ptq",
+      "primary_urls": [
+        "https://arxiv.org/abs/2211.05109",
+        "https://github.com/GATECH-EIC/ViTaLiTy"
+      ],
+      "title": "ViTALiTy: Unifying Low-rank and Sparse Approximation for Vision Transformer Acceleration with a Linear Taylor Attention",
+      "reason": "改变attention结构并训练/蒸馏，不是独立PTQ算法；仅筛查，避免误称QAT。"
+    },
+    {
+      "id": "vitcod",
+      "survey_ref": 92,
+      "coverage_category": "excluded_non_ptq",
+      "primary_urls": [
+        "https://arxiv.org/abs/2210.09573",
+        "https://github.com/GATECH-EIC/ViTCoD"
+      ],
+      "title": "ViTCoD: Vision Transformer Acceleration via Dedicated Algorithm and Accelerator Co-Design",
+      "reason": "包含稀疏结构及learnable encoder训练，非独立PTQ原配方；仅筛查，避免误称QAT。"
+    }
+  ]
+}

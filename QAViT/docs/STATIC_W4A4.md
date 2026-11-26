@@ -1,6 +1,14 @@
-# Static W4A4 协议
+# 静态 W4A4 协议
 
-新 ResearchBrief 使用 `quantization_contract: {"protocol":"static_w4a4/1"}`。旧运行的冻结记录保持原义。模型主体 Linear/Conv 主权重 W4、输入 A4；Attention Q/K/V 和用于 PV 的 Softmax 输出 P、用于 FC2 的 post-GELU 均 A4。每个固定量化组最多16码字，零计入；参数在推理前冻结。
+当前主线模板为 `static_w4a4/2`。量化覆盖按绑定模型实际 Linear、Conv、注意力两个矩阵乘和下游输入边审计。每个固定分组最多 16 个可区分码字，零值、符号、区域位、饱和与下溢均占真实编码容量。每组的位置、粒度及推理尺度固定。有限校准数据上的估计、搜索、闭式求解和限定目标重构均有执行入口。
+
+使用优化时，`execution.construction` 绑定配方版本、校准 split、更新对象、目标及 optimizer step 上界。冻结阶段单独加载包，核验来源、实际状态与下游评分。扩展配置 `ptq_extension/1` 记录 `coverage_exceptions`、`weight_only`、`mixed_precision`、`dynamic_quantization` 和 `additional_computation` 中实际使用的各项。额外 FP 旁路、向量码本、混合 payload 与结构开销随配置记录。历史比较按各自冻结协议恢复。
+
+[协议数学与执行含义](../knowledge/ptq/01_STATIC_W4A4_V2.md) · [比较、校准来源与证据](../knowledge/ptq/11_TASK_COMPARISON_AND_EVIDENCE.md) · [逐方法可调用状态](../knowledge/ptq/implementation_status.json)
+
+## 历史 static_w4a4/1
+
+当时的 ResearchBrief 使用 `quantization_contract: {"protocol":"static_w4a4/1"}`。旧运行的冻结记录保持原义。模型主体 Linear/Conv 主权重 W4、输入 A4；Attention Q/K/V 和用于 PV 的 Softmax 输出 P、用于 FC2 的 post-GELU 均 A4。每个固定量化组最多16码字，零计入；参数在推理前冻结。
 
 允许 LN、Softmax、GELU 内部高精度，允许 gamma/beta、bias、CLS token、位置编码、Residual 加法和矩阵累加高精度；进入上述计算边界须 A4。head、neck 可 FP，实际选择进入 coverage.task_modules。粒度、对称性、量化器、校准、重参数化与补偿是搜索空间；[-8,7]与[-7,7]都合法。内置插件的能力限制不是全局算法禁令，自主实现可走 Coding。
 

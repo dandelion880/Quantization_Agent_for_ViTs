@@ -1,0 +1,39 @@
+{
+  "calls": [
+    {
+      "role": "generation",
+      "provider": "codex_subscription",
+      "request_sha256": "93233ddb0685e57c082fadeb69669e4d283698deb549591194f6a0ea9a934885",
+      "exit_code": 0,
+      "response_present": true,
+      "audit_sha256": "b6b4e670977dec4d3a474a0ae9011e4e902743701e19e4537727ee757e7ebcd2",
+      "path": "role_calls/generation/0/llm_audit.json"
+    },
+    {
+      "role": "generation",
+      "provider": "codex_subscription",
+      "request_sha256": "e7f6dd6cb4d210b80f1a09cb06039749acf35e762ae27f0d1b860daa59ecf9d4",
+      "exit_code": 0,
+      "response_present": true,
+      "audit_sha256": "7360edee2e855e8689186f33e15fabe3512bf6216d91fdaf5cc965d4b13b8c44",
+      "path": "role_calls/generation/1/llm_audit.json"
+    },
+    {
+      "role": "recorder",
+      "provider": "codex_subscription",
+      "request_sha256": "ad3a21aaf614a8b36651b7c40bc2311b2a6063fca45f5839472741becde9270a",
+      "exit_code": 0,
+      "response_present": true,
+      "audit_sha256": "e4780d7432e21b5be64e52e133af5485a093e4afc0152b5a75c2bf2ae3c8b9e7",
+      "path": "role_calls/recorder/0/llm_audit.json"
+    }
+  ],
+  "static_read": {
+    "asset": "methods/recipes/biascomp.md",
+    "characters": 1591,
+    "sha256": "f59ecdb025797fb7199b9e539928941a84e1f18df72b296892d8a50bcd9c92ff"
+  },
+  "evidence": "EvidenceCard-8a79bcdfa7734eddbd2369537bed29a7@1",
+  "recorder": "MetareviewCard-b981a32f69354971a39100733eba65d9@1",
+  "restored_digest": "140e04d7402b8328781552b7244aef6cc9d8a964fa1df7d8c3e1b79dc5df9d4a"
+}

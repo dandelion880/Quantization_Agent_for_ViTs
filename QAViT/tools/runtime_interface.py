@@ -247,8 +247,7 @@ def interface_fixture(execution, case):
         reset = ServerBackend.reset
 
         def forward_model(self, model, inputs):
-            with torch.inference_mode():
-                return model(inputs)
+            return model(inputs)
 
     backend = Backend()
     if len(shape) == 4 and 'patch_embed.proj' in sites:

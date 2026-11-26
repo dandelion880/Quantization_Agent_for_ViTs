@@ -60,16 +60,26 @@ def capture(backend, model, layer, data, limit_mib, gradient_loss=None, *, obser
                     module.integer_enabled = enabled and last_batch
             if gradient_loss:
                 with torch.enable_grad():
-                    pred = differentiable_forward(backend, model, x.detach().requires_grad_(True))
-                    require(torch.is_tensor(pred) and pred.ndim == 2 and pred.shape[1] > 1,
-                            "Hessian-guided 当前需要分类 logits")
-                    if gradient_loss == "classification_ce":
-                        require(sample_id in data.labels, "缺少校准样本真实标签")
-                        loss = F.cross_entropy(pred, torch.tensor([data.labels[sample_id]], device=pred.device))
+                    variable=x.detach().requires_grad_(True)
+                    if hasattr(x,"_qavit_dense_metadata"):variable._qavit_dense_metadata=x._qavit_dense_metadata
+                    pred = differentiable_forward(backend, model, variable)
+                    require(torch.is_tensor(pred) and pred.ndim==(4 if hasattr(x,"_qavit_dense_metadata") else 2) and pred.shape[1] > 1,
+                            "task sensitivity requires the bound classification or dense head")
+                    if gradient_loss == "teacher_class_ce":
+                        reference=forward(backend,backend.model,x)
+                        loss=F.cross_entropy(pred,reference.argmax(1))
+                    elif gradient_loss == "classification_ce":
+                        require(hasattr(x,"_qavit_dense_labels") or sample_id in data.labels, "缺少校准样本真实标签")
+                        if hasattr(x,"_qavit_dense_labels"):
+                            loss=F.cross_entropy(pred,x._qavit_dense_labels,ignore_index=x._qavit_ignore_index)
+                        else:loss = F.cross_entropy(pred, torch.tensor([data.labels[sample_id]], device=pred.device))
                     else:
                         require(gradient_loss == "teacher_kl", "未知 Hessian loss")
                         teacher = forward(backend, backend.model, x).clone()
-                        loss = F.kl_div(F.log_softmax(pred, -1), F.softmax(teacher, -1), reduction="batchmean")
+                        if hasattr(x,"_qavit_dense_metadata"):
+                            from .research_metrics import task_loss
+                            loss=task_loss(pred,teacher=teacher,mask=(x._qavit_dense_labels!=x._qavit_ignore_index))
+                        else:loss = F.kl_div(F.log_softmax(pred, -1), F.softmax(teacher, -1), reduction="batchmean")
                     require(current and all(r["y"].requires_grad for r in current), "位点输出不可微，不能伪造 Hessian 权重")
                     gradients = torch.autograd.grad(loss, [r["y"] for r in current])
                     for row, grad in zip(current, gradients):
@@ -118,7 +128,17 @@ def capture(backend, model, layer, data, limit_mib, gradient_loss=None, *, obser
                      "gradient_statistics": gradient_statistics}
 
 
-def combined_input(records):
+def combined_input(records, *, flexible_axis=None):
+    if flexible_axis is not None and any(r["x"].shape[1:]!=records[0]["x"].shape[1:] for r in records):
+        # For a uniform static observer, concatenate sample coordinates while preserving the retained feature axis.
+        if flexible_axis=="scalar":return torch.cat([r["x"].flatten() for r in records])[None,:]
+        feature=int(flexible_axis)
+        parts=[r["x"].movedim(feature,-1).reshape(-1,r["x"].shape[feature]) for r in records]
+        require(len({p.size(-1) for p in parts})==1,"ragged view changes the retained feature count")
+        merged=torch.cat(parts)
+        rank=records[0]["x"].ndim
+        return merged.reshape(1,merged.size(0),*([1]*(rank-3)),merged.size(-1)).movedim(-1,feature)
+
     require(all(r["x"].shape[1:] == records[0]["x"].shape[1:] for r in records),
             "此静态校准器要求固定输入形状；不能静默合并不同 token 布局")
     return torch.cat([r["x"] for r in records], dim=0)

@@ -64,10 +64,10 @@ def state_identity(model):
     """Include nonpersistent buffers, packed codes, execution flags and bound recipes."""
     from .evaluation import model_digest
     qmap = _quantizers(model)
-    return fingerprint({"parameters_and_buffers": model_digest(model), "sites": {
+    return fingerprint({**({"structure":model._qavit_structure} if getattr(model,"_qavit_structure",None) else {}), "parameters_and_buffers": model_digest(model), "sites": {
         sid: {"layer": q.layer, "execution": q.execution, "record": _digest(getattr(q, "weight_record", None)),
               "flags": {key: getattr(q, key) for key in ("enabled", "weight_enabled", "gradient_probe",
-                                                         "bias_uses_decoded_weight") if hasattr(q, key)}}
+                                                         "bias_uses_decoded_weight","grid_edit_from_packed_state") if hasattr(q, key)}}
         for sid, q in qmap.items()}, "operators": {
         name: {k: getattr(m, k) for k in ("integer_enabled", "_ptq_integer_enabled") if hasattr(m, k)}
         for name, m in model.named_modules() if hasattr(m, "integer_enabled") or hasattr(m, "_ptq_integer_enabled")}})
@@ -126,6 +126,7 @@ def apply_grid_changes(model, scales, input_shapes):
             new = _candidate_params(old, edit, method)
             if all(torch.equal(old[k], new[k]) for k in old):
                 continue
+            require(not hasattr(getattr(q,"ptq_output_correction",None),"multiplier"),"changing a folded accumulator requires a complete refit to update the signed multiplier and bias")
             if target == "activation":
                 shape = input_shapes.get(sid, getattr(q, "last_input_shape", None))
                 require(shape is not None, "missing bound input shape for " + sid)
@@ -133,7 +134,8 @@ def apply_grid_changes(model, scales, input_shapes):
                 pending.append((q, target, new))
                 before, after = old, new
             else:
-                record = get_target_method("weight", method).fit(q.reference_weight, spec, new)
+                source=q.decoded_weight if getattr(q,"grid_edit_from_packed_state",False) else q.reference_weight
+                record = get_target_method("weight", method).fit(source, spec, new)
                 validate_weight(record, spec, list(q.reference_weight.shape))
                 pending.append((q, target, (record, decode_weight(record, q.reference_weight.device))))
                 before, after = q.weight_record, record

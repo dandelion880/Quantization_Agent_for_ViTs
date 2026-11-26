@@ -134,7 +134,10 @@ class SkillLibrary:
             if query is None:
                 lines.append(f'{name} {version} {"retired" if retired else "active"} {description}')
             else:
-                lines.append(f'skills/{name}/SKILL.md — {description[:150]}')
+                line=f'skills/{name}/SKILL.md — {description[:150]}'
+                if sum(len(item)+1 for item in lines)+len(line)>3600:
+                    break
+                lines.append(line)
         if query is None:
             lines += [f'{name}@{v} conflicting lineage; exact read only' for name in conflicts for v in conflicts[name]]
             return '# QAViT Scientific Skill Catalog\n' + '\n'.join(lines)

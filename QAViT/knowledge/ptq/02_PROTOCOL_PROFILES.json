@@ -1,0 +1,117 @@
+{
+  "document_schema": "qavit.research_materials.protocol_design/1",
+  "status": "source_specification_with_runtime_bindings",
+  "date": "2026-11-25",
+  "research_scope": {
+    "construction_regime": "verified_post_training_quantization",
+    "qat_allowed": false,
+    "mixed_papers": "admit_only_independently_verified_ptq_branch",
+    "uncertain_training_regime": "screening_record_only_no_method_content"
+  },
+  "extension_inheritance": "All extension profiles inherit research_scope. Expanding deployment choices does not permit QAT.",
+  "primary_profile": {
+    "id": "static_w4a4/2",
+    "definition_document": "01_STATIC_W4A4_V2.md",
+    "construction_regime": "verified_post_training_quantization",
+    "qat_allowed": false,
+    "deployment": {
+      "weight_bits": 4,
+      "activation_bits": 4,
+      "code_capacity_per_group": 16,
+      "parameters": "frozen_after_construction",
+      "group_assignment": "fixed_from_structure_or_metadata_not_input_values",
+      "runtime_range_estimation": false,
+      "runtime_parameter_learning": false,
+      "coverage": "actual_backbone_linear_conv_and_attention_matmul_edges",
+      "task_modules": "explicit_float_or_quantized_policy",
+      "internal_high_precision": [
+        "normalization",
+        "nonlinear_evaluation",
+        "bias",
+        "residual_addition",
+        "accumulation",
+        "fixed_model_constants"
+      ],
+      "format": "declare_actual_codec_in_addition_to_bitwidth"
+    },
+    "construction_choices": {
+      "gradient_use": [
+        "none",
+        "read_only",
+        "optimization"
+      ],
+      "parameter_update": [
+        "statistics",
+        "discrete_search",
+        "closed_form",
+        "finite_calibration_reconstruction"
+      ],
+      "update_scope": "declared_by_recipe_and_experiment",
+      "calibration_data": "declared_sources_samples_views_and_supervision",
+      "compute_budget": "declared_and_measured_no_universal_iteration_count"
+    },
+    "task_modes": [
+      "single_source_same_backbone_transfer",
+      "joint_calibration_same_backbone",
+      "separate_task_packages_with_separate_claims"
+    ]
+  },
+  "extension_dimensions": [
+    {
+      "id": "coverage_exceptions",
+      "description": "Static W4A4 with explicitly listed higher-precision or unquantized backbone edges; report the exceptions beside the result.",
+      "comparison": "matched_coverage_or_resource_controlled"
+    },
+    {
+      "id": "dynamic_quantization",
+      "description": "Input-dependent scales, ranges, groups or routing; freeze the deployed algorithm and learned constants, report runtime behavior.",
+      "comparison": "matched_dynamic_policy_or_resource_controlled"
+    },
+    {
+      "id": "mixed_precision",
+      "description": "Layer, channel, group, token or window precision allocation; preserve the actual precision map and runtime rule.",
+      "comparison": "matched_storage_compute_or_measured_latency"
+    },
+    {
+      "id": "additional_computation",
+      "description": "Retained extra operators must be reported with their precision and cost. A retained FP matrix compensation or FP outlier multiplication requires an extension; correction fused into quantized weights, permitted bias or static requantization does not automatically leave the primary profile.",
+      "architecture_rule": "A fixed structural change can still satisfy static W4A4 if all actual covered matrix inputs and weights meet that profile. Record architecture and total cost independently.",
+      "comparison": "matched_resource_or_explicit_pareto"
+    },
+    {
+      "id": "weight_only",
+      "description": "A PTQ reference profile retaining higher precision activations; it is not a W4A4 result.",
+      "comparison": "weight_only_baselines"
+    }
+  ],
+  "independent_attributes": {
+    "training_free": "must_define_whether_it_excludes_parameter_optimization_or_all_backward",
+    "integer_only": "requires_actual_operator_graph_evidence",
+    "native_low_precision": "requires_backend_and_kernel_evidence",
+    "data_free": "record_generation_and_model_restoration_separately",
+    "architecture_change": "record_structure_and_reconstruction_with_appropriate_controls"
+  },
+  "comparison_intents": [
+    "original_recipe_reproduction",
+    "matched_quantization_conditions",
+    "matched_resources",
+    "transfer_and_robustness"
+  ],
+  "provenance_groups": [
+    "source_model",
+    "method_and_code_version",
+    "data_and_usage",
+    "parameter_updates",
+    "actual_precision_and_coverage",
+    "artifact_state",
+    "evaluation_view",
+    "construction_and_deployment_cost"
+  ],
+  "historical_runs": "preserve_original_protocol_and_evidence",
+  "integration_note": "Map these concepts into existing ResearchBrief, execution and Evidence structures. This file is descriptive and must not be passed to the current configuration loader.",
+  "runtime": {
+    "profile": "QAViT/core/ptq_protocol.py",
+    "coverage": "QAViT/core/static_w4a4.py",
+    "template": "QAViT/configs/research.json"
+  }
+}

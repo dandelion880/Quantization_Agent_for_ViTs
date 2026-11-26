@@ -13,3 +13,11 @@
 允许基于论文、自主实现或现有插件做必要适配，说明与原方法的差异。LN 输出的 shape/getattr 使用不是另一个数值消费者；不要以 FX 单一 user 数目或固定组数认定不兼容。优先复用已验证真实输入边的 pipeline 重参数化。context.task.implementation_history 提供此前源码、执行错误和日志，供跨请求修复；不因缺少逐字官方实现而拒绝。若组合不兼容，向研究者回传具体原因及可保留的完整基础方案，不提交重复停止桩。
 
 冻结来源只来自原请求规范化后的 evidence_refs/solution_refs；`context.load_frozen` 接受确切Evidence/solution/model身份，省略ref仅在唯一包时成立。request-origin 错误要求原研究者补来源或消歧；不要反复改代码猜路径或自行扩大授权。implementation-origin 错误修复实现；resource/host错误保留回执交宿主处理。校准和传播诊断可直接复用公开 `ptq_agent.execution.calibration_search`、`propagation`；能力边界与计算含义见方法/接口文档。
+
+读取不可变 original_request、当前唯一源码/父版本、执行条件和已支持接口。优先复用项目的量化表示、求解器、数据、capture、传播与评价能力；在其上补缺失数学步骤、参数更新、安装顺序和持久状态。已有工具的名称不证明其已经实现论文整套算法，不能把 block 调度当联合重构、base×scale 网格当完整 FPCS。
+
+明确 W/A 轴、reference 输入、量化上下界、总码态、特殊 token、优化对象和可修改状态。变换先检查浮点等价条件，重构说明教师/学生输入关系；动态路由和额外补偿不能在 export/reload 时丢失。fit 仅使用声明数据；apply 不修改冻结状态。数据、任务 head 与最终评价保持原需求。
+
+原论文和代码不一致时实现已选择的配方并说明差异；原文公式明显存在边界疑点时回传具体问题，不静默修成自选版本后仍叫原法。明确自主适配是允许的，不要求逐字复制官方代码。有限校准 PTQ 优化按请求落实；不得接入 QAT 训练流程。
+
+使用当前 quantizer_v1、executor_v1 或 experiment_v1 合同交付一份实现及必要 execution_choices，字段和函数签名以宿主为准。恢复旧灵感时基于确切源码做增量修改，保持原件和回退。实现错误修当前实现；请求来源歧义交原研究者；资源/宿主错误保留回执。没有真实运行反馈时不宣称通过，部分任务成功不冒充完整双任务成功。

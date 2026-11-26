@@ -34,7 +34,7 @@ class ScientificSkills(TempCase):
         task, context = self.begin(wf, self.generation(wf))
         root = QAVIT / 'docs/skills'
         skills = sorted(root.glob('*/SKILL.md'))
-        self.assertEqual(len(skills), 7)
+        self.assertEqual(len(skills), 11)
         identity = code_identity()['core_files']
         catalog = context['skill_catalog']
         self.assertLess(len(catalog), 4000)
@@ -42,7 +42,9 @@ class ScientificSkills(TempCase):
             body = path.read_text()
             self.assertIn('name: ' + path.parent.name, body)
             self.assertIn('description: >-', body)
-            self.assertIn(path.parent.name + '/SKILL.md', catalog)
+            specific = wf.skills.catalog(wf.journal.sequence, path.parent.name.replace('-', ' '))
+            self.assertIn(path.parent.name + '/SKILL.md', specific)
+            self.assertIn(path.parent.name, wf.skills.read('skills/INDEX.md', wf.journal.sequence)[1])
             # A body or reference is never injected by catalog discovery alone.
             self.assertNotIn(body, canonical(context))
         paths = [*root.rglob('*.md'), *(QAVIT / 'knowledge/research-skills').rglob('*.md'),

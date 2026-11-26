@@ -21,7 +21,7 @@
       "user goals and search space"
     ],
     "quantization_contract": {
-      "protocol": "static_w4a4/1"
+      "protocol": "static_w4a4/2"
     }
   },
   "budget": {

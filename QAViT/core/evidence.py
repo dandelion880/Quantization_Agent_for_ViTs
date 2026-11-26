@@ -327,7 +327,7 @@ def evidence_facts(card, root=None):
             and all(isinstance(r, dict) and {'id','scores','objectives'} <= r.keys() for r in trial['candidates'])):
         field = '/payload/observations/result'
         result['frozen_trials'] = {k: deepcopy(trial[k]) for k in ('parent_state_sha256','parent_model_ref',
-            'split','reduction','winners','parameters_installed') if k in trial}
+            'split','reduction','winners','parameters_installed','measurement_cost') if k in trial}
         result['frozen_trials'].update(originals=len(trial['sample_ids']), view_units=len(trial['views']),
             candidates=len(trial['candidates']), read_card={'ref':ref,'field':field},
             scores_source={'read_card': {'ref':ref,'field':field+'/candidates'}})

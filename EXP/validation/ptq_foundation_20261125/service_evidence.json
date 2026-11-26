@@ -1,0 +1,171 @@
+{
+  "fixture": "预训练分类模型与真实 ImageNet 原图；局部覆盖扩展，L2 有界验证",
+  "stages": {
+    "prepare": {
+      "request": "service/prepare/request.json",
+      "request_sha256": "8152fd8849e0727b40dd14fb0ca1f2e9597eb96e507f16bd600ef73eba17303e",
+      "model_ref": "0093d951a8c2d4e95e53bbb1c20187c8ae5f1e86931a91cf8712baaed3fd1c10",
+      "sample_ids": [
+        "train/n04522168/n04522168_9121.JPEG"
+      ],
+      "stable_metrics": {
+        "mse": 0.007028959427763652,
+        "cosine_error": 0.006237273141551092,
+        "top1": 100.0,
+        "top5": 100.0
+      },
+      "gradient_audit": {
+        "autograd_grad_calls": 0,
+        "backward_calls": 2,
+        "optimizer_steps": 2
+      },
+      "frozen_evaluation_sha256": "45d47aadb91434fd35f73e7b734b0bd8fc60525c4ac8641a1ea7a9c96ace2227",
+      "weights_sha256": "3ba0c3fc4b6589f453bd2276f5b36138d913d105ea5a3ef2447b9df17d6d40ad",
+      "construction": {
+        "max_steps": 2,
+        "objective": "teacher CE + TV residual - patch KDE entropy",
+        "recipe_version": "psaq_kde bounded/1",
+        "regime": "finite_calibration_ptq",
+        "split": "calibration",
+        "update_targets": [
+          "synthetic image pixels"
+        ]
+      },
+      "ancestry": null,
+      "refinement": null,
+      "retained_plan": {
+        "evidence": [
+          "methods/recipes/psaq-vit.md"
+        ],
+        "profile": "bounded pixel optimization and single-site coverage",
+        "selected_sites": [
+          "blocks.0.attn.qkv"
+        ],
+        "settings": {},
+        "source_id": "psaq-vit",
+        "units": [],
+        "version": "paper+author reference"
+      }
+    },
+    "reuse": {
+      "request": "service/reuse/request.json",
+      "request_sha256": "e97d4d194ac7df2219409badaa3c6ba1d44b6a3d3a288c4b30211bf3add9e986",
+      "model_ref": "0093d951a8c2d4e95e53bbb1c20187c8ae5f1e86931a91cf8712baaed3fd1c10",
+      "sample_ids": [
+        "train/n04522168/n04522168_9121.JPEG"
+      ],
+      "stable_metrics": {
+        "mse": 0.007028959427763652,
+        "cosine_error": 0.006237273141551092,
+        "top1": 100.0,
+        "top5": 100.0
+      },
+      "gradient_audit": {
+        "autograd_grad_calls": 0,
+        "backward_calls": 0,
+        "optimizer_steps": 0
+      },
+      "frozen_evaluation_sha256": "45d47aadb91434fd35f73e7b734b0bd8fc60525c4ac8641a1ea7a9c96ace2227"
+    },
+    "child": {
+      "request": "service/child/request.json",
+      "request_sha256": "206c8b87171e9bf04ce83c62339592ac5716e17f1b12074fd3113176ca95e420",
+      "model_ref": "ecef088593e8b0777da3fef9c314b67843c4cf9796645a065ffe9482a505b5fe",
+      "sample_ids": [
+        "train/n04522168/n04522168_9121.JPEG"
+      ],
+      "stable_metrics": {
+        "mse": 0.011397272973351474,
+        "cosine_error": 0.010043969936841424,
+        "top1": 100.0,
+        "top5": 100.0
+      },
+      "gradient_audit": {
+        "autograd_grad_calls": 0,
+        "backward_calls": 0,
+        "optimizer_steps": 0
+      },
+      "frozen_evaluation_sha256": "8cd4b42f9b2addccbd98278cd9fe531e9cc4fb9ea9412abb14151ca2783e5854",
+      "weights_sha256": "4ce734fde5919d29e5753083383dfd9e90c94a4753eca25037e7178e9b663c37",
+      "construction": {
+        "max_steps": 2,
+        "objective": "teacher CE + TV residual - patch KDE entropy",
+        "recipe_version": "psaq_kde bounded/1",
+        "regime": "finite_calibration_ptq",
+        "split": "calibration",
+        "update_targets": [
+          "synthetic image pixels"
+        ]
+      },
+      "ancestry": [
+        {
+          "construction": {
+            "max_steps": 2,
+            "objective": "teacher CE + TV residual - patch KDE entropy",
+            "recipe_version": "psaq_kde bounded/1",
+            "regime": "finite_calibration_ptq",
+            "split": "calibration",
+            "update_targets": [
+              "synthetic image pixels"
+            ]
+          },
+          "model_ref": "0093d951a8c2d4e95e53bbb1c20187c8ae5f1e86931a91cf8712baaed3fd1c10"
+        }
+      ],
+      "refinement": {
+        "candidate_sha256": "d2623e95eb90b6aa325e6747ede2d1c35471af0993efb44645602d70c2a9c823",
+        "changes": {
+          "blocks.0.attn.qkv": {
+            "activation": {
+              "after": "19e54fb7493ec50c49e5bcd582fb0e359d0b5902b748ed7cbc69953f366105ac",
+              "before": "622ae2934150e6d9ba5ddd81b83219cd17473a76881bd1aeac9c7a46986bd577"
+            }
+          }
+        },
+        "child_state_sha256": "27019e8b6375918bd5b9c77df9a169b86960e63b026ff1346e9f8baa0389f7b0",
+        "id": "0.97",
+        "incremental_calibration_ids": [
+          "train/n01751748/n01751748_5926.JPEG",
+          "train/n02442845/n02442845_19600.JPEG"
+        ],
+        "inherited_calibration_ids": [
+          "synthetic/568c8878acb4a5efa98c0c7e840063c15bc0b363d214e16fee750c6280427e9d",
+          "synthetic/a826cb46f9869601001959775e9183042e6055ca0490a1f3916c779474771a18"
+        ],
+        "initialization": "verified_parent",
+        "job_calibration_reads": {},
+        "parent_evidence_ref": "/root/data-fs/projects/Quantization_Agent_for_ViTs/EXP/validation/ptq_foundation_20261125/service/prepare/frozen_evaluation.json",
+        "parent_model_ref": "0093d951a8c2d4e95e53bbb1c20187c8ae5f1e86931a91cf8712baaed3fd1c10",
+        "parent_state_sha256": "5648771f29b73cd14001bae13d70eda5eceae50aabe59ab1843c8b4f187d331e",
+        "scales": {
+          "blocks.0.attn.qkv": {
+            "activation": 0.97
+          }
+        },
+        "selection_source": {
+          "candidate_id": "0.97",
+          "evidence_ref": "/root/data-fs/projects/Quantization_Agent_for_ViTs/EXP/validation/ptq_foundation_20261125/service/child/scores.json"
+        },
+        "validation_input_shapes": {
+          "blocks.0.attn.qkv": [
+            1,
+            197,
+            768
+          ]
+        }
+      },
+      "retained_plan": null
+    }
+  },
+  "frozen_comparison": {
+    "selected": "0.97",
+    "candidates": {
+      "0.97": {
+        "class.mse": 0.002516698678502427
+      },
+      "1.03": {
+        "class.mse": 0.004482256566518243
+      }
+    }
+  }
+}

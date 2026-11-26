@@ -5,7 +5,7 @@ from core.cards import ContractError, canonical, fingerprint
 
 VERSION = "qavit.evidence_scope/1"
 BOUNDARIES = ("model", "model_identity_sha256", "measurement_kind", "measurement_source",
-              "site", "weight_bits", "activation_bits", "quantization", "parameters", "data", "implementation")
+              "site", "weight_bits", "activation_bits", "quantization", "parameters", "data", "implementation","protocol","deployed_coverage","task_views","construction")
 
 
 def canonical_scope(experiment, data):
@@ -19,6 +19,15 @@ def canonical_scope(experiment, data):
               "model_identity_sha256": fingerprint(provenance.get("model_identity", {})),
               "measurement_kind": facts.get("measurement_kind", "unverified_scope"),
               "data": deepcopy(facts.get("data", {}))}
+    from core.ptq_protocol import current,protocol_of
+    if current(protocol_of(spec)):
+        receipt=data.get("observations",{}).get("static_w4a4") or {}
+        result["protocol"]=protocol_of(spec)
+        if receipt:
+            result["deployed_coverage"]={k:deepcopy(receipt[k]) for k in ("protocol","extension_dimensions","required_bits","unquantized_edges","task_modules","boundaries") if k in receipt}
+        result["task_views"]={k:{field:deepcopy(value[field]) for field in ("split","sample_count","full_dataset","development_sha256") if field in value}
+                              for k,value in data.get("observations",{}).get("evaluations",{}).items()}
+        result["construction"]={k:deepcopy(provenance[k]) for k in ("construction","gradient_audit","training_declared") if k in provenance}
     implementation = {}
     if spec.get("measurement_implementation"):
         implementation["measurement_sha256"] = fingerprint(spec["measurement_implementation"])

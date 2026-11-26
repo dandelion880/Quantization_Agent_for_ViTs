@@ -16,7 +16,7 @@ def record_signature(value):
 
 
 def target_options(layer, target):
-    weight_keys = {"blocksize", "damping", "actorder", "gptaq_clip"}
+    weight_keys = {"qep","erq","row_codebook","gptaq_signed_min","blocksize", "damping", "actorder", "gptaq_clip"}
     return {k: v for k, v in layer.get("options", {}).items()
             if ((k in weight_keys or k.startswith("rounding_")) == (target == "weight"))}
 

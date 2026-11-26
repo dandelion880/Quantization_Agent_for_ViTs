@@ -14,3 +14,5 @@ PTF是量化器，integer_layernorm另行显式声明尺度边；使用PTF不自
 
 与同一LN链的RepQ-LN/SmoothQuant互斥；不同LN链可以并列。需要测量实际通道差异和形状；若用户要求最粗粒度，需解释通道因子的收益及开销。
 
+
+完整配方与版本条件见 [fq_vit](recipes/fq_vit.md)。

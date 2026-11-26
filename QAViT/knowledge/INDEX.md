@@ -35,3 +35,5 @@
 动态主题（问题＋可修改范围）及方法谱系由 `core/topics.py` 从本运行 Journal 派生；共同 focus 和轮中 revise_topic 属于 Generation。Recorder 的 topic_notes 只记录进展与复议建议。read_topic/read_method 保持原件按需可达，完整方案/B 不受主题过滤。见 [生命周期](../docs/RESOURCE_LIFECYCLE.md#动态研究主题与方法谱系)。
 
 Coding 的按需工程资料见 [工程索引](coding/INDEX.md)。科研角色根据配对的开发集 FP 和候选判断是否修订；阶段比较保留视图身份、校准条件和冻结模型身份。
+
+[PTQ 协议、来源账本、完整方法、研究维度和证据](ptq/INDEX.md)；静态文献按方法目录的 read_asset 读取，运行谱系按 read_method 恢复。

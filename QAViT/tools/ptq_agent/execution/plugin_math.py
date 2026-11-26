@@ -40,7 +40,7 @@ def smoothquant(x, weight, *, alpha=0.5):
     return {"scale": scale, "shift": torch.zeros_like(scale)}, None
 
 
-def repq_ln(x, weight, *, bits, observer=None, channel_params=None):
+def repq_ln(x, weight, *, bits, observer=None, channel_params=None, aggregate="mean", round_shared_zero=False):
     """RepQ Eq. 11–14；初始化用 minmax，保留官方可为非整数的 mean(z)。"""
     channels = x.reshape(-1, x.shape[-1])
     if channel_params is not None:
@@ -53,7 +53,8 @@ def repq_ln(x, weight, *, bits, observer=None, channel_params=None):
         lo, hi = channels.amin(0), channels.amax(0)
         delta = ((hi-lo) / (2 ** bits - 1)).clamp_min(1e-12)
         zero = (-lo / delta).round()
-    target_delta, target_zero = delta.mean(), zero.mean()
+    target_delta = torch.quantile(delta, .5) if aggregate=="median" else delta.mean()
+    target_zero = zero.mean().round() if round_shared_zero else zero.mean()
     scale = delta / target_delta
     shift = -zero * delta / scale + target_zero * target_delta
     return {"scale": scale, "shift": shift}, {"scale": target_delta, "zero": target_zero,
@@ -108,6 +109,9 @@ def fit_activation(x, spec, method, options=None):
 
 def activation_qdq(x, spec, method, params=None, options=None):
     p = fit_activation(x, spec, method, options) if params is None else {k: v.to(x.device) for k, v in params.items()}
+    if "layout_shape" in p:
+        from .fixed_grids import quantize
+        return quantize(x, spec, p)
     if (options or {}).get('token_partition') and method == 'uniform_affine':
         from .grids_partition import apply
         return apply(x, spec, options['token_partition'], p)
@@ -236,7 +240,7 @@ def gptq(weight, hessian, spec, options):
     require(bool(torch.isfinite(h).all()), "GPTQ Hessian 非有限")
     h = torch.linalg.cholesky(torch.cholesky_inverse(torch.linalg.cholesky(h)), upper=True)
     result = torch.zeros_like(w)
-    codes = torch.zeros_like(w, dtype=torch.uint8)
+    codes = torch.zeros_like(w, dtype=codecs.code_dtype(spec["bits"]))
     blocksize = options.get("blocksize", 128)
     for start in range(0, columns, blocksize):
         end = min(start + blocksize, columns)
@@ -246,7 +250,7 @@ def gptq(weight, hessian, spec, options):
             scale, zero = groups[int(order[start+j]) // group]
             q = (local[:, j] / scale).round().add(zero).clamp(0, 2 ** bits - 1)
             decoded = scale * (q - zero)
-            result[:, start+j], codes[:, start+j] = decoded, q.to(torch.uint8)
+            result[:, start+j], codes[:, start+j] = decoded, q.to(codes.dtype)
             err = (local[:, j] - decoded) / h[start+j, start+j]
             local[:, j:] -= err[:, None] @ h[start+j, start+j:end][None, :]
             error[:, j] = err
@@ -260,6 +264,12 @@ def gptq(weight, hessian, spec, options):
 
 
 def decode_weight(record, device):
+    if record.get("method")=="hc_rows":
+        from .weight_codebook import decode
+        return decode(record, device)
+    if record.get("method") == "erq":
+        from .paired_weights import decode
+        return decode(record, device)
     if record.get("method") == "adaround":
         from .adaround import decode
         return decode(record, device)
@@ -275,6 +285,12 @@ def decode_weight(record, device):
 
 
 def validate_weight(record, spec, shape):
+    if record.get("method")=="hc_rows":
+        from .weight_codebook import validate
+        return validate(record,spec,shape)
+    if record.get("method") == "erq":
+        from .paired_weights import validate
+        return validate(record, spec, shape)
     if record.get("method") == "adaround":
         from .adaround import validate_record
         return validate_record(record, spec, shape)
@@ -294,6 +310,12 @@ def validate_weight(record, spec, shape):
 
 
 def validate_activation(params, layer, shape):
+    from . import encodings
+    if layer["activation_method"] in encodings.NAMES:
+        return encodings.validate(params,layer,shape)
+    if layer["activation_method"] == "rtn" and layer["activation"]["granularity"] in ("per_group", "per_token"):
+        from .fixed_grids import validate
+        return validate(params, layer["activation"], shape)
     spec, method = layer["activation"], layer["activation_method"]
     if layer.get('options', {}).get('token_partition'):
         from .grids_partition import validate

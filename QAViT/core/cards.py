@@ -149,7 +149,7 @@ PAYLOAD_SCHEMAS["ReviewDecisionCard"]["allOf"] = [{
 PAYLOAD_SCHEMAS["ResearchBrief"]["properties"].update(quantization_contract=OBJECT, fixed_quantization=OBJECT)
 PAYLOAD_SCHEMAS["ExperimentCard"]["properties"]["execution"] = object_schema({
     "service": TEXT, "seed": {"type": "integer", "minimum": 0}, "requires_code": {"type": "boolean"},
-    "resolved_choices": OBJECT, "parameters": OBJECT, "quantization_contract": OBJECT,
+    "construction": OBJECT, "resolved_choices": OBJECT, "parameters": OBJECT, "quantization_contract": OBJECT,
     "evaluations": {"type": "array", "items": OBJECT}, "reload_before_evaluation": {"type": "boolean"},
 }, ["service", "resolved_choices"])
 PAYLOAD_SCHEMAS["MetareviewCard"]["properties"]["knowledge_updates"]["items"] = object_schema({

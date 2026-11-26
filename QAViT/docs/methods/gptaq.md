@@ -11,3 +11,5 @@
 适配：逐图流式统计，输入A是项目独立的静态插件，不复用原仓库动态per-token A或整模型配方；当前不开放未经核对的Conv/输入组GPTAQ。空间O(in_features²)多个矩阵，代价高于GPTQ；FP32并关闭此计算的TF32。W/A、前缀、输入变换或calibration数据改变都使统计缓存失效。量化编码保存重载不重新校准；仅reference QDQ。
 
 W4 对称码默认 [-8,7]（16值）合法。`options.gptaq_signed_min=-7` 可显式适配为15值；裁剪搜索及逐列舍入均使用新下界，误差补偿基于新解码值，禁止事后夹取冒充原算法。仅用于signed W4，不要求选择该变体。
+
+完整配方与版本条件见 [qep](recipes/qep.md)、[erq-icml2024](recipes/erq-icml2024.md)。

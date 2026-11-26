@@ -14,3 +14,5 @@ minmax 是固定初始 split（默认2^-8），并没有优化阈值。options.s
 
 依据：大量接近0概率且极少大值，检查 AV 输出误差。不能只依据QKV权重分布选择；需要概率实测。
 
+
+完整配方与版本条件见 [ptq4vit](recipes/ptq4vit.md)。

@@ -1,0 +1,167 @@
+{
+  "schema": "qavit.research_materials.package/1",
+  "date": "2026-11-25",
+  "edition": "five_work_packages_text_supplement",
+  "purpose": "Sourced PTQ materials and complete written specifications for QAViT work packages A–E; implementation and low-cost integration verification to follow",
+  "codex_task_prompt": "provided only in the conversation writing block; not included in archive",
+  "qat_allowed": false,
+  "implementation_performed": false,
+  "algorithm_reproduction_performed": false,
+  "source_coverage": {
+    "ptq_material": 51,
+    "ptq_source_gap": 5,
+    "excluded_qat": 14,
+    "family_version": 1,
+    "unresolved_boundary": 5,
+    "excluded_non_ptq": 6,
+    "operator_context": 1
+  },
+  "input_fingerprints": [
+    {
+      "name": "survey4vitptq.pdf",
+      "bytes": 4000942,
+      "sha256": "b3c5a0eaf73cb78c2eadecf4a454e5614db2de11350b05b92946a9d2ac8f6946"
+    },
+    {
+      "name": "QAViT(20261124-101904).zip",
+      "bytes": 238507848,
+      "sha256": "90188718f93fdc44e300ccd6aff9d4007454193513f816b7ec575ff166b2f4b6"
+    }
+  ],
+  "files": [
+    {
+      "name": "00_README.md",
+      "bytes": 7845,
+      "sha256": "e9ce796ce237fe551286000e8f7fd376a1dca1ac3643435ec9c658eab1f9865d"
+    },
+    {
+      "name": "01_STATIC_W4A4_V2.md",
+      "bytes": 15065,
+      "sha256": "5c73bd79a98a2d605a8c8d720f75b55b67434a0fc90e3bd662376ccb6a75bc07"
+    },
+    {
+      "name": "02_PROTOCOL_PROFILES.json",
+      "bytes": 4646,
+      "sha256": "9c82d8282d9e789e157161fb277b22a0a10710224f424d39e8a44d07a59cc2c4"
+    },
+    {
+      "name": "03_BASELINE_AND_INTEGRATION.md",
+      "bytes": 7180,
+      "sha256": "ab41de09372ade14757e3c1082c944fef67484c948711ec7628a0e95f6c1fb56"
+    },
+    {
+      "name": "04_RESEARCH_WORKFLOWS.md",
+      "bytes": 12885,
+      "sha256": "c5d1b033fe8d544983faaffedc5a4e9c869eeb93ad17c88a681f49626cc42e34"
+    },
+    {
+      "name": "05_TAXONOMY_AND_TOPIC_DESIGN.md",
+      "bytes": 11265,
+      "sha256": "d0d7c48a1dcb751ca543aa3bb0ce66ef8ab91aabc511f7ab8828521436392c3e"
+    },
+    {
+      "name": "06_CODEX_HANDOFF.md",
+      "bytes": 5465,
+      "sha256": "e3e08457b30cc1f1bf2b6380c7a525170203f6f7f42e8a10869eeae643d44767"
+    },
+    {
+      "name": "07_FIVE_WORK_PACKAGES.md",
+      "bytes": 13793,
+      "sha256": "3e62dff28cf65fccd27f458f5740bac95763a1765fd263956b5882711c701098"
+    },
+    {
+      "name": "08_METHOD_COMPONENT_MAP.md",
+      "bytes": 49822,
+      "sha256": "358eca7c6bc29ec2e252150606055836cb8cd3d9ea6307f0a52e7742d9331291"
+    },
+    {
+      "name": "09_ROLE_TEXT_BLOCKS.md",
+      "bytes": 23781,
+      "sha256": "ef9019980ffb6478149120988fb4608c1f1dd4352a3c45e3d2350b014bc816ed"
+    },
+    {
+      "name": "10_RESEARCH_SKILL_CONTENT.md",
+      "bytes": 31888,
+      "sha256": "8cc54f14c44099cb1512167ca459c5e8e2cd5aeb6e1ea8a6ce070919716ebe29"
+    },
+    {
+      "name": "11_TASK_COMPARISON_AND_EVIDENCE.md",
+      "bytes": 25915,
+      "sha256": "81081ec544c11e17226303861dce58f8f3a2baae379aff9532622e8ffd51a854"
+    },
+    {
+      "name": "12_INTEGRATION_ACCEPTANCE.md",
+      "bytes": 31214,
+      "sha256": "96b93b9072fad7e861aa39c8fe28dee4ccfa58e365765717604bc46fd77c1b26"
+    },
+    {
+      "name": "SOURCE_COVERAGE.md",
+      "bytes": 19448,
+      "sha256": "a50bf441b620fd7876ed711b28d3e464f3dc997853227522ebbbfbabd802fdd7"
+    },
+    {
+      "name": "existing_methods_delta.md",
+      "bytes": 10037,
+      "sha256": "725b8f23d3298953cba84e53620c53c63c13716d3560837aa3e9eaa9aa6e4d91"
+    },
+    {
+      "name": "methods_data_free.md",
+      "bytes": 16189,
+      "sha256": "d6ef5fb75f7661ef0669703cf92e27943cc0a3872583396a77e8e8702b31f78f"
+    },
+    {
+      "name": "methods_deployment.md",
+      "bytes": 15313,
+      "sha256": "89361bc8727b52926158f047f29af4f83f507dbdefea346909dbc33fd0636556"
+    },
+    {
+      "name": "methods_precision_allocation.md",
+      "bytes": 21986,
+      "sha256": "a0d7b9856a1f581170b032669293db541094200c2a7289af0ea63b5183f4310d"
+    },
+    {
+      "name": "methods_reconstruction_metrics.md",
+      "bytes": 61425,
+      "sha256": "074ba1eaba9c233967f03ccca1e86bb30ab3132a7412a1b2cb3028680307aee9"
+    },
+    {
+      "name": "methods_representation_distribution.md",
+      "bytes": 48087,
+      "sha256": "6d7050eeecbfb930daf5c67a5d857106e4469de58fe907e6eff2abf40b57925d"
+    },
+    {
+      "name": "metrics_registry.md",
+      "bytes": 31901,
+      "sha256": "e2ddb6d7cd0b6d94b57e5cae9a0f0531b0db84e12abe38aca87fe0b6aa648e68"
+    },
+    {
+      "name": "research_corrections_coverage.md",
+      "bytes": 15847,
+      "sha256": "3a9b818fb7044bab521c6dde7ec72bc853e1f0d0c967b0de9261a4b8273f849e"
+    },
+    {
+      "name": "research_corrections_distribution.md",
+      "bytes": 8916,
+      "sha256": "82fd6cde8ee29241406e84bf1125db232c3144aad8ab7010121efbb7c2fabf35"
+    },
+    {
+      "name": "research_screening_data_precision_deployment.md",
+      "bytes": 12708,
+      "sha256": "0bd1a3f4a1ca489c2fa55d32695e46d1dc615609c62d2abfa88ea1a738fe4e71"
+    },
+    {
+      "name": "source_coverage.json",
+      "bytes": 95578,
+      "sha256": "6b4552d2d18c74f4c7056119a5bf61dc296263daa71d1bd2caaae6724bffc696"
+    }
+  ],
+  "validation": [
+    "83 survey reference records accounted for exactly once",
+    "all explicit local document links and anchors resolve",
+    "JSON files parse",
+    "Markdown table columns are consistent",
+    "Codex task prompt is not included in archive",
+    "QAT and unresolved training-boundary entries route to screening or correction records only"
+  ],
+  "manifest_self_hash": "not_included"
+}

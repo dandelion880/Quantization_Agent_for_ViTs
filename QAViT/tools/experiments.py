@@ -16,6 +16,7 @@ from core.journal import file_sha256, read_json
 from core.execution_contract import freeze_contract, declared_contract, declared_rules, research_contracts, merge, uses_quantization_contract
 from tools.result_contract import check_results, result_requirements
 from core.evidence_scope import canonical_scope
+from core.ptq_protocol import current, protocol_of, validate_construction
 
 
 SERVICE_VERSION = "qavit.experiments/2.1"
@@ -37,7 +38,7 @@ EXPERIMENT_DRAFT_SCHEMA['properties']['execution'] = deepcopy(EXPERIMENT_DRAFT_S
 EXPERIMENT_DRAFT_SCHEMA['properties']['execution']['required'] = []
 EXPERIMENT_DRAFT_SCHEMA['properties']['execution']['properties'] = {
     **{key: deepcopy(OBJECT) for key in ('backend', 'resolved_choices', 'parameters',
-        'quantization_contract', 'method_options', 'arguments')},
+        'quantization_contract', 'method_options', 'arguments', 'recipe', 'construction', 'precision_search', 'calibration_generator','calibration_tasks')},
     'accept_trial': {'type': 'object', 'additionalProperties': False, 'required': ['evidence_ref', 'candidate_id'],
                      'properties': {'evidence_ref': TEXT, 'candidate_id': TEXT}},
     'requires_code': {'type': 'boolean'}, 'training': {'type': 'boolean'},
@@ -136,8 +137,8 @@ def prepare_request(payload, brief, runtime=None):
     if any(k.startswith('required_') for k in value):
         raise ContractError('ExperimentCard 必需执行约束须放入 execution.quantization_contract')
     execution.setdefault('requires_code', service == 'custom_experiment' or
-                         (service == 'quantize_evaluate' and 'plan' not in execution and 'accept_trial' not in execution))
-    if service == 'quantize_evaluate' and 'plan' in execution and (execution['requires_code'] or 'interface' in execution):
+                         (service == 'quantize_evaluate' and not {'plan','recipe','accept_trial'}.intersection(execution)))
+    if service == 'quantize_evaluate' and {'plan','recipe'}.intersection(execution) and (execution['requires_code'] or 'interface' in execution):
         raise ContractError('execution.plan 使用现有执行器，不能同时请求新增代码/interface；明确选择实现来源')
     if execution['requires_code']:
         interfaces = {'tensor_probe': 'quantizer_v1', 'quantize_evaluate': 'executor_v1',
@@ -244,7 +245,7 @@ def normalize_calibration(value, brief=None):
     from ptq_agent.execution.pipeline import plan_uses_calibration
     required = value["service"] == "tensor_probe" or (
         value["service"] == "quantize_evaluate" and not value.get("requires_code")
-        and plan_uses_calibration(value.get("plan", {})))
+        and ("recipe" in value or plan_uses_calibration(value.get("plan", {}))))
     if not required and "calibration" not in value and "calibration_samples" not in choices:
         return
     calibration = value.setdefault("calibration", {})
@@ -336,24 +337,28 @@ def normalize_execution(execution, brief, *, level=None):
         choices['training'] = fixed_training
     if service in ('profile', 'frozen_helper', 'tensor_probe', 'evaluate_artifact'):
         merge(choices, {'training': False}, 'resolved_choices')
+    profile = brief.get("quantization_contract", {}).get("protocol")
     final_training = brief.get("evaluation_protocol", {}).get("final_training")
-    if level == "L3" and final_training is not None:
+    if level == "L3" and final_training is not None and not current(profile):
         if type(final_training) is not bool:
             raise ContractError("evaluation_protocol.final_training 必须是布尔值")
         merge(choices, {"training": final_training}, "final protocol")
     if type(choices.get("training")) is not bool:
         raise ContractError("execution.resolved_choices.training 必须明确此次执行是否训练；Agent依据用户输入与搜索空间选择")
+    validate_construction(value, profile, choices["training"])
     value.setdefault("seed", brief.get("execution_guidance", {}).get("seed", 0))
     if type(value.get("seed")) is not int or not 0 <= value["seed"] < 2 ** 63:
         raise ContractError("execution.seed 必须是明确的非负64位整数")
     if "requires_code" in value and type(value["requires_code"]) is not bool:
         raise ContractError("execution.requires_code 必须为 boolean")
     if 'parent_ref' in value and (service != 'quantize_evaluate' or not isinstance(value['parent_ref'], str)
-            or not value['parent_ref'].strip() or choices.get('training') is not False):
-        raise ContractError('parent_ref requires training-free quantize_evaluate and an exact parent identifier')
+            or not value['parent_ref'].strip() or (not current(profile) and choices.get('training') is not False)):
+        raise ContractError('parent_ref requires a compatible construction, quantize_evaluate and the exact parent identifier')
     if 'accept_trial' in value and ('parent_ref' not in value or 'plan' in value):
         raise ContractError('accept_trial inherits the named parent plan; use its measured candidate_id')
-    builtin_plan = service == 'quantize_evaluate' and ('plan' in value or ('accept_trial' in value and not value.get('requires_code')))
+    if 'recipe' in value and (not isinstance(value['recipe'],dict) or {'plan','parent_ref','accept_trial'}.intersection(value)):
+        raise ContractError("recipe is a source-bound fresh preparation; provide one starting configuration")
+    builtin_plan = service == 'quantize_evaluate' and ('recipe' in value or 'plan' in value or ('accept_trial' in value and not value.get('requires_code')))
     value.setdefault('requires_code', service == 'custom_experiment' or (service == 'quantize_evaluate' and not builtin_plan))
     if service == 'custom_experiment' and not value['requires_code']:
         raise ContractError('custom_experiment.requires_code 必须为 true；新增实现先经 Coding 和 Safeguard')
@@ -361,6 +366,8 @@ def normalize_execution(execution, brief, *, level=None):
         if 'accept_trial' in value:
             if not value['requires_code'] and 'interface' in value:
                 raise ContractError('built-in accept_trial does not take an implementation interface')
+        elif 'recipe' in value:
+            pass  # The worker expands against the bound graph and permitted calibration view.
         elif builtin_plan:
             if value['requires_code'] or 'interface' in value:
                 raise ContractError('execution.plan 使用现有执行器，不能同时请求新增代码/interface；明确选择实现来源')
@@ -391,7 +398,7 @@ def normalize_execution(execution, brief, *, level=None):
     from ptq_agent.execution.pipeline import plan_uses_calibration
     consumes_calibration = (service == "tensor_probe" or "calibration" in value
         or service == "quantize_evaluate" and not value['requires_code']
-        and plan_uses_calibration(value.get('plan', {})))
+        and ('recipe' in value or plan_uses_calibration(value.get('plan', {}))))
     if service == 'profile':
         from tools.profiling import uses_calibration
         consumes_calibration = uses_calibration(value)
@@ -417,7 +424,7 @@ def normalize_execution(execution, brief, *, level=None):
                     value['arguments'].setdefault(key, default)
     normalize_calibration(value, brief if consumes_calibration else None)
     validate_diagnostic_view(value, level)
-    if choices['training'] and (value.get('calibration', {}).get('split', 'calibration') != 'calibration'
+    if choices['training'] and not current(profile) and (value.get('calibration', {}).get('split', 'calibration') != 'calibration'
             or value.get('evaluation', {}).get('split', 'search') != 'search'
             or any(row.get('kind') != 'classification' or row.get('split') != 'search'
                    for row in value.get('evaluations', []))):
@@ -721,7 +728,8 @@ class ExperimentBroker:
         try:
             if payload.get('evidence_refs'):
                 execution['frozen_sources'] = bind_sources(self.journal, payload['evidence_refs'],
-                    training_free_only=payload['level'] == 'L3' and brief['evaluation_protocol'].get('final_training') is False)
+                    training_free_only=payload['level'] == 'L3' and not current(protocol_of(brief)) and brief['evaluation_protocol'].get('final_training') is False,
+                    protocol=brief.get('quantization_contract', {}).get('protocol'))
             if payload.get('solution_refs'):
                 execution.setdefault('frozen_sources', []).extend(bind_solutions(self.journal, payload['solution_refs'], brief))
         except (ContractError, OSError) as exc:
@@ -733,8 +741,8 @@ class ExperimentBroker:
         if execution['service'] == 'evaluate_artifact' and execution.get('frozen_sources') and not execution.get('model_dir'):
             from tools.runtime_interface import select_frozen_source
             package = select_frozen_source(execution['frozen_sources'], execution.get('source_ref'))
-            if not package.get('verified_segmentation'):
-                raise ContractError('bound package lacks a complete frozen training-free measurement')
+            if not (package.get('verified_segmentation') or package.get('verified_evaluation')):
+                raise ContractError('bound package lacks a verified frozen evaluation')
             execution.update(evaluation_package=package, model_dir=package['model_dir'], model_assets=package['assets'])
         if execution['service'] == 'evaluate_artifact' and not execution.get('model_dir'):
             raise ContractError('references did not resolve to a complete frozen model package')

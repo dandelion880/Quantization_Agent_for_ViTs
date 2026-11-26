@@ -13,7 +13,7 @@ EXECUTION_FIELDS = {"mode", "compute_dtype", "activation_calibration", "order", 
 SPEC_FIELDS = {"bits", "format", "granularity", "axis", "group_size", "symmetric", "scale"}
 CONTRACT_FIELDS = {"required_sites", "required_site_targets", "required_kinds", "specs", "methods",
                    "calibrations", "site_overrides", "execution", "preprocess", "operators",
-                   "unlisted_modules", "parameters", "parameter_bindings", "fp_exceptions", "protocol"}
+                   "unlisted_modules", "parameters", "parameter_bindings", "fp_exceptions", "protocol", "extension_dimensions"}
 
 
 def equal(left, right):
@@ -43,9 +43,10 @@ def validate_contract(value):
     if not isinstance(value, dict):
         raise ContractError("quantization_contract 必须是对象")
     if "protocol" in value:
-        from core.static_w4a4 import PROTOCOL
-        if value["protocol"] != PROTOCOL:
-            raise ContractError("unknown quantization protocol")
+        from core.ptq_protocol import validate_profile
+        validate_profile(value)
+    elif "extension_dimensions" in value:
+        raise ContractError("deployment extensions require a protocol")
     unknown = set(value) - CONTRACT_FIELDS
     if unknown:
         raise ContractError("未识别的必需执行约束: " + str(sorted(unknown)))
@@ -383,7 +384,8 @@ def check_plan(plan, choices, backend=None, cfg=None, contract=None, *, native=T
     protocol_receipt = {}
     if contract.get("protocol") and catalog is not None:
         from core.static_w4a4 import check_plan as check_static
-        protocol_receipt = check_static(plan, catalog, native=native)
+        protocol_receipt = check_static(plan, catalog, native=native, protocol=contract["protocol"],
+                                        extensions=contract.get("extension_dimensions", ()))
     required = set(contract.get("required_sites", [])) | set(contract.get("required_site_targets", {}))
     kinds = contract.get("required_kinds", [])
     if native and set(kinds) - set(KINDS):

@@ -1,0 +1,2085 @@
+{
+  "schema": "qavit.ptq.component_evidence/1",
+  "dependency_map": "08_METHOD_COMPONENT_MAP.md",
+  "source_versions": "implementation_status.json",
+  "observed": [
+    {
+      "kind": "activation",
+      "name": "adalog",
+      "public_entry": "ptq_agent.execution.methods.get_target_method",
+      "sources": [
+        "adalog"
+      ],
+      "requests": [
+        "EXP/validation/ptq_foundation_20261125/numerical/recipe_adalog/source_request.json"
+      ],
+      "variants": [
+        "paper; explicit reduced settings in this request"
+      ]
+    },
+    {
+      "kind": "activation",
+      "name": "adfq_outliers",
+      "public_entry": "ptq_agent.execution.methods.get_target_method",
+      "sources": [
+        "adfq_vit"
+      ],
+      "requests": [
+        "EXP/validation/ptq_foundation_20261125/numerical/recipe_adfq_vit/source_request.json"
+      ],
+      "variants": [
+        "paper; explicit reduced settings in this request"
+      ]
+    },
+    {
+      "kind": "activation",
+      "name": "bit_window",
+      "public_entry": "ptq_agent.execution.methods.get_target_method",
+      "sources": [
+        "tsptq_vit"
+      ],
+      "requests": [
+        "EXP/validation/ptq_foundation_20261125/numerical/recipe_tsptq_vit/source_request.json"
+      ],
+      "variants": [
+        "paper; explicit reduced settings in this request"
+      ]
+    },
+    {
+      "kind": "activation",
+      "name": "domain_clip",
+      "public_entry": "ptq_agent.execution.methods.get_target_method",
+      "sources": [
+        "daquant"
+      ],
+      "requests": [
+        "EXP/validation/ptq_foundation_20261125/numerical/daquant_frozen/source_request.json",
+        "EXP/validation/ptq_foundation_20261125/numerical/recipe_daquant/source_request.json"
+      ],
+      "variants": [
+        "paper; explicit reduced settings in this request"
+      ]
+    },
+    {
+      "kind": "activation",
+      "name": "focus_interval",
+      "public_entry": "ptq_agent.execution.methods.get_target_method",
+      "sources": [
+        "aiqvit"
+      ],
+      "requests": [
+        "EXP/validation/ptq_foundation_20261125/numerical/recipe_aiqvit/source_request.json"
+      ],
+      "variants": [
+        "paper; explicit reduced settings in this request"
+      ]
+    },
+    {
+      "kind": "activation",
+      "name": "igq_ranges",
+      "public_entry": "ptq_agent.execution.methods.get_target_method",
+      "sources": [
+        "igq_vit"
+      ],
+      "requests": [
+        "EXP/validation/ptq_foundation_20261125/allocation_recipes.json#igq_vit",
+        "EXP/validation/ptq_foundation_20261125/numerical/recipe_igq_vit/source_request.json"
+      ],
+      "variants": [
+        "paper; explicit reduced settings in this request"
+      ]
+    },
+    {
+      "kind": "activation",
+      "name": "log2",
+      "public_entry": "ptq_agent.execution.methods.get_target_method",
+      "sources": [
+        "fq_vit"
+      ],
+      "requests": [
+        "EXP/validation/ptq_foundation_20261125/native_recipes.json#fq_vit"
+      ],
+      "variants": [
+        "https://github.com/megvii-research/FQ-ViT/tree/5daf5915c715dc21d6afcd64e661652030e640ab"
+      ]
+    },
+    {
+      "kind": "activation",
+      "name": "log_sqrt2",
+      "public_entry": "ptq_agent.execution.methods.get_target_method",
+      "sources": [
+        "repq_vit"
+      ],
+      "requests": [
+        "EXP/validation/ptq_foundation_20261125/native_recipes.json#repq_vit"
+      ],
+      "variants": [
+        "https://github.com/zkkli/RepQ-ViT/tree/a160561b9233945e6680132f129d13041b787318"
+      ]
+    },
+    {
+      "kind": "activation",
+      "name": "patch_precision",
+      "public_entry": "ptq_agent.execution.methods.get_target_method",
+      "sources": [
+        "patchwise-mpq-vit"
+      ],
+      "requests": [
+        "EXP/validation/ptq_foundation_20261125/allocation_recipes.json#patchwise-mpq-vit",
+        "EXP/validation/ptq_foundation_20261125/numerical/recipe_patchwise-mpq-vit/source_request.json"
+      ],
+      "variants": [
+        "paper; explicit reduced settings",
+        "paper; explicit reduced settings in this request"
+      ]
+    },
+    {
+      "kind": "activation",
+      "name": "pot_error",
+      "public_entry": "ptq_agent.execution.methods.get_target_method",
+      "sources": [
+        "h-vit",
+        "p2-vit"
+      ],
+      "requests": [
+        "EXP/validation/ptq_foundation_20261125/allocation_recipes.json#p2-vit",
+        "EXP/validation/ptq_foundation_20261125/numerical/recipe_h-vit/source_request.json",
+        "EXP/validation/ptq_foundation_20261125/numerical/recipe_p2-vit/source_request.json"
+      ],
+      "variants": [
+        "paper; explicit reduced settings in this request"
+      ]
+    },
+    {
+      "kind": "activation",
+      "name": "ptf",
+      "public_entry": "ptq_agent.execution.methods.get_target_method",
+      "sources": [
+        "fq_vit"
+      ],
+      "requests": [
+        "EXP/validation/ptq_foundation_20261125/native_recipes.json#fq_vit"
+      ],
+      "variants": [
+        "https://github.com/megvii-research/FQ-ViT/tree/5daf5915c715dc21d6afcd64e661652030e640ab"
+      ]
+    },
+    {
+      "kind": "activation",
+      "name": "rtn",
+      "public_entry": "ptq_agent.execution.methods.get_target_method",
+      "sources": [
+        "clamp-vit",
+        "orq_vit"
+      ],
+      "requests": [
+        "EXP/validation/ptq_foundation_20261125/cyclic_images.json",
+        "EXP/validation/ptq_foundation_20261125/numerical/recipe_orq_vit/source_request.json"
+      ],
+      "variants": [
+        "ECCV paper, explicit perturbation bounds",
+        "paper; explicit reduced settings in this request"
+      ]
+    },
+    {
+      "kind": "activation",
+      "name": "shift_log",
+      "public_entry": "ptq_agent.execution.methods.get_target_method",
+      "sources": [
+        "adfq_vit"
+      ],
+      "requests": [
+        "EXP/validation/ptq_foundation_20261125/numerical/recipe_adfq_vit/source_request.json"
+      ],
+      "variants": [
+        "paper; explicit reduced settings in this request"
+      ]
+    },
+    {
+      "kind": "activation",
+      "name": "sulq",
+      "public_entry": "ptq_agent.execution.methods.get_target_method",
+      "sources": [
+        "is-vit"
+      ],
+      "requests": [
+        "EXP/validation/ptq_foundation_20261125/numerical/recipe_is-vit/source_request.json"
+      ],
+      "variants": [
+        "paper; explicit reduced settings in this request"
+      ]
+    },
+    {
+      "kind": "activation",
+      "name": "tanq",
+      "public_entry": "ptq_agent.execution.methods.get_target_method",
+      "sources": [
+        "dopq_vit"
+      ],
+      "requests": [
+        "EXP/validation/ptq_foundation_20261125/numerical/recipe_dopq_vit/source_request.json"
+      ],
+      "variants": [
+        "paper; explicit reduced settings in this request"
+      ]
+    },
+    {
+      "kind": "activation",
+      "name": "three_region",
+      "public_entry": "ptq_agent.execution.methods.get_target_method",
+      "sources": [
+        "amp-vit",
+        "mptq-vit"
+      ],
+      "requests": [
+        "EXP/validation/ptq_foundation_20261125/allocation_recipes.json#amp-vit",
+        "EXP/validation/ptq_foundation_20261125/allocation_recipes.json#mptq-vit",
+        "EXP/validation/ptq_foundation_20261125/numerical/recipe_amp-vit/source_request.json",
+        "EXP/validation/ptq_foundation_20261125/numerical/recipe_mptq-vit/source_request.json"
+      ],
+      "variants": [
+        "paper; explicit reduced settings",
+        "paper; explicit reduced settings in this request"
+      ]
+    },
+    {
+      "kind": "activation",
+      "name": "twin_gelu",
+      "public_entry": "ptq_agent.execution.methods.get_target_method",
+      "sources": [
+        "ptq4vit"
+      ],
+      "requests": [
+        "EXP/validation/ptq_foundation_20261125/native_recipes.json#ptq4vit"
+      ],
+      "variants": [
+        "https://github.com/hahnyuan/PTQ4ViT/tree/b42c790c2811e7835d435a9f9a6c64a079a7483a"
+      ]
+    },
+    {
+      "kind": "activation",
+      "name": "twin_softmax",
+      "public_entry": "ptq_agent.execution.methods.get_target_method",
+      "sources": [
+        "ptq4vit"
+      ],
+      "requests": [
+        "EXP/validation/ptq_foundation_20261125/native_recipes.json#ptq4vit"
+      ],
+      "variants": [
+        "https://github.com/hahnyuan/PTQ4ViT/tree/b42c790c2811e7835d435a9f9a6c64a079a7483a"
+      ]
+    },
+    {
+      "kind": "activation",
+      "name": "two_channel_scales",
+      "public_entry": "ptq_agent.execution.methods.get_target_method",
+      "sources": [
+        "tsptq_vit"
+      ],
+      "requests": [
+        "EXP/validation/ptq_foundation_20261125/numerical/recipe_tsptq_vit/source_request.json"
+      ],
+      "variants": [
+        "paper; explicit reduced settings in this request"
+      ]
+    },
+    {
+      "kind": "activation",
+      "name": "uniform_affine",
+      "public_entry": "ptq_agent.execution.methods.get_target_method",
+      "sources": [
+        "adalog",
+        "adfq_vit",
+        "aiqvit",
+        "amp-vit",
+        "aphq-vit",
+        "apq-vit",
+        "biascomp",
+        "bit-shrinking",
+        "clamp-vit",
+        "cpt-v",
+        "daquant",
+        "dfq-vit",
+        "dopq_vit",
+        "erq-icml2024",
+        "erq-tpami2025-duq",
+        "evol-q",
+        "fima-q",
+        "h-vit",
+        "igq_vit",
+        "iptq-vit",
+        "is-vit",
+        "lampq",
+        "lrp-qvit",
+        "mgrq",
+        "mix-qvit",
+        "mixa-q",
+        "mptq-vit",
+        "noisyquant",
+        "orq_vit",
+        "outlier-aware-slicing",
+        "p2-vit",
+        "patchwise-mpq-vit",
+        "pd-quant",
+        "pfcr-vit",
+        "pomq-vit",
+        "practicaledge",
+        "psaq-vit",
+        "ptq-vit-2021",
+        "q-hyvit",
+        "qdrop",
+        "qep",
+        "qwt",
+        "qwt-v2",
+        "regcache",
+        "repq_vit",
+        "repquant",
+        "sardfq",
+        "trio-vit",
+        "tsptq_vit"
+      ],
+      "requests": [
+        "EXP/validation/ptq_foundation_20261125/allocation_recipes.json#amp-vit",
+        "EXP/validation/ptq_foundation_20261125/allocation_recipes.json#igq_vit",
+        "EXP/validation/ptq_foundation_20261125/allocation_recipes.json#lampq",
+        "EXP/validation/ptq_foundation_20261125/allocation_recipes.json#lrp-qvit",
+        "EXP/validation/ptq_foundation_20261125/allocation_recipes.json#mix-qvit",
+        "EXP/validation/ptq_foundation_20261125/allocation_recipes.json#mptq-vit",
+        "EXP/validation/ptq_foundation_20261125/allocation_recipes.json#p2-vit",
+        "EXP/validation/ptq_foundation_20261125/allocation_recipes.json#patchwise-mpq-vit",
+        "EXP/validation/ptq_foundation_20261125/allocation_recipes.json#pomq-vit",
+        "EXP/validation/ptq_foundation_20261125/allocation_recipes.json#ptq-vit-2021",
+        "EXP/validation/ptq_foundation_20261125/allocation_recipes.json#q-hyvit",
+        "EXP/validation/ptq_foundation_20261125/component_checks.json#clamp_local_adapter",
+        "EXP/validation/ptq_foundation_20261125/component_checks.json#e2h_crop",
+        "EXP/validation/ptq_foundation_20261125/component_checks.json#psaq_kde",
+        "EXP/validation/ptq_foundation_20261125/component_checks.json#sardfq_gmm",
+        "EXP/validation/ptq_foundation_20261125/component_checks.json#trio_topology",
+        "EXP/validation/ptq_foundation_20261125/cyclic_images.json",
+        "EXP/validation/ptq_foundation_20261125/hybrid_bridge.json",
+        "EXP/validation/ptq_foundation_20261125/native_recipes.json#repq_vit",
+        "EXP/validation/ptq_foundation_20261125/numerical/daquant_frozen/source_request.json",
+        "EXP/validation/ptq_foundation_20261125/numerical/qwt_v2_integer_fold/source_request.json",
+        "EXP/validation/ptq_foundation_20261125/numerical/recipe_adalog/source_request.json",
+        "EXP/validation/ptq_foundation_20261125/numerical/recipe_adfq_vit/source_request.json",
+        "EXP/validation/ptq_foundation_20261125/numerical/recipe_aiqvit/source_request.json",
+        "EXP/validation/ptq_foundation_20261125/numerical/recipe_amp-vit/source_request.json",
+        "EXP/validation/ptq_foundation_20261125/numerical/recipe_aphq-vit/source_request.json",
+        "EXP/validation/ptq_foundation_20261125/numerical/recipe_apq-vit/source_request.json",
+        "EXP/validation/ptq_foundation_20261125/numerical/recipe_biascomp/source_request.json",
+        "EXP/validation/ptq_foundation_20261125/numerical/recipe_bit-shrinking/source_request.json",
+        "EXP/validation/ptq_foundation_20261125/numerical/recipe_cpt-v/source_request.json",
+        "EXP/validation/ptq_foundation_20261125/numerical/recipe_daquant/source_request.json",
+        "EXP/validation/ptq_foundation_20261125/numerical/recipe_dopq_vit/source_request.json",
+        "EXP/validation/ptq_foundation_20261125/numerical/recipe_erq-icml2024/source_request.json",
+        "EXP/validation/ptq_foundation_20261125/numerical/recipe_erq-tpami2025-duq/source_request.json",
+        "EXP/validation/ptq_foundation_20261125/numerical/recipe_evol-q/source_request.json",
+        "EXP/validation/ptq_foundation_20261125/numerical/recipe_fima-q/source_request.json",
+        "EXP/validation/ptq_foundation_20261125/numerical/recipe_h-vit/source_request.json",
+        "EXP/validation/ptq_foundation_20261125/numerical/recipe_igq_vit/source_request.json",
+        "EXP/validation/ptq_foundation_20261125/numerical/recipe_iptq-vit/source_request.json",
+        "EXP/validation/ptq_foundation_20261125/numerical/recipe_is-vit/source_request.json",
+        "EXP/validation/ptq_foundation_20261125/numerical/recipe_mgrq/source_request.json",
+        "EXP/validation/ptq_foundation_20261125/numerical/recipe_mptq-vit/source_request.json",
+        "EXP/validation/ptq_foundation_20261125/numerical/recipe_noisyquant/source_request.json",
+        "EXP/validation/ptq_foundation_20261125/numerical/recipe_orq_vit/source_request.json",
+        "EXP/validation/ptq_foundation_20261125/numerical/recipe_outlier-aware-slicing/source_request.json",
+        "EXP/validation/ptq_foundation_20261125/numerical/recipe_p2-vit/source_request.json",
+        "EXP/validation/ptq_foundation_20261125/numerical/recipe_patchwise-mpq-vit/source_request.json",
+        "EXP/validation/ptq_foundation_20261125/numerical/recipe_pd-quant/source_request.json",
+        "EXP/validation/ptq_foundation_20261125/numerical/recipe_pfcr-vit/source_request.json",
+        "EXP/validation/ptq_foundation_20261125/numerical/recipe_practicaledge/source_request.json",
+        "EXP/validation/ptq_foundation_20261125/numerical/recipe_ptq-vit-2021/source_request.json",
+        "EXP/validation/ptq_foundation_20261125/numerical/recipe_q-hyvit/source_request.json",
+        "EXP/validation/ptq_foundation_20261125/numerical/recipe_qdrop/source_request.json",
+        "EXP/validation/ptq_foundation_20261125/numerical/recipe_qep/source_request.json",
+        "EXP/validation/ptq_foundation_20261125/numerical/recipe_qwt-v2/source_request.json",
+        "EXP/validation/ptq_foundation_20261125/numerical/recipe_qwt/source_request.json",
+        "EXP/validation/ptq_foundation_20261125/numerical/recipe_regcache/source_request.json",
+        "EXP/validation/ptq_foundation_20261125/numerical/recipe_repquant/source_request.json",
+        "EXP/validation/ptq_foundation_20261125/numerical/recipe_tsptq_vit/source_request.json",
+        "EXP/validation/ptq_foundation_20261125/window_graph.json"
+      ],
+      "variants": [
+        "5628eb21; bounded exponent grid adapts capacity",
+        "ECCV paper, explicit perturbation bounds",
+        "ICCV 2025 COCO PTQ",
+        "https://github.com/zkkli/RepQ-ViT/tree/a160561b9233945e6680132f129d13041b787318",
+        "paper, explicit reduced adapter",
+        "paper; explicit reduced settings",
+        "paper; explicit reduced settings in this request"
+      ]
+    },
+    {
+      "kind": "activation",
+      "name": "uniform_full",
+      "public_entry": "ptq_agent.execution.methods.get_target_method",
+      "sources": [
+        "ptq4vit"
+      ],
+      "requests": [
+        "EXP/validation/ptq_foundation_20261125/native_recipes.json#ptq4vit"
+      ],
+      "variants": [
+        "https://github.com/hahnyuan/PTQ4ViT/tree/b42c790c2811e7835d435a9f9a6c64a079a7483a"
+      ]
+    },
+    {
+      "kind": "activation",
+      "name": "uniform_minmax",
+      "public_entry": "ptq_agent.execution.methods.get_target_method",
+      "sources": [
+        "apq-vit",
+        "fq_vit"
+      ],
+      "requests": [
+        "EXP/validation/ptq_foundation_20261125/native_recipes.json#fq_vit",
+        "EXP/validation/ptq_foundation_20261125/numerical/recipe_apq-vit/source_request.json"
+      ],
+      "variants": [
+        "https://github.com/megvii-research/FQ-ViT/tree/5daf5915c715dc21d6afcd64e661652030e640ab",
+        "paper; explicit reduced settings in this request"
+      ]
+    },
+    {
+      "kind": "allocation",
+      "name": "budget_search",
+      "public_entry": "ptq_agent.execution.precision.select",
+      "sources": [
+        "lrp-qvit",
+        "patchwise-mpq-vit"
+      ],
+      "requests": [
+        "EXP/validation/ptq_foundation_20261125/allocation_recipes.json#lrp-qvit",
+        "EXP/validation/ptq_foundation_20261125/allocation_recipes.json#patchwise-mpq-vit"
+      ],
+      "variants": [
+        "paper; explicit reduced settings"
+      ]
+    },
+    {
+      "kind": "allocation",
+      "name": "configuration_grid",
+      "public_entry": "ptq_agent.execution.precision.select",
+      "sources": [
+        "pomq-vit",
+        "ptq-vit-2021",
+        "q-hyvit"
+      ],
+      "requests": [
+        "EXP/validation/ptq_foundation_20261125/allocation_recipes.json#pomq-vit",
+        "EXP/validation/ptq_foundation_20261125/allocation_recipes.json#ptq-vit-2021",
+        "EXP/validation/ptq_foundation_20261125/allocation_recipes.json#q-hyvit",
+        "EXP/validation/ptq_foundation_20261125/hybrid_bridge.json"
+      ],
+      "variants": [
+        "paper; explicit reduced settings",
+        "paper; explicit reduced settings in this request"
+      ]
+    },
+    {
+      "kind": "allocation",
+      "name": "greedy_operand_sqnr",
+      "public_entry": "ptq_agent.execution.precision.select",
+      "sources": [
+        "amp-vit",
+        "mptq-vit"
+      ],
+      "requests": [
+        "EXP/validation/ptq_foundation_20261125/allocation_recipes.json#amp-vit",
+        "EXP/validation/ptq_foundation_20261125/allocation_recipes.json#mptq-vit"
+      ],
+      "variants": [
+        "paper; explicit reduced settings"
+      ]
+    },
+    {
+      "kind": "allocation",
+      "name": "group_count_schedule",
+      "public_entry": "ptq_agent.execution.precision.select",
+      "sources": [
+        "igq_vit"
+      ],
+      "requests": [
+        "EXP/validation/ptq_foundation_20261125/allocation_recipes.json#igq_vit"
+      ],
+      "variants": [
+        "paper; explicit reduced settings in this request"
+      ]
+    },
+    {
+      "kind": "allocation",
+      "name": "hessian_genetic",
+      "public_entry": "ptq_agent.execution.precision.select",
+      "sources": [
+        "p2-vit"
+      ],
+      "requests": [
+        "EXP/validation/ptq_foundation_20261125/allocation_recipes.json#p2-vit"
+      ],
+      "variants": [
+        "paper; explicit reduced settings in this request"
+      ]
+    },
+    {
+      "kind": "allocation",
+      "name": "lampq_initial",
+      "public_entry": "ptq_agent.execution.precision.select",
+      "sources": [
+        "lampq"
+      ],
+      "requests": [
+        "EXP/validation/ptq_foundation_20261125/allocation_recipes.json#lampq"
+      ],
+      "variants": [
+        "paper; explicit reduced settings"
+      ]
+    },
+    {
+      "kind": "allocation",
+      "name": "normalized_relative_loss",
+      "public_entry": "ptq_agent.execution.precision.select",
+      "sources": [
+        "mix-qvit"
+      ],
+      "requests": [
+        "EXP/validation/ptq_foundation_20261125/allocation_recipes.json#mix-qvit"
+      ],
+      "variants": [
+        "paper; explicit reduced settings"
+      ]
+    },
+    {
+      "kind": "calibration",
+      "name": "coordinate",
+      "public_entry": "QuantizationExecutor.fit_target",
+      "sources": [
+        "ptq4vit"
+      ],
+      "requests": [
+        "EXP/validation/ptq_foundation_20261125/native_recipes.json#ptq4vit"
+      ],
+      "variants": [
+        "https://github.com/hahnyuan/PTQ4ViT/tree/b42c790c2811e7835d435a9f9a6c64a079a7483a"
+      ]
+    },
+    {
+      "kind": "calibration",
+      "name": "first_batch_rows",
+      "public_entry": "QuantizationExecutor.fit_target",
+      "sources": [
+        "orq_vit"
+      ],
+      "requests": [
+        "EXP/validation/ptq_foundation_20261125/numerical/recipe_orq_vit/source_request.json"
+      ],
+      "variants": [
+        "paper; explicit reduced settings in this request"
+      ]
+    },
+    {
+      "kind": "calibration",
+      "name": "fpcs",
+      "public_entry": "QuantizationExecutor.fit_target",
+      "sources": [
+        "adalog"
+      ],
+      "requests": [
+        "EXP/validation/ptq_foundation_20261125/numerical/recipe_adalog/source_request.json"
+      ],
+      "variants": [
+        "paper; explicit reduced settings in this request"
+      ]
+    },
+    {
+      "kind": "calibration",
+      "name": "manual",
+      "public_entry": "QuantizationExecutor.fit_target",
+      "sources": [
+        "clamp-vit"
+      ],
+      "requests": [
+        "EXP/validation/ptq_foundation_20261125/cyclic_images.json"
+      ],
+      "variants": [
+        "ECCV paper, explicit perturbation bounds"
+      ]
+    },
+    {
+      "kind": "calibration",
+      "name": "minmax",
+      "public_entry": "QuantizationExecutor.fit_target",
+      "sources": [
+        "adalog",
+        "adfq_vit",
+        "aiqvit",
+        "amp-vit",
+        "aphq-vit",
+        "apq-vit",
+        "biascomp",
+        "bit-shrinking",
+        "clamp-vit",
+        "cpt-v",
+        "daquant",
+        "dfq-vit",
+        "dopq_vit",
+        "erq-icml2024",
+        "erq-tpami2025-duq",
+        "evol-q",
+        "fima-q",
+        "h-vit",
+        "hc-ptq",
+        "igq_vit",
+        "iptq-vit",
+        "is-vit",
+        "lampq",
+        "lrp-qvit",
+        "mgrq",
+        "mix-qvit",
+        "mixa-q",
+        "mptq-vit",
+        "noisyquant",
+        "orq_vit",
+        "outlier-aware-slicing",
+        "p2-vit",
+        "patchwise-mpq-vit",
+        "pd-quant",
+        "pfcr-vit",
+        "pomq-vit",
+        "practicaledge",
+        "psaq-vit",
+        "ptq-vit-2021",
+        "q-hyvit",
+        "qdrop",
+        "qep",
+        "qwt",
+        "qwt-v2",
+        "regcache",
+        "repquant",
+        "sardfq",
+        "trio-vit",
+        "tsptq_vit"
+      ],
+      "requests": [
+        "EXP/validation/ptq_foundation_20261125/allocation_recipes.json#amp-vit",
+        "EXP/validation/ptq_foundation_20261125/allocation_recipes.json#igq_vit",
+        "EXP/validation/ptq_foundation_20261125/allocation_recipes.json#lampq",
+        "EXP/validation/ptq_foundation_20261125/allocation_recipes.json#lrp-qvit",
+        "EXP/validation/ptq_foundation_20261125/allocation_recipes.json#mix-qvit",
+        "EXP/validation/ptq_foundation_20261125/allocation_recipes.json#mptq-vit",
+        "EXP/validation/ptq_foundation_20261125/allocation_recipes.json#p2-vit",
+        "EXP/validation/ptq_foundation_20261125/allocation_recipes.json#patchwise-mpq-vit",
+        "EXP/validation/ptq_foundation_20261125/allocation_recipes.json#pomq-vit",
+        "EXP/validation/ptq_foundation_20261125/allocation_recipes.json#ptq-vit-2021",
+        "EXP/validation/ptq_foundation_20261125/allocation_recipes.json#q-hyvit",
+        "EXP/validation/ptq_foundation_20261125/component_checks.json#clamp_local_adapter",
+        "EXP/validation/ptq_foundation_20261125/component_checks.json#e2h_crop",
+        "EXP/validation/ptq_foundation_20261125/component_checks.json#psaq_kde",
+        "EXP/validation/ptq_foundation_20261125/component_checks.json#sardfq_gmm",
+        "EXP/validation/ptq_foundation_20261125/component_checks.json#trio_topology",
+        "EXP/validation/ptq_foundation_20261125/cyclic_images.json",
+        "EXP/validation/ptq_foundation_20261125/hybrid_bridge.json",
+        "EXP/validation/ptq_foundation_20261125/numerical/daquant_frozen/source_request.json",
+        "EXP/validation/ptq_foundation_20261125/numerical/qwt_v2_integer_fold/source_request.json",
+        "EXP/validation/ptq_foundation_20261125/numerical/recipe_adalog/source_request.json",
+        "EXP/validation/ptq_foundation_20261125/numerical/recipe_adfq_vit/source_request.json",
+        "EXP/validation/ptq_foundation_20261125/numerical/recipe_aiqvit/source_request.json",
+        "EXP/validation/ptq_foundation_20261125/numerical/recipe_amp-vit/source_request.json",
+        "EXP/validation/ptq_foundation_20261125/numerical/recipe_aphq-vit/source_request.json",
+        "EXP/validation/ptq_foundation_20261125/numerical/recipe_apq-vit/source_request.json",
+        "EXP/validation/ptq_foundation_20261125/numerical/recipe_biascomp/source_request.json",
+        "EXP/validation/ptq_foundation_20261125/numerical/recipe_bit-shrinking/source_request.json",
+        "EXP/validation/ptq_foundation_20261125/numerical/recipe_cpt-v/source_request.json",
+        "EXP/validation/ptq_foundation_20261125/numerical/recipe_daquant/source_request.json",
+        "EXP/validation/ptq_foundation_20261125/numerical/recipe_dopq_vit/source_request.json",
+        "EXP/validation/ptq_foundation_20261125/numerical/recipe_erq-icml2024/source_request.json",
+        "EXP/validation/ptq_foundation_20261125/numerical/recipe_erq-tpami2025-duq/source_request.json",
+        "EXP/validation/ptq_foundation_20261125/numerical/recipe_evol-q/source_request.json",
+        "EXP/validation/ptq_foundation_20261125/numerical/recipe_fima-q/source_request.json",
+        "EXP/validation/ptq_foundation_20261125/numerical/recipe_h-vit/source_request.json",
+        "EXP/validation/ptq_foundation_20261125/numerical/recipe_hc-ptq/source_request.json",
+        "EXP/validation/ptq_foundation_20261125/numerical/recipe_igq_vit/source_request.json",
+        "EXP/validation/ptq_foundation_20261125/numerical/recipe_iptq-vit/source_request.json",
+        "EXP/validation/ptq_foundation_20261125/numerical/recipe_is-vit/source_request.json",
+        "EXP/validation/ptq_foundation_20261125/numerical/recipe_mgrq/source_request.json",
+        "EXP/validation/ptq_foundation_20261125/numerical/recipe_mptq-vit/source_request.json",
+        "EXP/validation/ptq_foundation_20261125/numerical/recipe_noisyquant/source_request.json",
+        "EXP/validation/ptq_foundation_20261125/numerical/recipe_orq_vit/source_request.json",
+        "EXP/validation/ptq_foundation_20261125/numerical/recipe_outlier-aware-slicing/source_request.json",
+        "EXP/validation/ptq_foundation_20261125/numerical/recipe_p2-vit/source_request.json",
+        "EXP/validation/ptq_foundation_20261125/numerical/recipe_patchwise-mpq-vit/source_request.json",
+        "EXP/validation/ptq_foundation_20261125/numerical/recipe_pd-quant/source_request.json",
+        "EXP/validation/ptq_foundation_20261125/numerical/recipe_pfcr-vit/source_request.json",
+        "EXP/validation/ptq_foundation_20261125/numerical/recipe_practicaledge/source_request.json",
+        "EXP/validation/ptq_foundation_20261125/numerical/recipe_ptq-vit-2021/source_request.json",
+        "EXP/validation/ptq_foundation_20261125/numerical/recipe_q-hyvit/source_request.json",
+        "EXP/validation/ptq_foundation_20261125/numerical/recipe_qdrop/source_request.json",
+        "EXP/validation/ptq_foundation_20261125/numerical/recipe_qep/source_request.json",
+        "EXP/validation/ptq_foundation_20261125/numerical/recipe_qwt-v2/source_request.json",
+        "EXP/validation/ptq_foundation_20261125/numerical/recipe_qwt/source_request.json",
+        "EXP/validation/ptq_foundation_20261125/numerical/recipe_regcache/source_request.json",
+        "EXP/validation/ptq_foundation_20261125/numerical/recipe_repquant/source_request.json",
+        "EXP/validation/ptq_foundation_20261125/numerical/recipe_tsptq_vit/source_request.json",
+        "EXP/validation/ptq_foundation_20261125/window_graph.json"
+      ],
+      "variants": [
+        "5628eb21; bounded exponent grid adapts capacity",
+        "ECCV paper, explicit perturbation bounds",
+        "ICCV 2025 COCO PTQ",
+        "paper, explicit reduced adapter",
+        "paper; explicit reduced settings",
+        "paper; explicit reduced settings in this request"
+      ]
+    },
+    {
+      "kind": "calibration",
+      "name": "percentile",
+      "public_entry": "QuantizationExecutor.fit_target",
+      "sources": [
+        "repq_vit"
+      ],
+      "requests": [
+        "EXP/validation/ptq_foundation_20261125/native_recipes.json#repq_vit"
+      ],
+      "variants": [
+        "https://github.com/zkkli/RepQ-ViT/tree/a160561b9233945e6680132f129d13041b787318"
+      ]
+    },
+    {
+      "kind": "calibration",
+      "name": "weight_pot",
+      "public_entry": "QuantizationExecutor.fit_target",
+      "sources": [
+        "h-vit",
+        "p2-vit"
+      ],
+      "requests": [
+        "EXP/validation/ptq_foundation_20261125/allocation_recipes.json#p2-vit",
+        "EXP/validation/ptq_foundation_20261125/numerical/recipe_h-vit/source_request.json",
+        "EXP/validation/ptq_foundation_20261125/numerical/recipe_p2-vit/source_request.json"
+      ],
+      "variants": [
+        "paper; explicit reduced settings in this request"
+      ]
+    },
+    {
+      "kind": "calibration_generator",
+      "name": "clamp_cyclic",
+      "public_entry": "execution.calibration_generator",
+      "sources": [
+        "clamp-vit"
+      ],
+      "requests": [
+        "EXP/validation/ptq_foundation_20261125/cyclic_images.json"
+      ],
+      "variants": [
+        "ECCV paper, explicit perturbation bounds"
+      ]
+    },
+    {
+      "kind": "calibration_generator",
+      "name": "clamp_local_adapter",
+      "public_entry": "execution.calibration_generator",
+      "sources": [
+        "clamp-vit"
+      ],
+      "requests": [
+        "EXP/validation/ptq_foundation_20261125/component_checks.json#clamp_local_adapter"
+      ],
+      "variants": [
+        "paper, explicit reduced adapter"
+      ]
+    },
+    {
+      "kind": "calibration_generator",
+      "name": "e2h_crop",
+      "public_entry": "execution.calibration_generator",
+      "sources": [
+        "dfq-vit"
+      ],
+      "requests": [
+        "EXP/validation/ptq_foundation_20261125/component_checks.json#e2h_crop"
+      ],
+      "variants": [
+        "paper, explicit reduced adapter"
+      ]
+    },
+    {
+      "kind": "calibration_generator",
+      "name": "psaq_kde",
+      "public_entry": "execution.calibration_generator",
+      "sources": [
+        "psaq-vit"
+      ],
+      "requests": [
+        "EXP/validation/ptq_foundation_20261125/component_checks.json#psaq_kde"
+      ],
+      "variants": [
+        "paper, explicit reduced adapter"
+      ]
+    },
+    {
+      "kind": "calibration_generator",
+      "name": "sardfq_gmm",
+      "public_entry": "execution.calibration_generator",
+      "sources": [
+        "sardfq"
+      ],
+      "requests": [
+        "EXP/validation/ptq_foundation_20261125/component_checks.json#sardfq_gmm"
+      ],
+      "variants": [
+        "paper, explicit reduced adapter"
+      ]
+    },
+    {
+      "kind": "operator",
+      "name": "edge_gelu",
+      "public_entry": "ptq_agent.execution.structure.configure",
+      "sources": [
+        "practicaledge"
+      ],
+      "requests": [
+        "EXP/validation/ptq_foundation_20261125/numerical/recipe_practicaledge/source_request.json"
+      ],
+      "variants": [
+        "paper; explicit reduced settings in this request"
+      ]
+    },
+    {
+      "kind": "operator",
+      "name": "edge_layernorm",
+      "public_entry": "ptq_agent.execution.structure.configure",
+      "sources": [
+        "practicaledge"
+      ],
+      "requests": [
+        "EXP/validation/ptq_foundation_20261125/numerical/recipe_practicaledge/source_request.json"
+      ],
+      "variants": [
+        "paper; explicit reduced settings in this request"
+      ]
+    },
+    {
+      "kind": "operator",
+      "name": "edge_softmax",
+      "public_entry": "ptq_agent.execution.structure.configure",
+      "sources": [
+        "practicaledge"
+      ],
+      "requests": [
+        "EXP/validation/ptq_foundation_20261125/numerical/recipe_practicaledge/source_request.json"
+      ],
+      "variants": [
+        "paper; explicit reduced settings in this request"
+      ]
+    },
+    {
+      "kind": "operator",
+      "name": "efficient_bit_softmax",
+      "public_entry": "ptq_agent.execution.structure.configure",
+      "sources": [
+        "iptq-vit"
+      ],
+      "requests": [
+        "EXP/validation/ptq_foundation_20261125/numerical/recipe_iptq-vit/source_request.json"
+      ],
+      "variants": [
+        "paper; explicit reduced settings in this request"
+      ]
+    },
+    {
+      "kind": "operator",
+      "name": "hvit_layernorm",
+      "public_entry": "ptq_agent.execution.structure.configure",
+      "sources": [
+        "h-vit"
+      ],
+      "requests": [
+        "EXP/validation/ptq_foundation_20261125/numerical/recipe_h-vit/source_request.json"
+      ],
+      "variants": [
+        "paper; explicit reduced settings in this request"
+      ]
+    },
+    {
+      "kind": "operator",
+      "name": "integer_layernorm",
+      "public_entry": "ptq_agent.execution.operators",
+      "sources": [
+        "fq_vit"
+      ],
+      "requests": [
+        "EXP/validation/ptq_foundation_20261125/native_recipes.json#fq_vit"
+      ],
+      "variants": [
+        "https://github.com/megvii-research/FQ-ViT/tree/5daf5915c715dc21d6afcd64e661652030e640ab"
+      ]
+    },
+    {
+      "kind": "operator",
+      "name": "integer_softmax",
+      "public_entry": "ptq_agent.execution.operators",
+      "sources": [
+        "fq_vit"
+      ],
+      "requests": [
+        "EXP/validation/ptq_foundation_20261125/native_recipes.json#fq_vit"
+      ],
+      "variants": [
+        "https://github.com/megvii-research/FQ-ViT/tree/5daf5915c715dc21d6afcd64e661652030e640ab"
+      ]
+    },
+    {
+      "kind": "operator",
+      "name": "quartic_gelu",
+      "public_entry": "ptq_agent.execution.structure.configure",
+      "sources": [
+        "iptq-vit"
+      ],
+      "requests": [
+        "EXP/validation/ptq_foundation_20261125/numerical/recipe_iptq-vit/source_request.json"
+      ],
+      "variants": [
+        "paper; explicit reduced settings in this request"
+      ]
+    },
+    {
+      "kind": "postfit",
+      "name": "bias_compensation",
+      "public_entry": "QuantizationExecutor.prepare",
+      "sources": [
+        "biascomp",
+        "dfq-vit"
+      ],
+      "requests": [
+        "EXP/validation/ptq_foundation_20261125/component_checks.json#e2h_crop",
+        "EXP/validation/ptq_foundation_20261125/numerical/recipe_biascomp/source_request.json"
+      ],
+      "variants": [
+        "paper, explicit reduced adapter",
+        "paper; explicit reduced settings in this request"
+      ]
+    },
+    {
+      "kind": "postfit",
+      "name": "bit_shrinking",
+      "public_entry": "QuantizationExecutor.prepare",
+      "sources": [
+        "bit-shrinking"
+      ],
+      "requests": [
+        "EXP/validation/ptq_foundation_20261125/numerical/recipe_bit-shrinking/source_request.json"
+      ],
+      "variants": [
+        "paper; explicit reduced settings in this request"
+      ]
+    },
+    {
+      "kind": "postfit",
+      "name": "block_coordinate_search",
+      "public_entry": "QuantizationExecutor.prepare",
+      "sources": [
+        "apq-vit",
+        "ptq-vit-2021",
+        "q-hyvit"
+      ],
+      "requests": [
+        "EXP/validation/ptq_foundation_20261125/allocation_recipes.json#ptq-vit-2021",
+        "EXP/validation/ptq_foundation_20261125/allocation_recipes.json#q-hyvit",
+        "EXP/validation/ptq_foundation_20261125/hybrid_bridge.json",
+        "EXP/validation/ptq_foundation_20261125/numerical/recipe_apq-vit/source_request.json",
+        "EXP/validation/ptq_foundation_20261125/numerical/recipe_ptq-vit-2021/source_request.json",
+        "EXP/validation/ptq_foundation_20261125/numerical/recipe_q-hyvit/source_request.json"
+      ],
+      "variants": [
+        "paper; explicit reduced settings in this request"
+      ]
+    },
+    {
+      "kind": "postfit",
+      "name": "block_reconstruction",
+      "public_entry": "QuantizationExecutor.prepare",
+      "sources": [
+        "aphq-vit",
+        "fima-q",
+        "mgrq",
+        "orq_vit",
+        "outlier-aware-slicing",
+        "pd-quant",
+        "qdrop"
+      ],
+      "requests": [
+        "EXP/validation/ptq_foundation_20261125/numerical/recipe_aphq-vit/source_request.json",
+        "EXP/validation/ptq_foundation_20261125/numerical/recipe_fima-q/source_request.json",
+        "EXP/validation/ptq_foundation_20261125/numerical/recipe_mgrq/source_request.json",
+        "EXP/validation/ptq_foundation_20261125/numerical/recipe_orq_vit/source_request.json",
+        "EXP/validation/ptq_foundation_20261125/numerical/recipe_outlier-aware-slicing/source_request.json",
+        "EXP/validation/ptq_foundation_20261125/numerical/recipe_pd-quant/source_request.json",
+        "EXP/validation/ptq_foundation_20261125/numerical/recipe_qdrop/source_request.json"
+      ],
+      "variants": [
+        "paper; explicit reduced settings in this request"
+      ]
+    },
+    {
+      "kind": "postfit",
+      "name": "channel_affine",
+      "public_entry": "QuantizationExecutor.prepare",
+      "sources": [
+        "qwt-v2"
+      ],
+      "requests": [
+        "EXP/validation/ptq_foundation_20261125/numerical/qwt_v2_integer_fold/source_request.json",
+        "EXP/validation/ptq_foundation_20261125/numerical/recipe_qwt-v2/source_request.json"
+      ],
+      "variants": [
+        "paper; explicit reduced settings in this request"
+      ]
+    },
+    {
+      "kind": "postfit",
+      "name": "domain_affine_fit",
+      "public_entry": "QuantizationExecutor.prepare",
+      "sources": [
+        "daquant"
+      ],
+      "requests": [
+        "EXP/validation/ptq_foundation_20261125/numerical/daquant_frozen/source_request.json",
+        "EXP/validation/ptq_foundation_20261125/numerical/recipe_daquant/source_request.json"
+      ],
+      "variants": [
+        "paper; explicit reduced settings in this request"
+      ]
+    },
+    {
+      "kind": "postfit",
+      "name": "graph_reconstruction",
+      "public_entry": "QuantizationExecutor.prepare",
+      "sources": [
+        "is-vit",
+        "pfcr-vit",
+        "sardfq"
+      ],
+      "requests": [
+        "EXP/validation/ptq_foundation_20261125/component_checks.json#sardfq_gmm",
+        "EXP/validation/ptq_foundation_20261125/numerical/recipe_is-vit/source_request.json",
+        "EXP/validation/ptq_foundation_20261125/numerical/recipe_pfcr-vit/source_request.json"
+      ],
+      "variants": [
+        "paper, explicit reduced adapter",
+        "paper; explicit reduced settings in this request"
+      ]
+    },
+    {
+      "kind": "postfit",
+      "name": "merged_weight_fit",
+      "public_entry": "QuantizationExecutor.prepare",
+      "sources": [
+        "aiqvit"
+      ],
+      "requests": [
+        "EXP/validation/ptq_foundation_20261125/numerical/recipe_aiqvit/source_request.json"
+      ],
+      "variants": [
+        "paper; explicit reduced settings in this request"
+      ]
+    },
+    {
+      "kind": "postfit",
+      "name": "qwt",
+      "public_entry": "QuantizationExecutor.prepare",
+      "sources": [
+        "qwt"
+      ],
+      "requests": [
+        "EXP/validation/ptq_foundation_20261125/numerical/recipe_qwt/source_request.json"
+      ],
+      "variants": [
+        "paper; explicit reduced settings in this request"
+      ]
+    },
+    {
+      "kind": "postfit",
+      "name": "scale_search",
+      "public_entry": "QuantizationExecutor.prepare",
+      "sources": [
+        "clamp-vit",
+        "cpt-v",
+        "evol-q"
+      ],
+      "requests": [
+        "EXP/validation/ptq_foundation_20261125/component_checks.json#clamp_local_adapter",
+        "EXP/validation/ptq_foundation_20261125/numerical/recipe_cpt-v/source_request.json",
+        "EXP/validation/ptq_foundation_20261125/numerical/recipe_evol-q/source_request.json"
+      ],
+      "variants": [
+        "paper, explicit reduced adapter",
+        "paper; explicit reduced settings in this request"
+      ]
+    },
+    {
+      "kind": "preprocess",
+      "name": "centered_smoothing",
+      "public_entry": "QuantizationExecutor.preprocess",
+      "sources": [
+        "amp-vit",
+        "mptq-vit",
+        "p2-vit"
+      ],
+      "requests": [
+        "EXP/validation/ptq_foundation_20261125/allocation_recipes.json#amp-vit",
+        "EXP/validation/ptq_foundation_20261125/allocation_recipes.json#mptq-vit",
+        "EXP/validation/ptq_foundation_20261125/allocation_recipes.json#p2-vit",
+        "EXP/validation/ptq_foundation_20261125/numerical/recipe_amp-vit/source_request.json",
+        "EXP/validation/ptq_foundation_20261125/numerical/recipe_mptq-vit/source_request.json",
+        "EXP/validation/ptq_foundation_20261125/numerical/recipe_p2-vit/source_request.json"
+      ],
+      "variants": [
+        "paper; explicit reduced settings",
+        "paper; explicit reduced settings in this request"
+      ]
+    },
+    {
+      "kind": "preprocess",
+      "name": "domain_affine",
+      "public_entry": "QuantizationExecutor.preprocess",
+      "sources": [
+        "daquant"
+      ],
+      "requests": [
+        "EXP/validation/ptq_foundation_20261125/numerical/daquant_frozen/source_request.json",
+        "EXP/validation/ptq_foundation_20261125/numerical/recipe_daquant/source_request.json"
+      ],
+      "variants": [
+        "paper; explicit reduced settings in this request"
+      ]
+    },
+    {
+      "kind": "preprocess",
+      "name": "noisy_shift",
+      "public_entry": "QuantizationExecutor.preprocess",
+      "sources": [
+        "noisyquant"
+      ],
+      "requests": [
+        "EXP/validation/ptq_foundation_20261125/numerical/recipe_noisyquant/source_request.json"
+      ],
+      "variants": [
+        "paper; explicit reduced settings in this request"
+      ]
+    },
+    {
+      "kind": "preprocess",
+      "name": "repq_ln",
+      "public_entry": "QuantizationExecutor.preprocess",
+      "sources": [
+        "dopq_vit",
+        "erq-icml2024",
+        "erq-tpami2025-duq",
+        "is-vit",
+        "lrp-qvit",
+        "mix-qvit",
+        "repq_vit",
+        "repquant"
+      ],
+      "requests": [
+        "EXP/validation/ptq_foundation_20261125/allocation_recipes.json#lrp-qvit",
+        "EXP/validation/ptq_foundation_20261125/allocation_recipes.json#mix-qvit",
+        "EXP/validation/ptq_foundation_20261125/native_recipes.json#repq_vit",
+        "EXP/validation/ptq_foundation_20261125/numerical/recipe_dopq_vit/source_request.json",
+        "EXP/validation/ptq_foundation_20261125/numerical/recipe_erq-icml2024/source_request.json",
+        "EXP/validation/ptq_foundation_20261125/numerical/recipe_erq-tpami2025-duq/source_request.json",
+        "EXP/validation/ptq_foundation_20261125/numerical/recipe_is-vit/source_request.json",
+        "EXP/validation/ptq_foundation_20261125/numerical/recipe_repquant/source_request.json"
+      ],
+      "variants": [
+        "https://github.com/zkkli/RepQ-ViT/tree/a160561b9233945e6680132f129d13041b787318",
+        "paper; explicit reduced settings",
+        "paper; explicit reduced settings in this request"
+      ]
+    },
+    {
+      "kind": "preprocess",
+      "name": "trio_dw_scale",
+      "public_entry": "QuantizationExecutor.preprocess",
+      "sources": [
+        "trio-vit"
+      ],
+      "requests": [
+        "EXP/validation/ptq_foundation_20261125/component_checks.json#trio_topology"
+      ],
+      "variants": [
+        "5628eb21; bounded exponent grid adapts capacity"
+      ]
+    },
+    {
+      "kind": "preprocess",
+      "name": "trio_pw_shift",
+      "public_entry": "QuantizationExecutor.preprocess",
+      "sources": [
+        "trio-vit"
+      ],
+      "requests": [
+        "EXP/validation/ptq_foundation_20261125/component_checks.json#trio_topology"
+      ],
+      "variants": [
+        "5628eb21; bounded exponent grid adapts capacity"
+      ]
+    },
+    {
+      "kind": "structure",
+      "name": "cached_kv",
+      "public_entry": "ptq_agent.execution.structure.configure",
+      "sources": [
+        "regcache"
+      ],
+      "requests": [
+        "EXP/validation/ptq_foundation_20261125/numerical/recipe_regcache/source_request.json"
+      ],
+      "variants": [
+        "paper; explicit reduced settings in this request"
+      ]
+    },
+    {
+      "kind": "structure",
+      "name": "calibrated_operator",
+      "public_entry": "ptq_agent.execution.structure.configure",
+      "sources": [
+        "h-vit",
+        "practicaledge"
+      ],
+      "requests": [
+        "EXP/validation/ptq_foundation_20261125/numerical/recipe_h-vit/source_request.json",
+        "EXP/validation/ptq_foundation_20261125/numerical/recipe_practicaledge/source_request.json"
+      ],
+      "variants": [
+        "paper; explicit reduced settings in this request"
+      ]
+    },
+    {
+      "kind": "structure",
+      "name": "gelu_to_relu",
+      "public_entry": "ptq_agent.execution.structure.configure",
+      "sources": [
+        "aphq-vit"
+      ],
+      "requests": [
+        "EXP/validation/ptq_foundation_20261125/numerical/recipe_aphq-vit/source_request.json"
+      ],
+      "variants": [
+        "paper; explicit reduced settings in this request"
+      ]
+    },
+    {
+      "kind": "structure",
+      "name": "integer_function",
+      "public_entry": "ptq_agent.execution.structure.configure",
+      "sources": [
+        "iptq-vit",
+        "practicaledge"
+      ],
+      "requests": [
+        "EXP/validation/ptq_foundation_20261125/numerical/recipe_iptq-vit/source_request.json",
+        "EXP/validation/ptq_foundation_20261125/numerical/recipe_practicaledge/source_request.json"
+      ],
+      "variants": [
+        "paper; explicit reduced settings in this request"
+      ]
+    },
+    {
+      "kind": "structure",
+      "name": "lite_denominator",
+      "public_entry": "ptq_agent.execution.structure.configure",
+      "sources": [
+        "trio-vit"
+      ],
+      "requests": [
+        "EXP/validation/ptq_foundation_20261125/component_checks.json#trio_topology"
+      ],
+      "variants": [
+        "5628eb21; bounded exponent grid adapts capacity"
+      ]
+    },
+    {
+      "kind": "structure",
+      "name": "outlier_tokens",
+      "public_entry": "ptq_agent.execution.structure.configure",
+      "sources": [
+        "regcache"
+      ],
+      "requests": [
+        "EXP/validation/ptq_foundation_20261125/numerical/recipe_regcache/source_request.json"
+      ],
+      "variants": [
+        "paper; explicit reduced settings in this request"
+      ]
+    },
+    {
+      "kind": "structure",
+      "name": "window_branches",
+      "public_entry": "ptq_agent.execution.structure.configure",
+      "sources": [
+        "mixa-q"
+      ],
+      "requests": [
+        "EXP/validation/ptq_foundation_20261125/window_graph.json"
+      ],
+      "variants": [
+        "ICCV 2025 COCO PTQ"
+      ]
+    },
+    {
+      "kind": "weight",
+      "name": "erq",
+      "public_entry": "ptq_agent.execution.methods.get_target_method",
+      "sources": [
+        "erq-icml2024",
+        "erq-tpami2025-duq"
+      ],
+      "requests": [
+        "EXP/validation/ptq_foundation_20261125/numerical/recipe_erq-icml2024/source_request.json",
+        "EXP/validation/ptq_foundation_20261125/numerical/recipe_erq-tpami2025-duq/source_request.json"
+      ],
+      "variants": [
+        "paper; explicit reduced settings in this request"
+      ]
+    },
+    {
+      "kind": "weight",
+      "name": "gptq",
+      "public_entry": "ptq_agent.execution.methods.get_target_method",
+      "sources": [
+        "repquant"
+      ],
+      "requests": [
+        "EXP/validation/ptq_foundation_20261125/numerical/recipe_repquant/source_request.json"
+      ],
+      "variants": [
+        "paper; explicit reduced settings in this request"
+      ]
+    },
+    {
+      "kind": "weight",
+      "name": "hc_rows",
+      "public_entry": "ptq_agent.execution.methods.get_target_method",
+      "sources": [
+        "hc-ptq"
+      ],
+      "requests": [
+        "EXP/validation/ptq_foundation_20261125/numerical/recipe_hc-ptq/source_request.json"
+      ],
+      "variants": [
+        "paper; explicit reduced settings in this request"
+      ]
+    },
+    {
+      "kind": "weight",
+      "name": "rtn",
+      "public_entry": "ptq_agent.execution.methods.get_target_method",
+      "sources": [
+        "clamp-vit",
+        "qep"
+      ],
+      "requests": [
+        "EXP/validation/ptq_foundation_20261125/cyclic_images.json",
+        "EXP/validation/ptq_foundation_20261125/numerical/recipe_qep/source_request.json"
+      ],
+      "variants": [
+        "ECCV paper, explicit perturbation bounds",
+        "paper; explicit reduced settings in this request"
+      ]
+    },
+    {
+      "kind": "weight",
+      "name": "uniform_affine",
+      "public_entry": "ptq_agent.execution.methods.get_target_method",
+      "sources": [
+        "adalog",
+        "adfq_vit",
+        "aiqvit",
+        "amp-vit",
+        "aphq-vit",
+        "apq-vit",
+        "biascomp",
+        "bit-shrinking",
+        "clamp-vit",
+        "cpt-v",
+        "daquant",
+        "dfq-vit",
+        "dopq_vit",
+        "erq-icml2024",
+        "erq-tpami2025-duq",
+        "evol-q",
+        "fima-q",
+        "igq_vit",
+        "iptq-vit",
+        "is-vit",
+        "lampq",
+        "lrp-qvit",
+        "mgrq",
+        "mix-qvit",
+        "mixa-q",
+        "mptq-vit",
+        "noisyquant",
+        "orq_vit",
+        "outlier-aware-slicing",
+        "patchwise-mpq-vit",
+        "pd-quant",
+        "pfcr-vit",
+        "pomq-vit",
+        "practicaledge",
+        "psaq-vit",
+        "ptq-vit-2021",
+        "q-hyvit",
+        "qdrop",
+        "qep",
+        "qwt",
+        "qwt-v2",
+        "regcache",
+        "repq_vit",
+        "repquant",
+        "sardfq",
+        "trio-vit",
+        "tsptq_vit"
+      ],
+      "requests": [
+        "EXP/validation/ptq_foundation_20261125/allocation_recipes.json#amp-vit",
+        "EXP/validation/ptq_foundation_20261125/allocation_recipes.json#igq_vit",
+        "EXP/validation/ptq_foundation_20261125/allocation_recipes.json#lampq",
+        "EXP/validation/ptq_foundation_20261125/allocation_recipes.json#lrp-qvit",
+        "EXP/validation/ptq_foundation_20261125/allocation_recipes.json#mix-qvit",
+        "EXP/validation/ptq_foundation_20261125/allocation_recipes.json#mptq-vit",
+        "EXP/validation/ptq_foundation_20261125/allocation_recipes.json#patchwise-mpq-vit",
+        "EXP/validation/ptq_foundation_20261125/allocation_recipes.json#pomq-vit",
+        "EXP/validation/ptq_foundation_20261125/allocation_recipes.json#ptq-vit-2021",
+        "EXP/validation/ptq_foundation_20261125/allocation_recipes.json#q-hyvit",
+        "EXP/validation/ptq_foundation_20261125/component_checks.json#clamp_local_adapter",
+        "EXP/validation/ptq_foundation_20261125/component_checks.json#e2h_crop",
+        "EXP/validation/ptq_foundation_20261125/component_checks.json#psaq_kde",
+        "EXP/validation/ptq_foundation_20261125/component_checks.json#sardfq_gmm",
+        "EXP/validation/ptq_foundation_20261125/component_checks.json#trio_topology",
+        "EXP/validation/ptq_foundation_20261125/cyclic_images.json",
+        "EXP/validation/ptq_foundation_20261125/native_recipes.json#repq_vit",
+        "EXP/validation/ptq_foundation_20261125/numerical/daquant_frozen/source_request.json",
+        "EXP/validation/ptq_foundation_20261125/numerical/qwt_v2_integer_fold/source_request.json",
+        "EXP/validation/ptq_foundation_20261125/numerical/recipe_adalog/source_request.json",
+        "EXP/validation/ptq_foundation_20261125/numerical/recipe_adfq_vit/source_request.json",
+        "EXP/validation/ptq_foundation_20261125/numerical/recipe_aiqvit/source_request.json",
+        "EXP/validation/ptq_foundation_20261125/numerical/recipe_amp-vit/source_request.json",
+        "EXP/validation/ptq_foundation_20261125/numerical/recipe_aphq-vit/source_request.json",
+        "EXP/validation/ptq_foundation_20261125/numerical/recipe_apq-vit/source_request.json",
+        "EXP/validation/ptq_foundation_20261125/numerical/recipe_biascomp/source_request.json",
+        "EXP/validation/ptq_foundation_20261125/numerical/recipe_bit-shrinking/source_request.json",
+        "EXP/validation/ptq_foundation_20261125/numerical/recipe_cpt-v/source_request.json",
+        "EXP/validation/ptq_foundation_20261125/numerical/recipe_daquant/source_request.json",
+        "EXP/validation/ptq_foundation_20261125/numerical/recipe_dopq_vit/source_request.json",
+        "EXP/validation/ptq_foundation_20261125/numerical/recipe_erq-icml2024/source_request.json",
+        "EXP/validation/ptq_foundation_20261125/numerical/recipe_erq-tpami2025-duq/source_request.json",
+        "EXP/validation/ptq_foundation_20261125/numerical/recipe_evol-q/source_request.json",
+        "EXP/validation/ptq_foundation_20261125/numerical/recipe_fima-q/source_request.json",
+        "EXP/validation/ptq_foundation_20261125/numerical/recipe_igq_vit/source_request.json",
+        "EXP/validation/ptq_foundation_20261125/numerical/recipe_iptq-vit/source_request.json",
+        "EXP/validation/ptq_foundation_20261125/numerical/recipe_is-vit/source_request.json",
+        "EXP/validation/ptq_foundation_20261125/numerical/recipe_mgrq/source_request.json",
+        "EXP/validation/ptq_foundation_20261125/numerical/recipe_mptq-vit/source_request.json",
+        "EXP/validation/ptq_foundation_20261125/numerical/recipe_noisyquant/source_request.json",
+        "EXP/validation/ptq_foundation_20261125/numerical/recipe_orq_vit/source_request.json",
+        "EXP/validation/ptq_foundation_20261125/numerical/recipe_outlier-aware-slicing/source_request.json",
+        "EXP/validation/ptq_foundation_20261125/numerical/recipe_patchwise-mpq-vit/source_request.json",
+        "EXP/validation/ptq_foundation_20261125/numerical/recipe_pd-quant/source_request.json",
+        "EXP/validation/ptq_foundation_20261125/numerical/recipe_pfcr-vit/source_request.json",
+        "EXP/validation/ptq_foundation_20261125/numerical/recipe_practicaledge/source_request.json",
+        "EXP/validation/ptq_foundation_20261125/numerical/recipe_ptq-vit-2021/source_request.json",
+        "EXP/validation/ptq_foundation_20261125/numerical/recipe_q-hyvit/source_request.json",
+        "EXP/validation/ptq_foundation_20261125/numerical/recipe_qdrop/source_request.json",
+        "EXP/validation/ptq_foundation_20261125/numerical/recipe_qep/source_request.json",
+        "EXP/validation/ptq_foundation_20261125/numerical/recipe_qwt-v2/source_request.json",
+        "EXP/validation/ptq_foundation_20261125/numerical/recipe_qwt/source_request.json",
+        "EXP/validation/ptq_foundation_20261125/numerical/recipe_regcache/source_request.json",
+        "EXP/validation/ptq_foundation_20261125/numerical/recipe_repquant/source_request.json",
+        "EXP/validation/ptq_foundation_20261125/numerical/recipe_tsptq_vit/source_request.json",
+        "EXP/validation/ptq_foundation_20261125/window_graph.json"
+      ],
+      "variants": [
+        "5628eb21; bounded exponent grid adapts capacity",
+        "ECCV paper, explicit perturbation bounds",
+        "ICCV 2025 COCO PTQ",
+        "https://github.com/zkkli/RepQ-ViT/tree/a160561b9233945e6680132f129d13041b787318",
+        "paper, explicit reduced adapter",
+        "paper; explicit reduced settings",
+        "paper; explicit reduced settings in this request"
+      ]
+    },
+    {
+      "kind": "weight",
+      "name": "uniform_full",
+      "public_entry": "ptq_agent.execution.methods.get_target_method",
+      "sources": [
+        "ptq4vit"
+      ],
+      "requests": [
+        "EXP/validation/ptq_foundation_20261125/native_recipes.json#ptq4vit"
+      ],
+      "variants": [
+        "https://github.com/hahnyuan/PTQ4ViT/tree/b42c790c2811e7835d435a9f9a6c64a079a7483a"
+      ]
+    },
+    {
+      "kind": "weight",
+      "name": "uniform_minmax",
+      "public_entry": "ptq_agent.execution.methods.get_target_method",
+      "sources": [
+        "fq_vit",
+        "h-vit",
+        "p2-vit",
+        "q-hyvit"
+      ],
+      "requests": [
+        "EXP/validation/ptq_foundation_20261125/allocation_recipes.json#p2-vit",
+        "EXP/validation/ptq_foundation_20261125/allocation_recipes.json#q-hyvit",
+        "EXP/validation/ptq_foundation_20261125/hybrid_bridge.json",
+        "EXP/validation/ptq_foundation_20261125/native_recipes.json#fq_vit",
+        "EXP/validation/ptq_foundation_20261125/numerical/recipe_h-vit/source_request.json",
+        "EXP/validation/ptq_foundation_20261125/numerical/recipe_p2-vit/source_request.json"
+      ],
+      "variants": [
+        "https://github.com/megvii-research/FQ-ViT/tree/5daf5915c715dc21d6afcd64e661652030e640ab",
+        "paper; explicit reduced settings in this request"
+      ]
+    }
+  ],
+  "literature_identifiers": {
+    "rep.adaptive_log_codebook": {
+      "uses": [
+        "adalog"
+      ],
+      "implementation": null,
+      "scope": "文献研究问题或待独立测量的诊断",
+      "source_asset": {
+        "asset": "methods/adalog.md"
+      }
+    },
+    "search.fpcs_joint": {
+      "uses": [
+        "adalog"
+      ],
+      "implementation": null,
+      "scope": "文献研究问题或待独立测量的诊断",
+      "source_asset": {
+        "asset": "methods/adalog.md"
+      }
+    },
+    "transform.positive_shift_fold": {
+      "uses": [
+        "adalog"
+      ],
+      "implementation": null,
+      "scope": "文献研究问题或待独立测量的诊断",
+      "source_asset": {
+        "asset": "methods/adalog.md"
+      }
+    },
+    "rep.log_lut_decode": {
+      "uses": [
+        "adalog"
+      ],
+      "implementation": null,
+      "scope": "文献研究问题或待独立测量的诊断",
+      "source_asset": {
+        "asset": "methods/adalog.md"
+      }
+    },
+    "study.representation_vs_search": {
+      "uses": [
+        "adalog"
+      ],
+      "implementation": null,
+      "scope": "文献研究问题或待独立测量的诊断",
+      "source_asset": {
+        "asset": "methods/adalog.md"
+      }
+    },
+    "metric.log_underflow_mass": {
+      "uses": [
+        "adalog"
+      ],
+      "implementation": null,
+      "scope": "文献研究问题或待独立测量的诊断",
+      "source_asset": {
+        "asset": "methods/adalog.md"
+      }
+    },
+    "outlier.sparse_bypass": {
+      "uses": [
+        "adfq_vit"
+      ],
+      "implementation": "encodings.apply",
+      "scope": "软件入口",
+      "source_asset": {
+        "asset": "methods/recipes/adfq_vit.md"
+      }
+    },
+    "rep.shift_log2": {
+      "uses": [
+        "adfq_vit"
+      ],
+      "implementation": "encodings.shift_decode",
+      "scope": "软件入口",
+      "source_asset": {
+        "asset": "methods/recipes/adfq_vit.md"
+      }
+    },
+    "loss.adfq_module": {
+      "uses": [
+        "adfq_vit"
+      ],
+      "implementation": "block_objectives.objective",
+      "scope": "软件入口",
+      "source_asset": {
+        "asset": "methods/recipes/adfq_vit.md"
+      }
+    },
+    "study.outlier_protection_cost": {
+      "uses": [
+        "adfq_vit"
+      ],
+      "implementation": null,
+      "scope": "文献研究问题或待独立测量的诊断",
+      "source_asset": {
+        "asset": "methods/recipes/adfq_vit.md"
+      }
+    },
+    "metric.outlier_payload_bytes": {
+      "uses": [
+        "adfq_vit"
+      ],
+      "implementation": null,
+      "scope": "文献研究问题或待独立测量的诊断",
+      "source_asset": {
+        "asset": "methods/recipes/adfq_vit.md"
+      }
+    },
+    "metric.outlier_task_sensitivity": {
+      "uses": [
+        "adfq_vit"
+      ],
+      "implementation": null,
+      "scope": "文献研究问题或待独立测量的诊断",
+      "source_asset": {
+        "asset": "methods/recipes/adfq_vit.md"
+      }
+    },
+    "weight.mergeable_low_rank_correction": {
+      "uses": [
+        "aiqvit"
+      ],
+      "implementation": "block_objectives.merged_fit",
+      "scope": "软件入口",
+      "source_asset": {
+        "asset": "methods/recipes/aiqvit.md"
+      }
+    },
+    "rep.learned_focus_interval": {
+      "uses": [
+        "aiqvit"
+      ],
+      "implementation": "region_grids.fit",
+      "scope": "软件入口",
+      "source_asset": {
+        "asset": "methods/recipes/aiqvit.md"
+      }
+    },
+    "search.rank_allocation": {
+      "uses": [
+        "aiqvit"
+      ],
+      "implementation": "rank_search.search",
+      "scope": "软件入口",
+      "source_asset": {
+        "asset": "methods/recipes/aiqvit.md"
+      }
+    },
+    "schedule.easy_to_hard_reconstruction": {
+      "uses": [
+        "aiqvit"
+      ],
+      "implementation": "block_objectives.merged_fit",
+      "scope": "软件入口",
+      "source_asset": {
+        "asset": "methods/recipes/aiqvit.md"
+      }
+    },
+    "rep.tangent_companding": {
+      "uses": [
+        "dopq_vit"
+      ],
+      "implementation": "encodings.apply",
+      "scope": "软件入口",
+      "source_asset": {
+        "asset": "methods/recipes/dopq_vit.md"
+      }
+    },
+    "aggregate.robust_channel_scale": {
+      "uses": [
+        "dopq_vit"
+      ],
+      "implementation": "edge_transforms",
+      "scope": "软件入口",
+      "source_asset": {
+        "asset": "methods/recipes/dopq_vit.md"
+      }
+    },
+    "study.attention_tail_budget": {
+      "uses": [
+        "dopq_vit"
+      ],
+      "implementation": null,
+      "scope": "文献研究问题或待独立测量的诊断",
+      "source_asset": {
+        "asset": "methods/recipes/dopq_vit.md"
+      }
+    },
+    "study.reparam_weight_tradeoff": {
+      "uses": [
+        "dopq_vit"
+      ],
+      "implementation": null,
+      "scope": "文献研究问题或待独立测量的诊断",
+      "source_asset": {
+        "asset": "methods/recipes/dopq_vit.md"
+      }
+    },
+    "pipeline.ptf_integer_ln": {
+      "uses": [
+        "fq_vit"
+      ],
+      "implementation": "operators.integer_layernorm",
+      "scope": "软件入口",
+      "source_asset": {
+        "asset": "methods/recipes/fq_vit.md"
+      }
+    },
+    "pipeline.lis": {
+      "uses": [
+        "fq_vit"
+      ],
+      "implementation": "operators.SoftmaxSite",
+      "scope": "软件入口",
+      "source_asset": {
+        "asset": "methods/recipes/fq_vit.md"
+      }
+    },
+    "study.nonlinear_error_split": {
+      "uses": [
+        "fq_vit"
+      ],
+      "implementation": null,
+      "scope": "文献研究问题或待独立测量的诊断",
+      "source_asset": {
+        "asset": "methods/recipes/fq_vit.md"
+      }
+    },
+    "rep.bit_window_two_scale": {
+      "uses": [
+        "tsptq_vit"
+      ],
+      "implementation": "encodings.bit_window",
+      "scope": "软件入口",
+      "source_asset": {
+        "asset": "methods/recipes/tsptq_vit.md"
+      }
+    },
+    "group.static_outlier_channels": {
+      "uses": [
+        "tsptq_vit"
+      ],
+      "implementation": "region_grids.fit",
+      "scope": "软件入口",
+      "source_asset": {
+        "asset": "methods/recipes/tsptq_vit.md"
+      }
+    },
+    "search.shift_aligned_scales": {
+      "uses": [
+        "tsptq_vit"
+      ],
+      "implementation": "region_grids.fit",
+      "scope": "软件入口",
+      "source_asset": {
+        "asset": "methods/recipes/tsptq_vit.md"
+      }
+    },
+    "study.metadata_vs_resolution": {
+      "uses": [
+        "tsptq_vit"
+      ],
+      "implementation": null,
+      "scope": "文献研究问题或待独立测量的诊断",
+      "source_asset": {
+        "asset": "methods/recipes/tsptq_vit.md"
+      }
+    },
+    "observer.learned_dual_clip": {
+      "uses": [
+        "repquant"
+      ],
+      "implementation": "edge_transforms.bilateral_clip",
+      "scope": "软件入口",
+      "source_asset": {
+        "asset": "methods/recipes/repquant.md"
+      }
+    },
+    "transform.repq_shared_grid": {
+      "uses": [
+        "repquant"
+      ],
+      "implementation": "QuantizationExecutor.preprocess",
+      "scope": "软件入口",
+      "source_asset": {
+        "asset": "methods/recipes/repquant.md"
+      }
+    },
+    "schedule.activation_then_weight": {
+      "uses": [
+        "repquant"
+      ],
+      "implementation": "QuantizationExecutor.fit_model",
+      "scope": "软件入口",
+      "source_asset": {
+        "asset": "methods/recipes/repquant.md"
+      }
+    },
+    "study.clip_in_quantized_space": {
+      "uses": [
+        "repquant"
+      ],
+      "implementation": null,
+      "scope": "文献研究问题或待独立测量的诊断",
+      "source_asset": {
+        "asset": "methods/recipes/repquant.md"
+      }
+    },
+    "observer.row_percentile_select": {
+      "uses": [
+        "orq_vit"
+      ],
+      "implementation": "fixed_grids.first_batch_rows",
+      "scope": "软件入口",
+      "source_asset": {
+        "asset": "methods/recipes/orq_vit.md"
+      }
+    },
+    "opt.scale_only_reconstruction": {
+      "uses": [
+        "orq_vit"
+      ],
+      "implementation": "reconstruction.fit_stage",
+      "scope": "软件入口",
+      "source_asset": {
+        "asset": "methods/recipes/orq_vit.md"
+      }
+    },
+    "layout.fixed_token_scale": {
+      "uses": [
+        "orq_vit"
+      ],
+      "implementation": "fixed_grids",
+      "scope": "软件入口",
+      "source_asset": {
+        "asset": "methods/recipes/orq_vit.md"
+      }
+    },
+    "study.axis_vs_outlier": {
+      "uses": [
+        "orq_vit"
+      ],
+      "implementation": null,
+      "scope": "文献研究问题或待独立测量的诊断",
+      "source_asset": {
+        "asset": "methods/recipes/orq_vit.md"
+      }
+    },
+    "metric.code_occupancy": {
+      "uses": [
+        "orq_vit"
+      ],
+      "implementation": null,
+      "scope": "文献研究问题或待独立测量的诊断",
+      "source_asset": {
+        "asset": "methods/recipes/orq_vit.md"
+      }
+    },
+    "transform.fixed_noise_shift": {
+      "uses": [
+        "noisyquant"
+      ],
+      "implementation": "QuantizationExecutor.preprocess",
+      "scope": "软件入口",
+      "source_asset": {
+        "asset": "methods/recipes/noisyquant.md"
+      }
+    },
+    "transform.fold_shift_with_decoded_weight": {
+      "uses": [
+        "noisyquant"
+      ],
+      "implementation": "PipelineLinear.effective_bias",
+      "scope": "软件入口",
+      "source_asset": {
+        "asset": "methods/recipes/noisyquant.md"
+      }
+    },
+    "study.quantization_phase_shift": {
+      "uses": [
+        "noisyquant"
+      ],
+      "implementation": null,
+      "scope": "文献研究问题或待独立测量的诊断",
+      "source_asset": {
+        "asset": "methods/recipes/noisyquant.md"
+      }
+    },
+    "metric.shift_compensation_residual": {
+      "uses": [
+        "noisyquant"
+      ],
+      "implementation": null,
+      "scope": "文献研究问题或待独立测量的诊断",
+      "source_asset": {
+        "asset": "methods/recipes/noisyquant.md"
+      }
+    },
+    "group.instance_range_assignment": {
+      "uses": [
+        "igq_vit"
+      ],
+      "implementation": "encodings.fit_groups / encodings.apply",
+      "scope": "软件入口",
+      "source_asset": {
+        "asset": "methods/recipes/igq_vit.md"
+      }
+    },
+    "search.group_count_budget": {
+      "uses": [
+        "igq_vit"
+      ],
+      "implementation": "source_allocation.group_schedule",
+      "scope": "软件入口",
+      "source_asset": {
+        "asset": "methods/recipes/igq_vit.md"
+      }
+    },
+    "reduce.group_scaled_sum": {
+      "uses": [
+        "igq_vit"
+      ],
+      "implementation": "encodings.apply (分组反量化后的浮点矩阵乘，软件参考)",
+      "scope": "软件入口",
+      "source_asset": {
+        "asset": "methods/recipes/igq_vit.md"
+      }
+    },
+    "study.partition_drift": {
+      "uses": [
+        "igq_vit"
+      ],
+      "implementation": null,
+      "scope": "文献研究问题或待独立测量的诊断",
+      "source_asset": {
+        "asset": "methods/recipes/igq_vit.md"
+      }
+    },
+    "init.distribution_scale_shift": {
+      "uses": [
+        "daquant"
+      ],
+      "implementation": "edge_transforms.domain_affine",
+      "scope": "软件入口",
+      "source_asset": {
+        "asset": "methods/recipes/daquant.md"
+      }
+    },
+    "opt.learned_clip_and_weight_correction": {
+      "uses": [
+        "daquant"
+      ],
+      "implementation": "domain_fit.fit",
+      "scope": "软件入口",
+      "source_asset": {
+        "asset": "methods/recipes/daquant.md"
+      }
+    },
+    "loss.domain_feature_alignment": {
+      "uses": [
+        "daquant"
+      ],
+      "implementation": "domain_fit.fit",
+      "scope": "软件入口",
+      "source_asset": {
+        "asset": "methods/recipes/daquant.md"
+      }
+    },
+    "study.domain_calibration_transfer": {
+      "uses": [
+        "daquant"
+      ],
+      "implementation": null,
+      "scope": "文献研究问题或待独立测量的诊断",
+      "source_asset": {
+        "asset": "methods/recipes/daquant.md"
+      }
+    },
+    "structure.register_candidate_bank": {
+      "uses": [
+        "regcache"
+      ],
+      "implementation": "structure.token_bank",
+      "scope": "软件入口",
+      "source_asset": {
+        "asset": "methods/recipes/regcache.md"
+      }
+    },
+    "structure.cached_kv_prefix": {
+      "uses": [
+        "regcache"
+      ],
+      "implementation": "structure.configure",
+      "scope": "软件入口",
+      "source_asset": {
+        "asset": "methods/recipes/regcache.md"
+      }
+    },
+    "structure.outlier_token_policy": {
+      "uses": [
+        "regcache"
+      ],
+      "implementation": "structure.configure",
+      "scope": "软件入口",
+      "source_asset": {
+        "asset": "methods/recipes/regcache.md"
+      }
+    },
+    "study.register_mechanism_applicability": {
+      "uses": [
+        "regcache"
+      ],
+      "implementation": null,
+      "scope": "文献研究问题或待独立测量的诊断",
+      "source_asset": {
+        "asset": "methods/recipes/regcache.md"
+      }
+    },
+    "metric.prefix_outlier_suppression": {
+      "uses": [
+        "regcache"
+      ],
+      "implementation": null,
+      "scope": "文献研究问题或待独立测量的诊断",
+      "source_asset": {
+        "asset": "methods/recipes/regcache.md"
+      }
+    }
+  }
+}

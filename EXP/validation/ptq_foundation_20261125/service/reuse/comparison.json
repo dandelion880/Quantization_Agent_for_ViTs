@@ -1,0 +1,1 @@
+{"gradient_audit":{"autograd_grad_calls":0,"backward_calls":0,"optimizer_steps":0},"same_model":true,"sample_ids":["train/n04522168/n04522168_9121.JPEG"],"stable_metrics":{"cosine_error":0.006237273141551092,"mse":0.007028959427763652,"top1":100.0,"top5":100.0}}

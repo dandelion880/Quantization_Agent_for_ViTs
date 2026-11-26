@@ -33,12 +33,13 @@ def require_regular_modules(backend, modules, tool):
 
 def plugin_capabilities(backend):
     from .objectives import NATIVE_KERNELS
+    from .encodings import NAMES
     return {
-        "weight": {"rtn": "existing finite-grid QDQ + scale selection", "gptq": "official Cholesky error compensation; static groups; optional act-order",
+        "weight": {"erq":"paired input compensation, progressive rounding, optional DUQ partition", "hc_rows":"packed row indices and FP32 vector codebook", "rtn": "existing finite-grid QDQ + scale selection", "gptq": "official Cholesky error compensation; static groups; optional act-order",
                    "gptaq": "original-FP aligned input-difference compensation; a_then_w/sequential; per-channel",
                    "adaround": "frozen grid; optimize alpha only; explicit iteration budget; hard freeze before inference",
                    "uniform_full": "full signed grid, amax/(qmax-.5); output row blocks supported", "uniform_affine": "unsigned affine grid, minmax/percentile observer", "uniform_minmax": "FQ-ViT signed/unsigned minmax grid"},
-        "activation": {"rtn": "registered formats", "uniform_full": "full signed grid; tensor/channel/head scales",
+        "activation": {**{name:"source-specific codec; see method document and encoding parameters" for name in NAMES}, "rtn": "registered formats", "uniform_full": "full signed grid; tensor/channel/head scales",
                        "uniform_affine": "unsigned affine grid, independent percentile observer", "uniform_minmax": "FQ-ViT minmax grid with clamped zero point", "twin_softmax": "PTQ4ViT dual uniform grid",
                        "log2": "FQ-ViT log2 QDQ, no integer softmax claim", "log_sqrt2": "RepQ log sqrt(2)",
                        "adalog": "searchable logarithmic base and official inference LUT; softmax/verified GELU",
@@ -47,14 +48,14 @@ def plugin_capabilities(backend):
                        "ptf": "shared base scale + channel power-of-two; pre-LN original placement / post-LN adapted placement"},
         "operator": {"integer_layernorm": "independent FQ integer LN reference; uses frozen input/output scales",
                      "integer_softmax": "independent FQ LIS reference; uses frozen logit scale and output bits; floating simulation"},
-        "preprocess": {"smoothquant": "X/s, W*s; alpha configurable", "repq_ln": "LN output scale/shift reparameterization; explicit edge affine",
+        "preprocess": {"noisy_shift":"fixed injected offset with decoded-weight bias correction","centered_smoothing":"center the observed range, optionally constrain scale to powers of two","smoothquant": "X/s, W*s; alpha configurable", "repq_ln": "LN output scale/shift reparameterization; explicit edge affine",
                        "adalog_bias": "GELU input shift; bias recomputed from actual decoded weight, independent from activation method"},
         "order": ["preprocess → W → A", "preprocess → A → W", "preprocess → W/A fitted on the same FP reference"],
         "conflicts": ["no preprocessing after any W/A quantization", "one preprocessing transform per edge",
                       "PTF conflicts with RepQ/SmoothQuant only on the same LN chain; disjoint chains may coexist",
                       "one activation quantizer per tensor edge; twin/log/RTN cannot overlap",
                       "post-GELU twin grid cannot follow an input affine transform"],
-        "scale_selection": {"strategies": ["minmax", "search", "manual", "percentile", "coordinate"], "metrics": ["mse", "cosine", "hessian"],
+        "scale_selection": {"strategies": ["minmax", "search", "manual", "percentile", "coordinate", "first_batch_rows", "fpcs"], "metrics": ["mse", "cosine", "hessian"],
                             "hessian_requires": "real classification head and actual CE or teacher-KL gradients; no training",
                             "gptq": "official minmax grid; other scale search is explicitly rejected",
                             "block_float": "NVFP4/MXFP4 keep their fixed scaling recipes"},
@@ -69,10 +70,10 @@ def plugin_capabilities(backend):
             "preflight": "legal plans may defer unknown shapes to prepare, which observes real inputs from host-permitted views and strictly validates before use; axis and other scientific choices must be explicit, never guessed",
         },
         "feature_error_reduction": ERROR_REDUCTION,
-        "method_documents": "query_method_library / read_method_document: independent components, no whole-model recipe",
+        "method_documents": "query_method_library / read_method_document; agent read_asset uses the catalog document and implementation_status. execution.recipe expands sourced stages.",
         "validation_limits": ["operator/tiny-graph parity does not establish whole-model paper accuracy",
                               "registered plugins must also pass model-specific semantics and user constraints",
-                              "other projects' ERQ/IGQ remain unregistered; new independent components are not whole-paper recipes"],
+                              "frozen complete candidates and read-only classification/dense sensitivities use score_frozen_candidates; task supervision and input geometry are bound explicitly"],
     }
 
 

@@ -57,18 +57,25 @@ def target_methods():
     from . import plugin_math as p
     from . import grids
     from . import operators
-    from . import adalog, adaround, gptaq
+    from . import adalog, adaround, gptaq, paired_weights, encodings, weight_codebook, edge_transforms, efficient_topology
     return {
-        "weight": {"rtn": TargetMethod("rtn_scale_v1", p.encode_rtn, p.decode_weight),
+        "weight": {"hc_rows":TargetMethod("hc_rows_poincare_v1",weight_codebook.fit,weight_codebook.decode),
+                   "erq": TargetMethod("erq_paired_columns_v1", paired_weights.erq, paired_weights.decode),
+                   "rtn": TargetMethod("rtn_scale_v1", p.encode_rtn, p.decode_weight),
                    "gptq": TargetMethod("gptq_static_groups_v1", p.gptq, p.decode_weight),
                    "gptaq": TargetMethod("gptaq_d6bd2e4_v1", gptaq.fit, p.decode_weight),
                    "adaround": TargetMethod("adaround_7b60b525_v1", adaround.fit, adaround.decode),
                    **{name: TargetMethod(name + "_v1", partial(grids.encode, method=name), grids.decode) for name in grids.METHODS}},
-        "activation": {"adalog": TargetMethod("adalog_75a57d2_v1", adalog.fit, adalog.apply),
+        "activation": {**{name: TargetMethod(name+"_qdq_v1", partial(encodings.fit,method=name),
+                                                  partial(encodings.apply,method=name)) for name in encodings.NAMES},
+                       "adalog": TargetMethod("adalog_75a57d2_v1", adalog.fit, adalog.apply),
                        **{name: TargetMethod(name + "_v1", partial(p.fit_activation, method=name),
                                            partial(p.activation_qdq, method=name))
                        for name in ("rtn", "uniform_full", "uniform_affine", "uniform_minmax", "twin_softmax", "log2", "log_sqrt2", "twin_gelu", "asymmetric_gelu", "ptf")}},
-        "preprocess": {"smoothquant": TargetMethod("smoothquant_edge_v1", p.smoothquant),
+        "preprocess": {"domain_affine":TargetMethod("da_distribution_channel_init_v1",edge_transforms.domain_affine),"trio_dw_scale":TargetMethod("trio_dw_v1",efficient_topology.channel_migration),
+                       "trio_pw_shift":TargetMethod("trio_pw_v1",efficient_topology.filter_shift),"noisy_shift": TargetMethod("fixed_noise_decoded_bias_v1",edge_transforms.shifted_noise),
+                       "centered_smoothing":TargetMethod("mean_centered_edge_affine_v1",edge_transforms.centered_smoothing),
+                       "smoothquant": TargetMethod("smoothquant_edge_v1", p.smoothquant),
                        "repq_ln": TargetMethod("repq_minmax_edge_v1", p.repq_ln),
                        "adalog_bias": TargetMethod("adalog_decoded_bias_v1", adalog.bias_transform)},
         "operator": {"integer_layernorm": OperatorMethod("fq_integer_layernorm_v1", operators.integer_layernorm),

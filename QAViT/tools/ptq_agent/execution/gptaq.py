@@ -73,7 +73,7 @@ def fit(weight, hessian, difference, spec, options):
     h.diagonal().add_(options.get("damping", 0.01) * h.diagonal().mean())
     h = torch.linalg.cholesky(torch.cholesky_inverse(torch.linalg.cholesky(h)), upper=True)
     correction = 0.25 * ((dx @ h.t()).triu(diagonal=1)) @ h
-    codes, result = torch.zeros_like(w, dtype=torch.uint8), torch.zeros_like(w)
+    codes, result = torch.zeros_like(w, dtype=codecs.code_dtype(spec["bits"])), torch.zeros_like(w)
     blocksize = options.get("blocksize", 128)
     for start in range(0, columns, blocksize):
         end = min(start + blocksize, columns)
@@ -83,7 +83,7 @@ def fit(weight, hessian, difference, spec, options):
             minimum = options.get("gptaq_signed_min", -2 ** (spec["bits"] - 1)) + 2 ** (spec["bits"] - 1) if spec["symmetric"] else 0
             q = ((column / scale).round() + zero).clamp(minimum, 2 ** spec["bits"] - 1)
             decoded = scale * (q - zero)
-            result[:, start+j], codes[:, start+j] = decoded, q.to(torch.uint8)
+            result[:, start+j], codes[:, start+j] = decoded, q.to(codes.dtype)
             err = (column - decoded) / h[start+j, start+j]
             # RHS 在原地更新前求值；跨 block 补偿使用更新后的 local（与官方一致）。
             local[:, j:] -= err[:, None] @ h[start+j, start+j:end][None, :] - column[:, None] @ correction[start+j, start+j:end][None, :]

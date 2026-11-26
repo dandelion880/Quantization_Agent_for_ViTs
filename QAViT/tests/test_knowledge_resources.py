@@ -164,7 +164,9 @@ class KnowledgeResources(TempCase):
         host = profile_host(backend, cfg, self.root / 'numeric')
         result = host.registry.invoke('profiling', ToolCall('q', 'query_method_library', {'target': 'all', 'query': ''}))
         self.assertEqual(result.status, 'success')
-        self.assertEqual(len(result.data['methods']), 21)
+        expected = read_json(QAVIT / 'docs/methods/index.json')['methods']
+        self.assertEqual({row['id'] for row in result.data['methods']}, {row['id'] for row in expected})
+        self.assertTrue(any(row.get('literature_id') == 'erq-tpami2025-duq' for row in expected))
         read = host.registry.invoke('profiling', ToolCall('r', 'read_method_document', {'methods': ['gptaq', 'smoothquant']}))
         self.assertEqual(read.status, 'success')
         self.assertEqual(len(read.data['documents']), 2)

@@ -26,7 +26,7 @@ from .methods import get_target_method, plugin_versions
 from .calibration import capture, combined_input, gram, reconstruction_score
 from .sites import install_attention, semantic_edge_checks
 from .metrics import OutputErrors
-from . import grids
+from . import grids, codecs
 from .coordinate import operator_id, fit_operator
 from .operators import FLOW_KINDS, install_flows, install_operators, bind_operators, audit_operators, bind_calibration_operators
 
@@ -55,6 +55,19 @@ class ActivationQuantizer(nn.Module):
     def quantize(self, x):
         if not self.enabled or self.layer["activation"] is None:
             return x
+        if hasattr(self,"_focus_bounds"):
+            from .rank_search import focus
+            return focus(x,self._focus_bounds,self.layer["activation"]["bits"])
+        if hasattr(self,"_continuous_width"):
+            from .progressive_bits import continuous
+            return x if self._continuous_width is None else continuous(x,self.layer["activation"],self.params(),self._continuous_width)
+        if hasattr(self,"_fitting"):
+            from .reconstruction import reconstruct_activation
+            return reconstruct_activation(x,self)
+        if getattr(self,"ptq_window_member",False):
+            from .window_routes import branch,low_grid
+            bits=branch.get()
+            if bits is not None:return low_grid(self,x,bits)
         p = self.params() if self.execution["activation_calibration"] == "static" else None
         q = get_target_method("activation", self.layer["activation_method"]).apply(
             x, self.layer["activation"], params=p, options=self.layer.get("options", {}))
@@ -97,6 +110,10 @@ class PipelineLinear(ActivationQuantizer):
         else:
             source = self.reference_weight
         correction = source @ self.input_shift
+        if self.weight_enabled and self.weight_record and "bias_delta" in self.weight_record["params"]:
+            correction=correction+self.weight_record["params"]["bias_delta"].to(correction)
+        if hasattr(self,"fitted_input_bias"):
+            correction=correction+self.fitted_input_bias
         # DINO 的 K bias 掩码只作用于原 bias；仿射补偿不能再次被掩掉。
         return correction if bias is None else bias + correction
 
@@ -110,22 +127,34 @@ class PipelineLinear(ActivationQuantizer):
 
 class PipelineConv2d(PipelineLinear):
     """普通 Conv2d 复用相同的 W/A 插件；不改变卷积几何或 bias。"""
-    def __init__(self, original, layer, execution, record=None, params=None):
+    def __init__(self, original, layer, execution, record=None, params=None, preprocess=None):
         ActivationQuantizer.__init__(self, layer, execution, params)
         self.stride, self.padding, self.dilation, self.groups = original.stride, original.padding, original.dilation, original.groups
         self.register_buffer("bias", None if original.bias is None else original.bias.detach().clone())
-        self.register_buffer("input_scale", original.weight.new_tensor(1.))
-        self.register_buffer("input_shift", original.weight.new_tensor(0.))
-        self.register_buffer("reference_weight", original.weight.detach().clone(), persistent=False)
+        self.transformed=preprocess is not None
+        self.register_buffer("input_scale", (preprocess["scale"].to(original.weight) if preprocess else original.weight.new_tensor(1.)))
+        self.register_buffer("input_shift", (preprocess["shift"].to(original.weight) if preprocess else original.weight.new_tensor(0.)))
+        weight=original.weight.detach().clone()
+        if preprocess:
+            if self.groups==original.in_channels==original.out_channels: weight=weight*self.input_scale[:,None,None,None]
+            else:
+                require(self.groups==1 and original.kernel_size==(1,1) and original.padding==(0,0),"pointwise bias correction requires dense padding-free 1x1")
+                weight=weight*self.input_scale[None,:,None,None]
+        self.register_buffer("reference_weight", weight, persistent=False)
         self.register_buffer("decoded_weight", self.reference_weight.clone(), persistent=False)
         self.weight_record, self.weight_enabled = record, False
         if record is not None:
             self.decoded_weight = math_plugin.decode_weight(record, original.weight.device)
 
     def calibration_input(self, x):
+        if self.transformed: x=x/self.input_scale[None,:,None,None]-self.input_shift[None,:,None,None]
         return self.quantize(x)
 
     def effective_bias(self, weight=None):
+        if self.transformed and self.groups==1:
+            w=self.decoded_weight if self.weight_enabled else self.reference_weight
+            correction=(w if weight is None else weight)[:,:,0,0]@self.input_shift
+            return correction if self.bias is None else self.bias+correction
         return self.bias
 
     def forward(self, x):
@@ -133,15 +162,37 @@ class PipelineConv2d(PipelineLinear):
         self.last_input_shape = list(x.shape)
         dtype = DTYPES[self.execution["compute_dtype"]]
         w = self.decoded_weight if self.weight_enabled else self.reference_weight
-        bias = None if self.bias is None else self.bias.to(dtype)
+        bias = self.effective_bias()
+        bias = None if bias is None else bias.to(dtype)
         return F.conv2d(self.calibration_input(x).to(dtype), w.to(dtype), bias,
                         self.stride, self.padding, self.dilation, self.groups).to(x.dtype)
+
+
+def bind_weight_origins(model,plan):
+    # A later grid change must start from the deployed fitted W when a continuous pre-rounding
+    # parameter no longer exists. Do not recreate the original FP teacher in an optimized parent.
+    updated={r["module"] for r in plan["layers"] if r.get("options",{}).get("qep")}
+    updated.update(n for g in plan.get("activation_first",{}).get("groups",[]) for n in g["weight_modules"])
+    updated.update(n for s in plan.get("structure",[]) for n in s.get("fit",{}).get("weight_modules",[]))
+    for s in plan.get("postfit",[]):
+        cfg=s.get("settings",{})
+        if cfg.get("slice"):
+            updated.update(cfg["slice"]["sites"])
+        if s["kind"]=="graph_reconstruction":
+            updated.update(n for g in cfg["groups"] for n in g["weight_modules"])
+        if (s["kind"] in ("domain_affine_fit","merged_weight_fit","bit_shrinking") or
+                s["kind"]=="block_reconstruction" and cfg.get("update")!="scale"):
+            updated.update(r["module"] for r in plan["layers"] if r.get("weight") and r["module"].startswith(s["module"]+"."))
+    qmap=quantizers(model)
+    for n in updated:qmap[n].grid_edit_from_packed_state=True
 
 
 def build_model(backend, plan, preprocess=None, weights=None, activations=None):
     model = deepcopy(backend.model).eval().requires_grad_(False)
     preprocess, weights, activations = preprocess or {}, weights or {}, activations or {}
-    install_attention(model, {l["module"] for l in plan["layers"] if l["kind"] in (*ATTENTION_KINDS, "attention_logits")})
+    attention_targets = {l["module"] for l in plan["layers"] if l["kind"] in (*ATTENTION_KINDS, "attention_logits")}
+    attention_targets.update(s["module"].rsplit(".",1)[0] for s in plan.get("postfit",()) if s["module"].endswith(("._ptq_qk","._ptq_probability")))
+    install_attention(model, attention_targets)
     install_flows(model, plan["layers"])
     # 先替换有权重算子，再绑定输出 hook；配置数组的排列不能让 hook 丢失。
     for layer in sorted(plan["layers"], key=lambda l: l["kind"] not in WEIGHT_KINDS):
@@ -149,9 +200,9 @@ def build_model(backend, plan, preprocess=None, weights=None, activations=None):
         original = model.get_submodule(name)
         if layer["kind"] in WEIGHT_KINDS:
             q = (PipelineLinear(original, layer, plan["execution"], preprocess.get(name), weights.get(name), activations.get(sid))
-                 if layer["kind"] == "linear" else PipelineConv2d(original, layer, plan["execution"], weights.get(name), activations.get(sid)))
+                 if layer["kind"] == "linear" else PipelineConv2d(original, layer, plan["execution"], weights.get(name), activations.get(sid),preprocess.get(name)))
             if layer["kind"] == "linear":
-                q.bias_uses_decoded_weight = any(p["module"] == name and p["method"] == "adalog_bias" for p in plan["preprocess"])
+                q.bias_uses_decoded_weight = any(p["module"] == name and p["method"] in ("adalog_bias","noisy_shift") for p in plan["preprocess"])
             parent, _, leaf = name.rpartition(".")
             setattr(model.get_submodule(parent) if parent else model, leaf, q)
         else:
@@ -190,7 +241,7 @@ def quantizers(model):
 
 def plan_uses_calibration(plan):
     """Whether this native plan fits any state from image activations."""
-    if plan.get("preprocess"):
+    if plan.get("structure") or plan.get("preprocess") or plan.get("postfit") or any(l.get("options",{}).get("qep") or l.get("weight_method") == "erq" for l in plan.get("layers",[])):
         return True
     for layer in plan.get("layers", []):
         for target in ("weight", "activation"):
@@ -254,7 +305,7 @@ class QuantizationExecutor:
             del probe
             gc.collect()
             self.backend.reset()
-        layer_map = {l["module"]: l for l in plan["layers"] if l["kind"] == "linear"}
+        layer_map = {l["module"]: l for l in plan["layers"] if l["kind"] in WEIGHT_KINDS}
         for prep in plan["preprocess"]:
             name, layer = prep["module"], layer_map[prep["module"]]
             # 原 FP 只读 hook，逐边测量；不把全模型激活留在内存。
@@ -279,8 +330,17 @@ class QuantizationExecutor:
             w = self.backend.model.get_submodule(name).weight.detach().cpu().float()
             options = ({"alpha": prep.get("alpha", 0.5)} if prep["method"] == "smoothquant" else
                        {"bits": layer["activation"]["bits"], "observer": prep.get("calibration")} if prep["method"] == "repq_ln" else {})
+            if prep["method"]=="repq_ln":
+                options.update(prep.get("settings",{}))
+            if prep["method"]=="noisy_shift":
+                options={"settings":prep["settings"],"spec":layer["activation"],"method":layer["activation_method"]}
+            if prep["method"] in ("domain_affine","centered_smoothing","trio_dw_scale","trio_pw_shift"):
+                options={"settings":prep["settings"]}
             if self.preview_state is not None:
                 options["channel_params"] = self.preview_state[1][name]
+            if prep["method"]=="repq_ln" and "learned_clip" in options:
+                from .edge_transforms import bilateral_clip
+                options["channel_params"],report["learned_clip"]=bilateral_clip(x,options["bits"],options.pop("learned_clip"))
             affine, activation = get_target_method("preprocess", prep["method"]).fit(x, w, **options)
             scale, shift = affine["scale"], affine["shift"]
             if activation is not None:
@@ -299,21 +359,45 @@ class QuantizationExecutor:
         c = calibration(layer, target)
         method = layer[target + "_method"]
         options = layer.get("options", {})
-        need_data = target == "activation" or method in ("gptq", "gptaq", "adaround") or c["strategy"] == "search"
+        need_data = target == "activation" or method in ("gptq", "gptaq", "adaround", "erq") or options.get("qep") or c["strategy"] == "search"
+        need_data=need_data or (c["strategy"]=="weight_pot" and c["error_domain"]=="linear_output")
         records, report = [], {"samples": 0, "calls": 0, "cache_bytes": 0, "gradient_loss": None}
+        autoscale=options.get("encoding",{}) if target=="activation" and method=="three_region" else {}
+        gradient_loss=autoscale.get("gradient_loss") or (c["loss"] if c["metric"]=="hessian" else None)
         if need_data:
             records, report = capture(self.backend, model, layer, self.data, self.cache_mib,
-                                      c["loss"] if c["metric"] == "hessian" else None,
+                                      gradient_loss,
                                       observer_batch_size=getattr(self, "observer_batch_size", None))
             self.input_shapes[sid] = list(records[0]["x"].shape)
         teachers = None
-        if method in ("gptaq", "adaround"):
+        if method in ("gptaq", "adaround", "erq") or target == "weight" and options.get("qep"):
             teachers, teacher_report = capture(self.backend, self.backend.model, layer, self.data, self.cache_mib)
             require(report["cache_bytes"] + teacher_report["cache_bytes"] <= self.cache_mib * 1024 ** 2,
                     "成对 FP/量化缓存超过 calibration_cache_mib；不会减少样本", code="memory_budget")
             require(report["record_sample_ids"] == teacher_report["record_sample_ids"], "FP teacher/量化输入样本或调用顺序不一致")
             report["teacher"] = "original FP model module output; unchanged checkpoint/head"
             report["teacher_cache_bytes"] = teacher_report["cache_bytes"]
+        if target == "weight" and (method == "erq" or options.get("qep")):
+            from .paired_weights import correct_weight, erq
+            qx = combined_input(records).to(module.reference_weight)
+            fx = combined_input(teachers).to(qx) / module.input_scale
+            if module.bias_uses_decoded_weight:
+                qx = qx + module.input_shift
+            else:
+                fx = fx - module.input_shift
+            if method == "erq":
+                record, stages = erq(module.reference_weight,fx,qx,spec,options,module.bias)
+                return record, {**report, **stages}
+            settings = options["qep"]
+            h = gram(records,self.backend.device)
+            damping = settings["relative_damping"] * qx.double().reshape(-1,qx.shape[-1]).square().sum(0).mean()
+            w, _ = correct_weight(module.reference_weight,fx,qx,alpha=settings["alpha"],damping=float(damping),normalization="sum")
+            if method == "gptq":
+                record, _ = math_plugin.gptq(w,h,spec,options)
+            else:
+                require(method == "rtn", "QEP adapter supports RTN and GPTQ")
+                record = codecs.encode_weight(w,spec)
+            return record, {**report,"correction":"qep","qep":settings,"actual_damping":float(damping)}
         if method == "gptaq":
             from .gptaq import statistics
             # 使用同一原始图像的两条真实输入流。AdaLog 的 bias 随 W 改变时，
@@ -345,6 +429,9 @@ class QuantizationExecutor:
             report.update(alpha=0.25, compensation="triangular original-FP input difference update",
                           statistics_precision="FP32; TF32 disabled", calibrated_input="actual quantized path")
             return record, report
+        if method=="hc_rows":
+            from .weight_codebook import fit
+            return fit(module.reference_weight,spec,options["row_codebook"])
         if method == "gptq":
             with math_plugin.fp32_statistics(self.backend.device):
                 h = gram(records, self.backend.device)
@@ -352,7 +439,23 @@ class QuantizationExecutor:
             report["statistics_precision"] = "FP32; TF32 disabled for Gram/error updates only"
             del h, decoded, records
             return record, report
-        x = module.reference_weight.detach().cpu() if target == "weight" else combined_input(records)
+        flexible=None
+        if target=="activation" and method in grids.METHODS and self.data.identity.get("task_calibration"):
+            if spec["granularity"]=="per_tensor":flexible="scalar"
+            elif spec["granularity"]=="per_channel":flexible=spec["axis"]
+        x = module.reference_weight.detach().cpu() if target == "weight" else combined_input(records,flexible_axis=flexible)
+        if target == "activation" and method == "rtn" and spec["granularity"] in ("per_token","per_group"):
+            from .fixed_grids import fit
+            if c["strategy"]=="first_batch_rows":
+                from .fixed_grids import first_batch_rows
+                ids=list(dict.fromkeys(report["record_sample_ids"]))
+                count=c["first_batch_images"]
+                require(count<=len(ids),"first calibration batch exceeds bound data")
+                chosen=set(ids[:count])
+                first=combined_input([r for r,i in zip(records,report["record_sample_ids"]) if i in chosen])
+                return first_batch_rows(first,spec,c["percentiles"]),{**report,"first_batch_ids":ids[:count],"percentiles":c["percentiles"]}
+            require(c["strategy"] == "minmax", "fixed RTN grids require a minmax calibration")
+            return fit(x,spec), {**report,"fixed_feature_axis":spec["axis"],"position_shape":list(x.shape[1:])}
         if method == "ptf" and getattr(self, "observer_batch_size", None):
             options = dict(options, score_input=combined_input(records[-report["last_batch_records"]:]))
         grid_method = options["rounding_grid"] if method == "adaround" else method
@@ -362,17 +465,40 @@ class QuantizationExecutor:
             semantic = site_catalog(self.backend)[sid]["semantic"]
             options = dict(options, _shift=(math_plugin.GELU_NEGATIVE_BOUND if semantic == "post_gelu"
                                            and not getattr(module, "bias_uses_decoded_weight", False) else 0.0))
-        params = (grids.fit(x, spec, grid_method) if grid_method in grids.METHODS else fit_rtn(x, spec)) if target == "weight" else get_target_method("activation", method).fit(x, spec, options=options)
+        if autoscale.get("gradient_loss"):
+            from . import region_grids
+            def score_region(p):
+                return reconstruction_score(layer,module,records,lambda v:region_grids.apply(v,spec,method,p,autoscale),"hessian")
+            params=region_grids.fit(x,spec,method,autoscale,candidate_loss=score_region)
+            report["autoscale_objective"]={"metric":"squared FC output deviation times squared observed task gradient","loss":gradient_loss,
+                                           "selected_score":score_region(params),"reference":"current prefix and W at calibration"}
+        else:
+            params = (grids.fit(x, spec, grid_method) if grid_method in grids.METHODS else fit_rtn(x, spec)) if target == "weight" else get_target_method("activation", method).fit(x, spec, options=options)
         if target == "activation" and getattr(self, "repq_activation_params", {}).get(layer["module"]) is not None:
             params = {k: v.clone() for k, v in self.repq_activation_params[layer["module"]].items()}
         trials = []
         if target == 'activation' and options.get('token_partition') and c['strategy'] == 'percentile':
             from .grids_partition import fit
             params = fit(x, spec, options['token_partition'], c['percentiles'])
+        elif c["strategy"]=="weight_pot":
+            inputs=combined_input(records) if c["error_domain"]=="linear_output" else None
+            params,report["power_search"]=grids.nearest_power_grid(x,spec,method,params,inputs,neighbors=c.get("neighbors",1))
         elif c["strategy"] == "percentile":
             params = (grids.fit(x, spec, method, percentiles=c["percentiles"]) if method == "uniform_affine" else
                       grids.percentile_log(x, spec, lambda value, shape, params: get_target_method("activation", method).apply(
                           value, shape, params=params, options=options), c["percentiles"]))
+        elif c["strategy"]=="fpcs":
+            from .research_search import fpcs
+            from .adalog import parameters
+            def make(q,factor):
+                return parameters(params["scale"]*factor,spec["bits"],q,params["shift"].item())
+            def measure(q,factor):
+                trial=make(q,factor)
+                return reconstruction_score(layer,module,records,lambda v:get_target_method("activation",method).apply(
+                    v,spec,params=trial,options=options),c["metric"],weight=False)
+            selected,report["fpcs"]=fpcs([c["base_values"],c["factors"]],measure,beam=c["beam"],
+                refinements=c["refinements"],subdivisions=c["subdivisions"],integer_axes=(0,))
+            params=make(*selected)
         elif c["strategy"] == "manual":
             params = math_plugin.adjusted_params(params, 1.0, method, manual=c["scale_values"], zero=c.get("zero_values"))
         elif c["strategy"] == "search":
@@ -403,7 +529,7 @@ class QuantizationExecutor:
                 lambda a, w: F.linear(a, w, module.effective_bias(w)), options)
             report.update(strategy=c["strategy"], metric=c["metric"], candidates=trials, rounding=optimization)
             return result, report
-        if target == "activation" and layer["module"] in getattr(self, "repq_activation_params", {}):
+        if target == "activation" and "repq_affine" in getattr(self, "repq_activation_params", {}).get(layer["module"], {}):
             # percentile 可重新拟合变换后的共享尺度，但不能丢失仿射执行语义。
             # 只补标记，不修改拟合的 scale/zero；原 quantized_prefix 路径复用既有参数。
             params["repq_affine"] = torch.tensor(True)
@@ -584,6 +710,62 @@ class QuantizationExecutor:
         return weights, params, reports
 
     def prepare(self, plan, shapes):
+        if plan.get("activation_first"):
+            from .graph_fit import activation_phase,restore_source
+            source=self.backend
+            proxy,receipt=activation_phase(source,self.config,self.data,plan)
+            reduced={k:v for k,v in plan.items() if k!="activation_first"}
+            try:
+                self.backend=proxy
+                self.reference_backend=source
+                model,weights,params,_=self.prepare(reduced,shapes)
+            finally:
+                self.backend=source
+                self.reference_backend=None
+            restore_source(model,source)
+            bind_weight_origins(model,plan)
+            self.report["activation_first"]=receipt
+            return model,weights,params,self.audit(model,plan)
+        if not plan.get("structure"):
+            return self._prepare(plan,shapes)
+        from copy import copy
+        from . import structure
+        from ..backends.server import state_sha256
+        original=self.backend
+        proxy=copy(original)
+        proxy.model=deepcopy(original.model)
+        states,receipts={},[]
+        for stage in plan["structure"]:
+            if stage["kind"]=="calibrated_operator":
+                from .nonlinear_calibration import fit
+                state,ranking=fit(proxy,self.data,stage,self.cache_mib)
+                states[stage["module"]]=state
+                receipts.append({"module":stage["module"],"operator_selection":ranking,"images":list(self.data.ids("calibration"))})
+            elif stage["kind"]=="integer_function":
+                from .integer_functions import fit
+                state,ranking=fit(proxy,self.data,stage,self.cache_mib)
+                states[stage["module"]]=state
+                receipts.append({"module":stage["module"],"operator_selection":ranking,"images":list(self.data.ids("calibration"))})
+            elif stage["kind"]=="cached_kv":
+                state,rows=structure.token_bank(proxy,self.data,stage)
+                states[stage["module"]]=state
+                receipts.append({"module":stage["module"],"candidate_tokens":rows,"images":list(self.data.ids("calibration"))})
+            structure.configure(proxy.model,[stage],states)
+            if stage.get("fit"):
+                from .curvature_fit import mlp_replacement
+                receipts.append(mlp_replacement(original,proxy,self.data,stage))
+        proxy.original_state=state_sha256(proxy.model)
+        try:
+            self.backend=proxy
+            result=self._prepare(plan,shapes)
+            self.report["structure"]={"fit_before_observers":True,"stages":receipts,"reference":"structurally modified FP model"}
+        finally:self.backend=original
+        if any(s.get("fit") for s in plan["structure"]):
+            from .graph_fit import restore_source
+            restore_source(result[0],original)
+        return result
+
+    def _prepare(self, plan, shapes):
         from .capabilities import validate_plan, detect
         from .contracts import normalize_plan
         plan = normalize_plan(plan)
@@ -633,8 +815,25 @@ class QuantizationExecutor:
         weights, params, reports = self.fit_model(model, plan, initial_weights=initial_weights,
                                                  initial_params=initial_params, reset_weights=preprocess)
         bind_operators(model, plan, quantizers(model))
+        from .window_routes import activate
+        activate(model,plan.get("structure",[]))
         self.report = {"order": plan["execution"]["order"], "within_stage": plan["execution"].get("within_stage", "parallel"),
                        "preprocessing": prep_report, "fidelity": fidelity, "calibration": reports}
+        if plan.get("postfit"):
+            from . import output_correction
+            self.report["postfit"] = []
+            for stage in plan["postfit"]:
+                if stage["kind"]=="graph_reconstruction":
+                    from .graph_fit import optimize
+                    _,trace=optimize(getattr(self,"reference_backend",None) or self.backend,model,self.data,stage["settings"])
+                    receipt={"kind":stage["kind"],"groups":trace}
+                elif stage["kind"] in output_correction.CORRECTIONS:
+                    receipt = output_correction.fit(self.backend, model, self.data, stage)
+                else:
+                    from .reconstruction import fit_stage
+                    receipt = fit_stage(self.backend, model, self.data, stage, self.cache_mib)
+                self.report["postfit"].append(receipt)
+        bind_weight_origins(model,plan)
         self.preprocess_state = preprocess
         validate_plan(self.backend, plan, self.config, detect(self.backend), self.input_shapes, diagnostic=self.diagnostic)
         audit = self.audit(model, plan)
@@ -644,6 +843,10 @@ class QuantizationExecutor:
         from .contracts import normalize_plan
         plan = normalize_plan(plan)
         qmap = quantizers(model)
+        from . import output_correction
+        output_correction.audit(model, plan)
+        from .structure import fitted_state
+        fitted_state(model,plan.get("structure",[]))
         audit_operators(model, plan, qmap)
         require(set(qmap) == {site_id(l) for l in plan["layers"]}, "插件实际位点与配置不符", code="coverage_mismatch")
         selected = {l["module"] + ".weight" for l in plan["layers"] if l["kind"] in WEIGHT_KINDS}
@@ -658,12 +861,15 @@ class QuantizationExecutor:
             if isinstance(q, PipelineLinear):
                 require(q.weight_enabled == (layer["weight"] is not None), "权重量化状态不符")
                 source = self.backend.model.get_submodule(layer["module"]).weight.detach()
-                require(torch.equal(q.reference_weight, source * q.input_scale), "预处理参考权重被改变", code="protection_failed")
+                scale=q.input_scale
+                if layer["kind"]=="conv2d" and scale.ndim:
+                    scale = scale[:,None,None,None] if q.groups!=1 else scale[None,:,None,None]
+                require(torch.equal(q.reference_weight, source * scale), "预处理参考权重被改变", code="protection_failed")
                 require(bool((q.input_scale > 0).all()) and bool(torch.isfinite(q.input_shift).all()), "预处理参数非法")
                 if layer["kind"] == "linear":
-                    decoded_bias = any(p["module"] == layer["module"] and p["method"] == "adalog_bias" for p in plan["preprocess"])
+                    decoded_bias = any(p["module"] == layer["module"] and p["method"] in ("adalog_bias","noisy_shift") for p in plan["preprocess"])
                     require(q.bias_uses_decoded_weight == decoded_bias, "AdaLog bias 权重依赖与配置不符")
-                    if decoded_bias:
+                    if any(p["module"] == layer["module"] and p["method"]=="adalog_bias" for p in plan["preprocess"]):
                         require(bool((q.input_scale == 1).all()) and bool((q.input_shift == -math_plugin.GELU_NEGATIVE_BOUND).all()),
                                 "AdaLog bias 输入仿射不符")
                 if not any(p["module"] == layer["module"] for p in plan["preprocess"]):
@@ -701,6 +907,14 @@ class QuantizationExecutor:
         removed = {name + ".weight" for name in records}
         state = {k: v.detach().cpu().clone() for k, v in self.backend.model.state_dict().items() if k not in removed}
         payload = {"state": state, "weights": records, "activations": params, "preprocess": preprocess}
+        if plan.get("activation_first") or any(s.get("fit") for s in plan.get("structure",())) or any(s.get("settings",{}).get("mean_bias_sites") for s in plan.get("postfit",())):
+            payload["fitted_input_bias"]={n:q.fitted_input_bias.cpu() for n,q in qmap.items() if hasattr(q,"fitted_input_bias")}
+        if plan.get("structure"):
+            from .structure import fitted_state
+            payload["structure"]=fitted_state(model,plan["structure"])
+        if plan.get("postfit"):
+            from . import output_correction
+            payload["corrections"] = output_correction.audit(model,plan)
         handle, tmp = tempfile.mkstemp(dir=path, suffix=".tmp")
         os.close(handle)
         try:
@@ -743,13 +957,22 @@ class QuantizationExecutor:
             expected["config"]["device"] = actual["config"]["device"]
         require(expected == actual, "产物模型/数据/源码身份不匹配", code="identity_mismatch")
         require(m["schema_version"] == 2 and m["implementation"] == PLUGIN_VERSION, "插件实现版本不匹配")
-        require(m["plugin_versions"] == plugin_versions(), "数值插件版本不匹配")
+        versions = plugin_versions()
+        require(all(versions.get(target, {}).get(name) == version
+                    for target, plugins in m["plugin_versions"].items() for name,version in plugins.items()),
+                "数值插件版本不匹配")
+        for layer in m["plan"]["layers"]:
+            for target in ("activation","weight"):
+                if layer[target]:
+                    require(layer[target+"_method"] in m["plugin_versions"][target], "missing fitted plugin version")
         require(m["weights_sha256"] == file_sha256(path / "weights.pt"), "产物 tensor hash 不匹配")
         plan = m["plan"]
         require(m["configuration_hash"] == fingerprint(plan), "产物配置 hash 不符")
         validate_plan(self.backend, plan, self.config, detect(self.backend), m["input_shapes"])
         payload = torch.load(path / "weights.pt", map_location="cpu", weights_only=True)
-        require(set(payload) == {"state", "weights", "activations", "preprocess"}, "产物字段不符")
+        fields = {"state", "weights", "activations", "preprocess"} | ({"corrections"} if plan.get("postfit") else set()) | ({"structure"} if plan.get("structure") else set())
+        if plan.get("activation_first") or any(s.get("fit") for s in plan.get("structure",())) or any(s.get("settings",{}).get("mean_bias_sites") for s in plan.get("postfit",())):fields.add("fitted_input_bias")
+        require(set(payload) == fields, "产物字段不符")
         weight_names = {l["module"] for l in plan["layers"] if l["weight"]}
         static = {site_id(l): l for l in plan["layers"] if l["activation"] and l["activation"]["format"] not in RAW_FLOATS and plan["execution"]["activation_calibration"] == "static"}
         require(set(payload["weights"]) == weight_names and set(payload["activations"]) == set(static), "量化状态覆盖不符")
@@ -759,7 +982,8 @@ class QuantizationExecutor:
             require(tensor_digest(value) == tensor_digest(base[name]), f"非量化状态被改变：{name}")
         require(set(payload["preprocess"]) == {p["module"] for p in plan["preprocess"]}, "重参数化覆盖不符")
         for name, prep in payload["preprocess"].items():
-            count = self.backend.model.get_submodule(name).in_features
+            original = self.backend.model.get_submodule(name)
+            count = original.in_channels if isinstance(original,nn.Conv2d) else original.in_features
             require(set(prep) == {"scale", "shift"}, "重参数化字段不符")
             require(all(v.shape == (count,) and bool(torch.isfinite(v).all()) for v in prep.values()), "重参数化形状/有限性不符")
             require(bool((prep["scale"] > 0).all()), "重参数化 scale 非正")
@@ -773,11 +997,38 @@ class QuantizationExecutor:
             require(("repq_affine" in payload["activations"][sid]) == is_repq, "RepQ 激活网格与预处理方案不一致")
             validate_activation(payload["activations"][sid], layer, m["input_shapes"][sid])
         model = build_model(self.backend, plan, payload["preprocess"], payload["weights"], payload["activations"])
+        if "fitted_input_bias" in payload:
+            permitted={n for group in plan.get("activation_first",{}).get("groups",[]) for n in group["weight_modules"]}
+            permitted.update(n for s in plan.get("structure",[]) if s.get("fit") for n in s["fit"]["weight_modules"])
+            permitted.update(n for s in plan.get("postfit",[]) for n in s.get("settings",{}).get("mean_bias_sites",[]))
+            for n,bias in payload["fitted_input_bias"].items():
+                q=quantizers(model)[n]
+                require(n in permitted and bias.shape==(q.out_features,) and bool(torch.isfinite(bias).all()),"invalid folded calibration bias")
+                q.register_buffer("fitted_input_bias",bias.to(q.reference_weight))
+        if plan.get("structure"):
+            from .structure import configure
+            require(set(payload["structure"])=={s["module"] for s in plan["structure"] if s["kind"] in ("cached_kv","integer_function","calibrated_operator")},"KV structures differ")
+            configure(model,plan["structure"],payload["structure"])
+            from .window_routes import activate
+            activate(model,plan["structure"])
         for q in quantizers(model).values():
             q.enabled = q.layer["activation"] is not None
             if isinstance(q, PipelineLinear):
                 q.weight_enabled = q.layer["weight"] is not None
         bind_operators(model, plan, quantizers(model))
+        if plan.get("postfit"):
+            from . import output_correction
+            corrections = {s["module"]:s["kind"] for s in plan["postfit"] if s["kind"] in output_correction.CORRECTIONS}
+            require(set(payload["corrections"]) == set(corrections), "correction weights missing")
+            for name, kind in corrections.items():
+                state = payload["corrections"][name]
+                fields = {"bias","weight"} if kind == "qwt" else {"bias","alpha"} if kind == "channel_affine" else {"bias"}
+                if any(s["module"]==name and s.get("settings",{}).get("integer_fold") for s in plan["postfit"]):
+                    from .integer_affine import FIELDS
+                    fields=FIELDS
+                require(set(state) == fields and all(bool(torch.isfinite(v).all()) for v in state.values()), "invalid correction state")
+                output_correction.install(model,name,kind,state)
         self.input_shapes = m["input_shapes"]
+        bind_weight_origins(model,plan)
         self.audit(model, plan)
         return model, m

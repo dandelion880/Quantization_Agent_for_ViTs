@@ -5,6 +5,7 @@ import json
 from jsonschema import Draft202012Validator, SchemaError
 
 from core.cards import ContractError
+from core.ptq_protocol import reusable_execution
 
 
 def evaluation_name(row):
@@ -19,7 +20,7 @@ def classification_shard_fallback(payload, brief):
     """
     spec = payload['execution']
     if (spec['service'] not in ('quantize_evaluate', 'evaluate_artifact')
-            or spec.get('requires_code') or spec.get('resolved_choices', {}).get('training')
+            or spec.get('requires_code') or (spec.get('resolved_choices', {}).get('training') and not reusable_execution(spec))
             or spec.get('backend', {}).get('kind', 'server') != 'server'):
         return 'existing single-device backend/executor'
     rows = spec.get('evaluations', [])
@@ -52,7 +53,7 @@ def dual_task_fallback(payload):
     """
     spec = payload['execution']
     if (spec.get('service') not in ('quantize_evaluate', 'evaluate_artifact')
-            or spec.get('resolved_choices', {}).get('training')
+            or (spec.get('resolved_choices', {}).get('training') and not reusable_execution(spec))
             or spec.get('backend', {}).get('kind', 'server') != 'server'):
         return 'backend/service does not support frozen dual-task loading'
     rows = spec.get('evaluations', [])

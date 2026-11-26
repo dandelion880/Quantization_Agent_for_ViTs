@@ -8,6 +8,7 @@ affine/percentile 沿用 RepQ 的 round(x/delta)+zero，不把 zero 强行截到
 from copy import deepcopy
 import math
 import numpy as np
+import torch.nn.functional as F
 import torch
 
 from ..schemas import require
@@ -147,7 +148,7 @@ def encode(weight, spec, params=None, *, method):
     else:
         codes = ((x / p["scale"]).round() + p["zero"]).clamp(0, 2 ** spec["bits"] - 1)
     return {"method": method, "spec": deepcopy(spec), "shape": list(weight.shape),
-            "data": codecs.pack(codes.reshape_as(weight).to(torch.uint8), spec["bits"]),
+            "data": codecs.pack(codes.reshape_as(weight).to(codecs.code_dtype(spec["bits"])), spec["bits"]),
             "params": {k: v.detach().cpu() for k, v in p.items()}}
 
 
@@ -195,3 +196,20 @@ def percentile_log(x, spec, apply_fn, percentiles):
         if best is None or error < best:
             best, params = error, candidate
     return params
+
+
+def nearest_power_grid(x, spec, method, params, inputs=None, *, neighbors=1):
+    """Choose a power-of-two step per output channel by W or real Linear-output error."""
+    initial=params["scale"];exp=initial.log2()
+    best=None
+    require(neighbors in (0,1), "choose floor/ceil or the extended P2 exponent neighborhood")
+    offsets=(exp.floor()-1,exp.floor(),exp.ceil(),exp.ceil()+1) if neighbors else (exp.floor(),exp.ceil())
+    for candidate in offsets:
+        scale=torch.exp2(candidate)
+        error=apply(x,spec,method,{**params,"scale":scale})-x
+        if inputs is not None:
+            error=F.linear(inputs.reshape(-1,x.size(1)).to(x),error).T
+        cost=error.double().square().mean() if scale.numel()==1 else error.flatten(1).double().square().mean(1).reshape_as(scale)
+        if best is None:best=(scale,cost)
+        else:best=(torch.where(cost<best[1],scale,best[0]),torch.minimum(cost,best[1]))
+    return {**params,"scale":best[0]},{"domain":"linear_output" if inputs is not None else "weight","selected_exponents":best[0].log2().reshape(-1).tolist(),"mean_error":float(best[1].mean())}

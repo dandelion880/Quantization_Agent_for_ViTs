@@ -1,7 +1,7 @@
 """人可编辑的方法资料；只提供文档，执行权限始终来自数值注册表和契约。
 
 会话开始时冻结一份小型文档快照，防止人工编辑改变运行中的 LLM 依据。
-不从 Markdown 加载 Python，不提供整模型配方，也不自动选择/注入方法。
+目录提供组件和完整配方的静态正文，执行状态按条目记录。
 """
 
 from copy import deepcopy
@@ -41,7 +41,7 @@ class MethodLibrary:
             self.documents[key] = {"id": key, "document": entry["document"], "content": content,
                                    "sha256": hashlib.sha256(content.encode()).hexdigest()}
         expected = {(target, name) for target, methods in registry.items() for name in methods}
-        require(covered == expected, f"已注册插件缺少方法说明：{sorted(expected - covered)}")
+        require(covered <= expected if snapshot else covered == expected, f"已注册插件缺少方法说明：{sorted(expected - covered)}")
         self.snapshot = {"index": index, "documents": self.documents}
         self.sha256 = hashlib.sha256(json.dumps(self.snapshot, sort_keys=True, ensure_ascii=False).encode()).hexdigest()
         if snapshot:
@@ -93,7 +93,7 @@ def register_method_library(session):
             return library.read(method)
         return {"documents": [library.read(key) for key in methods], "library_sha256": library.sha256}
     session.registry.register(ToolDefinition(
-        "read_method_document", "读取独立方法原理、伪代码、适用分布、参数、组合关系和局限；method单篇或methods批量1至8篇完整读取，不返回整模型配方",
+        "read_method_document", "读取独立方法原理、伪代码、适用分布、参数、组合关系和局限；method单篇或methods批量1至8篇完整读取，含当前实现状态及来源版本",
         {"anyOf": [obj({"method": {"enum": list(library.entries)}}),
                    obj({"methods": arr({"enum": list(library.entries)}, minItems=1, maxItems=8, uniqueItems=True)})]},
         free, ("profiling",), read))

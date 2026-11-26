@@ -1,0 +1,12 @@
+{
+  "filename": "QAViT_PTQ_Foundation_20261125.zip",
+  "bytes": 258472,
+  "sha256": "b4788c50d92933aa1c37068413b158e3ad12a0761bd1abf11ec199438eee523c",
+  "state": "removed_after_verification",
+  "deleted_utc": "2026-11-25T13:23:05+00:00",
+  "source_mapping": "source_mapping.json",
+  "source_manifest": "PACKAGE_MANIFEST.json",
+  "intake": "asset_ingest.json",
+  "verification": "verification.json",
+  "verification_sha256": "4df9cfabb8fe33178cf4ff1b916a60a86914471a694ce62cabe7b48837e59167"
+}

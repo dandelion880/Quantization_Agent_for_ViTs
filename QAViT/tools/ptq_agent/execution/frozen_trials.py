@@ -3,12 +3,14 @@ from collections import defaultdict
 from contextlib import ExitStack
 from copy import deepcopy
 import math
+import time
 
 import torch
 from ..schemas import fingerprint, require
 from ..profiling.adapters import ProfileAdapter, boundary_tensor
 from .calibration_search import _quantizers, apply_grid_changes, state_identity
 from .metrics import OutputErrors
+from .research_metrics import SENSITIVITY
 from .model import forward, tensor_digest
 
 
@@ -90,19 +92,19 @@ def _observe(backend, model, x, meta, specs, dense, *, conditional=None, geometr
     return result
 
 
-def observations(backend, model, x, meta, specs, dense_task, *, parent=None, geometry=None):
+def observations(backend, model, x, meta, specs, dense_task, *, parent=None, candidate=None, geometry=None):
     """Conditional FP is the original block on the fixed parent's input for this image/window."""
     result = {}
-    for mode in ("fp_model", "local_fp"):
+    for mode in ("fp_model", "local_fp", "local_fp_parent", "local_fp_candidate"):
         group = [s for s in specs if s.get("reference", "fp_model") == mode]
         if group:
-            conditional = parent is not None and mode == "local_fp"
-            result.update(_observe(backend, parent if conditional else model, x, meta, group, dense_task,
-                                   conditional=model if conditional else None, geometry=geometry))
+            driver = candidate if mode == "local_fp_candidate" else parent if mode in ("local_fp","local_fp_parent") else None
+            result.update(_observe(backend, driver if driver is not None else model, x, meta, group, dense_task,
+                                   conditional=model if driver is not None else None, geometry=geometry))
     return result
 
 
-def _metrics(reference, candidate, names):
+def _metrics(reference, candidate, names, estimators=None, sensitivities=None, label=None):
     err = OutputErrors()
     require(reference.shape == candidate.shape, "candidate observation shape differs from its reference")
     if reference.numel() > (1 << 20):
@@ -121,6 +123,16 @@ def _metrics(reference, candidate, names):
             total += torch.nn.functional.kl_div(q.double().log_softmax(1), fp.double().softmax(1),
                                                 reduction="sum").item()
         values["teacher_kl"] = total / (a.shape[0] * a.shape[-1])
+    if set(names)&{"task_nll","top1_error"}:
+        require(label is not None and candidate.ndim==2 and len(candidate)==1,"missing true classification target")
+        values["task_nll"]=float(torch.nn.functional.cross_entropy(candidate.double(),torch.tensor([label],device=candidate.device)))
+        values["top1_error"]=float(candidate.argmax(1).item()!=label)
+    from . import research_metrics
+    for name in set(names) - {"mse","nmse","cosine"}:
+        opt = (estimators or {}).get(name, {})
+        if name not in values or opt:
+            state,binding=(sensitivities or {}).get(name,(None,None))
+            values[name] = float(research_metrics.score(name,reference,candidate,options=opt,prepared=state,binding=binding))
     require(all(values[n] is not None and math.isfinite(values[n]) for n in names),
             "undefined or non-finite objective on the requested observation")
     return {n: values[n] for n in names}
@@ -138,14 +150,16 @@ def _validate(specs):
     for s in specs:
         kind, view, metrics = s["output"], s["view"], s["metrics"]
         require(isinstance(s["id"], str) and s["id"] and set(s) <= {
-            "id", "view", "output", "block", "tokens", "reference", "metrics", "layers", "layer_weights"},
+            "id", "view", "output", "block", "tokens", "reference", "metrics", "layers", "layer_weights","estimators"},
             "invalid observation")
         require(view in ("classification", "dense") and kind in
                 ("block", "head_features", "classification_logits", "segmentation_logits"), "unknown view or output")
         require(kind == "block" or (view == "classification") == (kind == "classification_logits"), "output/view mismatch")
-        require(metrics and len(set(metrics)) == len(metrics) and set(metrics) <= {"mse", "nmse", "cosine", "teacher_kl"}
+        require(metrics and len(set(metrics)) == len(metrics) and (not ({'top1_error','task_nll'} & set(metrics)) or kind=='classification_logits'), 'task classification metric requires native logits')
+        require(set(metrics) <= SENSITIVITY | {"top1_error","task_nll","mse", "nmse", "cosine", "teacher_kl","pearson_error","sqnr_power_db","nuclear_norm_proxy",
+                    "attention_pairwise_hinge","attention_rank_agreement","attention_topk_overlap"}
                 and ("teacher_kl" not in metrics or kind.endswith("_logits")), "unsupported metric for this observation")
-        require(s.get("reference", "fp_model") in (("fp_model", "local_fp") if kind == "block" else ("fp_model",)),
+        require(s.get("reference", "fp_model") in (("fp_model", "local_fp", "local_fp_parent","local_fp_candidate") if kind == "block" else ("fp_model",)),
                 "conditional FP requires a block")
         require((kind == "block") == ("block" in s) and s.get("tokens", "all") in ("all", "cls", "special", "patch")
                 and (kind == "block" or "tokens" not in s), "invalid block/token selection")
@@ -178,13 +192,12 @@ def accepted_copy(model, candidate, *, source_ref, input_shapes):
     return child, {**receipt, "child_state_sha256": state_identity(child)}
 
 
-@torch.inference_mode()
 def score_frozen_candidates(backend, model, data, candidates, *, observations_spec, objectives=None,
-                            split="calibration", source_ref=None, input_shapes=None, dense_task=None):
+                            split="calibration", source_ref=None, input_shapes=None, dense_task=None, load_candidate=None):
     """Re-evaluate the explicit pool on identical inputs. Return scores and reproducible edit receipts."""
     _validate(observations_spec)
-    require(candidates and all(set(c) == {"id", "scales"} and isinstance(c["id"], str) and c["id"]
-                               and isinstance(c["scales"], dict) for c in candidates)
+    require(candidates and all(isinstance(c["id"], str) and c["id"] and (set(c) == {"id","scales"} and isinstance(c["scales"],dict)
+                     or set(c) == {"id","source_ref"} and isinstance(c["source_ref"],str) and load_candidate) for c in candidates)
             and len({c["id"] for c in candidates}) == len(candidates), "provide unique explicit candidates")
     require(split in ("calibration", "search") and (split == "calibration" or not objectives),
             "search only confirms declared candidates; calibration selects parameters")
@@ -194,34 +207,58 @@ def score_frozen_candidates(backend, model, data, candidates, *, observations_sp
     if "dense" in groups and dense_task is None:
         from tools.segmentation import DenseTask
         dense_task = DenseTask(backend)
+    from .task_sensitivity import prepare_pool
+    def wall():
+        if torch.device(backend.device).type=="cuda":torch.cuda.synchronize(backend.device)
+        return time.perf_counter()
+    begin=wall()
+    prepared, receipts = prepare_pool(backend,data,observations_spec,split,dense_task,load_candidate)
+    return _score(backend,model,data,candidates,observations_spec,objectives,split,source_ref,input_shapes,dense_task,
+                  load_candidate,groups,prepared,receipts,wall,begin)
+
+
+@torch.inference_mode()
+def _score(backend,model,data,candidates,observations_spec,objectives,split,source_ref,input_shapes,dense_task,
+           load_candidate,groups,prepared,receipts,wall,begin):
     parent = state_identity(model)
+    prepared_at=wall()
     rows, expected_views = [], None
     # Use a private copy for counters, shape-dependent caches and arbitrary approved
     # parent modules as well as grid state. Only one arm and one window live at once.
     try:
         for candidate in candidates:
-            trial = deepcopy(model)
+            if "source_ref" in candidate:
+                trial, origin = load_candidate(candidate["source_ref"])
+                require(trial is not model and all(not m.training for m in trial.modules())
+                        and all(not p.requires_grad for p in trial.parameters()), "complete candidate must be separately cold-loaded and frozen")
+            else:
+                trial = deepcopy(model)
             shapes = dict(input_shapes or {})
-            if any("activation" in targets and site not in shapes for site, targets in candidate["scales"].items()):
+            if any("activation" in targets and site not in shapes for site, targets in candidate.get("scales",{}).items()):
                 # Bare Python callers may have a newly loaded model without observed shapes.
                 x, _ = next(data.batches(split))
                 forward(backend, trial, x)
                 shapes.update({s:q.last_input_shape for s,q in _quantizers(trial).items()
                                if s not in shapes and hasattr(q, "last_input_shape")})
-            changes = apply_grid_changes(trial, candidate["scales"], shapes or {})
-            receipt = candidate_receipt(parent, source_ref, candidate, changes, shapes)
-            references = deepcopy(model) if any(s.get("reference") == "local_fp" for s in observations_spec) else None
+            if "source_ref" in candidate:
+                receipt = {"id":candidate["id"], "source_ref":candidate["source_ref"],"model_ref":origin["model_ref"],
+                           "state_sha256":state_identity(trial),"origin":"complete_frozen_package"}
+            else:
+                changes = apply_grid_changes(trial, candidate["scales"], shapes or {})
+                receipt = candidate_receipt(parent, source_ref, candidate, changes, shapes)
+            references = deepcopy(model) if any(s.get("reference") in ("local_fp","local_fp_parent") for s in observations_spec) else None
             measured, samples, layers = [], {}, {}
             for x, meta, view in image_views(backend, data, split, groups, dense_task):
                 specs = groups[view["view"]]
                 view["output_geometry"] = {}
                 teacher = observations(backend, backend.model, x, meta, specs, dense_task,
-                                       parent=references, geometry=view["output_geometry"])
+                                       parent=references, candidate=trial, geometry=view["output_geometry"])
                 outputs = observations(backend, trial, x, meta, specs, dense_task)
                 per_image = samples.setdefault(view["sample_id"], defaultdict(list))
                 for s in specs:
                     key = s["id"]
-                    by_layer = {k: _metrics(t, outputs[key][k], s["metrics"]) for k,t in teacher[key].items()}
+                    estimates={n:prepared[(view["input_sha256"],key,n)] for n in set(s["metrics"]) & SENSITIVITY}
+                    by_layer = {k: _metrics(t, outputs[key][k], s["metrics"], s.get("estimators"),estimates,data.labels.get(view["sample_id"]) if set(s["metrics"])&{"task_nll","top1_error"} else None) for k,t in teacher[key].items()}
                     weights = s.get("layer_weights", dict.fromkeys(by_layer, 1))
                     require(set(weights) == set(by_layer), "layer_weights must cover exactly the observed layers")
                     for metric in s["metrics"]:
@@ -242,8 +279,9 @@ def score_frozen_candidates(backend, model, data, candidates, *, observations_sp
     finally:
         backend.reset()
         require(state_identity(model) == parent, "scoring changed parent state")
-    return {"api": "frozen_candidate_scores/1", "parent_state_sha256": parent, "parent_model_ref": source_ref,
-            "parameters_installed": False, "split": split, "sample_ids": data.ids(split), "views": expected_views,
+    return {"measurement_cost":{"prepare_and_parent_binding_seconds":prepared_at-begin,"frozen_score_seconds":wall()-prepared_at,"candidates":len(rows),"original_images":len(data.ids(split)),"view_units_per_candidate":len(expected_views),"device":str(backend.device),"clock":"synchronized observed wall time"},
+            "api": "frozen_candidate_scores/1", "parent_state_sha256": parent, "parent_model_ref": source_ref,
+            "sensitivity_preparations":receipts, "parameters_installed": False, "split": split, "sample_ids": data.ids(split), "views": expected_views,
             "view_transforms": {**({"classification": data.identity.get("preprocessing")} if "classification" in groups else {}),
                                 **({"dense": dense_task.identity} if "dense" in groups else {})},
             "observations": observations_spec, "objectives": objectives or {}, "candidates": rows,

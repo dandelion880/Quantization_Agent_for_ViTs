@@ -41,6 +41,7 @@ def audit():
               *QAVIT.joinpath('docs').rglob('*.md')]
     for page in pages:
         body = re.sub(r'(?ms)^```.*?^```[^\n]*$', '', page.read_text(encoding='utf-8'))
+        body = re.sub(r'(?s)\\\[.*?\\\]|\\\(.*?\\\)', '', body)
         body = re.sub(r'`[^`\n]*`', '', body)
         for link in re.findall(r'\]\(([^)]+)\)', body):
             if '://' in link or link.startswith('#'):

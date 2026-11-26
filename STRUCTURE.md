@@ -9,7 +9,7 @@
 | QAViT/core/skills.py、EXP/skills/ | Recorder 可选流程更新、跨运行不可变包与发布回执，运行快照固定可见版本 |
 | QAViT/agents/interaction.py | 任务上下文、读取权限、分页/去重、来源与提交绑定 |
 | QAViT/knowledge/INDEX.md | 统一静态科研知识导航与维护入口，正文按需读取 |
-| QAViT/docs/skills/ | 七项按需 Skill、16 份包内参考及保留的冻结传播 API 参考，INDEX 触发表由 frontmatter 生成 |
+| QAViT/docs/skills/ | 版本化按需 Skill 和包内参考及保留的冻结传播 API 参考，INDEX 触发表由 frontmatter 生成 |
 | QAViT/knowledge/research-skills/ | 共同科研约定、六条完整研究路线及来源；按需 read_asset |
 | QAViT/docs/methods/ | 原位保留的组件手册及 index.json；read_asset 为常规阅读入口 |
 | QAViT/docs/solutions/ | 原位保留的完整方案种子及说明，不是实测排名文件 |
@@ -55,3 +55,5 @@ Eval-L0 的行为回放入口位于 `QAViT/tools/evaluation/breakpoint.py`；真
 同父候选与视图评分在 `QAViT/tools/ptq_agent/execution/frozen_trials.py`，绑定的分割几何在 `QAViT/tools/segmentation.py`，原包与子包的加载在 `QAViT/tools/frozen.py`。任务内材料投递在 `QAViT/agents/working_materials.py`。数值收据、局部回放及当前流程见[本轮报告](EXP/validation/frozen_trials_20261124/REPORT.md)和[伪代码](EXP/validation/frozen_trials_20261124/PSEUDOCODE.md)。
 
 当前科研流程与验证见[主线伪代码](EXP/validation/skill_critic_20261124/PSEUDOCODE.md)及[变更报告](EXP/validation/skill_critic_20261124/REPORT.md)。
+
+PTQ 协议与来源集中在 [知识入口](QAViT/knowledge/ptq/INDEX.md)，配方正文由现有方法目录定位，集成验证见 [交付记录](EXP/validation/ptq_foundation_20261125/REPORT.md)。

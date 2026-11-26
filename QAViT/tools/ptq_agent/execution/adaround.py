@@ -24,11 +24,15 @@ def initialize(weight, scale):
     return -torch.log(1.2 / (fraction + 0.1) - 1)
 
 
-def rounding_loss(alpha, iteration, iterations, reg=0.01, warmup=0.2, beta_range=(20., 2.)):
+def rounding_loss(alpha, iteration, iterations, reg=0.01, warmup=0.2, beta_range=(20., 2.), *, schedule="cosine"):
     if iteration < iterations * warmup:
         return alpha.new_tensor(0.)
     fraction = (iteration - iterations * warmup) / (iterations * (1 - warmup))
-    beta = beta_range[1] + 0.5 * (beta_range[0] - beta_range[1]) * (1 + math.cos(math.pi * fraction))
+    require(schedule in ("cosine","exponential") and min(beta_range)>0,"invalid rounding-temperature schedule")
+    if schedule=="exponential":
+        beta=beta_range[0]*(beta_range[1]/beta_range[0])**fraction
+    else:
+        beta = beta_range[1] + 0.5 * (beta_range[0] - beta_range[1]) * (1 + math.cos(math.pi * fraction))
     return reg * (1 - (2 * soft_round(alpha) - 1).abs().pow(beta)).sum()
 
 
@@ -81,7 +85,7 @@ def fit(weight, spec, params, records, teachers, output, options):
                 del x, target, rounded, decoded, y, reconstruction, regularizer, loss
         with torch.no_grad():
             hard = (floor + (alpha >= 0).to(w.dtype) + zero).clamp(low, high)
-            codes = (hard + offset).to(torch.uint8)
+            codes = (hard + offset).to(codecs.code_dtype(spec["bits"]))
             require(all(tensor_digest(p[k]) == v for k, v in grid_before.items()), "AdaRound 修改了依赖网格")
             record = {"method": "adaround", "grid_method": grid_method, "spec": deepcopy(spec),
                       "shape": list(w.shape), "data": codecs.pack(codes, spec["bits"]),

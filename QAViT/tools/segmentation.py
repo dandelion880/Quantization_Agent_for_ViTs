@@ -1,4 +1,4 @@
-"""ADE20K冻结head评价：复用旧MMSeg协议，显式记录分类量化尺度迁移。"""
+"""使用绑定的 ADE 任务资产、冻结 head 和实际校准来源评价原图。"""
 from pathlib import Path
 import sys
 from contextlib import contextmanager
@@ -55,6 +55,8 @@ class DenseTask:
         with segmentation_dependencies(backend.config['seed']):
             wrapped, self.features, _ = build_ade(backend, settings, head, receipt)
             self.pipeline = task_pipeline(settings, annotations=False)
+            self.label_pipeline = task_pipeline(settings)
+        self.reduce_zero_label=any(r.get("reduce_zero_label") for r in settings["pipeline"] if r["type"]=="LoadAnnotations")
         self.segmentor = wrapped.segmentor
         self.indices = tuple(settings['model']['backbone']['out_indices'])
         self.test_cfg = settings['model']['test_cfg']
@@ -68,11 +70,24 @@ class DenseTask:
         path = Path(row['path'])
         if file_hash(path) != row['file_sha256']:
             raise ValueError('dense view original differs from the selected manifest')
-        packed = self.pipeline(dict(img_path=str(path), seg_fields=[]))
+        annotation=row.get("seg_map_path")
+        if annotation:
+            if file_hash(annotation)!=row.get("annotation_sha256"):
+                raise ValueError("dense annotation differs from the bound calibration manifest")
+            packed=self.label_pipeline(dict(img_path=str(path),seg_map_path=str(annotation),seg_fields=[],reduce_zero_label=self.reduce_zero_label))
+        else:
+            packed=self.pipeline(dict(img_path=str(path),seg_fields=[]))
         prepared = self.segmentor.data_preprocessor(pseudo_collate([packed]), training=False)
         meta = prepared['data_samples'][0].metainfo
         image = prepared['inputs']
         h, w = image.shape[-2:]
+        label=None
+        if annotation:
+            import torch.nn.functional as F
+            label=packed["data_samples"].gt_sem_seg.data.unsqueeze(0).to(image)
+            height,width=meta["img_shape"][:2]
+            label=F.interpolate(label,size=(height,width),mode="nearest").long()[:,0]
+            label=F.pad(label,(0,w-width,0,h-height),value=self.segmentor.decode_head.ignore_index)
         mode = self.test_cfg.get('mode', 'whole')
         if mode not in ('slide', 'whole'):
             raise ValueError('unsupported bound segmentation inference mode ' + mode)
@@ -83,12 +98,14 @@ class DenseTask:
                 bottom, right = min(iy * sh + ch, h), min(ix * sw + cw, w)
                 top, left = max(bottom - ch, 0), max(right - cw, 0)
                 crop = image[:, :, top:bottom, left:right]
-                yield crop, {**meta, 'img_shape': tuple(crop.shape[-2:])}, {
+                yield crop, {**meta, 'img_shape': tuple(crop.shape[-2:]),
+                             **({'_qavit_labels':label[:,top:bottom,left:right]} if label is not None else {})}, {
                     'original_hw': list(meta['ori_shape']), 'resized_hw': list(meta['img_shape']),
                     'prepared_shape': list(image.shape), 'box_yxyx': [top, left, bottom, right]}
 
     def observe(self, model, x, meta, *, logits):
         # Features are exactly the tensors passed to the frozen neck by extract_feat.
+        meta={k:v for k,v in meta.items() if k!="_qavit_labels"}
         features = self.features(model)(x)
         result = {str(i): t for i, t in zip(self.indices, features)}
         if logits:
@@ -116,7 +133,7 @@ def _fp_identity(backend, files, annotation_dir, *, settings, head, weights, cla
         'deterministic': [torch.are_deterministic_algorithms_enabled(), torch.backends.cudnn.deterministic, torch.backends.cudnn.benchmark]})
 
 
-def evaluate(backbone, backend, directory, count=None, *, fp_reference=None, development=None):
+def evaluate(backbone, backend, directory, count=None, *, fp_reference=None, development=None, per_image_confusion=False):
     """Use the selected task's trained head, preprocessing and frozen backbone."""
     import torch
     from runtime.files import save
@@ -149,6 +166,7 @@ def evaluate(backbone, backend, directory, count=None, *, fp_reference=None, dev
         if not 0 < count <= total_files:
             raise ValueError('ADE count越界')
         files = files[:count]
+    original_counts = {}
     histograms = {name: torch.zeros((classes,classes), dtype=torch.int64) for name in ('fp', 'quantized')}
     model_hashes = [model_digest(reference), model_digest(backbone)]
     def identity():
@@ -191,7 +209,12 @@ def evaluate(backbone, backend, directory, count=None, *, fp_reference=None, dev
                 valid = gt != ignore_index
                 if not ((gt[valid] >= 0) & (gt[valid] < classes)).all():
                     raise ValueError('ADE标签越界')
-                histograms[name] += torch.bincount(classes * gt[valid] + pred[valid], minlength=classes**2).reshape(classes,classes)
+                image_counts = torch.bincount(classes * gt[valid] + pred[valid], minlength=classes**2).reshape(classes,classes)
+                histograms[name] += image_counts
+                if per_image_confusion:
+                    flat=image_counts.flatten()
+                    ix=flat.nonzero().flatten()
+                    original_counts.setdefault(p.name,{})[name]={"classes":classes,"indices":ix.tolist(),"counts":flat[ix].tolist()}
             if (i+1) % 10 == 0:
                 save(directory / 'ade_progress.json', {'completed_images': i+1, 'requested':len(files)})
                 print('ADE', i+1, '/', len(files), flush=True)
@@ -205,7 +228,7 @@ def evaluate(backbone, backend, directory, count=None, *, fp_reference=None, dev
         results[name] = {'mIoU':float((tp/(total+predicted-tp)).nanmean()*100),
                          'mAcc':float((tp/total).nanmean()*100), 'aAcc':float(tp.sum()/hist.sum()*100),
                          'confusion_matrix':hist.tolist()}
-    return {'images':len(files), 'split': 'ade_dev' if development is not None else 'ade_validation',
+    return {**({'per_original_confusion':original_counts} if per_image_confusion else {}), 'images':len(files), 'split': 'ade_dev' if development is not None else 'ade_validation',
             'complete_view':len(files)==total_files, 'full_dataset_evaluation':development is None and expected_images is not None and len(files)==expected_images, 'classes':classes,
             'fp_identity': identity_before, 'fp_reference_sha256': reused,
             'metrics':results, 'delta_mIoU_pp':results['quantized']['mIoU']-results['fp']['mIoU'],

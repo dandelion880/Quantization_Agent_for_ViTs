@@ -1,0 +1,18 @@
+{
+  "input_zip_sha256": "b4788c50d92933aa1c37068413b158e3ad12a0761bd1abf11ec199438eee523c",
+  "manifest_sha256": "c6d32fcd8a487f6dc44228f43455d44bf28977c26826c2cf460aadf5d6f1397a",
+  "payload_members_verified": 25,
+  "survey_records": 83,
+  "dispositions": {
+    "ptq_material": 51,
+    "ptq_source_gap": 5,
+    "excluded_qat": 14,
+    "family_version": 1,
+    "unresolved_boundary": 5,
+    "excluded_non_ptq": 6,
+    "operator_context": 1
+  },
+  "method_versions": 52,
+  "structured_assets": "source_mapping.json",
+  "source_manifest": "PACKAGE_MANIFEST.json"
+}
